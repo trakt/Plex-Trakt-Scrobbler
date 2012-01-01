@@ -44,6 +44,7 @@ current_id = None
 progress = 0
 duration = 0
 percent = 0
+last_scrobbled_id = 0
 
 print ""
 print "Started monitoring a "+platform+" running "+platformVersion+" with PMS Version "+version
@@ -117,7 +118,6 @@ def add_to_trakt (video_type, title, year, duration, progress, guid):
         print "Message: " + html['message']
     else:
         print "Message: " + html['error']
-    #print "Disabled"
 
 
 #Set the filename and open the file
@@ -143,6 +143,7 @@ while 1:
             print "Progress on "+m.group(1)+" is "+m2.group(1)+" ms"
             url = 'http://localhost:32400/library/metadata/'+m.group(1)
             progress = int(m2.group(1))
+            print last_scrobbled_id
         except: pass
         
 
@@ -165,14 +166,20 @@ while 1:
                     percent = round((float(progress)/duration)*100, 0)
                     #print "percent "+str(percent)
                     print "Found the "+type+" "+title+" from "+year+", lets make a call to trakt.tv"
-                    add_to_trakt(type, title, year, int(float(duration)/60000), percent, guid)
+                    if last_scrobbled_id != m.group(1):
+                        add_to_trakt(type, title, year, int(float(duration)/60000), percent, guid)
+                    else:
+                        print "This is already scrobbled."
                     last_commit = datetime.datetime.now()
                     current_id = m.group(1)
                     remaining = float(float(duration)-int(progress))/1000
-                    if remaining < 15*60 and percent > 85.0:
-                        print "We are close to the end and have scrobbled so will pause for %s seconds." % str(remaining)
-                        time.sleep(remaining)
-                        current_id = None
+                    if percent > 85.0:
+                        last_scrobbled_id = current_id
+                    # This won't work
+                    #if remaining < 15*60 and percent > 85.0:
+                    #    print "We are close to the end and have scrobbled so will pause for %s seconds." % str(remaining)
+                    #    time.sleep(remaining)
+                    #    current_id = None
 
         # Leave whatch state if not updated for 30 minutes
         if last_commit < datetime.datetime.now() - datetime.timedelta(minutes=30) and current_id != None:
