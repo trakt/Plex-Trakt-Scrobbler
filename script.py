@@ -19,13 +19,13 @@ config.read(path + '/config.ini')
 trakt_username = config.get('Trakt', 'username')
 trakt_password = config.get('Trakt', 'password')
 
-plugin_version = "0.1"
+plugin_version = "0.2"
 # Path to your PMS Server log file
-# Using startswith for linux, as read about new kernel reporting as linux3 rather than linux2
 if sys.platform == 'win32':
     filename = os.path.join(winpaths.get_local_appdata(), 'Plex Media Server\Logs\Plex Media Server.log')
 elif sys.platform == 'darwin':
     filename = os.path.join(os.environ['HOME'], 'Library/Logs/Plex Media Server.log')
+# Using startswith for linux, as read about new kernel reporting as linux3 rather than linux2
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
