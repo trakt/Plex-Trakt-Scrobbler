@@ -21,7 +21,6 @@ trakt_password = config.get('Trakt', 'password')
 
 plugin_version = "0.1"
 # Path to your PMS Server log file
-
 # Using startswith for linux, as read about new kernel reporting as linux3 rather than linux2
 if sys.platform == 'win32':
     filename = os.path.join(winpaths.get_local_appdata(), 'Plex Media Server\Logs\Plex Media Server.log')
@@ -52,7 +51,8 @@ percent = 0
 last_scrobbled_id = 0
 
 print ""
-print "Started monitoring a "+platform+" running "+platformVersion+" with PMS Version "+version
+print "Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version+""
+print ""
 print "This plugin is in version "+plugin_version+" and is monitoring the log at "+filename
 print "additional data is collected from PMS running at "+url+" and reported to trakt.tv with username "+trakt_username+"."
 print ""
