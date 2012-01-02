@@ -11,6 +11,7 @@ import simplejson as json
 import urllib2
 import signal
 import ConfigParser
+import winpaths
 
 path = os.path.dirname(os.path.abspath( __file__ ))
 config = ConfigParser.RawConfigParser()
@@ -20,12 +21,16 @@ trakt_password = config.get('Trakt', 'password')
 
 plugin_version = "0.1"
 # Path to your PMS Server log file
-osx_path = os.path.join(os.environ['HOME'], 'Library/Logs/Plex Media Server.log')
-linux_path = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
-if os.path.exists(osx_path):
-    filename = osx_path
+
+# Using startswith for linux, as read about new kernel reporting as linux3 rather than linux2
+if sys.platform == 'win32':
+    filename = os.path.join(winpaths.get_local_appdata(), 'Plex Media Server\Logs\Plex Media Server.log')
+elif sys.platform == 'darwin':
+    filename = os.path.join(os.environ['HOME'], 'Library/Logs/Plex Media Server.log')
+elif sys.platform.startswith('linux'):
+    filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
-    filename = linux_path
+    print 'OS not detected correctly'
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
