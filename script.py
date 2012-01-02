@@ -51,7 +51,7 @@ percent = 0
 last_scrobbled_id = 0
 
 print ""
-print "Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version+""
+print "Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version
 print ""
 print "This plugin is in version "+plugin_version+" and is monitoring the log at "+filename
 print "additional data is collected from PMS running at "+url+" and reported to trakt.tv with username "+trakt_username+"."
