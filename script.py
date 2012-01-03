@@ -22,6 +22,9 @@ trakt_username = config.get('Trakt', 'username')
 trakt_password = config.get('Trakt', 'password')
 log_path = config.get('Optional', 'log_path')
 
+def Log(string):
+    print str(string)
+
 plugin_version = "0.2"
 # Path to your PMS Server log file
 if log_path != '':
@@ -34,7 +37,7 @@ elif sys.platform == 'darwin':
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
-    print 'OS not detected correctly, please specify log path in config.ini'
+    Log('OS not detected correctly, please specify log path in config.ini')
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
@@ -56,20 +59,19 @@ percent = 0
 last_scrobbled_id = 0
 
 if os.path.isfile(filename) == False:
-    print 'Log file not found'
+    Log('Log file not found')
     sys.exit()
 
-print ""
-print "Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version
-print ""
-print "This plugin is in version "+plugin_version+" and is monitoring the log at "+filename
-print "additional data is collected from PMS running at "+url+" and reported to trakt.tv with username "+trakt_username+"."
-print ""
+Log("Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version)
+Log("")
+Log("This plugin is in version "+plugin_version+" and is monitoring the log at "+filename)
+Log("additional data is collected from PMS running at "+url+" and reported to trakt.tv with username "+trakt_username+".")
+Log("")
 
 user_agent = "PMS Scrobbler for trakt.tv/"+plugin_version+" (compatible; "+platformVersion+"; "+platform+")"
 
 def signal_handler(signal, frame):
-    print 'Down for a halt'
+    Log('Down for a halt')
     stop_watching()
 
     sys.exit(0)
@@ -77,26 +79,26 @@ signal.signal(signal.SIGINT, signal_handler)
 
 def stop_watching():
     if current_id != None:
-        print "Leaving Watch state"
+        Log("Leaving Watch state")
         req = urllib2.Request("http://api.trakt.tv/movie/cancelwatching/"+api_key, auth_data, headers = { "Accept": "*/*", "User-Agent": user_agent})
         result = urllib2.urlopen(req)
         html = json.loads(result.read())
 
-        print "Status: " + html['status']
+        Log("Status: " + html['status'])
         if html['status'] == "success":
-            print "Message: " + html['message']
+            Log("Message: " + html['message'])
         else:
-            print "Message: " + html['error']
+            Log("Message: " + html['error'])
 
         req = urllib2.Request("http://api.trakt.tv/show/cancelwatching/"+api_key, auth_data, headers = { "Accept": "*/*", "User-Agent": user_agent})
         result = urllib2.urlopen(req)
         html = json.loads(result.read())
 
-        print "Status: " + html['status']
+        Log("Status: " + html['status'])
         if html['status'] == "success":
-            print "Message: " + html['message']
+            Log("Message: " + html['message'])
         else:
-            print "Message: " + html['error']
+            Log("Message: " + html['error'])
 
 def add_to_trakt (video_type, title, year, duration, progress, guid):
 
@@ -120,18 +122,18 @@ def add_to_trakt (video_type, title, year, duration, progress, guid):
     # define a Python data dictionary
     data = auth_data + "&" + urllib.urlencode({'title': title, 'progress': progress, 'duration': duration, 'plugin_version': plugin_version, 'media_center_version': version, 'year': year}) + "&" + specific_data
 
-    print "Make a call with this data: " + data
+    Log("Make a call with this data: " + data)
 
     req = urllib2.Request("http://api.trakt.tv/" + video_type + "/" + kind + "/"+api_key, data, headers = { "Accept": "*/*", "User-Agent": user_agent})
     result = urllib2.urlopen(req)
 
     html = json.loads(result.read())
 
-    print "Status: " + html['status']
+    Log("Status: " + html['status'])
     if html['status'] == "success":
-        print "Message: " + html['message']
+        Log("Message: " + html['message'])
     else:
-        print "Message: " + html['error']
+        Log("Message: " + html['error'])
 
 
 #Set the filename and open the file
@@ -154,10 +156,10 @@ while 1:
         try:
             m = re.search('progress on (?P<last>\w*?)\s', line)
             m2 = re.search('got played (?P<last>\w*?)\s', line)
-            print "Progress on "+m.group(1)+" is "+m2.group(1)+" ms"
+            Log("Progress on "+m.group(1)+" is "+m2.group(1)+" ms")
             url = 'http://localhost:32400/library/metadata/'+m.group(1)
             progress = int(m2.group(1))
-            print last_scrobbled_id
+            Log(last_scrobbled_id)
         except: pass
 
 
@@ -165,7 +167,7 @@ while 1:
             #print url
             if duration != 0 and progress != 0:
                 percent = round((float(progress)/duration)*100, 0)
-            print "percent "+str(percent)
+            Log("percent "+str(percent))
 
             if last_commit < datetime.datetime.now() - datetime.timedelta(minutes=15) or current_id != m.group(1) or percent > 85.0:
                 data = parse(urllib2.urlopen(url)).getroot()
@@ -179,11 +181,11 @@ while 1:
                     duration = int(element.attrib.get("duration"))
                     percent = round((float(progress)/duration)*100, 0)
                     #print "percent "+str(percent)
-                    print "Found the "+type+" "+title+" from "+year+", lets make a call to trakt.tv"
+                    Log("Found the "+type+" "+title+" from "+year+", lets make a call to trakt.tv")
                     if last_scrobbled_id != m.group(1):
                         add_to_trakt(type, title, year, int(float(duration)/60000), percent, guid)
                     else:
-                        print "This is already scrobbled."
+                        Log("This is already scrobbled.")
                     last_commit = datetime.datetime.now()
                     current_id = m.group(1)
                     remaining = float(float(duration)-int(progress))/1000
