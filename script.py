@@ -23,7 +23,7 @@ trakt_password = config.get('Trakt', 'password')
 log_path = config.get('Optional', 'log_path')
 
 def Log(string):
-    print str(string)
+    print string.encode('utf-8')
 
 plugin_version = "0.2"
 # Path to your PMS Server log file
