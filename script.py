@@ -24,7 +24,9 @@ log_path = config.get('Optional', 'log_path')
 
 plugin_version = "0.2"
 # Path to your PMS Server log file
-if sys.platform == 'win32':
+if log_path != '':
+    filename = log_path
+elif sys.platform == 'win32':
     filename = os.path.join(winpaths.get_local_appdata(), 'Plex Media Server\Logs\Plex Media Server.log')
 elif sys.platform == 'darwin':
     filename = os.path.join(os.environ['HOME'], 'Library/Logs/Plex Media Server.log')
@@ -32,10 +34,7 @@ elif sys.platform == 'darwin':
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
-    print 'OS not detected correctly'
-    
-if log_path != '':
-    filename = log_path
+    print 'OS not detected correctly, please specify log path in config.ini'
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
