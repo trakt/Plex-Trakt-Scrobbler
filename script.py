@@ -44,10 +44,10 @@ createSha1 = hashlib.sha1(trakt_password)
 auth_data = "username=" + trakt_username + "&password=" + createSha1.hexdigest()
 
 data = parse(urllib2.urlopen(url)).getroot()
-version = data.attrib.get("version")
-platform = data.attrib.get("platform")
-platformVersion = data.attrib.get("platformVersion")
-filename = os.path.abspath(filename)
+version = str(data.attrib.get("version"))
+platform = str(data.attrib.get("platform"))
+platformVersion = str(data.attrib.get("platformVersion"))
+filename = str(os.path.abspath(filename))
 # Need to be older then default check value
 last_commit = datetime.datetime.now()
 current_id = None
@@ -116,7 +116,7 @@ def add_to_trakt (video_type, title, year, duration, progress, guid):
 
     # define a Python data dictionary
     data = auth_data + "&" + urllib.urlencode({'title': title, 'progress': progress, 'duration': duration, 'plugin_version': plugin_version, 'media_center_version': version, 'year': year}) + "&" + specific_data
-    
+
     print "Make a call with this data: " + data
 
     req = urllib2.Request("http://api.trakt.tv/" + video_type + "/" + kind + "/"+api_key, data, headers = { "Accept": "*/*", "User-Agent": user_agent})
@@ -156,7 +156,7 @@ while 1:
             progress = int(m2.group(1))
             print last_scrobbled_id
         except: pass
-        
+
 
         if url != None:
             #print url
@@ -170,9 +170,9 @@ while 1:
                 for element in iter:
                     #print tostring(element)
                     title = element.attrib.get("title").encode('utf-8')
-                    type = element.attrib.get("type")
-                    year = element.attrib.get("year")
-                    guid = element.attrib.get("guid")
+                    type = str(element.attrib.get("type"))
+                    year = str(element.attrib.get("year"))
+                    guid = str(element.attrib.get("guid"))
                     duration = int(element.attrib.get("duration"))
                     percent = round((float(progress)/duration)*100, 0)
                     #print "percent "+str(percent)
@@ -196,4 +196,4 @@ while 1:
         if last_commit < datetime.datetime.now() - datetime.timedelta(minutes=30) and current_id != None:
             stop_watching()
             current_id = None
-            
+
