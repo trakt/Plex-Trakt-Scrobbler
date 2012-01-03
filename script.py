@@ -36,10 +36,6 @@ elif sys.platform.startswith('linux'):
 else:
     print 'OS not detected correctly, please specify log path in config.ini'
 
-if os.path.isfile(filename) == False:
-    print 'Log file not found'
-    sys.exit()
-
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
 
@@ -58,6 +54,10 @@ progress = 0
 duration = 0
 percent = 0
 last_scrobbled_id = 0
+
+if os.path.isfile(filename) == False:
+    print 'Log file not found'
+    sys.exit()
 
 print ""
 print "Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version
