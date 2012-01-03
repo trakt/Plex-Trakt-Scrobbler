@@ -1,1 +1,3 @@
 settings.ini
+# dont upload config.ini, will share password with the world!
+config.ini
