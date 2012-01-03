@@ -34,7 +34,7 @@ elif sys.platform == 'darwin':
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
-    print 'OS not detected correctly'
+    print 'OS not detected correctly, please specify log path in config.ini'
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
