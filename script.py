@@ -65,7 +65,7 @@ percent = 0
 last_scrobbled_id = 0
 
 if os.path.isfile(filename) == False:
-    Log('Log file not found')
+    Log('Plex Log file not found')
     sys.exit()
 
 Log("Started monitoring...")
