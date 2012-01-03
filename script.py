@@ -11,6 +11,7 @@ import simplejson as json
 import urllib2
 import signal
 import ConfigParser
+import logging
 
 if sys.platform == 'win32':
     import winpaths
@@ -20,15 +21,20 @@ config = ConfigParser.RawConfigParser()
 config.read(path + '/config.ini')
 trakt_username = config.get('Trakt', 'username')
 trakt_password = config.get('Trakt', 'password')
-log_path = config.get('Optional', 'log_path')
+plexlog_path = config.get('Optional', 'plexlog_path')
+
+# Will this always be current directory? maybe include something to get script location to use in path first?
+logging.basicConfig(filename='Plex-Trakt-Scrobbler.log',format='%(asctime)s: %(message)s',datefmt='%m/%d/%Y %I:%M:%S %p',level=logging.DEBUG)
 
 def Log(string):
-    print string.encode('utf-8')
-
+    # Probably want to pass through log type along with string. Can alsonuse logging.debug(string) and logging.warning(string)
+    logging.info(string)
+    print string.encode('utf-8')+"\n"
+    
 plugin_version = "0.2"
 # Path to your PMS Server log file
-if log_path != '':
-    filename = log_path
+if plexlog_path != '':
+    filename = plexlog_path
 elif sys.platform == 'win32':
     filename = os.path.join(winpaths.get_local_appdata(), 'Plex Media Server\Logs\Plex Media Server.log')
 elif sys.platform == 'darwin':
@@ -37,7 +43,7 @@ elif sys.platform == 'darwin':
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
-    Log('OS not detected correctly, please specify log path in config.ini')
+    Log('OS not detected correctly, please specify Plex log path in config.ini')
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
@@ -59,14 +65,15 @@ percent = 0
 last_scrobbled_id = 0
 
 if os.path.isfile(filename) == False:
-    Log('Log file not found')
+    Log('Plex Log file not found')
     sys.exit()
 
-Log("Started monitoring: "+platform+" "+platformVersion+" with PMS Version "+version)
-Log("")
-Log("This plugin is in version "+plugin_version+" and is monitoring the log at "+filename)
-Log("additional data is collected from PMS running at "+url+" and reported to trakt.tv with username "+trakt_username+".")
-Log("")
+Log("Started monitoring...")
+Log("Running on "+platform+" "+platformVersion+" with PMS Version "+version)
+Log("Plugin version: "+plugin_version)
+Log("Monitoring the log at "+filename)
+Log("PMS running at "+url)
+Log("trakt.tv username "+trakt_username)
 
 user_agent = "PMS Scrobbler for trakt.tv/"+plugin_version+" (compatible; "+platformVersion+"; "+platform+")"
 
