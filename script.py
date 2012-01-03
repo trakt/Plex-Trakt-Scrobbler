@@ -11,13 +11,16 @@ import simplejson as json
 import urllib2
 import signal
 import ConfigParser
-import winpaths
+
+if sys.platform == 'win32':
+    import winpaths
 
 path = os.path.dirname(os.path.abspath( __file__ ))
 config = ConfigParser.RawConfigParser()
 config.read(path + '/config.ini')
 trakt_username = config.get('Trakt', 'username')
 trakt_password = config.get('Trakt', 'password')
+log_path = config.get('Optional', 'log_path')
 
 plugin_version = "0.2"
 # Path to your PMS Server log file
@@ -30,6 +33,9 @@ elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
 else:
     print 'OS not detected correctly'
+    
+if log_path != '':
+    filename = log_path
 
 url = 'http://localhost:32400/'
 api_key = 'aebda823a279b219476c565be863d83739999502'
