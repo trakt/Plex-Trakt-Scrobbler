@@ -46,7 +46,7 @@ else:
     Log('OS not detected correctly, please specify Plex log path in config.ini')
 
 url = 'http://localhost:32400/'
-api_key = 'aebda823a279b219476c565be863d83739999502'
+api_key = 'ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
 createSha1 = hashlib.sha1(trakt_password)
 auth_data = "username=" + trakt_username + "&password=" + createSha1.hexdigest()
