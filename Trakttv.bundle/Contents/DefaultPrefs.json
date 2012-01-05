@@ -1,0 +1,27 @@
+[
+  {
+        "id": "username",
+        "type": "text",
+        "label": "Username",
+        "default": ""
+    },
+    {
+        "id": "password",
+        "type": "text",
+        "label": "Password",
+        "default": "",
+        "option": "hidden"
+    },
+    {
+        "id": "pms_host",
+        "type": "text",
+        "label": "PMS Host",
+        "default": "localhost:32400",
+    },
+    {
+        "id": "log_path",
+        "type": "text",
+        "label": "Log Path",
+        "default": "",
+    }
+]

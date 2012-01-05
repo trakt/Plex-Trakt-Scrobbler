@@ -2,15 +2,11 @@ Plex-Trakt-Scrobbler
 =================================
 
 This is a proof of concept for monitoring a Plex Media Server and scrobble the result to trakt.tv
+The dev branch is currently broken!
 
-Usage:
-------------
+Copy the bundle to your Plex folder, and configure your settings in plex.
+tip, if you are using osx just launch the copy_script.sh from terminal.
 
-Rename config_sample.ini to config.ini and add your username and password.
-Finally launch the script with python script.py and check that you don't get any errors in the terminal.
-See [Jotlab] for a more in dept article.
-
-[Jotlab]: http://www.jotlab.com/2012/01/03/plex-trakt-a-scrobbling-love-story/
 
 TODO:
 ------------

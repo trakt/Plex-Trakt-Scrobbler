@@ -23,7 +23,7 @@ trakt_password = config.get('Trakt', 'password')
 log_path = config.get('Optional', 'log_path')
 
 def Log(string):
-    print string.encode('utf-8')
+    print string
 
 plugin_version = "0.2"
 # Path to your PMS Server log file
@@ -36,11 +36,14 @@ elif sys.platform == 'darwin':
 # Using startswith for linux, as read about new kernel reporting as linux3 rather than linux2
 elif sys.platform.startswith('linux'):
     filename = '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
+    # Fix for Synology users
+    if not os.path.isfile(filename):
+        filename = '/volume1/Plex/Library/Logs/Plex Media Server.log'
 else:
     Log('OS not detected correctly, please specify log path in config.ini')
 
 url = 'http://localhost:32400/'
-api_key = 'aebda823a279b219476c565be863d83739999502'
+api_key = 'ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
 createSha1 = hashlib.sha1(trakt_password)
 auth_data = "username=" + trakt_username + "&password=" + createSha1.hexdigest()
@@ -160,6 +163,7 @@ while 1:
             url = 'http://localhost:32400/library/metadata/'+m.group(1)
             progress = int(m2.group(1))
             Log(last_scrobbled_id)
+            Log(url)
         except: pass
 
 
@@ -174,7 +178,7 @@ while 1:
                 iter = data.findall("Video")
                 for element in iter:
                     #print tostring(element)
-                    title = element.attrib.get("title").encode('utf-8')
+                    title = str(element.attrib.get("title").encode('utf-8'))
                     type = str(element.attrib.get("type"))
                     year = str(element.attrib.get("year"))
                     guid = str(element.attrib.get("guid"))
@@ -191,14 +195,8 @@ while 1:
                     remaining = float(float(duration)-int(progress))/1000
                     if percent > 85.0:
                         last_scrobbled_id = current_id
-                    # This won't work
-                    #if remaining < 15*60 and percent > 85.0:
-                    #    print "We are close to the end and have scrobbled so will pause for %s seconds." % str(remaining)
-                    #    time.sleep(remaining)
-                    #    current_id = None
 
         # Leave whatch state if not updated for 30 minutes
         if last_commit < datetime.datetime.now() - datetime.timedelta(minutes=30) and current_id != None:
             stop_watching()
             current_id = None
-
