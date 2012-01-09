@@ -1,7 +1,5 @@
-import time
-import os
-import re
-import sys
+import logsucker
+import hashlib
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
 
@@ -12,6 +10,9 @@ NAME = L('Title')
 # the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
+PMS_URL = 'http://%s/library/sections/'
+TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
+
 
 ####################################################################################################
 
@@ -38,80 +39,48 @@ def Start():
     MediaContainer.art = R(ART)
     DirectoryItem.thumb = R(ICON)
     VideoItem.thumb = R(ICON)
-    
-    HTTP.CacheTime = CACHE_1HOUR
-    StartMonitoring()
 
-# see:
-#  http://dev.plexapp.com/docs/Functions.html#ValidatePrefs
 def ValidatePrefs():
     u = Prefs['username']
     p = Prefs['password']
     ## do some checks and return a
     ## message container
-    if( u and p ):
+    
+    values = {}
+    values['username'] = u
+    values['password'] = hashlib.sha1(p).hexdigest()
+    
+    
+    if talk_to_trakt('account/test', values):
         return MessageContainer(
             "Success",
-            "User and password provided ok"
+            "Valid username and password provided"
         )
     else:
         return MessageContainer(
             "Error",
-            "You need to provide both a user and password"
+            "You need to provide a valid username and password"
         )
-
-  
-
-
-#### the rest of these are user created functions and
-#### are not reserved by the plugin framework.
-#### see: http://dev.plexapp.com/docs/Functions.html for
-#### a list of reserved functions above
-
-
-
-#
-# Example main menu referenced in the Start() method
-# for the 'Applications' prefix handler
-#
 
 def ApplicationsMainMenu():
 
-    # Container acting sort of like a folder on
-    # a file system containing other things like
-    # "sub-folders", videos, music, etc
-    # see:
-    #  http://dev.plexapp.com/docs/Objects.html#MediaContainer
-    dir = MediaContainer(viewGroup="InfoList")
-
-
-    # see:
-    #  http://dev.plexapp.com/docs/Objects.html#DirectoryItem
-    #  http://dev.plexapp.com/docs/Objects.html#function-objects
+    dir = MediaContainer(viewGroup="InfoList", noCache=True)
     dir.Append(
         Function(
             DirectoryItem(
-                CallbackExample,
-                "directory item title",
-                subtitle="subtitle",
-                summary="clicking on me will call CallbackExample",
+                ManuallySync,
+                "Manually Sync to trakt.tv",
+                summary="Sync current library to trakt.tv",
                 thumb=R(ICON),
                 art=R(ART)
             )
         )
-    )
-
-  
-    # Part of the "preferences" example 
-    # see also:
-    #  http://dev.plexapp.com/docs/Objects.html#PrefsItem
-    #  http://dev.plexapp.com/docs/Functions.html#CreatePrefs
-    #  http://dev.plexapp.com/docs/Functions.html#ValidatePrefs 
+    )  
     dir.Append(
         PrefsItem(
             title="Trakt.tv preferences",
             subtile="Configure your trakt.tv account",
-            summary="lets you connect to trakt.tv",
+            summary="Configure how to connect to trakt.tv",
             thumb=R(ICON)
         )
     )
@@ -119,24 +88,43 @@ def ApplicationsMainMenu():
     # ... and then return the container
     return dir
 
-def CallbackExample(sender):
+def ManuallySync(sender):
+    title = "Dummy"
+    key = "1"
+    
 
-    ## you might want to try making me return a MediaContainer
-    ## containing a list of DirectoryItems to see what happens =)
+    url = GetPmsHost() + key + '/refresh'
+    update = HTTP.Request(url, cacheTime=1).content
 
-    return MessageContainer(
-        "Not implemented",
-        "In real life, you'll make more than one callback,\nand you'll do something useful.\nsender.itemTitle=%s" % sender.itemTitle
-    )
+    if title == 'All sections':
+        return MessageContainer(title, 'All sections will be updated!')
+    elif len(key) > 1:
+        return MessageContainer(title, 'All chosen sections will be updated!')
+    else:
+        return MessageContainer(title, 'Section "' + title + '" will be updated!')
 
-  
+def GetPmsHost():
+  host = Prefs['pms_host']
 
-def StartMonitoring():
-    if Prefs['log_path'] != '':
-        filename = Prefs['log_path']
-    elif sys.platform == 'darwin':
-        filename = os.path.join(os.environ['HOME'], 'Library/Logs/Plex Media Server.log')
+  if host.find(':') == -1:
+    host += ':32400'
 
+  return PMS_URL % (host)
 
-    Log(filename)
-    #filename = str(os.path.abspath(filename))
+def talk_to_trakt(action, values):
+    # Function to talkt to the plex api
+    data_url = TRAKT_URL % action
+
+    try:
+        result = JSON.ObjectFromURL(data_url, values=values)
+        Log(result)
+
+        if result['status'] == 'success':
+            Log('Trakt responded with: %s' % result['message'])
+            return True
+        else:
+            Log('Trakt responded with: %s' % result['error'])
+            return False
+    except:
+        Log('Could not talk to Trakt.tv')
+        return False
