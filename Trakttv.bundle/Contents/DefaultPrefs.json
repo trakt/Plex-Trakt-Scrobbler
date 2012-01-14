@@ -1,5 +1,11 @@
 [
-  {
+    {
+    "id": "start_scrobble",
+    "type": "bool",
+    "label": "Start scrobbling automatically",
+    "default": "true"
+    },
+    {
         "id": "username",
         "type": "text",
         "label": "Username",
@@ -16,12 +22,12 @@
         "id": "pms_host",
         "type": "text",
         "label": "PMS Host",
-        "default": "localhost:32400",
+        "default": "localhost:32400"
     },
     {
         "id": "log_path",
         "type": "text",
         "label": "Log Path",
-        "default": "",
+        "default": ""
     }
 ]

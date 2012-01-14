@@ -13,6 +13,71 @@ ICON = 'icon-default.png'
 PMS_URL = 'http://%s/library/sections/'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
+responses = {
+    100: ('Continue', 'Request received, please continue'),
+    101: ('Switching Protocols',
+          'Switching to new protocol; obey Upgrade header'),
+
+    200: ('OK', 'Request fulfilled, document follows'),
+    201: ('Created', 'Document created, URL follows'),
+    202: ('Accepted',
+          'Request accepted, processing continues off-line'),
+    203: ('Non-Authoritative Information', 'Request fulfilled from cache'),
+    204: ('No Content', 'Request fulfilled, nothing follows'),
+    205: ('Reset Content', 'Clear input form for further input.'),
+    206: ('Partial Content', 'Partial content follows.'),
+
+    300: ('Multiple Choices',
+          'Object has several resources -- see URI list'),
+    301: ('Moved Permanently', 'Object moved permanently -- see URI list'),
+    302: ('Found', 'Object moved temporarily -- see URI list'),
+    303: ('See Other', 'Object moved -- see Method and URL list'),
+    304: ('Not Modified',
+          'Document has not changed since given time'),
+    305: ('Use Proxy',
+          'You must use proxy specified in Location to access this '
+          'resource.'),
+    307: ('Temporary Redirect',
+          'Object moved temporarily -- see URI list'),
+
+    400: ('Bad Request',
+          'Bad request syntax or unsupported method'),
+    401: ('Unauthorized',
+          'Login failed'),
+    402: ('Payment Required',
+          'No payment -- see charging schemes'),
+    403: ('Forbidden',
+          'Request forbidden -- authorization will not help'),
+    404: ('Not Found', 'Nothing matches the given URI'),
+    405: ('Method Not Allowed',
+          'Specified method is invalid for this server.'),
+    406: ('Not Acceptable', 'URI not available in preferred format.'),
+    407: ('Proxy Authentication Required', 'You must authenticate with '
+          'this proxy before proceeding.'),
+    408: ('Request Timeout', 'Request timed out; try again later.'),
+    409: ('Conflict', 'Request conflict.'),
+    410: ('Gone',
+          'URI no longer exists and has been permanently removed.'),
+    411: ('Length Required', 'Client must specify Content-Length.'),
+    412: ('Precondition Failed', 'Precondition in headers is false.'),
+    413: ('Request Entity Too Large', 'Entity is too large.'),
+    414: ('Request-URI Too Long', 'URI is too long.'),
+    415: ('Unsupported Media Type', 'Entity body in unsupported format.'),
+    416: ('Requested Range Not Satisfiable',
+          'Cannot satisfy request range.'),
+    417: ('Expectation Failed',
+          'Expect condition could not be satisfied.'),
+
+    500: ('Internal Server Error', 'Server got itself in trouble'),
+    501: ('Not Implemented',
+          'Server does not support this operation'),
+    502: ('Bad Gateway', 'Invalid responses from another server/proxy.'),
+    503: ('Service Unavailable',
+          'The server cannot process the request due to a high load'),
+    504: ('Gateway Timeout',
+          'The gateway server did not receive a timely response'),
+    505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
+    }
 
 ####################################################################################################
 
@@ -46,20 +111,17 @@ def ValidatePrefs():
     ## do some checks and return a
     ## message container
     
-    values = {}
-    values['username'] = u
-    values['password'] = hashlib.sha1(p).hexdigest()
-    
-    
-    if talk_to_trakt('account/test', values):
+
+    status = talk_to_trakt('account/test', {'username' : u, 'password' : hashlib.sha1(p).hexdigest()})
+    if status['status']:
         return MessageContainer(
             "Success",
-            "Valid username and password provided"
+            "Trakt responded with: %s " % status['message']
         )
     else:
         return MessageContainer(
             "Error",
-            "You need to provide a valid username and password"
+            "Trakt responded with: %s " % status['message']
         )
 
 def ApplicationsMainMenu():
@@ -112,19 +174,21 @@ def GetPmsHost():
   return PMS_URL % (host)
 
 def talk_to_trakt(action, values):
-    # Function to talkt to the plex api
+    # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % action
 
     try:
-        result = JSON.ObjectFromURL(data_url, values=values)
+        json_file = HTTP.Request(data_url, values=values)
+        headers = json_file.headers
+        result = JSON.ObjectFromString(json_file.content)
         Log(result)
 
-        if result['status'] == 'success':
-            Log('Trakt responded with: %s' % result['message'])
-            return True
-        else:
-            Log('Trakt responded with: %s' % result['error'])
-            return False
-    except:
-        Log('Could not talk to Trakt.tv')
-        return False
+    except Ex.HTTPError, e:
+        result = {'status' : 'failure', 'error' : responses[e.code][1]}
+
+    if result['status'] == 'success':
+        Log('Trakt responded with: %s' % result['message'])
+        return {'status' : True, 'message' : result['message']}
+    else:
+        Log('Trakt responded with: %s' % result['error'])
+        return {'status' : False, 'message' : result['error']}
