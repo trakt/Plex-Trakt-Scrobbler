@@ -1,5 +1,6 @@
 import logsucker
 import hashlib
+import re
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
 
@@ -10,7 +11,7 @@ NAME = L('Title')
 # the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
-PMS_URL = 'http://%s/library/sections/'
+PMS_URL = 'http://%s/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
 responses = {
@@ -105,6 +106,7 @@ def Start():
     DirectoryItem.thumb = R(ICON)
     VideoItem.thumb = R(ICON)
 
+
 def ValidatePrefs():
     u = Prefs['username']
     p = Prefs['password']
@@ -151,27 +153,14 @@ def ApplicationsMainMenu():
     return dir
 
 def ManuallySync(sender):
-    title = "Dummy"
-    key = "1"
     
-
-    url = GetPmsHost() + key + '/refresh'
-    update = HTTP.Request(url, cacheTime=1).content
-
-    if title == 'All sections':
-        return MessageContainer(title, 'All sections will be updated!')
-    elif len(key) > 1:
-        return MessageContainer(title, 'All chosen sections will be updated!')
+    metadata = get_metadata_from_pms(2)
+    Log(metadata)
+    
+    if metadata['status']:
+        return MessageContainer('Works', 'You are watching %s.' % metadata['title'])
     else:
-        return MessageContainer(title, 'Section "' + title + '" will be updated!')
-
-def GetPmsHost():
-  host = Prefs['pms_host']
-
-  if host.find(':') == -1:
-    host += ':32400'
-
-  return PMS_URL % (host)
+        return MessageContainer('Failed', 'Failed because: %s.' % metadata['message'])
 
 def talk_to_trakt(action, values):
     # Function to talk to the trakt.tv api
@@ -185,6 +174,8 @@ def talk_to_trakt(action, values):
 
     except Ex.HTTPError, e:
         result = {'status' : 'failure', 'error' : responses[e.code][1]}
+    except Ex.URLError, e:
+        return {'status' : 'failure', 'error' : e.reason[0]}
 
     if result['status'] == 'success':
         Log('Trakt responded with: %s' % result['message'])
@@ -192,3 +183,54 @@ def talk_to_trakt(action, values):
     else:
         Log('Trakt responded with: %s' % result['error'])
         return {'status' : False, 'message' : result['error']}
+
+def get_metadata_from_pms(item_id):
+    # Prepare a dict that contains all the metadata required for trakt.
+    host = Prefs['pms_host']
+
+    if host.find(':') == -1:
+        host += ':32400'
+
+    pms_url = PMS_URL % (host, 'metadata/' + str(item_id))
+    Log(pms_url)
+    try:
+        xml_file = HTTP.Request(pms_url)
+        xml_content = XML.ElementFromString(xml_file).xpath('//Video')
+        for section in xml_content:
+            #Log(section)
+            metadata = {'title' : section.get('title'), 'year' : section.get('year'), 'duration' : int(float(section.get('duration'))/60000)}
+
+            if section.get('type') == 'movie':
+                try:
+                    m = re.search('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)', section.get('guid'))
+                    metadata['imdb_id'] = m.group(1)
+                    metadata['type'] = 'movie'
+                    metadata['status'] = True
+                except:
+                    Log('The movie %s doesn\'t have any imdb id, it will not be scrobbled.' % section.get('title'))
+            elif section.get('type') == 'episode':
+                try:
+                    m = re.search('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)', section.get('guid'))
+                    metadata['tvdb_id'] = m.group(1)
+                    metadata['season'] = m.group(2)
+                    metadata['episode'] = m.group(3)
+                    metadata['type'] = 'show'
+                    metadata['status'] = True
+                except:
+                    metadata['status'] = False
+                    Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
+            else:
+                Log('The content type %s is not supported, the item %s will not be scrobbled.' % (section.get('type'), section.get('title')))
+
+            return metadata
+    except Ex.HTTPError, e:
+        Log('Failed to connect to %s.' % pms_url)
+        return {'status' : False, 'message' : responses[e.code][1]}
+    except Ex.URLError, e:
+        Log('Failed to connect to %s.' % pms_url)
+        return {'status' : False, 'message' : e.reason[0]}
+        
+        
+
+
+
