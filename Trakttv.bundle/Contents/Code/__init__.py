@@ -1,5 +1,5 @@
 import logsucker
-import hashlib
+#import hashlib
 import re
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
@@ -105,6 +105,7 @@ def Start():
     MediaContainer.art = R(ART)
     DirectoryItem.thumb = R(ICON)
     VideoItem.thumb = R(ICON)
+    Log(Platform.OS)
 
 
 def ValidatePrefs():
@@ -114,7 +115,7 @@ def ValidatePrefs():
     ## message container
     
 
-    status = talk_to_trakt('account/test', {'username' : u, 'password' : hashlib.sha1(p).hexdigest()})
+    status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
     if status['status']:
         return MessageContainer(
             "Success",
@@ -154,18 +155,47 @@ def ApplicationsMainMenu():
 
 def ManuallySync(sender):
     
-    metadata = get_metadata_from_pms(2)
-    Log(metadata)
-    
-    if metadata['status']:
-        return MessageContainer('Works', 'You are watching %s.' % metadata['title'])
+    status = watch_or_scrobble(132, 300000)
+    if status['status']:
+        return MessageContainer('Works', 'Trakt.tv said %s.' % status['message'])
     else:
-        return MessageContainer('Failed', 'Failed because: %s.' % metadata['message'])
+        return MessageContainer('Failed', 'Trakt.tv said %s.' % status['message'])
+
+def watch_or_scrobble(item_id, progress):
+    # Function to add what currently is playing to trakt, decide o watch or scrobble
+    values = get_metadata_from_pms(item_id)
+    progress = int(float(progress)/60000)
+    values['progress'] = round((float(progress)/values['duration'])*100, 0)
+    # Add username and pssword to values
+    values['username'] = Prefs['username']
+    values['password'] =  Hash.SHA1(Prefs['password'])
+
+    # Just for debugging
+    Log(values)
+    
+    if 'tvdb_id' in values:
+        action = 'show/'
+    elif 'imdb_id' in values:
+        action = 'movie/'
+    else:
+        # Todo
+        Log('Figure out how to bail out.')
+    
+    if values['progress'] > 85.0:
+        Log('We will scrobble it')
+        action += 'scrobble'
+    else:
+        Log('We will watch it')
+        action += 'watching'
+    
+    result = talk_to_trakt(action, values)
+    Log(result)
+    return result
 
 def talk_to_trakt(action, values):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % action
-
+    
     try:
         json_file = HTTP.Request(data_url, values=values)
         headers = json_file.headers
@@ -204,7 +234,6 @@ def get_metadata_from_pms(item_id):
                 try:
                     m = re.search('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)', section.get('guid'))
                     metadata['imdb_id'] = m.group(1)
-                    metadata['type'] = 'movie'
                     metadata['status'] = True
                 except:
                     Log('The movie %s doesn\'t have any imdb id, it will not be scrobbled.' % section.get('title'))
@@ -214,7 +243,6 @@ def get_metadata_from_pms(item_id):
                     metadata['tvdb_id'] = m.group(1)
                     metadata['season'] = m.group(2)
                     metadata['episode'] = m.group(3)
-                    metadata['type'] = 'show'
                     metadata['status'] = True
                 except:
                     metadata['status'] = False
