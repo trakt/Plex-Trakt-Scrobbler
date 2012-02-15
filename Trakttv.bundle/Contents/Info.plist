@@ -15,8 +15,6 @@
 	<string>hook</string>
 	<key>CFBundleVersion</key>
 	<string>1.0</string>
-	<key>PlexClientPlatforms</key>
-	<string>MacOSX,iOS,Android,LGTV</string>
 	<key>PlexFrameworkVersion</key>
 	<string>2</string>
 	<key>PlexPluginCodePolicy</key>
