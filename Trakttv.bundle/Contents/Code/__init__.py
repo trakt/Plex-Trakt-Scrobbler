@@ -261,5 +261,8 @@ def get_metadata_from_pms(item_id):
 def LogPath():
     return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
-
+def LoadLog(log_path=LogPath()):
+    return Core.storage.load(LogPath())
+    
+    
 
