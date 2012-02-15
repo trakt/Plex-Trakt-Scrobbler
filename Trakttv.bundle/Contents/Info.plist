@@ -22,7 +22,7 @@
 	<key>PlexPluginCodePolicy</key>
 	<string>Elevated</string>
 	<key>PlexPluginMode</key>
-	<string>AlwaysOn</string>	
+	<string>Daemon</string>	
 	<key>PlexPluginConsoleLogging</key>
 	<string>1</string>
 	<key>PlexPluginDevMode</key>
