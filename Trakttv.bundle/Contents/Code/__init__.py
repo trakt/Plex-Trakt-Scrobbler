@@ -258,7 +258,8 @@ def get_metadata_from_pms(item_id):
         Log('Failed to connect to %s.' % pms_url)
         return {'status' : False, 'message' : e.reason[0]}
         
-        
+def LogPath():
+    return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
 
 
