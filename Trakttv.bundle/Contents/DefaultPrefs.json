@@ -23,11 +23,5 @@
         "type": "text",
         "label": "PMS Host",
         "default": "localhost:32400"
-    },
-    {
-        "id": "log_path",
-        "type": "text",
-        "label": "Log Path",
-        "default": ""
     }
 ]
