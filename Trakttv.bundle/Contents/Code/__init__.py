@@ -1,4 +1,3 @@
-import logsucker
 #import hashlib
 import re
 import fileinput
