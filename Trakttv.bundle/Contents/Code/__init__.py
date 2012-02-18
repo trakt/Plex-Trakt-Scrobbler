@@ -1,6 +1,7 @@
 import logsucker
 #import hashlib
 import re
+import fileinput
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
 
@@ -140,7 +141,29 @@ def ApplicationsMainMenu():
                 art=R(ART)
             )
         )
-    )  
+    )
+    if not Dict["scrobble"]: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
+        dir.Append(
+            Function(
+                DirectoryItem(
+                    StartScrobbling,
+                    "Start Scrobbling",
+                    thumb=R(ICON),
+                    art=R(ART)
+                )
+            )   
+        )
+    else:
+        dir.Append(
+            Function(
+                DirectoryItem(
+                    StopScrobbling,
+                    "Stop Scrobbling",
+                    thumb=R(ICON),
+                    art=R(ART)
+                )
+            )   
+        )
     dir.Append(
         PrefsItem(
             title="Trakt.tv preferences",
@@ -149,12 +172,13 @@ def ApplicationsMainMenu():
             thumb=R(ICON)
         )
     )
+    
 
     # ... and then return the container
     return dir
 
 def ManuallySync(sender):
-    
+
     status = watch_or_scrobble(132, 300000)
     if status['status']:
         return MessageContainer('Works', 'Trakt.tv said %s.' % status['message'])
@@ -257,12 +281,36 @@ def get_metadata_from_pms(item_id):
     except Ex.URLError, e:
         Log('Failed to connect to %s.' % pms_url)
         return {'status' : False, 'message' : e.reason[0]}
-        
+
 def LogPath():
     return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
-def LoadLog(log_path=LogPath()):
-    return Core.storage.load(LogPath())
+def StartScrobbling(sender):
+    Dict["scrobble"] = True
+    Log("Start scrobbling")
+    LogSucker = Thread.Create(ReadLog())
+    return MessageContainer(NAME, L('Now scrobbling what you watch.'))
     
-    
+def StopScrobbling(sender):
+    Dict["scrobble"] = False
+    return MessageContainer(NAME, L('Scrobbling is now stopped.'))
 
+def ReadLog(last_line=None):
+    log_path = LogPath()
+    #Log("LogPath='%s'" % log_path)
+    while Dict["scrobble"]:
+        if last_line:
+            ignore_lines = True
+        else:
+            ignore_lines = False
+        for line in fileinput.input([log_path]):
+            if ignore_lines:
+                if line == last_line:
+                    ignore_lines = False
+                    continue
+            else:
+                Log(line)
+                ### THIS IS WHERE THE CODE TO INTERPRET THE PMS LOG INFO WILL NEED TO GO ###
+                last_line = line
+        ReadLog(last_line)
+    return 
