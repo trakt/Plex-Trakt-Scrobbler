@@ -1,6 +1,7 @@
 #import hashlib
 import re
 import fileinput
+import time
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
 
@@ -311,5 +312,8 @@ def ReadLog(last_line=None):
                 Log(line)
                 ### THIS IS WHERE THE CODE TO INTERPRET THE PMS LOG INFO WILL NEED TO GO ###
                 last_line = line
+        fileinput.close()
+        time.sleep(1)
         ReadLog(last_line)
+    
     return 
