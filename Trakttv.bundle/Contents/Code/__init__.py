@@ -1,6 +1,8 @@
 #import hashlib
 import re
 import fileinput
+import time
+from LogSucker import ReadLog
 
 APPLICATIONS_PREFIX = "/applications/trakttv"
 
@@ -141,28 +143,28 @@ def ApplicationsMainMenu():
             )
         )
     )
-    if not Dict["scrobble"]: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
-        dir.Append(
-            Function(
-                DirectoryItem(
-                    StartScrobbling,
-                    "Start Scrobbling",
-                    thumb=R(ICON),
-                    art=R(ART)
-                )
-            )   
-        )
-    else:
-        dir.Append(
-            Function(
-                DirectoryItem(
-                    StopScrobbling,
-                    "Stop Scrobbling",
-                    thumb=R(ICON),
-                    art=R(ART)
-                )
-            )   
-        )
+    #if not Dict["scrobble"]: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
+    dir.Append(
+        Function(
+            DirectoryItem(
+                StartScrobbling,
+                "Start Scrobbling",
+                thumb=R(ICON),
+                art=R(ART)
+            )
+        )   
+    )
+    #else: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
+    dir.Append(
+        Function(
+            DirectoryItem(
+                StopScrobbling,
+                "Stop Scrobbling",
+                thumb=R(ICON),
+                art=R(ART)
+            )
+        )   
+    )
     dir.Append(
         PrefsItem(
             title="Trakt.tv preferences",
@@ -287,29 +289,29 @@ def LogPath():
 def StartScrobbling(sender):
     Dict["scrobble"] = True
     Log("Start scrobbling")
-    LogSucker = Thread.Create(ReadLog())
+    Scrobble()
     return MessageContainer(NAME, L('Now scrobbling what you watch.'))
     
 def StopScrobbling(sender):
     Dict["scrobble"] = False
     return MessageContainer(NAME, L('Scrobbling is now stopped.'))
 
-def ReadLog(last_line=None):
+def Scrobble():
     log_path = LogPath()
-    #Log("LogPath='%s'" % log_path)
-    while Dict["scrobble"]:
-        if last_line:
-            ignore_lines = True
-        else:
-            ignore_lines = False
-        for line in fileinput.input([log_path]):
-            if ignore_lines:
-                if line == last_line:
-                    ignore_lines = False
-                    continue
-            else:
-                Log(line)
-                ### THIS IS WHERE THE CODE TO INTERPRET THE PMS LOG INFO WILL NEED TO GO ###
-                last_line = line
-        ReadLog(last_line)
+    Log("LogPath='%s'" % log_path)
+    log_data = ReadLog(log_path, True)
+    line = log_data['line']
+    Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
+    
+    while 1:
+        if not Dict["scrobble"]: break
+        else: pass
+        #Add code to parse the given line from the log#
+        
+        
+        
+        #Grab the next line of the log#
+        log_data = ReadLog(log_path, False, log_data['where'])
+        line = log_data['line']
+        Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
     return 
