@@ -16,6 +16,9 @@ ICON = 'icon-default.png'
 PMS_URL = 'http://%s/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
+Dict['LAST_SCROBBLED_ID'] = None
+Dict['LAST_WATCHED_ID'] = None
+
 responses = {
     100: ('Continue', 'Request received, please continue'),
     101: ('Switching Protocols',
@@ -188,6 +191,15 @@ def ManuallySync(sender):
 
 def watch_or_scrobble(item_id, progress):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
+    Log(item_id)
+    Log(Dict['LAST_WATCHED_ID'])
+    
+    if item_id == Dict['LAST_WATCHED_ID']:
+        Log('This is already watched')
+        return false
+    else:
+        Dict['LAST_WATCHED_ID'] = item_id
+        
     values = get_metadata_from_pms(item_id)
     progress = int(float(progress)/60000)
     values['progress'] = round((float(progress)/values['duration'])*100, 0)
@@ -319,7 +331,6 @@ def Scrobble():
             if log_values['key'] != None:
                 Log('Playing something')
                 watch_or_scrobble(log_values['key'], log_values['time'])
-            
         except:
             pass
         ##Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
