@@ -316,7 +316,7 @@ def Scrobble():
         try:
             log_values = dict(re.findall('(?P<key>\w*?)=(?P<value>\w+\w?)', line))
             Log(log_values)
-            if log_values['state'] == 'playing':
+            if log_values['key'] != None:
                 Log('Playing something')
                 watch_or_scrobble(log_values['key'], log_values['time'])
             
