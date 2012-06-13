@@ -180,7 +180,7 @@ def ApplicationsMainMenu():
 
 def ManuallySync(sender):
 
-    status = watch_or_scrobble(132, 300000)
+    status = watch_or_scrobble(1, 300000)
     if status['status']:
         return MessageContainer('Works', 'Trakt.tv said %s.' % status['message'])
     else:
@@ -313,5 +313,14 @@ def Scrobble():
         #Grab the next line of the log#
         log_data = ReadLog(log_path, False, log_data['where'])
         line = log_data['line']
-        Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
+        try:
+            log_values = dict(re.findall('(?P<key>\w*?)=(?P<value>\w+\w?)', line))
+            Log(log_values)
+            if log_values['state'] == 'playing':
+                Log('Playing something')
+                watch_or_scrobble(log_values['key'], log_values['time'])
+            
+        except:
+            pass
+        ##Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
     return 
