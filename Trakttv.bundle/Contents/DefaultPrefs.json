@@ -3,7 +3,7 @@
     "id": "start_scrobble",
     "type": "bool",
     "label": "Start scrobbling automatically",
-    "default": "true"
+    "default": "false"
     },
     {
         "id": "username",
