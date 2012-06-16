@@ -13,11 +13,8 @@ NAME = L('Title')
 # the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
-PMS_URL = 'http://%s/library/%s'
+PMS_URL = 'http://localhost:32400/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
-
-Dict['LAST_SCROBBLED_ID'] = None
-Dict['LAST_WATCHED_ID'] = None
 
 responses = {
     100: ('Continue', 'Request received, please continue'),
@@ -110,7 +107,10 @@ def Start():
     MediaContainer.art = R(ART)
     DirectoryItem.thumb = R(ICON)
     VideoItem.thumb = R(ICON)
-    Log(Platform.OS)
+    
+    if Prefs['start_scrobble']:
+        Log('Autostart scrobling')
+        StartScrobbling('auto')
 
 
 def ValidatePrefs():
@@ -135,17 +135,17 @@ def ValidatePrefs():
 def ApplicationsMainMenu():
 
     dir = MediaContainer(viewGroup="InfoList", noCache=True)
-    dir.Append(
-        Function(
-            DirectoryItem(
-                ManuallySync,
-                "Manually Sync to trakt.tv",
-                summary="Sync current library to trakt.tv",
-                thumb=R(ICON),
-                art=R(ART)
-            )
-        )
-    )
+#    dir.Append(
+#        Function(
+#            DirectoryItem(
+#                ManuallySync,
+#                "Manually Sync to trakt.tv",
+#                summary="Sync current library to trakt.tv",
+#                thumb=R(ICON),
+#                art=R(ART)
+#            )
+#        )
+#    )
     #if not Dict["scrobble"]: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
     dir.Append(
         Function(
@@ -191,42 +191,56 @@ def ManuallySync(sender):
 
 def watch_or_scrobble(item_id, progress):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
-    Log(item_id)
-    Log(Dict['LAST_WATCHED_ID'])
-    
-    if item_id == Dict['LAST_WATCHED_ID']:
-        Log('This is already watched')
-        return false
-    else:
-        Dict['LAST_WATCHED_ID'] = item_id
-        
-    values = get_metadata_from_pms(item_id)
+    LAST_USED_ID = Dict['Last_used_id']
+    LAST_USED_ACTION = Dict['Last_used_action']
+    values = Dict['Last_used_metadata']
+    Log('Current id: %s and previous id: %s' % (item_id, LAST_USED_ID))
+    Log(LAST_USED_ACTION)
+
+    if item_id != LAST_USED_ID:
+        # Reset all parameters since the user has changes what they are watching.
+        Log('Lets refresh the metadata')
+        values = get_metadata_from_pms(item_id)
+        Dict['Last_used_metadata'] = values
+        Dict['Last_used_id'] = item_id
+        LAST_USED_ACTION = None
+
     progress = int(float(progress)/60000)
     values['progress'] = round((float(progress)/values['duration'])*100, 0)
-    # Add username and pssword to values
+
+    # Add username and password to values
     values['username'] = Prefs['username']
     values['password'] =  Hash.SHA1(Prefs['password'])
-
+    
     # Just for debugging
     Log(values)
-    
+
+    # Is it a movie or a serie? Else return false
     if 'tvdb_id' in values:
         action = 'show/'
+        Log('This is a tv show')
     elif 'imdb_id' in values:
         action = 'movie/'
+        Log('This is a movie')
     else:
-        # Todo
-        Log('Figure out how to bail out.')
-    
-    if values['progress'] > 85.0:
-        Log('We will scrobble it')
-        action += 'scrobble'
-    else:
-        Log('We will watch it')
+        # Not a movie or TV-Show or have incorrect metadata!
+        Log('Unknown item, bail out!')
+        return false
+
+    if item_id != LAST_USED_ID:
         action += 'watching'
+        Dict['Last_used_action'] = 'watching'
+    elif LAST_USED_ACTION == 'watching' and values['progress'] > 85.0:
+        action += 'scrobble'
+        Dict['Last_used_action'] = 'scrobble'
+    else:
+        # Already watching or already scrobbled
+        Log('Nothing to do this time, all that could be dono is done!')
+        return false
     
     result = talk_to_trakt(action, values)
     Log(result)
+
     return result
 
 def talk_to_trakt(action, values):
@@ -253,12 +267,7 @@ def talk_to_trakt(action, values):
 
 def get_metadata_from_pms(item_id):
     # Prepare a dict that contains all the metadata required for trakt.
-    host = Prefs['pms_host']
-
-    if host.find(':') == -1:
-        host += ':32400'
-
-    pms_url = PMS_URL % (host, 'metadata/' + str(item_id))
+    pms_url = PMS_URL % ('metadata/' + str(item_id))
     Log(pms_url)
     try:
         xml_file = HTTP.Request(pms_url)
@@ -327,7 +336,7 @@ def Scrobble():
         line = log_data['line']
         try:
             log_values = dict(re.findall('(?P<key>\w*?)=(?P<value>\w+\w?)', line))
-            Log(log_values)
+            #Log(log_values)
             if log_values['key'] != None:
                 Log('Playing something')
                 watch_or_scrobble(log_values['key'], log_values['time'])

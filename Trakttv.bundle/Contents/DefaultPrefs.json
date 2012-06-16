@@ -17,11 +17,5 @@
         "label": "Password",
         "default": "",
         "option": "hidden"
-    },
-    {
-        "id": "pms_host",
-        "type": "text",
-        "label": "PMS Host",
-        "default": "localhost:32400"
     }
 ]

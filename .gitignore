@@ -3,3 +3,4 @@ config.ini
 *.pyc
 .DS_Store
 update.sh
+*.log
