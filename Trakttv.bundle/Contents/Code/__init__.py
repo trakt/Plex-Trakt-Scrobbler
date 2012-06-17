@@ -110,7 +110,7 @@ def Start():
     
     if Prefs['start_scrobble']:
         Log('Autostart scrobling')
-        StartScrobbling('auto')
+        #StartScrobbling('auto')
 
 
 def ValidatePrefs():
