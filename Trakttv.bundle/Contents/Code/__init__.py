@@ -109,9 +109,10 @@ def Start():
     VideoItem.thumb = R(ICON)
     
     if Prefs['start_scrobble']:
-        Log('Autostart scrobling')
-        #StartScrobbling('auto')
-
+        Log('Autostart scrobbling')
+        Dict["scrobble"] = True
+        #Scrobble()
+    
 
 def ValidatePrefs():
     u = Prefs['username']
@@ -194,8 +195,8 @@ def watch_or_scrobble(item_id, progress):
     LAST_USED_ID = Dict['Last_used_id']
     LAST_USED_ACTION = Dict['Last_used_action']
     values = Dict['Last_used_metadata']
-    Log('Current id: %s and previous id: %s' % (item_id, LAST_USED_ID))
-    Log(LAST_USED_ACTION)
+    LAST_UPDATED = Dict['Last_updated']
+    Log('Current id: %s and previous id: %s using action: %s' % (item_id, LAST_USED_ID, LAST_USED_ACTION))
 
     if item_id != LAST_USED_ID:
         # Reset all parameters since the user has changes what they are watching.
@@ -204,24 +205,25 @@ def watch_or_scrobble(item_id, progress):
         Dict['Last_used_metadata'] = values
         Dict['Last_used_id'] = item_id
         LAST_USED_ACTION = None
+        LAST_UPDATED = None
 
     progress = int(float(progress)/60000)
     values['progress'] = round((float(progress)/values['duration'])*100, 0)
-
-    # Add username and password to values
-    values['username'] = Prefs['username']
-    values['password'] =  Hash.SHA1(Prefs['password'])
     
     # Just for debugging
     Log(values)
+    
+    # Add username and password to values
+    values['username'] = Prefs['username']
+    values['password'] =  Hash.SHA1(Prefs['password'])
 
     # Is it a movie or a serie? Else return false
     if 'tvdb_id' in values:
         action = 'show/'
-        Log('This is a tv show')
+        #Log('This is a tv show')
     elif 'imdb_id' in values:
         action = 'movie/'
-        Log('This is a movie')
+        #Log('This is a movie')
     else:
         # Not a movie or TV-Show or have incorrect metadata!
         Log('Unknown item, bail out!')
@@ -230,12 +232,18 @@ def watch_or_scrobble(item_id, progress):
     if item_id != LAST_USED_ID:
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
+        Dict['Last_updated'] = Datetime.Now()
+    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 85.0:
+        Log('More than 10 minutes since last update')
+        action += 'watching'
+        Dict['Last_used_action'] = 'watching'
+        Dict['Last_updated'] = Datetime.Now()
     elif LAST_USED_ACTION == 'watching' and values['progress'] > 85.0:
         action += 'scrobble'
         Dict['Last_used_action'] = 'scrobble'
     else:
         # Already watching or already scrobbled
-        Log('Nothing to do this time, all that could be dono is done!')
+        Log('Nothing to do this time, all that could be done is done!')
         return false
     
     result = talk_to_trakt(action, values)
@@ -322,15 +330,12 @@ def Scrobble():
     Log("LogPath='%s'" % log_path)
     log_data = ReadLog(log_path, True)
     line = log_data['line']
-    Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
+    #Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
     
     while 1:
         if not Dict["scrobble"]: break
         else: pass
-        #Add code to parse the given line from the log#
-        
-        
-        
+
         #Grab the next line of the log#
         log_data = ReadLog(log_path, False, log_data['where'])
         line = log_data['line']
@@ -338,7 +343,7 @@ def Scrobble():
             log_values = dict(re.findall('(?P<key>\w*?)=(?P<value>\w+\w?)', line))
             #Log(log_values)
             if log_values['key'] != None:
-                Log('Playing something')
+                #Log('Playing something')
                 watch_or_scrobble(log_values['key'], log_values['time'])
         except:
             pass
