@@ -111,7 +111,7 @@ def Start():
     if Prefs['start_scrobble']:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
-        #Scrobble()
+        Thread.Create(Scrobble)
     
 
 def ValidatePrefs():
@@ -318,7 +318,7 @@ def LogPath():
 def StartScrobbling(sender):
     Dict["scrobble"] = True
     Log("Start scrobbling")
-    Scrobble()
+    Thread.Create(Scrobble)
     return MessageContainer(NAME, L('Now scrobbling what you watch.'))
     
 def StopScrobbling(sender):
