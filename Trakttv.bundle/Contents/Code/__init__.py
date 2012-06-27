@@ -1,5 +1,4 @@
 #import hashlib
-import re
 import fileinput
 import time
 from LogSucker import ReadLog
@@ -15,6 +14,11 @@ ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
 PMS_URL = 'http://localhost:32400/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
+
+#Regexps to load data from strings
+LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
+MOVIE_REGEXP = Regex('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)')
+TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
 
 responses = {
     100: ('Continue', 'Request received, please continue'),
@@ -108,7 +112,7 @@ def Start():
     DirectoryItem.thumb = R(ICON)
     VideoItem.thumb = R(ICON)
     
-    if Prefs['start_scrobble']:
+    if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
         Thread.Create(Scrobble)
@@ -120,6 +124,8 @@ def ValidatePrefs():
     ## do some checks and return a
     ## message container
     
+    if Prefs['username'] is None:
+        return MessageContainer("Error", "No login information entered.")
 
     status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
     if status['status']:
@@ -136,39 +142,24 @@ def ValidatePrefs():
 def ApplicationsMainMenu():
 
     dir = MediaContainer(viewGroup="InfoList", noCache=True)
-#    dir.Append(
-#        Function(
-#            DirectoryItem(
-#                ManuallySync,
-#                "Manually Sync to trakt.tv",
-#                summary="Sync current library to trakt.tv",
-#                thumb=R(ICON),
-#                art=R(ART)
-#            )
-#        )
-#    )
-    #if not Dict["scrobble"]: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
+    
+    if Dict["scrobble"]: 
+        toggle_string = "Scrobbling is currently enabled, click here to disable it."
+    else:
+        toggle_string = "Scrobbling is currently disabled, click here to enable it."
+    
     dir.Append(
         Function(
             DirectoryItem(
-                StartScrobbling,
-                "Start Scrobbling",
+                ToggleScrobbling,
+                "Toggle Scrobbling",
+                summary=toggle_string,
                 thumb=R(ICON),
                 art=R(ART)
             )
-        )   
+        )
     )
-    #else: ### THIS TEST DOESN'T CURRENTLY WORK IN THE DESKTOP CLIENT BECAUSE OF A CACHE BUG. IT SHOULD BE FIXED FOR US (HOPEFULLY SOON) ###
-    dir.Append(
-        Function(
-            DirectoryItem(
-                StopScrobbling,
-                "Stop Scrobbling",
-                thumb=R(ICON),
-                art=R(ART)
-            )
-        )   
-    )
+
     dir.Append(
         PrefsItem(
             title="Trakt.tv preferences",
@@ -286,14 +277,13 @@ def get_metadata_from_pms(item_id):
 
             if section.get('type') == 'movie':
                 try:
-                    m = re.search('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)', section.get('guid'))
-                    metadata['imdb_id'] = m.group(1)
+                    metadata['imdb_id'] = MOVIE_REGEXP.search(section.get('guid')).group(1)
                     metadata['status'] = True
                 except:
                     Log('The movie %s doesn\'t have any imdb id, it will not be scrobbled.' % section.get('title'))
             elif section.get('type') == 'episode':
                 try:
-                    m = re.search('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)', section.get('guid'))
+                    m = TVSHOW_REGEXP.search(section.get('guid'))
                     metadata['tvdb_id'] = m.group(1)
                     metadata['season'] = m.group(2)
                     metadata['episode'] = m.group(3)
@@ -315,15 +305,17 @@ def get_metadata_from_pms(item_id):
 def LogPath():
     return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
-def StartScrobbling(sender):
-    Dict["scrobble"] = True
-    Log("Start scrobbling")
-    Thread.Create(Scrobble)
-    return MessageContainer(NAME, L('Now scrobbling what you watch.'))
-    
-def StopScrobbling(sender):
-    Dict["scrobble"] = False
-    return MessageContainer(NAME, L('Scrobbling is now stopped.'))
+def ToggleScrobbling(sender):
+    if not Dict["scrobble"]:
+        if Prefs['username'] is None:
+            return MessageContainer('Login information missing', 'You need to enter you login information first.')
+        Dict["scrobble"] = True
+        Log("Start scrobbling")
+        Thread.Create(Scrobble)
+        return MessageContainer(NAME, L('Now scrobbling what you watch.'))
+    else:
+        Dict["scrobble"] = False
+        return MessageContainer(NAME, L('Scrobbling is now stopped.'))
 
 def Scrobble():
     log_path = LogPath()
@@ -340,7 +332,7 @@ def Scrobble():
         log_data = ReadLog(log_path, False, log_data['where'])
         line = log_data['line']
         try:
-            log_values = dict(re.findall('(?P<key>\w*?)=(?P<value>\w+\w?)', line))
+            log_values = dict(LOG_REGEXP.findall(line))
             #Log(log_values)
             if log_values['key'] != None:
                 #Log('Playing something')
