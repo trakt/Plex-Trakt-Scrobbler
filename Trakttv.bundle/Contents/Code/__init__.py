@@ -1,4 +1,3 @@
-#import hashlib
 import fileinput
 import time
 from LogSucker import ReadLog
@@ -19,6 +18,7 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
 LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
 MOVIE_REGEXP = Regex('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)')
 TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
+TVSHOW1_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)')
 
 responses = {
     100: ('Continue', 'Request received, please continue'),
@@ -161,6 +161,18 @@ def ApplicationsMainMenu():
     )
 
     dir.Append(
+        Function(
+            DirectoryItem(
+                ManuallySync,
+                title="Sync the Plex library with Trakt.tv",
+                subtile="Sync the Plex library with Trakt.tv",
+                summary="Sync the Plex library with Trakt.tv",
+                thumb=R(ICON)
+            )
+        )
+    )
+
+    dir.Append(
         PrefsItem(
             title="Trakt.tv preferences",
             subtile="Configure your trakt.tv account",
@@ -168,18 +180,120 @@ def ApplicationsMainMenu():
             thumb=R(ICON)
         )
     )
-    
+
 
     # ... and then return the container
     return dir
 
 def ManuallySync(sender):
 
-    status = watch_or_scrobble(1, 300000)
-    if status['status']:
-        return MessageContainer('Works', 'Trakt.tv said %s.' % status['message'])
-    else:
-        return MessageContainer('Failed', 'Trakt.tv said %s.' % status['message'])
+    dir = MediaContainer(noCache=True)
+
+    all_keys = []
+
+    try:
+        sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
+        for section in sections:
+            key = section.get('key')
+            title = section.get('title')
+            Log('%s: %s' %(title, key))
+            if section.get('type') == 'show' or section.get('type') == 'movie':
+                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv'), title=title, key=[key]))
+                all_keys.append(key)
+    except:
+        dir.header = "Couldn't find PMS instance"
+        dir.message = "Add or update the address of PMS in the plugin's preferences"
+
+    if len(all_keys) > 1:
+        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv'), title='Sync all sections to Trakt.tv', key=all_keys))
+
+    return dir
+
+def SyncSection(sender, title, key):
+
+    if Prefs['username'] is None:
+        return MessageContainer('Login information missing', 'You need to enter you login information first.')
+
+    # Sync the library with trakt.tv
+    all_movies = []
+    all_episodes = []
+    completed_shows = []
+
+    for value in key:
+        # TODO: is the section containing movies or tvshows?
+        item_kind = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
+        if item_kind == 'movie':
+            videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Video')
+            for video in videos:
+                if video.get('viewCount') > 0:
+                    Log('You have seen %s', video.get('title'))
+                    if video.get('type') == 'movie':
+                        movie_dict = get_metadata_from_pms(video.get('ratingKey'))
+                        movie_dict['plays'] = int(video.get('viewCount'))
+                        #movie_dict['last_played'] = int(video.get('updatedAt'))
+                        all_movies.append(movie_dict)
+                    else:
+                        Log('Unknown item %s' % video.get('ratingKey'))
+        elif item_kind == 'show':
+            directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
+            for directory in directories:
+                # If user has seen all shows mark as seen by show
+                Log('Test : %s' % directory.get('ratingKey'))
+                try:
+                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
+                except:
+                    tvdb_id = None
+
+                tv_show = {}
+                tv_show['title'] = directory.get('title')
+                tv_show['year'] = directory.get('year')
+                tv_show['tvdb_id'] = tvdb_id
+
+                if directory.get('leafCount') == directory.get('viewedLeafCount'):
+                    completed_shows.append(tv_show)
+                else:
+                    Log('Not all episodes seen on %s.' % directory.get('title'))
+                    seen_episodes = []
+                    episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                    for episode in episodes:
+                        if episode.get('viewCount') > 0:
+                            tv_episode = {}
+                            tv_episode['season'] = int(episode.get('parentIndex'))
+                            tv_episode['episode'] = int(episode.get('index'))
+                            seen_episodes.append(tv_episode)
+                    tv_show['episodes'] = seen_episodes
+                    all_episodes.append(tv_show)
+                        
+
+    #Log('Found %s movies' % len(all_movies))
+    #Log(all_movies)
+    #Log('Completed shows: %s' % len(completed_shows))
+    #Log(completed_shows)
+    #Log('Episodes: %s' % len(all_episodes))
+    #Log(all_episodes)
+
+    if len(all_movies) > 0:
+        values = {}
+        values['username'] = Prefs['username']
+        values['password'] = Hash.SHA1(Prefs['password'])
+        values['movies'] = all_movies
+        status = talk_to_trakt('movie/seen', values)
+        #Log("Trakt responded with: %s " % status)
+    if len(completed_shows) > 0:
+        for values in completed_shows:
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            status = talk_to_trakt('show/seen', values)
+    #        Log("Trakt responded with: %s " % status['message'])
+    for episode in all_episodes:
+        if len(episode['episodes']) > 0:
+            values = {}
+            episode['username'] = Prefs['username']
+            episode['password'] = Hash.SHA1(Prefs['password'])
+            status = talk_to_trakt('show/episode/seen', episode)
+    #        Log("Trakt responded with: %s " % status['message'])
+
+    return MessageContainer(title, 'Done')
 
 def watch_or_scrobble(item_id, progress):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
@@ -246,6 +360,8 @@ def talk_to_trakt(action, values):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % action
     
+    Log(values)
+    
     try:
         json_file = HTTP.Request(data_url, values=values)
         headers = json_file.headers
@@ -258,6 +374,8 @@ def talk_to_trakt(action, values):
         return {'status' : 'failure', 'error' : e.reason[0]}
 
     if result['status'] == 'success':
+        if not 'message' in result:
+           result['message'] = 'Unknown'
         Log('Trakt responded with: %s' % result['message'])
         return {'status' : True, 'message' : result['message']}
     else:
@@ -273,12 +391,11 @@ def get_metadata_from_pms(item_id):
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         for section in xml_content:
             #Log(section)
-            metadata = {'title' : section.get('title'), 'year' : section.get('year'), 'duration' : int(float(section.get('duration'))/60000)}
+            metadata = {'title' : section.get('title'), 'year' : int(section.get('year')), 'duration' : int(float(section.get('duration'))/60000)}
 
             if section.get('type') == 'movie':
                 try:
                     metadata['imdb_id'] = MOVIE_REGEXP.search(section.get('guid')).group(1)
-                    metadata['status'] = True
                 except:
                     Log('The movie %s doesn\'t have any imdb id, it will not be scrobbled.' % section.get('title'))
             elif section.get('type') == 'episode':
@@ -287,9 +404,7 @@ def get_metadata_from_pms(item_id):
                     metadata['tvdb_id'] = m.group(1)
                     metadata['season'] = m.group(2)
                     metadata['episode'] = m.group(3)
-                    metadata['status'] = True
                 except:
-                    metadata['status'] = False
                     Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
             else:
                 Log('The content type %s is not supported, the item %s will not be scrobbled.' % (section.get('type'), section.get('title')))
@@ -322,7 +437,6 @@ def Scrobble():
     Log("LogPath='%s'" % log_path)
     log_data = ReadLog(log_path, True)
     line = log_data['line']
-    #Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
     
     while 1:
         if not Dict["scrobble"]: break
@@ -339,5 +453,5 @@ def Scrobble():
                 watch_or_scrobble(log_values['key'], log_values['time'])
         except:
             pass
-        ##Log(line) ### Just to show that it's reading the PMS log. Remove/Comment this line prior to release.
+
     return 
