@@ -206,8 +206,16 @@ def ManuallySync(sender):
 
     if len(all_keys) > 1:
         dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv'), title='Sync all sections to Trakt.tv', key=all_keys))
+        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex'), title='Sync Trakt.tv with Plex'))
 
     return dir
+
+def SyncTrakt(sender, title):
+
+    if Prefs['username'] is None:
+        return MessageContainer('Login information missing', 'You need to enter you login information first.')
+
+    return MessageContainer('Not implemented', 'Not implemented.')
 
 def SyncSection(sender, title, key):
 
@@ -217,7 +225,6 @@ def SyncSection(sender, title, key):
     # Sync the library with trakt.tv
     all_movies = []
     all_episodes = []
-    completed_shows = []
 
     for value in key:
         # TODO: is the section containing movies or tvshows?
@@ -230,7 +237,8 @@ def SyncSection(sender, title, key):
                     if video.get('type') == 'movie':
                         movie_dict = get_metadata_from_pms(video.get('ratingKey'))
                         movie_dict['plays'] = int(video.get('viewCount'))
-                        #movie_dict['last_played'] = int(video.get('updatedAt'))
+                        movie_dict['last_played'] = int(video.get('updatedAt'))
+                        movie_dict.pop('duration')
                         all_movies.append(movie_dict)
                     else:
                         Log('Unknown item %s' % video.get('ratingKey'))
@@ -238,7 +246,6 @@ def SyncSection(sender, title, key):
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
             for directory in directories:
                 # If user has seen all shows mark as seen by show
-                Log('Test : %s' % directory.get('ratingKey'))
                 try:
                     tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
                 except:
@@ -246,23 +253,21 @@ def SyncSection(sender, title, key):
 
                 tv_show = {}
                 tv_show['title'] = directory.get('title')
-                tv_show['year'] = directory.get('year')
-                tv_show['tvdb_id'] = tvdb_id
+                if directory.get('year') is not None:
+                    tv_show['year'] = directory.get('year')
+                if tvdb_id is not None:
+                    tv_show['tvdb_id'] = tvdb_id
 
-                if directory.get('leafCount') == directory.get('viewedLeafCount'):
-                    completed_shows.append(tv_show)
-                else:
-                    Log('Not all episodes seen on %s.' % directory.get('title'))
-                    seen_episodes = []
-                    episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
-                    for episode in episodes:
-                        if episode.get('viewCount') > 0:
-                            tv_episode = {}
-                            tv_episode['season'] = int(episode.get('parentIndex'))
-                            tv_episode['episode'] = int(episode.get('index'))
-                            seen_episodes.append(tv_episode)
-                    tv_show['episodes'] = seen_episodes
-                    all_episodes.append(tv_show)
+                seen_episodes = []
+                episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                for episode in episodes:
+                    if episode.get('viewCount') > 0:
+                        tv_episode = {}
+                        tv_episode['season'] = int(episode.get('parentIndex'))
+                        tv_episode['episode'] = int(episode.get('index'))
+                        seen_episodes.append(tv_episode)
+                tv_show['episodes'] = seen_episodes
+                all_episodes.append(tv_show)
                         
 
     #Log('Found %s movies' % len(all_movies))
@@ -279,12 +284,6 @@ def SyncSection(sender, title, key):
         values['movies'] = all_movies
         status = talk_to_trakt('movie/seen', values)
         #Log("Trakt responded with: %s " % status)
-    if len(completed_shows) > 0:
-        for values in completed_shows:
-            values['username'] = Prefs['username']
-            values['password'] = Hash.SHA1(Prefs['password'])
-            status = talk_to_trakt('show/seen', values)
-    #        Log("Trakt responded with: %s " % status['message'])
     for episode in all_episodes:
         if len(episode['episodes']) > 0:
             values = {}
@@ -360,7 +359,7 @@ def talk_to_trakt(action, values):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % action
     
-    Log(values)
+    #Log(values)
     
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
