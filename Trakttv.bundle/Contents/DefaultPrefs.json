@@ -1,0 +1,21 @@
+[
+    {
+    "id": "start_scrobble",
+    "type": "bool",
+    "label": "Start scrobbling automatically",
+    "default": "false"
+    },
+    {
+        "id": "username",
+        "type": "text",
+        "label": "Username",
+        "default": ""
+    },
+    {
+        "id": "password",
+        "type": "text",
+        "label": "Password",
+        "default": "",
+        "option": "hidden"
+    }
+]

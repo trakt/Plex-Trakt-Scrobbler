@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleExecutable</key>
+    <string></string>
+    <key>CFBundleIdentifier</key>
+    <string>com.plexapp.plugins.trakttv</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>AAPL</string>
+	<key>CFBundleSignature</key>
+	<string>hook</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>PlexFrameworkVersion</key>
+	<string>2</string>
+	<key>PlexPluginCodePolicy</key>
+	<string>Elevated</string>
+	<key>PlexPluginMode</key>
+	<string>Daemon</string>	
+	<key>PlexPluginConsoleLogging</key>
+	<string>1</string>
+	<key>PlexPluginDevMode</key>
+	<string>1</string>
+</dict>
+</plist>
