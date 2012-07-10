@@ -1,16 +1,14 @@
 Plex-Trakt-Scrobbler
 =================================
 
-This is a proof of concept for monitoring a Plex Media Server and scrobble the result to trakt.tv
-The dev branch is currently broken!
+***WARNING:*** Do not use the autoscrobbling functionality if you are planning to use more than 1 client at a time.
 
-Copy the bundle to your Plex folder, and configure your settings in plex.
-tip, if you are using osx just launch the copy_script.sh from terminal.
+*Installation:*
+Download the plugin from [here](https://github.com/tester22/Plex-Trakt-Scrobbler/zipball/develop).
+
+Extract the zipfile and copy the .bundle file to your Plex Media server plugin folder.
+Go to Applications -> Trakt.tv Scrobbler -> Preferences and enter your username and password.
 
 
-TODO:
-------------
-* Separate all functions
-* Better error handling (eg don't die if the user is using a plugin or listening to music)
-* Better logging
-* Transform the script into a regular Plex plugin.
+The plugin is still work in progress so there might be bugs. Please report all bugs here: [http://forums.plexapp.com/index.php/topic/35626-plex-media-server-scrobbler-for-trakttv](http://forums.plexapp.com/index.php/topic/35626-plex-media-server-scrobbler-for-trakttv/page__st__180)
+
