@@ -363,7 +363,7 @@ def talk_to_trakt(action, values):
     Log(values)
     
     try:
-        json_file = HTTP.Request(data_url, values=values)
+        json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
         headers = json_file.headers
         result = JSON.ObjectFromString(json_file.content)
         Log(result)
