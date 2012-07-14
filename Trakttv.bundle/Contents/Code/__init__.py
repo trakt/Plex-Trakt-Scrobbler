@@ -11,6 +11,7 @@ NAME = L('Title')
 # the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
+PREF_ICON = 'icon-preferences.png'
 PMS_URL = 'http://localhost:32400/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
@@ -174,10 +175,10 @@ def ApplicationsMainMenu():
 
     dir.Append(
         PrefsItem(
-            title="Trakt.tv preferences",
-            subtile="Configure your trakt.tv account",
-            summary="Configure how to connect to trakt.tv",
-            thumb=R(ICON)
+            title="Preferences",
+            subtile="Configure your Trakt.tv account",
+            summary="Configure how to connect to Trakt.tv",
+            thumb=R(PREF_ICON)
         )
     )
 
@@ -186,6 +187,9 @@ def ApplicationsMainMenu():
     return dir
 
 def ManuallySync(sender):
+
+    if Prefs['username'] is None:
+        return MessageContainer("Error", "No login information entered.")
 
     dir = MediaContainer(noCache=True)
 
@@ -198,15 +202,15 @@ def ManuallySync(sender):
             title = section.get('title')
             Log('%s: %s' %(title, key))
             if section.get('type') == 'show' or section.get('type') == 'movie':
-                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv'), title=title, key=[key]))
+                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv', summary='Sync the "' + title + '" section from your Plex library with Trakt.tv'), title=title, key=[key]))
                 all_keys.append(key)
     except:
         dir.header = "Couldn't find PMS instance"
         dir.message = "Add or update the address of PMS in the plugin's preferences"
 
     if len(all_keys) > 1:
-        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv'), title='Sync all sections to Trakt.tv', key=all_keys))
-        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex'), title='Sync Trakt.tv with Plex'))
+        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv', summary='Sync all sections in Plex library with Trakt.tv'), title='Sync all sections to Trakt.tv', key=all_keys))
+        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library'), title='Sync Trakt.tv with Plex'))
 
     return dir
 
@@ -238,6 +242,7 @@ def SyncSection(sender, title, key):
                         movie_dict = get_metadata_from_pms(video.get('ratingKey'))
                         movie_dict['plays'] = int(video.get('viewCount'))
                         movie_dict['last_played'] = int(video.get('updatedAt'))
+                        # Remove the duration value since we won't need that!
                         movie_dict.pop('duration')
                         all_movies.append(movie_dict)
                     else:
@@ -270,12 +275,8 @@ def SyncSection(sender, title, key):
                 all_episodes.append(tv_show)
                         
 
-    #Log('Found %s movies' % len(all_movies))
-    #Log(all_movies)
-    #Log('Completed shows: %s' % len(completed_shows))
-    #Log(completed_shows)
-    #Log('Episodes: %s' % len(all_episodes))
-    #Log(all_episodes)
+    Log('Found %s movies' % len(all_movies))
+    Log('Found %s series' % len(all_episodes))
 
     if len(all_movies) > 0:
         values = {}
@@ -359,7 +360,7 @@ def talk_to_trakt(action, values):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % action
     
-    #Log(values)
+    Log(values)
     
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
@@ -390,7 +391,9 @@ def get_metadata_from_pms(item_id):
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         for section in xml_content:
             #Log(section)
-            metadata = {'title' : section.get('title'), 'year' : int(section.get('year')), 'duration' : int(float(section.get('duration'))/60000)}
+            metadata = {'title' : section.get('title'), 'duration' : int(float(section.get('duration'))/60000)}
+            if section.get('year') is not None:
+                metadata['year'] = int(section.get('year')), 
 
             if section.get('type') == 'movie':
                 try:
