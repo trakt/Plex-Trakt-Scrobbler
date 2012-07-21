@@ -393,7 +393,7 @@ def get_metadata_from_pms(item_id):
             #Log(section)
             metadata = {'title' : section.get('title'), 'duration' : int(float(section.get('duration'))/60000)}
             if section.get('year') is not None:
-                metadata['year'] = int(section.get('year')), 
+                metadata['year'] = int(section.get('year'))
 
             if section.get('type') == 'movie':
                 try:
