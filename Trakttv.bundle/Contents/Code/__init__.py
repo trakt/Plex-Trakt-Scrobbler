@@ -373,9 +373,6 @@ def talk_to_trakt(action, values):
     except Ex.URLError, e:
         return {'status' : 'failure', 'error' : e.reason[0]}
 
-    # Fix this!
-    return result
-
     if result['status'] == 'success':
         if not 'message' in result:
            result['message'] = 'Unknown'
