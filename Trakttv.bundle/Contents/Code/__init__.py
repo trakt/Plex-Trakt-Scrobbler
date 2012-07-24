@@ -338,12 +338,12 @@ def watch_or_scrobble(item_id, progress):
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 85.0:
+    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < int(Prefs['percentage']):
         Log('More than 10 minutes since last update')
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and values['progress'] > 85.0:
+    elif LAST_USED_ACTION == 'watching' and values['progress'] > int(Prefs['percentage']):
         action += 'scrobble'
         Dict['Last_used_action'] = 'scrobble'
     else:
@@ -366,12 +366,15 @@ def talk_to_trakt(action, values):
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
         headers = json_file.headers
         result = JSON.ObjectFromString(json_file.content)
-        Log(result)
+        #Log(result)
 
     except Ex.HTTPError, e:
         result = {'status' : 'failure', 'error' : responses[e.code][1]}
     except Ex.URLError, e:
         return {'status' : 'failure', 'error' : e.reason[0]}
+
+    # Fix this!
+    return result
 
     if result['status'] == 'success':
         if not 'message' in result:
