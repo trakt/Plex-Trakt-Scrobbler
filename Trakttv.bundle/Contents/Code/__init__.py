@@ -13,7 +13,7 @@ ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
 PREF_ICON = 'icon-preferences.png'
 PMS_URL = 'http://localhost:32400/library/%s'
-TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28'
+TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 #Regexps to load data from strings
 LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
@@ -219,6 +219,34 @@ def SyncTrakt(sender, title):
     if Prefs['username'] is None:
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
 
+    values = {}
+    values['username'] = Prefs['username']
+    values['password'] = Hash.SHA1(Prefs['password'])
+    values['extended'] = 'min'
+
+    # Get dara from Trakt.tv
+    movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
+    #Log(movie_list)
+    videos = XML.ElementFromURL(PMS_URL % 'sections/1/all', errors='ignore').xpath('//Video')
+    for video in videos:
+        #Log(get_metadata_from_pms(video.get('ratingKey')))
+        metadata = get_metadata_from_pms(video.get('ratingKey'))
+        if 'imdb_id' in metadata:
+            for movie in movie_list:
+                if 'imdb_id' in movie:
+                    if metadata['imdb_id'] == movie['imdb_id']:
+                        Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+                        Log(HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')))
+
+        #if get_metadata_from_pms(video.get('ratingKey'))['imdb_id'] in movie_list['imdb_id']:
+        #    Log('Found one')
+    #for movie in movie_list:
+    #    Log('Hi there: ' + movie['title'] + ' with id ' + movie['imdb_id'])
+
+    #show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+    #for show in show_list:
+    #    Log(show['title'])
+
     return MessageContainer('Not implemented', 'Not implemented.')
 
 def SyncSection(sender, title, key):
@@ -338,12 +366,12 @@ def watch_or_scrobble(item_id, progress):
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 85.0:
+    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < int(Prefs['percentage']):
         Log('More than 10 minutes since last update')
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and values['progress'] > 85.0:
+    elif LAST_USED_ACTION == 'watching' and values['progress'] > int(Prefs['percentage']):
         action += 'scrobble'
         Dict['Last_used_action'] = 'scrobble'
     else:
@@ -356,9 +384,12 @@ def watch_or_scrobble(item_id, progress):
 
     return result
 
-def talk_to_trakt(action, values):
+def talk_to_trakt(action, values, param = ""):
+
+    if param != "":
+        param = "/" + param
     # Function to talk to the trakt.tv api
-    data_url = TRAKT_URL % action
+    data_url = TRAKT_URL % (action, param)
     
     Log(values)
     
@@ -372,6 +403,10 @@ def talk_to_trakt(action, values):
         result = {'status' : 'failure', 'error' : responses[e.code][1]}
     except Ex.URLError, e:
         return {'status' : 'failure', 'error' : e.reason[0]}
+
+    # TODO: Fix this!
+    if not 'message' in result:
+        return result
 
     if result['status'] == 'success':
         if not 'message' in result:
@@ -393,7 +428,7 @@ def get_metadata_from_pms(item_id):
             #Log(section)
             metadata = {'title' : section.get('title'), 'duration' : int(float(section.get('duration'))/60000)}
             if section.get('year') is not None:
-                metadata['year'] = int(section.get('year')), 
+                metadata['year'] = int(section.get('year'))
 
             if section.get('type') == 'movie':
                 try:
