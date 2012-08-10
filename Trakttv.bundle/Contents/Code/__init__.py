@@ -128,8 +128,17 @@ def ValidatePrefs():
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
 
+    if not Prefs['start_scrobble']:
+        Dict["scrobble"] = False
+
     status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
     if status['status']:
+    
+        if Prefs['start_scrobble']:
+            Log('Autostart scrobbling')
+            Dict["scrobble"] = True
+            Thread.Create(Scrobble)
+    
         return MessageContainer(
             "Success",
             "Trakt responded with: %s " % status['message']
@@ -224,19 +233,27 @@ def SyncTrakt(sender, title):
     values['password'] = Hash.SHA1(Prefs['password'])
     values['extended'] = 'min'
 
-    # Get dara from Trakt.tv
+    # Get data from Trakt.tv
     movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
-    #Log(movie_list)
-    videos = XML.ElementFromURL(PMS_URL % 'sections/1/all', errors='ignore').xpath('//Video')
-    for video in videos:
-        #Log(get_metadata_from_pms(video.get('ratingKey')))
-        metadata = get_metadata_from_pms(video.get('ratingKey'))
-        if 'imdb_id' in metadata:
-            for movie in movie_list:
-                if 'imdb_id' in movie:
-                    if metadata['imdb_id'] == movie['imdb_id']:
-                        Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
-                        Log(HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')))
+    show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+
+    #Go through the Plex library and update playflags
+    library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
+    for library_section in library_sections:
+        if library_section.get('agent') == "com.plexapp.agents.imdb":
+            videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
+            for video in videos:
+                metadata = get_metadata_from_pms(video.get('ratingKey'))
+                if 'imdb_id' in metadata:
+                    for movie in movie_list:
+                        if 'imdb_id' in movie:
+                            if metadata['imdb_id'] == movie['imdb_id']:
+                                Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+                                # TODO: Dont mark a movie as seen if it allready is seen. Messes up the library.
+                                request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
+
+        elif library_section.get('agent') == "com.plexapp.agents.thetvdb":
+            Log("TV Not implemented yeat")
 
         #if get_metadata_from_pms(video.get('ratingKey'))['imdb_id'] in movie_list['imdb_id']:
         #    Log('Found one')
@@ -259,7 +276,6 @@ def SyncSection(sender, title, key):
     all_episodes = []
 
     for value in key:
-        # TODO: is the section containing movies or tvshows?
         item_kind = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
         if item_kind == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Video')
@@ -269,7 +285,6 @@ def SyncSection(sender, title, key):
                     if video.get('type') == 'movie':
                         movie_dict = get_metadata_from_pms(video.get('ratingKey'))
                         movie_dict['plays'] = int(video.get('viewCount'))
-                        movie_dict['last_played'] = int(video.get('updatedAt'))
                         # Remove the duration value since we won't need that!
                         movie_dict.pop('duration')
                         all_movies.append(movie_dict)
@@ -278,7 +293,6 @@ def SyncSection(sender, title, key):
         elif item_kind == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
             for directory in directories:
-                # If user has seen all shows mark as seen by show
                 try:
                     tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
                 except:
