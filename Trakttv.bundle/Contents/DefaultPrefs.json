@@ -2,7 +2,7 @@
     {
         "id": "start_scrobble",
         "type": "bool",
-        "label": "Scrobbling",
+        "label": "Scrobble",
         "default": "false"
     },
     {
