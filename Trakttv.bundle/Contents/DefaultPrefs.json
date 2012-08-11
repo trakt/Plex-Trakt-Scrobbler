@@ -2,7 +2,7 @@
     {
         "id": "start_scrobble",
         "type": "bool",
-        "label": "Start scrobbling automatically",
+        "label": "Scrobble",
         "default": "false"
     },
     {
@@ -10,7 +10,7 @@
         "label": "Scrobble at percentage",
         "type": "enum",
         "values": ["80", "85", "90"],
-        "default": "85",
+        "default": "85"
     },
     {
         "id": "username",
