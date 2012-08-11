@@ -259,12 +259,17 @@ def SyncTrakt(sender, title):
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
-                Log(tvdb_id)
                 if tvdb_id != None:
                     for show in show_list:
                         if tvdb_id == show['tvdb_id']:
                             Log('We have a match for %s' % show['title'])
-                            # TODO: mark each episde as seen.
+                            episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                            for episode in episodes:
+                                for season in show['seasons']:
+                                    if int(season['season']) == int(episode.get('parentIndex')):
+                                        if int(episode.get('index')) in season['episodes']:
+                                            Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
+                                            request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
 
     return MessageContainer('Not implemented', 'Not implemented.')
 
