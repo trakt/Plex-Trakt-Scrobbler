@@ -250,19 +250,21 @@ def SyncTrakt(sender, title):
                             if metadata['imdb_id'] == movie['imdb_id']:
                                 Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
                                 # TODO: Dont mark a movie as seen if it allready is seen. Messes up the library.
-                                request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
+                                if video.get('viewCount') > 0:
+                                    Log('The movie %s is already marked as seen in the library.' % metadata['title'] )
+                                else:
+                                    request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
 
         elif library_section.get('agent') == "com.plexapp.agents.thetvdb":
-            Log("TV Not implemented yeat")
-
-        #if get_metadata_from_pms(video.get('ratingKey'))['imdb_id'] in movie_list['imdb_id']:
-        #    Log('Found one')
-    #for movie in movie_list:
-    #    Log('Hi there: ' + movie['title'] + ' with id ' + movie['imdb_id'])
-
-    #show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
-    #for show in show_list:
-    #    Log(show['title'])
+            directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
+            for directory in directories:
+                tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
+                Log(tvdb_id)
+                if tvdb_id != None:
+                    for show in show_list:
+                        if tvdb_id == show['tvdb_id']:
+                            Log('We have a match for %s' % show['title'])
+                            # TODO: mark each episde as seen.
 
     return MessageContainer('Not implemented', 'Not implemented.')
 
