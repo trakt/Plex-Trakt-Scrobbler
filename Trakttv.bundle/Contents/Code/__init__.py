@@ -11,7 +11,6 @@ NAME = L('Title')
 # the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
-PREF_ICON = 'icon-preferences.png'
 PMS_URL = 'http://localhost:32400/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
@@ -122,8 +121,6 @@ def Start():
 def ValidatePrefs():
     u = Prefs['username']
     p = Prefs['password']
-    ## do some checks and return a
-    ## message container
     
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
@@ -153,31 +150,31 @@ def ApplicationsMainMenu():
 
     dir = MediaContainer(viewGroup="InfoList", noCache=True)
     
-    if Dict["scrobble"]: 
-        toggle_string = "Scrobbling is currently enabled, click here to disable it."
-    else:
-        toggle_string = "Scrobbling is currently disabled, click here to enable it."
-    
-    dir.Append(
-        Function(
-            DirectoryItem(
-                ToggleScrobbling,
-                "Toggle Scrobbling",
-                summary=toggle_string,
-                thumb=R(ICON),
-                art=R(ART)
-            )
-        )
-    )
+#    if Dict["scrobble"]: 
+#        toggle_string = "Scrobbling is currently enabled, click here to disable it."
+#    else:
+#        toggle_string = "Scrobbling is currently disabled, click here to enable it."
+#    
+#    dir.Append(
+#        Function(
+#            DirectoryItem(
+#                ToggleScrobbling,
+#                "Toggle Scrobbling",
+#                summary=toggle_string,
+#                thumb=R(ICON),
+#                art=R(ART)
+#            )
+#        )
+#    )
 
     dir.Append(
         Function(
             DirectoryItem(
                 ManuallySync,
-                title="Sync the Plex library with Trakt.tv",
+                title="Sync",
                 subtile="Sync the Plex library with Trakt.tv",
                 summary="Sync the Plex library with Trakt.tv",
-                thumb=R(ICON)
+                thumb=R("icon-sync.png")
             )
         )
     )
@@ -187,7 +184,7 @@ def ApplicationsMainMenu():
             title="Preferences",
             subtile="Configure your Trakt.tv account",
             summary="Configure how to connect to Trakt.tv",
-            thumb=R(PREF_ICON)
+            thumb=R("icon-preferences.png")
         )
     )
 
@@ -209,17 +206,17 @@ def ManuallySync(sender):
         for section in sections:
             key = section.get('key')
             title = section.get('title')
-            Log('%s: %s' %(title, key))
+            #Log('%s: %s' %(title, key))
             if section.get('type') == 'show' or section.get('type') == 'movie':
-                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv', summary='Sync the "' + title + '" section from your Plex library with Trakt.tv'), title=title, key=[key]))
+                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv', summary='Sync the "' + title + '" section from your Plex library with Trakt.tv', thumb=R("icon-sync_up.png")), title=title, key=[key]))
                 all_keys.append(key)
     except:
         dir.header = "Couldn't find PMS instance"
         dir.message = "Add or update the address of PMS in the plugin's preferences"
 
     if len(all_keys) > 1:
-        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv', summary='Sync all sections in Plex library with Trakt.tv'), title='Sync all sections to Trakt.tv', key=all_keys))
-        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library'), title='Sync Trakt.tv with Plex'))
+        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all sections to Trakt.tv', summary='Sync all sections in Plex library with Trakt.tv', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
+        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
 
     return dir
 
@@ -271,7 +268,7 @@ def SyncTrakt(sender, title):
                                             Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
                                             request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
 
-    return MessageContainer('Not implemented', 'Not implemented.')
+    return MessageContainer(title, 'Syncing is done!')
 
 def SyncSection(sender, title, key):
 
@@ -340,9 +337,8 @@ def SyncSection(sender, title, key):
             episode['username'] = Prefs['username']
             episode['password'] = Hash.SHA1(Prefs['password'])
             status = talk_to_trakt('show/episode/seen', episode)
-    #        Log("Trakt responded with: %s " % status['message'])
 
-    return MessageContainer(title, 'Done')
+    return MessageContainer(title, 'Syncing is done!')
 
 def watch_or_scrobble(item_id, progress):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
@@ -412,13 +408,13 @@ def talk_to_trakt(action, values, param = ""):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % (action, param)
     
-    Log(values)
+    #Log(values)
     
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
         headers = json_file.headers
         result = JSON.ObjectFromString(json_file.content)
-        Log(result)
+        #Log(result)
 
     except Ex.HTTPError, e:
         result = {'status' : 'failure', 'error' : responses[e.code][1]}
@@ -441,7 +437,7 @@ def talk_to_trakt(action, values, param = ""):
 def get_metadata_from_pms(item_id):
     # Prepare a dict that contains all the metadata required for trakt.
     pms_url = PMS_URL % ('metadata/' + str(item_id))
-    Log(pms_url)
+
     try:
         xml_file = HTTP.Request(pms_url)
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
@@ -477,18 +473,6 @@ def get_metadata_from_pms(item_id):
 
 def LogPath():
     return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
-
-def ToggleScrobbling(sender):
-    if not Dict["scrobble"]:
-        if Prefs['username'] is None:
-            return MessageContainer('Login information missing', 'You need to enter you login information first.')
-        Dict["scrobble"] = True
-        Log("Start scrobbling")
-        Thread.Create(Scrobble)
-        return MessageContainer(NAME, L('Now scrobbling what you watch.'))
-    else:
-        Dict["scrobble"] = False
-        return MessageContainer(NAME, L('Scrobbling is now stopped.'))
 
 def Scrobble():
     log_path = LogPath()
