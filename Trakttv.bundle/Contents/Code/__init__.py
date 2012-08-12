@@ -237,7 +237,7 @@ def SyncTrakt(sender, title):
     #Go through the Plex library and update playflags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
-        if library_section.get('agent') == "com.plexapp.agents.imdb":
+        if library_section.get('viewGroup') == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
             for video in videos:
                 metadata = get_metadata_from_pms(video.get('ratingKey'))
@@ -252,7 +252,7 @@ def SyncTrakt(sender, title):
                                 else:
                                     request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
 
-        elif library_section.get('agent') == "com.plexapp.agents.thetvdb":
+        elif library_section.get('viewGroup') == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
@@ -383,12 +383,12 @@ def watch_or_scrobble(item_id, progress):
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < int(Prefs['percentage']):
+    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 80:
         Log('More than 10 minutes since last update')
         action += 'watching'
         Dict['Last_used_action'] = 'watching'
         Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and values['progress'] > int(Prefs['percentage']):
+    elif LAST_USED_ACTION == 'watching' and values['progress'] > 80:
         action += 'scrobble'
         Dict['Last_used_action'] = 'scrobble'
     else:
