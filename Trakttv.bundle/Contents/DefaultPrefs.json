@@ -6,11 +6,22 @@
         "default": "false"
     },
     {
-        "id": "percentage",
-        "label": "Scrobble at percentage",
-        "type": "enum",
-        "values": ["80", "85", "90"],
-        "default": "85"
+        "id": "start_scrobble",
+        "type": "bool",
+        "label": "Scrobble",
+        "default": "false"
+    },
+    {
+        "id": "sync_ratings",
+        "type": "bool",
+        "label": "Sync ratings",
+        "default": "true"
+    },
+    {
+        "id": "sync_collection",
+        "type": "bool",
+        "label": "Sync collection",
+        "default": "false"
     },
     {
         "id": "username",
