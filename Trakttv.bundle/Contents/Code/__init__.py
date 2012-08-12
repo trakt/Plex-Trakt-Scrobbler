@@ -225,16 +225,27 @@ def SyncTrakt(sender, title):
     if Prefs['username'] is None:
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
 
+    if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True and Prefs['sync_collection'] is not True:
+        return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
+
     values = {}
     values['username'] = Prefs['username']
     values['password'] = Hash.SHA1(Prefs['password'])
     values['extended'] = 'min'
 
-    # Get data from Trakt.tv
-    movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
-    show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+    if Prefs['sync_watched'] is True:
+        # Get data from Trakt.tv
+        movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
+        show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
 
-    #Go through the Plex library and update playflags
+    if Prefs['sync_ratings'] is True:
+        # Get data from Trakt.tv
+        movies_rated_list = talk_to_trakt('user/ratings/movies.json', values, param = Prefs['username'])
+        episodes_rated_list = talk_to_trakt('user/ratings/episodes.json', values, param = Prefs['username'])
+        Log(movies_rated_list)
+        Log(episodes_rated_list)
+
+    #Go through the Plex library and update flags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
         if library_section.get('type') == 'movie':
@@ -242,38 +253,53 @@ def SyncTrakt(sender, title):
             for video in videos:
                 metadata = get_metadata_from_pms(video.get('ratingKey'))
                 if 'imdb_id' in metadata:
-                    for movie in movie_list:
-                        if 'imdb_id' in movie:
-                            if metadata['imdb_id'] == movie['imdb_id']:
-                                Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
-                                # TODO: Dont mark a movie as seen if it allready is seen. Messes up the library.
-                                if video.get('viewCount') > 0:
-                                    Log('The movie %s is already marked as seen in the library.' % metadata['title'] )
-                                else:
-                                    request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
-
+                    if Prefs['sync_watched'] is True:
+                        for movie in movie_list:
+                            if 'imdb_id' in movie:
+                                if metadata['imdb_id'] == movie['imdb_id']:
+                                    Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+                                    # TODO: Dont mark a movie as seen if it allready is seen. Messes up the library.
+                                    if video.get('viewCount') > 0:
+                                        Log('The movie %s is already marked as seen in the library.' % metadata['title'] )
+                                    else:
+                                        request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
+                    if Prefs['sync_ratings'] is True:
+                        for movie in movies_rated_list:
+                            if 'imdb_id' in movie:
+                                if metadata['imdb_id'] == movie['imdb_id']:
+                                    Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+                                    request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (video.get('ratingKey'), movie['rating_advanced'])).content
+    
         elif library_section.get('type') == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
                 if tvdb_id != None:
-                    for show in show_list:
-                        if tvdb_id == show['tvdb_id']:
-                            Log('We have a match for %s' % show['title'])
-                            episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
-                            for episode in episodes:
-                                for season in show['seasons']:
-                                    if int(season['season']) == int(episode.get('parentIndex')):
-                                        if int(episode.get('index')) in season['episodes']:
-                                            Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
-                                            request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
-
+                    if Prefs['sync_watched'] is True:
+                        for show in show_list:
+                            if tvdb_id == show['tvdb_id']:
+                                Log('We have a match for %s' % show['title'])
+                                episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                for episode in episodes:
+                                    for season in show['seasons']:
+                                        if int(season['season']) == int(episode.get('parentIndex')):
+                                            if int(episode.get('index')) in season['episodes']:
+                                                Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
+                                                if episode.get('viewCount') > 0:
+                                                    Log('The episode %s is already marked as seen in the library.' % episode.get('title') )
+                                                else:
+                                                    request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
+                    if Prefs['sync_ratings'] is True:
+                        Log('TODO')
     return MessageContainer(title, 'Syncing is done!')
 
 def SyncSection(sender, title, key):
 
     if Prefs['username'] is None:
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
+
+    if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True and Prefs['sync_collection'] is not True:
+        return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
 
     # Sync the library with trakt.tv
     all_movies = []
@@ -361,19 +387,20 @@ def SyncSection(sender, title, key):
             status = talk_to_trakt('rate/movies', values)
             #Log("Trakt responded with: %s " % status)
 
-    if len(all_movies) > 0:
-        values = {}
-        values['username'] = Prefs['username']
-        values['password'] = Hash.SHA1(Prefs['password'])
-        values['movies'] = all_movies
-        status = talk_to_trakt('movie/seen', values)
-        #Log("Trakt responded with: %s " % status)
-    for episode in all_episodes:
-        if len(episode['episodes']) > 0:
+    if Prefs['sync_watched'] is True:
+        if len(all_movies) > 0:
             values = {}
-            episode['username'] = Prefs['username']
-            episode['password'] = Hash.SHA1(Prefs['password'])
-            status = talk_to_trakt('show/episode/seen', episode)
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            values['movies'] = all_movies
+            status = talk_to_trakt('movie/seen', values)
+            #Log("Trakt responded with: %s " % status)
+        for episode in all_episodes:
+            if len(episode['episodes']) > 0:
+                values = {}
+                episode['username'] = Prefs['username']
+                episode['password'] = Hash.SHA1(Prefs['password'])
+                status = talk_to_trakt('show/episode/seen', episode)
 
     return MessageContainer(title, 'Syncing is done!')
 

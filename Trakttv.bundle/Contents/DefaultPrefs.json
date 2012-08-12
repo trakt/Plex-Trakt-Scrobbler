@@ -12,6 +12,12 @@
         "default": "false"
     },
     {
+        "id": "sync_watched",
+        "type": "bool",
+        "label": "Sync watched",
+        "default": "true"
+    },
+    {
         "id": "sync_ratings",
         "type": "bool",
         "label": "Sync ratings",
