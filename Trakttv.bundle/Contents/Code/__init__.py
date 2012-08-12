@@ -208,15 +208,15 @@ def ManuallySync(sender):
             title = section.get('title')
             #Log('%s: %s' %(title, key))
             if section.get('type') == 'show' or section.get('type') == 'movie':
-                dir.Append(Function(DirectoryItem(SyncSection, title='Sync "' + title + '" to Trakt.tv', summary='Sync the "' + title + '" section from your Plex library with Trakt.tv', thumb=R("icon-sync_up.png")), title=title, key=[key]))
+                dir.Append(Function(DirectoryItem(SyncSection, title='Sync Watched Items in "' + title + '" to Trakt.tv', summary='New items marked "Watched" in the "' + title + '" of your Plex library will be marked as seen in your Trakt.tv account. Unwatched items will not be changed.', thumb=R("icon-sync_up.png")), title=title, key=[key]))
                 all_keys.append(key)
     except:
         dir.header = "Couldn't find PMS instance"
         dir.message = "Add or update the address of PMS in the plugin's preferences"
 
     if len(all_keys) > 1:
-        dir.Append(Function(DirectoryItem(SyncSection, title='Sync all Plex sections to Trakt.tv', summary='Sync all sections in Plex library with Trakt.tv', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
-        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
+        dir.Append(Function(DirectoryItem(SyncSection, title='Sync Watched Items in ALL sections to Trakt.tv', summary='New items marked "Watched" in all sections of your Plex library will be marked as seen in your Trakt.tv account. Unwatched items will not be changed.', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
+        dir.Append(Function(DirectoryItem(SyncTrakt, title='Get Watched Items from Trakt.tv', summary='Sync your seen items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
 
     return dir
 
@@ -237,7 +237,7 @@ def SyncTrakt(sender, title):
     #Go through the Plex library and update playflags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
-        if library_section.get('viewGroup') == 'movie':
+        if library_section.get('type') == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
             for video in videos:
                 metadata = get_metadata_from_pms(video.get('ratingKey'))
@@ -252,7 +252,7 @@ def SyncTrakt(sender, title):
                                 else:
                                     request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
 
-        elif library_section.get('viewGroup') == 'show':
+        elif library_section.get('type') == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
@@ -278,6 +278,10 @@ def SyncSection(sender, title, key):
     # Sync the library with trakt.tv
     all_movies = []
     all_episodes = []
+    ratings_movies = []
+    ratings_episodes = []
+    collection_movies = []
+    collection_episodes = []
 
     for value in key:
         item_kind = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
@@ -294,6 +298,11 @@ def SyncSection(sender, title, key):
                         all_movies.append(movie_dict)
                     else:
                         Log('Unknown item %s' % video.get('ratingKey'))
+                if video.get('userRating') != None:
+                    rating_movie = get_metadata_from_pms(video.get('ratingKey'))
+                    rating_movie['rating'] = int(video.get('userRating'))
+                    rating_movie.pop('duration')
+                    ratings_movies.append(rating_movie)
         elif item_kind == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
             for directory in directories:
@@ -305,7 +314,7 @@ def SyncSection(sender, title, key):
                 tv_show = {}
                 tv_show['title'] = directory.get('title')
                 if directory.get('year') is not None:
-                    tv_show['year'] = directory.get('year')
+                    tv_show['year'] = int(directory.get('year'))
                 if tvdb_id is not None:
                     tv_show['tvdb_id'] = tvdb_id
 
@@ -317,12 +326,40 @@ def SyncSection(sender, title, key):
                         tv_episode['season'] = int(episode.get('parentIndex'))
                         tv_episode['episode'] = int(episode.get('index'))
                         seen_episodes.append(tv_episode)
+                    if episode.get('userRating') != None:
+                        rating_episode = {}
+                        rating_episode['season'] = int(episode.get('parentIndex'))
+                        rating_episode['episode'] = int(episode.get('index'))
+                        rating_episode['rating'] = int(episode.get('userRating'))
+                        rating_episode['title'] = directory.get('title')
+                        if directory.get('year') is not None:
+                            rating_episode['year'] = int(directory.get('year'))
+                        if tvdb_id is not None:
+                            rating_episode['tvdb_id'] = tvdb_id
+                        ratings_episodes.append(rating_episode)
                 tv_show['episodes'] = seen_episodes
                 all_episodes.append(tv_show)
                         
 
     Log('Found %s movies' % len(all_movies))
     Log('Found %s series' % len(all_episodes))
+    
+    if Prefs['sync_ratings'] is True:
+        if len(ratings_episodes) > 0:
+            values = {}
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            values['episodes'] = ratings_episodes
+            status = talk_to_trakt('rate/episodes', values)
+            #Log("Trakt responded with: %s " % status)
+    
+        if len(ratings_movies) > 0:
+            values = {}
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            values['movies'] = ratings_movies
+            status = talk_to_trakt('rate/movies', values)
+            #Log("Trakt responded with: %s " % status)
 
     if len(all_movies) > 0:
         values = {}
