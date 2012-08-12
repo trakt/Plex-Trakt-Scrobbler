@@ -237,7 +237,7 @@ def SyncTrakt(sender, title):
     #Go through the Plex library and update playflags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
-        if library_section.get('viewGroup') == 'movie':
+        if library_section.get('type') == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
             for video in videos:
                 metadata = get_metadata_from_pms(video.get('ratingKey'))
@@ -252,7 +252,7 @@ def SyncTrakt(sender, title):
                                 else:
                                     request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % video.get('ratingKey')).content
 
-        elif library_section.get('viewGroup') == 'show':
+        elif library_section.get('type') == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
