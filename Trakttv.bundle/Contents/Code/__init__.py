@@ -225,7 +225,7 @@ def SyncTrakt(sender, title):
     if Prefs['username'] is None:
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
 
-    if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True and Prefs['sync_collection'] is not True:
+    if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True:
         return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
 
     values = {}
@@ -314,20 +314,31 @@ def SyncSection(sender, title, key):
         if item_kind == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Video')
             for video in videos:
+                if Prefs['sync_collection'] is True:
+                    pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
+                    collection_movie = pms_metadata
+                    #collection_movie.pop('duration')
+                    collection_movies.append(collection_movie)
+                    
+                
                 if video.get('viewCount') > 0:
                     Log('You have seen %s', video.get('title'))
                     if video.get('type') == 'movie':
-                        movie_dict = get_metadata_from_pms(video.get('ratingKey'))
+                        if pms_metadata is None:
+                            pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
+                        movie_dict = pms_metadata
                         movie_dict['plays'] = int(video.get('viewCount'))
                         # Remove the duration value since we won't need that!
-                        movie_dict.pop('duration')
+                        #movie_dict.pop('duration')
                         all_movies.append(movie_dict)
                     else:
                         Log('Unknown item %s' % video.get('ratingKey'))
                 if video.get('userRating') != None:
-                    rating_movie = get_metadata_from_pms(video.get('ratingKey'))
+                    if pms_metadata is None:
+                        pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
+                    rating_movie = pms_metadata
                     rating_movie['rating'] = int(video.get('userRating'))
-                    rating_movie.pop('duration')
+                    #rating_movie.pop('duration')
                     ratings_movies.append(rating_movie)
         elif item_kind == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
@@ -345,8 +356,13 @@ def SyncSection(sender, title, key):
                     tv_show['tvdb_id'] = tvdb_id
 
                 seen_episodes = []
+                collected_episodes = []
                 episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
                 for episode in episodes:
+                    collected_episode = {}
+                    collected_episode['season'] = int(episode.get('parentIndex'))
+                    collected_episode['episode'] = int(episode.get('index'))
+                    collected_episodes.append(collected_episode)
                     if episode.get('viewCount') > 0:
                         tv_episode = {}
                         tv_episode['season'] = int(episode.get('parentIndex'))
@@ -365,10 +381,13 @@ def SyncSection(sender, title, key):
                         ratings_episodes.append(rating_episode)
                 tv_show['episodes'] = seen_episodes
                 all_episodes.append(tv_show)
+                tv_show['episodes'] = collected_episodes
+                collection_episodes.append(tv_show)
                         
 
     Log('Found %s movies' % len(all_movies))
     Log('Found %s series' % len(all_episodes))
+    #Log(collection_episodes)
     
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
@@ -401,6 +420,21 @@ def SyncSection(sender, title, key):
                 episode['username'] = Prefs['username']
                 episode['password'] = Hash.SHA1(Prefs['password'])
                 status = talk_to_trakt('show/episode/seen', episode)
+
+    if Prefs['sync_collection'] is True:
+        if len(collection_movies) > 0:
+            values = {}
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            values['movies'] = collection_movies
+            status = talk_to_trakt('movie/library', values)
+            Log("Trakt responded with: %s " % status)
+        for episode in collection_episodes:
+            if len(episode['episodes']) > 0:
+                values = {}
+                episode['username'] = Prefs['username']
+                episode['password'] = Hash.SHA1(Prefs['password'])
+                status = talk_to_trakt('show/episode/library', episode)
 
     return MessageContainer(title, 'Syncing is done!')
 
