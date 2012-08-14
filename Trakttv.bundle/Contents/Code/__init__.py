@@ -149,23 +149,6 @@ def ValidatePrefs():
 def ApplicationsMainMenu():
 
     dir = MediaContainer(viewGroup="InfoList", noCache=True)
-    
-#    if Dict["scrobble"]: 
-#        toggle_string = "Scrobbling is currently enabled, click here to disable it."
-#    else:
-#        toggle_string = "Scrobbling is currently disabled, click here to enable it."
-#    
-#    dir.Append(
-#        Function(
-#            DirectoryItem(
-#                ToggleScrobbling,
-#                "Toggle Scrobbling",
-#                summary=toggle_string,
-#                thumb=R(ICON),
-#                art=R(ART)
-#            )
-#        )
-#    )
 
     dir.Append(
         Function(
@@ -242,8 +225,6 @@ def SyncTrakt(sender, title):
         # Get data from Trakt.tv
         movies_rated_list = talk_to_trakt('user/ratings/movies.json', values, param = Prefs['username'])
         episodes_rated_list = talk_to_trakt('user/ratings/episodes.json', values, param = Prefs['username'])
-        Log(movies_rated_list)
-        Log(episodes_rated_list)
 
     #Go through the Plex library and update flags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
@@ -290,7 +271,13 @@ def SyncTrakt(sender, title):
                                                 else:
                                                     request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
                     if Prefs['sync_ratings'] is True:
-                        Log('TODO')
+                        for show in episodes_rated_list:
+                            if int(tvdb_id) == int(show['show']['tvdb_id']):
+                                episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                for episode in episodes:
+                                    if int(show['episode']['season']) == int(episode.get('parentIndex')) and int(show['episode']['number']) == int(episode.get('index')):
+                                        request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (episode.get('ratingKey'), show['rating_advanced'])).content
+                                      
     return MessageContainer(title, 'Syncing is done!')
 
 def SyncSection(sender, title, key):
@@ -320,7 +307,6 @@ def SyncSection(sender, title, key):
                     #collection_movie.pop('duration')
                     collection_movies.append(collection_movie)
                     
-                
                 if video.get('viewCount') > 0:
                     Log('You have seen %s', video.get('title'))
                     if video.get('type') == 'movie':
@@ -379,15 +365,21 @@ def SyncSection(sender, title, key):
                         if tvdb_id is not None:
                             rating_episode['tvdb_id'] = tvdb_id
                         ratings_episodes.append(rating_episode)
-                tv_show['episodes'] = seen_episodes
-                all_episodes.append(tv_show)
+                if len(seen_episodes) > 0:
+                    seen_tv_show = {}
+                    seen_tv_show['title'] = directory.get('title')
+                    if directory.get('year') is not None:
+                        seen_tv_show['year'] = int(directory.get('year'))
+                    if tvdb_id is not None:
+                        seen_tv_show['tvdb_id'] = tvdb_id
+                    seen_tv_show['episodes'] = seen_episodes
+                    all_episodes.append(seen_tv_show)
                 tv_show['episodes'] = collected_episodes
                 collection_episodes.append(tv_show)
                         
 
     Log('Found %s movies' % len(all_movies))
     Log('Found %s series' % len(all_episodes))
-    #Log(collection_episodes)
     
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
@@ -396,7 +388,7 @@ def SyncSection(sender, title, key):
             values['password'] = Hash.SHA1(Prefs['password'])
             values['episodes'] = ratings_episodes
             status = talk_to_trakt('rate/episodes', values)
-            #Log("Trakt responded with: %s " % status)
+            Log("Trakt responded with: %s " % status)
     
         if len(ratings_movies) > 0:
             values = {}
@@ -404,7 +396,7 @@ def SyncSection(sender, title, key):
             values['password'] = Hash.SHA1(Prefs['password'])
             values['movies'] = ratings_movies
             status = talk_to_trakt('rate/movies', values)
-            #Log("Trakt responded with: %s " % status)
+            Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
@@ -413,13 +405,12 @@ def SyncSection(sender, title, key):
             values['password'] = Hash.SHA1(Prefs['password'])
             values['movies'] = all_movies
             status = talk_to_trakt('movie/seen', values)
-            #Log("Trakt responded with: %s " % status)
+            Log("Trakt responded with: %s " % status)
         for episode in all_episodes:
-            if len(episode['episodes']) > 0:
-                values = {}
-                episode['username'] = Prefs['username']
-                episode['password'] = Hash.SHA1(Prefs['password'])
-                status = talk_to_trakt('show/episode/seen', episode)
+            episode['username'] = Prefs['username']
+            episode['password'] = Hash.SHA1(Prefs['password'])
+            status = talk_to_trakt('show/episode/seen', episode)
+            Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
@@ -430,11 +421,10 @@ def SyncSection(sender, title, key):
             status = talk_to_trakt('movie/library', values)
             Log("Trakt responded with: %s " % status)
         for episode in collection_episodes:
-            if len(episode['episodes']) > 0:
-                values = {}
-                episode['username'] = Prefs['username']
-                episode['password'] = Hash.SHA1(Prefs['password'])
-                status = talk_to_trakt('show/episode/library', episode)
+            episode['username'] = Prefs['username']
+            episode['password'] = Hash.SHA1(Prefs['password'])
+            status = talk_to_trakt('show/episode/library', episode)
+            Log("Trakt responded with: %s " % status)
 
     return MessageContainer(title, 'Syncing is done!')
 
