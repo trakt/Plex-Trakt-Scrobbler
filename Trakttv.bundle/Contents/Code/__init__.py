@@ -116,6 +116,12 @@ def Start():
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
         Thread.Create(Scrobble)
+
+    #if Prefs['auto_sync'] and Prefs['username'] is not None:
+        #Log('Will autosync in 1 minute')
+        #test_arg = (1, 2)
+        #Log(test_arg)
+        #Thread.CreateTimer(3, SyncTrakt, *test_arg)
     
 
 def ValidatePrefs():
@@ -301,6 +307,7 @@ def SyncSection(sender, title, key):
         if item_kind == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Video')
             for video in videos:
+                pms_metadata = None
                 if Prefs['sync_collection'] is True:
                     pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
                     collection_movie = pms_metadata
