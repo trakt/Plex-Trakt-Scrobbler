@@ -6,9 +6,9 @@
         "default": "false"
     },
     {
-        "id": "start_scrobble",
+        "id": "auto_sync",
         "type": "bool",
-        "label": "Scrobble",
+        "label": "Sync at startup",
         "default": "false"
     },
     {
