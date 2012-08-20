@@ -216,9 +216,9 @@ def ManuallySync(sender):
 
     if len(all_keys) > 1:
         dir.Append(Function(DirectoryItem(SyncSection, title='Sync all Plex sections to Trakt.tv', summary='Sync all sections in Plex library with Trakt.tv', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
-        dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
-
     return dir
+
+    dir.Append(Function(DirectoryItem(SyncTrakt, title='Sync Trakt.tv with Plex', summary='Sync your seen items on Trakt.tv with your Plex library', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
 
 def SyncTrakt(sender, title):
 
