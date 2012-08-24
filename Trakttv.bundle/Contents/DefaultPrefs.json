@@ -6,9 +6,21 @@
         "default": "false"
     },
     {
-        "id": "start_scrobble",
+        "id": "sync_watched",
         "type": "bool",
-        "label": "Scrobble",
+        "label": "Sync watched",
+        "default": "true"
+    },
+    {
+        "id": "sync_ratings",
+        "type": "bool",
+        "label": "Sync ratings",
+        "default": "true"
+    },
+    {
+        "id": "sync_collection",
+        "type": "bool",
+        "label": "Sync collection",
         "default": "false"
     },
     {
