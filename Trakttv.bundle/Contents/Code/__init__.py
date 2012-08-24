@@ -205,7 +205,8 @@ def ManuallySync(sender):
 
     if len(all_keys) > 1:
         dir.Append(Function(DirectoryItem(SyncSection, title='Sync Watched Items in ALL sections to Trakt.tv', summary='New items marked "Watched" in all sections of your Plex library will be marked as seen in your Trakt.tv account. Unwatched items will not be changed.', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
-        dir.Append(Function(DirectoryItem(SyncTrakt, title='Get Watched Items from Trakt.tv', summary='Sync your seen items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
+
+    dir.Append(Function(DirectoryItem(SyncTrakt, title='Get Watched Items from Trakt.tv', summary='Sync your seen items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
 
     return dir
 
