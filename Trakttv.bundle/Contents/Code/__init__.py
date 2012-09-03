@@ -260,30 +260,31 @@ def SyncTrakt(sender, title):
         elif library_section.get('type') == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
-                tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
-                if tvdb_id != None:
-                    if Prefs['sync_watched'] is True:
-                        for show in show_list:
-                            if tvdb_id == show['tvdb_id']:
-                                Log('We have a match for %s' % show['title'])
-                                episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
-                                for episode in episodes:
-                                    for season in show['seasons']:
-                                        if int(season['season']) == int(episode.get('parentIndex')):
-                                            if int(episode.get('index')) in season['episodes']:
-                                                Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
-                                                if episode.get('viewCount') > 0:
-                                                    Log('The episode %s is already marked as seen in the library.' % episode.get('title') )
-                                                else:
-                                                    request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
-                    if Prefs['sync_ratings'] is True:
-                        for show in episodes_rated_list:
-                            if int(tvdb_id) == int(show['show']['tvdb_id']):
-                                episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
-                                for episode in episodes:
-                                    if int(show['episode']['season']) == int(episode.get('parentIndex')) and int(show['episode']['number']) == int(episode.get('index')):
-                                        request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (episode.get('ratingKey'), show['rating_advanced'])).content
-                                      
+                try:
+                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
+                    if tvdb_id != None:
+                        if Prefs['sync_watched'] is True:
+                            for show in show_list:
+                                if tvdb_id == show['tvdb_id']:
+                                    Log('We have a match for %s' % show['title'])
+                                    episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                    for episode in episodes:
+                                        for season in show['seasons']:
+                                            if int(season['season']) == int(episode.get('parentIndex')):
+                                                if int(episode.get('index')) in season['episodes']:
+                                                    Log('Marking %s episode %s with key: %s as seen.' % (episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
+                                                    if episode.get('viewCount') > 0:
+                                                        Log('The episode %s is already marked as seen in the library.' % episode.get('title') )
+                                                    else:
+                                                        request = HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % episode.get('ratingKey')).content
+                        if Prefs['sync_ratings'] is True:
+                            for show in episodes_rated_list:
+                                if int(tvdb_id) == int(show['show']['tvdb_id']):
+                                    episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                    for episode in episodes:
+                                        if int(show['episode']['season']) == int(episode.get('parentIndex')) and int(show['episode']['number']) == int(episode.get('index')):
+                                            request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (episode.get('ratingKey'), show['rating_advanced'])).content
+                except: pass
     return MessageContainer(title, 'Syncing is done!')
 
 def SyncSection(sender, title, key):
