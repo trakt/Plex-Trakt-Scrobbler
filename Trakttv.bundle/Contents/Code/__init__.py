@@ -353,26 +353,32 @@ def SyncSection(sender, title, key):
                 collected_episodes = []
                 episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
                 for episode in episodes:
-                    collected_episode = {}
-                    collected_episode['season'] = int(episode.get('parentIndex'))
-                    collected_episode['episode'] = int(episode.get('index'))
-                    collected_episodes.append(collected_episode)
+                    try:
+                        collected_episode = {}
+                        collected_episode['season'] = int(episode.get('parentIndex'))
+                        collected_episode['episode'] = int(episode.get('index'))
+                        collected_episodes.append(collected_episode)
+                    except: pass
                     if episode.get('viewCount') > 0:
-                        tv_episode = {}
-                        tv_episode['season'] = int(episode.get('parentIndex'))
-                        tv_episode['episode'] = int(episode.get('index'))
-                        seen_episodes.append(tv_episode)
+                        try:
+                            tv_episode = {}
+                            tv_episode['season'] = int(episode.get('parentIndex'))
+                            tv_episode['episode'] = int(episode.get('index'))
+                            seen_episodes.append(tv_episode)
+                        except: pass
                     if episode.get('userRating') != None:
-                        rating_episode = {}
-                        rating_episode['season'] = int(episode.get('parentIndex'))
-                        rating_episode['episode'] = int(episode.get('index'))
-                        rating_episode['rating'] = int(episode.get('userRating'))
-                        rating_episode['title'] = directory.get('title')
-                        if directory.get('year') is not None:
-                            rating_episode['year'] = int(directory.get('year'))
-                        if tvdb_id is not None:
-                            rating_episode['tvdb_id'] = tvdb_id
-                        ratings_episodes.append(rating_episode)
+                        try:
+                            rating_episode = {}
+                            rating_episode['season'] = int(episode.get('parentIndex'))
+                            rating_episode['episode'] = int(episode.get('index'))
+                            rating_episode['rating'] = int(episode.get('userRating'))
+                            rating_episode['title'] = directory.get('title')
+                            if directory.get('year') is not None:
+                                rating_episode['year'] = int(directory.get('year'))
+                            if tvdb_id is not None:
+                                rating_episode['tvdb_id'] = tvdb_id
+                            ratings_episodes.append(rating_episode)
+                        except: pass
                 if len(seen_episodes) > 0:
                     seen_tv_show = {}
                     seen_tv_show['title'] = directory.get('title')
