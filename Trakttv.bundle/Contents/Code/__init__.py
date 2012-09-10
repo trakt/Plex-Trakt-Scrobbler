@@ -135,6 +135,7 @@ def ValidatePrefs():
         Dict["scrobble"] = False
 
     status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
+    Log(status)
     if status['status']:
     
         if Prefs['start_scrobble']:
@@ -223,15 +224,18 @@ def SyncTrakt(sender, title):
     values['password'] = Hash.SHA1(Prefs['password'])
     values['extended'] = 'min'
 
-    if Prefs['sync_watched'] is True:
-        # Get data from Trakt.tv
-        movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
-        show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
-
-    if Prefs['sync_ratings'] is True:
-        # Get data from Trakt.tv
-        movies_rated_list = talk_to_trakt('user/ratings/movies.json', values, param = Prefs['username'])
-        episodes_rated_list = talk_to_trakt('user/ratings/episodes.json', values, param = Prefs['username'])
+    try:
+        if Prefs['sync_watched'] is True:
+            # Get data from Trakt.tv
+            movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
+            show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+    
+        if Prefs['sync_ratings'] is True:
+            # Get data from Trakt.tv
+            movies_rated_list = talk_to_trakt('user/ratings/movies.json', values, param = Prefs['username'])
+            episodes_rated_list = talk_to_trakt('user/ratings/episodes.json', values, param = Prefs['username'])
+    except:
+        return MessageContainer('Failed to load data from Trakt', 'Something went wrong while getting data from Trakt. Please check the log for details.')
 
     #Go through the Plex library and update flags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
@@ -523,18 +527,18 @@ def talk_to_trakt(action, values, param = ""):
     except Ex.URLError, e:
         return {'status' : 'failure', 'error' : e.reason[0]}
 
-    # TODO: Fix this!
-    if not 'message' in result:
+    try:
+        if result['status'] == 'success':
+            if not 'message' in result:
+                result['message'] = 'Unknown'
+            Log('Trakt responded with: %s' % result['message'])
+            return {'status' : True, 'message' : result['message']}
+        elif result['status'] == 'failure':
+            Log('Trakt responded with: %s' % result['error'])
+            return {'status' : False, 'message' : result['error']}
+    except:
+        Log('Return all')
         return result
-
-    if result['status'] == 'success':
-        if not 'message' in result:
-           result['message'] = 'Unknown'
-        Log('Trakt responded with: %s' % result['message'])
-        return {'status' : True, 'message' : result['message']}
-    else:
-        Log('Trakt responded with: %s' % result['error'])
-        return {'status' : False, 'message' : result['error']}
 
 def get_metadata_from_pms(item_id):
     # Prepare a dict that contains all the metadata required for trakt.
