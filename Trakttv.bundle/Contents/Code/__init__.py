@@ -135,7 +135,7 @@ def ValidatePrefs():
         Dict["scrobble"] = False
 
     status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
-    Log(status)
+
     if status['status']:
     
         if Prefs['start_scrobble']:
@@ -549,7 +549,12 @@ def get_metadata_from_pms(item_id):
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         for section in xml_content:
             #Log(section)
-            metadata = {'title' : section.get('title'), 'duration' : int(float(section.get('duration'))/60000)}
+            metadata = {'title' : section.get('title')}
+
+            try:
+                metadata['duration'] = int(float(section.get('duration'))/60000)
+            except: pass
+
             if section.get('year') is not None:
                 metadata['year'] = int(section.get('year'))
 
