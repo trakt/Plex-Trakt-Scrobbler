@@ -601,9 +601,10 @@ def Scrobble():
         try:
             log_values = dict(LOG_REGEXP.findall(line))
             #Log(log_values)
-            if log_values['key'] != None:
+            key = log_values.get('key', log_values.get('ratingKey', None))
+            if key is not None:
                 #Log('Playing something')
-                watch_or_scrobble(log_values['key'], log_values['time'])
+                watch_or_scrobble(key, log_values['time'])
         except:
             pass
 
