@@ -9,7 +9,9 @@
 Download the plugin from [here](https://github.com/tester22/Plex-Trakt-Scrobbler/zipball/master). This will give you the latest version of the code.
 
 - Extract the zipfile and copy the `Trakttv.bundle` file to your Plex Media server plugin folder
-  * On OS X `~/Library/Application Support/Plex Media Server/Plug-ins`
+  * On OS X: `~/Library/Application Support/Plex Media Server/Plug-ins`
+  * On Linux: /var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins
+  * Windows: C:\Documents and Settings\[username]\Local Settings\Application Data\Plex Media Server\Plug-ins
 - In your Plex client, go to `Applications` -> `Trakt.tv Scrobbler` -> `Preferences`
 - Enter your [Trakt.tv](http://trakt.tv) username and password
 
