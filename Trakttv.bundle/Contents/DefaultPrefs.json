@@ -6,9 +6,15 @@
         "default": "false"
     },
     {
+        "id": "sync_startup",
+        "type": "bool",
+        "label": "Sync items from Trakt to Plex on startup",
+        "default": "false"
+    },
+    {
         "id": "sync_watched",
         "type": "bool",
-        "label": "Sync watched",
+        "label": "Sync seen",
         "default": "true"
     },
     {

@@ -2,13 +2,7 @@ import fileinput
 import time
 from LogSucker import ReadLog
 
-APPLICATIONS_PREFIX = "/applications/trakttv"
-
 NAME = L('Title')
-
-# make sure to replace artwork with what you want
-# these filenames reference the example files in
-# the Contents/Resources/ folder in the bundle
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
 PMS_URL = 'http://localhost:32400/library/%s'
@@ -90,46 +84,30 @@ responses = {
 
 def Start():
 
-    ## make this plugin show up in the 'Applications' section
-    ## in Plex. The L() function pulls the string out of the strings
-    ## file in the Contents/Strings/ folder in the bundle
-    ## see also:
-    ##  http://dev.plexapp.com/docs/mod_Plugin.html
-    ##  http://dev.plexapp.com/docs/Bundle.html#the-strings-directory
-    Plugin.AddPrefixHandler(APPLICATIONS_PREFIX, ApplicationsMainMenu, NAME, ICON, ART)
-
-    Plugin.AddViewGroup("InfoList", viewMode="InfoList", mediaType="items")
-    Plugin.AddViewGroup("List", viewMode="List", mediaType="items")
-
-    ## set some defaults so that you don't have to
-    ## pass these parameters to these object types
-    ## every single time
-    ## see also:
-    ##  http://dev.plexapp.com/docs/Objects.html
-    MediaContainer.title1 = NAME
-    MediaContainer.viewGroup = "List"
-    MediaContainer.art = R(ART)
-    DirectoryItem.thumb = R(ICON)
-    VideoItem.thumb = R(ICON)
+    ObjectContainer.art = R(ART)
+    ObjectContainer.title1 = NAME
+    DirectoryObject.thumb = R(ICON)
+    DirectoryObject.art = R(ART)
     
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
         Thread.Create(Scrobble)
 
-    #if Prefs['auto_sync'] and Prefs['username'] is not None:
-        #Log('Will autosync in 1 minute')
-        #test_arg = (1, 2)
-        #Log(test_arg)
-        #Thread.CreateTimer(3, SyncTrakt, *test_arg)
+    if Prefs['sync_startup'] and Prefs['username'] is not None:
+        Log('Will autosync in 1 minute')
+        Thread.CreateTimer(60, SyncTrakt)
     
-
+####################################################################################################
 def ValidatePrefs():
     u = Prefs['username']
     p = Prefs['password']
     
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
+
+    if not Prefs['sync_watched'] and not Prefs['sync_ratings'] and not Prefs['sync_collection']:
+        return MessageContainer("Error", "At least one sync type need to be enabled.")
 
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
@@ -152,42 +130,51 @@ def ValidatePrefs():
             "Error",
             "Trakt responded with: %s " % status['message']
         )
+####################################################################################################
+@handler('/applications/trakttv', NAME, thumb=ICON, art=ART)
+def MainMenu():
 
-def ApplicationsMainMenu():
+    oc = ObjectContainer()
 
-    dir = MediaContainer(viewGroup="InfoList", noCache=True)
+    oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
 
-    dir.Append(
-        Function(
-            DirectoryItem(
-                ManuallySync,
-                title="Sync",
-                subtile="Sync the Plex library with Trakt.tv",
-                summary="Sync the Plex library with Trakt.tv",
-                thumb=R("icon-sync.png")
-            )
-        )
-    )
+    oc.add(PrefsObject(title="Preferences", summary="Configure how to connect to Trakt.tv", thumb=R("icon-preferences.png")))
+    return oc
+    
+####################################################################################################
+def SyncDownString():
 
-    dir.Append(
-        PrefsItem(
-            title="Preferences",
-            subtile="Configure your Trakt.tv account",
-            summary="Configure how to connect to Trakt.tv",
-            thumb=R("icon-preferences.png")
-        )
-    )
+    if Prefs['sync_watched'] and Prefs['sync_ratings']:
+        return "seen and rated"
+    elif Prefs['sync_watched']:
+        return "seen "
+    elif Prefs['sync_ratings']:
+        return "rated "
+    else:
+        return ""
 
+####################################################################################################
+def SyncUpString():
+    action_strings = []
+    if Prefs['sync_collection']:
+        action_strings.append("library")
+    if Prefs['sync_watched']:
+        action_strings.append("seen items")
+    if Prefs['sync_ratings']:
+        action_strings.append("ratings")
 
-    # ... and then return the container
-    return dir
+    temp_string = ", ".join(action_strings)
+    li = temp_string.rsplit(", ", 1)
+    return " and ".join(li)
 
-def ManuallySync(sender):
+####################################################################################################
+@route('/applications/trakttv/manuallysync')
+def ManuallySync():
 
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
 
-    dir = MediaContainer(noCache=True)
+    oc = ObjectContainer(title2=L("Sync"))
 
     all_keys = []
 
@@ -198,25 +185,77 @@ def ManuallySync(sender):
             title = section.get('title')
             #Log('%s: %s' %(title, key))
             if section.get('type') == 'show' or section.get('type') == 'movie':
-                dir.Append(Function(DirectoryItem(SyncSection, title='Sync Watched Items in "' + title + '" to Trakt.tv', summary='New items marked "Watched" in the "' + title + '" of your Plex library will be marked as seen in your Trakt.tv account. Unwatched items will not be changed.', thumb=R("icon-sync_up.png")), title=title, key=[key]))
+                oc.add(DirectoryObject(key=Callback(SyncSection, key=[key]), title='Sync items in "' + title + '" to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in the "' + title + '" of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
                 all_keys.append(key)
-    except:
-        dir.header = "Couldn't find PMS instance"
-        dir.message = "Add or update the address of PMS in the plugin's preferences"
+    except: 
+        Log('Failed to load sections from PMS')
+        pass
 
     if len(all_keys) > 1:
-        dir.Append(Function(DirectoryItem(SyncSection, title='Sync Watched Items in ALL sections to Trakt.tv', summary='New items marked "Watched" in all sections of your Plex library will be marked as seen in your Trakt.tv account. Unwatched items will not be changed.', thumb=R("icon-sync_up.png")), title='Sync all sections to Trakt.tv', key=all_keys))
+        oc.add(DirectoryObject(key=Callback(SyncSection, key=all_keys), title='Sync items in ALL sections to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in all sections of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
 
-    dir.Append(Function(DirectoryItem(SyncTrakt, title='Get Watched Items from Trakt.tv', summary='Sync your seen items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")), title='Sync Trakt.tv with Plex'))
+    oc.add(DirectoryObject(key=Callback(ManuallyTrakt), title='Get items from Trakt.tv', summary='Sync your ' + SyncDownString() + 'items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")))
 
-    return dir
+    return oc
 
-def SyncTrakt(sender, title):
+####################################################################################################
+@route('/applications/trakttv/syncplex')
+def SyncPlex():
+    LAST_SYNC_UP = Dict['Last_sync_up']
+    try:
+        if (Dict['Last_sync_up'] + Datetime.Delta(minutes=360)) > Datetime.Now():
+            Log('Not enough time since last sync, breaking!')
+        else:
+            all_keys = []
+            try:
+                sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
+                for section in sections:
+                    if section.get('type') == 'show' or section.get('type') == 'movie':
+                        all_keys.append(key)
+            except:
+                Log("Couldn't find PMS instance")
+                
+            for key in all_keys:
+                try:
+                    SyncSection(key)
+                except: pass
+    except:
+        all_keys = []
+        try:
+            sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
+            for section in sections:
+                if section.get('type') == 'show' or section.get('type') == 'movie':
+                    all_keys.append(key)
+        except:
+            Log("Couldn't find PMS instance")
+            
+        for key in all_keys:
+            try:
+                SyncSection(key)
+            except: pass
+
+####################################################################################################
+@route('/applications/trakttv/synctrakt')
+def SyncTrakt():
+    LAST_SYNC_DOWN = Dict['Last_sync_down']
+    try:
+        if (LAST_SYNC_DOWN + Datetime.Delta(minutes=360)) > Datetime.Now():
+            Log('Not enough time since last sync, breaking!')
+        else:
+            ManuallyTrakt()
+    except:
+        ManuallyTrakt()
+
+####################################################################################################
+@route('/applications/trakttv/manuallytrakt')
+def ManuallyTrakt():
 
     if Prefs['username'] is None:
+        Log('You need to enter you login information first.')
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
 
     if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True:
+        Log('You need to enable at least one type of actions to sync first.')
         return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
 
     values = {}
@@ -289,14 +328,20 @@ def SyncTrakt(sender, title):
                                         if int(show['episode']['season']) == int(episode.get('parentIndex')) and int(show['episode']['number']) == int(episode.get('index')):
                                             request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (episode.get('ratingKey'), show['rating_advanced'])).content
                 except: pass
-    return MessageContainer(title, 'Syncing is done!')
+    Log('Syncing is done!')
+    Dict['Last_sync_down'] = Datetime.Now()
+    return MessageContainer('Done', 'Syncing is done!')
 
-def SyncSection(sender, title, key):
+####################################################################################################
+@route('/applications/trakttv/syncsection')
+def SyncSection(key):
 
     if Prefs['username'] is None:
+        Log('You need to enter you login information first.')
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
 
     if Prefs['sync_watched'] is not True and Prefs['sync_ratings'] is not True and Prefs['sync_collection'] is not True:
+        Log('You need to enable at least one type of actions to sync first.')
         return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
 
     # Sync the library with trakt.tv
@@ -444,8 +489,12 @@ def SyncSection(sender, title, key):
             status = talk_to_trakt('show/episode/library', episode)
             Log("Trakt responded with: %s " % status)
 
-    return MessageContainer(title, 'Syncing is done!')
+    Log('Syncing is done!')
+    Dict['Last_sync_up'] = Datetime.Now()
+    return MessageContainer('Done', 'Syncing is done!')
 
+####################################################################################################
+@route('/applications/trakttv/watch_or_scrobble')
 def watch_or_scrobble(item_id, progress):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
     LAST_USED_ID = Dict['Last_used_id']
@@ -467,7 +516,7 @@ def watch_or_scrobble(item_id, progress):
     values['progress'] = round((float(progress)/values['duration'])*100, 0)
     
     # Just for debugging
-    Log(values)
+    #Log(values)
     
     # Add username and password to values
     values['username'] = Prefs['username']
@@ -503,10 +552,12 @@ def watch_or_scrobble(item_id, progress):
         return false
     
     result = talk_to_trakt(action, values)
-    Log(result)
+    #Log(result)
 
     return result
 
+####################################################################################################
+@route('/applications/trakttv/talk_to_trakt')
 def talk_to_trakt(action, values, param = ""):
 
     if param != "":
@@ -540,6 +591,8 @@ def talk_to_trakt(action, values, param = ""):
         Log('Return all')
         return result
 
+####################################################################################################
+@route('/applications/trakttv/get_metadata_from_pms')
 def get_metadata_from_pms(item_id):
     # Prepare a dict that contains all the metadata required for trakt.
     pms_url = PMS_URL % ('metadata/' + str(item_id))
@@ -585,6 +638,8 @@ def get_metadata_from_pms(item_id):
 def LogPath():
     return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
+####################################################################################################
+@route('/applications/trakttv/scrobble')
 def Scrobble():
     log_path = LogPath()
     Log("LogPath='%s'" % log_path)

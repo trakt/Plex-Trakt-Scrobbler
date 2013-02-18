@@ -6,7 +6,8 @@
 
 ### Add the plugin to Plex Media Server
 
-Download the plugin from [here](https://github.com/tester22/Plex-Trakt-Scrobbler/zipball/master). This will give you the latest version of the code.
+The easiest way to install the plugin is to use the [Unsupported Appstore](http://forums.plexapp.com/index.php/topic/25523-unsupported-appstore/).
+Or download the plugin from [here](https://github.com/tester22/Plex-Trakt-Scrobbler/zipball/master). This will give you the latest version of the code.
 
 - Extract the zipfile and copy the `Trakttv.bundle` file to your Plex Media server plugin folder
   * On OS X: `~/Library/Application Support/Plex Media Server/Plug-ins`
