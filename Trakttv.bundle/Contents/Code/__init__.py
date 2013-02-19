@@ -136,6 +136,13 @@ def MainMenu():
 
     oc = ObjectContainer()
 
+    # Test if the user have the correct settings in the PMS.
+    for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
+        if setting.get('id') == 'LogVerbose':
+            if setting.get('value') != 'true':
+                oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
+                Log('Logging is currently disabled')
+
     oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
 
     oc.add(PrefsObject(title="Preferences", summary="Configure how to connect to Trakt.tv", thumb=R("icon-preferences.png")))
@@ -168,6 +175,16 @@ def SyncUpString():
     return " and ".join(li)
 
 ####################################################################################################
+@route('/applications/trakttv/fixlogging')
+def FixLogging():
+    try:
+        request = HTTP.Request('http://localhost:32400/:/prefs?LogVerbose=1', method='PUT').content
+        return MessageContainer("Success", "The logging preferences is changed.")
+    except:
+        return MessageContainer("Error", "Failed to change the preferences on the Plex Media Server.")
+
+
+####################################################################################################
 @route('/applications/trakttv/manuallysync')
 def ManuallySync():
 
@@ -185,7 +202,7 @@ def ManuallySync():
             title = section.get('title')
             #Log('%s: %s' %(title, key))
             if section.get('type') == 'show' or section.get('type') == 'movie':
-                oc.add(DirectoryObject(key=Callback(SyncSection, key=[key]), title='Sync items in "' + title + '" to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in the "' + title + '" of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
+                oc.add(DirectoryObject(key=Callback(SyncSection, key=[key]), title='Sync items in "' + title + '" to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in the "' + title + '" section of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
                 all_keys.append(key)
     except: 
         Log('Failed to load sections from PMS')
@@ -194,7 +211,7 @@ def ManuallySync():
     if len(all_keys) > 1:
         oc.add(DirectoryObject(key=Callback(SyncSection, key=all_keys), title='Sync items in ALL sections to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in all sections of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
 
-    oc.add(DirectoryObject(key=Callback(ManuallyTrakt), title='Get items from Trakt.tv', summary='Sync your ' + SyncDownString() + 'items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")))
+    oc.add(DirectoryObject(key=Callback(ManuallyTrakt), title='Sync items from Trakt.tv', summary='Sync your ' + SyncDownString() + ' items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")))
 
     return oc
 
