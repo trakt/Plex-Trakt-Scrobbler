@@ -209,7 +209,7 @@ def ManuallySync():
         pass
 
     if len(all_keys) > 1:
-        oc.add(DirectoryObject(key=Callback(SyncSection, key=all_keys), title='Sync items in ALL sections to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in all sections of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
+        oc.add(DirectoryObject(key=Callback(SyncSection, key=",".join(all_keys)), title='Sync items in ALL sections to Trakt.tv', summary='Sync your ' + SyncUpString() + ' in all sections of your Plex library with your Trakt.tv account.', thumb=R("icon-sync_up.png")))
 
     oc.add(DirectoryObject(key=Callback(ManuallyTrakt), title='Sync items from Trakt.tv', summary='Sync your ' + SyncDownString() + ' items on Trakt.tv with your Plex library.', thumb=R("icon-sync_down.png")))
 
@@ -368,8 +368,10 @@ def SyncSection(key):
     ratings_episodes = []
     collection_movies = []
     collection_episodes = []
+    Log(key)
 
-    for value in key:
+
+    for value in key.split(','):
         item_kind = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
         if item_kind == 'movie':
             videos = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Video')
@@ -407,14 +409,14 @@ def SyncSection(key):
                     tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
                 except:
                     tvdb_id = None
-
+    
                 tv_show = {}
                 tv_show['title'] = directory.get('title')
                 if directory.get('year') is not None:
                     tv_show['year'] = int(directory.get('year'))
                 if tvdb_id is not None:
                     tv_show['tvdb_id'] = tvdb_id
-
+    
                 seen_episodes = []
                 collected_episodes = []
                 episodes = XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
