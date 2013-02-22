@@ -11,7 +11,8 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 #Regexps to load data from strings
 LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
 MOVIE_REGEXP = Regex('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)')
-MOVIEDB_REGEXP = Regex('com.plexapp.agents.standalone://([0-9]+)')
+MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://([0-9]+)')
+STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://([0-9]+)')
 TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
 TVSHOW1_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)')
 
@@ -638,7 +639,10 @@ def get_metadata_from_pms(item_id):
                     try:
                         metadata['tmdb_id'] = MOVIEDB_REGEXP.search(section.get('guid')).group(1)
                     except:
-                        Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
+                        try:
+                            metadata['tmdb_id'] = STANDALONE_REGEXP.search(section.get('guid')).group(1)
+                        except:
+                            Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
             elif section.get('type') == 'episode':
                 try:
                     m = TVSHOW_REGEXP.search(section.get('guid'))
