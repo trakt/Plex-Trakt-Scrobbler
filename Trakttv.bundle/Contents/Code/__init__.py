@@ -546,10 +546,8 @@ def watch_or_scrobble(item_id, progress):
     # Is it a movie or a serie? Else return false
     if 'tvdb_id' in values:
         action = 'show/'
-        #Log('This is a tv show')
-    elif 'imdb_id' in values:
+    elif 'imdb_id' or 'tmdb_id' in values:
         action = 'movie/'
-        #Log('This is a movie')
     else:
         # Not a movie or TV-Show or have incorrect metadata!
         Log('Unknown item, bail out!')
