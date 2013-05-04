@@ -7,10 +7,11 @@ ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
 PMS_URL = 'http://localhost:32400/library/%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
+PLUGIN_VERSION = '0.5'
 
 #Regexps to load data from strings
 LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
-MOVIE_REGEXP = Regex('com.plexapp.agents.imdb://(tt[-a-z0-9\.]+)')
+MOVIE_REGEXP = Regex('com.plexapp.agents.*://(tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://([0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://([0-9]+)')
 TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
@@ -140,10 +141,9 @@ def MainMenu():
 
     # Test if the user have the correct settings in the PMS.
     for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
-        if setting.get('id') == 'LogVerbose':
-            if setting.get('value') != 'true':
-                oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
-                Log('Logging is currently disabled')
+        if setting.get('id') == 'logDebug' and setting.get('value') != 'true':
+            oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
+            Log('Logging is currently disabled')
 
     oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
 
@@ -162,7 +162,6 @@ def SyncDownString():
     else:
         return ""
 
-####################################################################################################
 def SyncUpString():
     action_strings = []
     if Prefs['sync_collection']:
@@ -176,11 +175,18 @@ def SyncUpString():
     li = temp_string.rsplit(", ", 1)
     return " and ".join(li)
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 ####################################################################################################
 @route('/applications/trakttv/fixlogging')
 def FixLogging():
     try:
-        request = HTTP.Request('http://localhost:32400/:/prefs?LogVerbose=1', method='PUT').content
+        request = HTTP.Request('http://localhost:32400/:/prefs?logDebug=1', method='PUT').content
         return MessageContainer("Success", "The logging preferences is changed.")
     except:
         return MessageContainer("Error", "Failed to change the preferences on the Plex Media Server.")
@@ -382,7 +388,6 @@ def SyncSection(key):
                 if Prefs['sync_collection'] is True:
                     pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
                     collection_movie = pms_metadata
-                    #collection_movie.pop('duration')
                     collection_movies.append(collection_movie)
                     
                 if video.get('viewCount') > 0:
@@ -402,7 +407,6 @@ def SyncSection(key):
                         pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
                     rating_movie = pms_metadata
                     rating_movie['rating'] = int(video.get('userRating'))
-                    #rating_movie.pop('duration')
                     ratings_movies.append(rating_movie)
         elif item_kind == 'show':
             directories = XML.ElementFromURL(PMS_URL % ('sections/%s/all' % value), errors='ignore').xpath('//Directory')
@@ -516,32 +520,32 @@ def SyncSection(key):
 
 ####################################################################################################
 @route('/applications/trakttv/watch_or_scrobble')
-def watch_or_scrobble(item_id, progress):
+def watch_or_scrobble(log_values):
     # Function to add what currently is playing to trakt, decide o watch or scrobble
     LAST_USED_ID = Dict['Last_used_id']
     LAST_USED_ACTION = Dict['Last_used_action']
     values = Dict['Last_used_metadata']
     LAST_UPDATED = Dict['Last_updated']
-    Log('Current id: %s and previous id: %s using action: %s' % (item_id, LAST_USED_ID, LAST_USED_ACTION))
+    Log('Current id: %s and previous id: %s using action: %s' % (log_values['key'], LAST_USED_ID, LAST_USED_ACTION))
 
-    if item_id != LAST_USED_ID:
+    if log_values['key'] != LAST_USED_ID:
         # Reset all parameters since the user has changes what they are watching.
         Log('Lets refresh the metadata')
-        values = get_metadata_from_pms(item_id)
+        values = get_metadata_from_pms(log_values['key'])
         Dict['Last_used_metadata'] = values
-        Dict['Last_used_id'] = item_id
+        Dict['Last_used_id'] = log_values['key']
         LAST_USED_ACTION = None
         LAST_UPDATED = None
 
-    progress = int(float(progress)/60000)
+    progress = int(float(log_values['time'])/60000)
     values['progress'] = round((float(progress)/values['duration'])*100, 0)
-    
-    # Just for debugging
-    #Log(values)
     
     # Add username and password to values
     values['username'] = Prefs['username']
     values['password'] =  Hash.SHA1(Prefs['password'])
+    values['plugin_version'] =  PLUGIN_VERSION
+    # TODO
+    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
 
     # Is it a movie or a serie? Else return false
     if 'tvdb_id' in values:
@@ -553,25 +557,30 @@ def watch_or_scrobble(item_id, progress):
         Log('Unknown item, bail out!')
         return false
 
-    if item_id != LAST_USED_ID:
+    if (log_values['key'] != LAST_USED_ID) or (LAST_USED_ACTION == 'cancel' and log_values['state'] == 'playing'):
         action += 'watching'
-        Dict['Last_used_action'] = 'watching'
+        USED_ACTION = 'watching'
         Dict['Last_updated'] = Datetime.Now()
     elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 80:
         Log('More than 10 minutes since last update')
         action += 'watching'
-        Dict['Last_used_action'] = 'watching'
+        USED_ACTION = 'watching'
         Dict['Last_updated'] = Datetime.Now()
     elif LAST_USED_ACTION == 'watching' and values['progress'] > 80:
         action += 'scrobble'
-        Dict['Last_used_action'] = 'scrobble'
+        USED_ACTION = 'scrobble'
+    elif LAST_USED_ACTION == 'watching' and log_values['state'] == 'stopped':
+        action += 'cancelwatching'
+        USED_ACTION = 'cancel'
     else:
         # Already watching or already scrobbled
         Log('Nothing to do this time, all that could be done is done!')
         return false
     
     result = talk_to_trakt(action, values)
-    #Log(result)
+    # Only update the action if trakt responds with a success.
+    if result['status']:
+        Dict['Last_used_action'] = USED_ACTION
 
     return result
 
@@ -583,8 +592,6 @@ def talk_to_trakt(action, values, param = ""):
         param = "/" + param
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % (action, param)
-    
-    #Log(values)
     
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
@@ -600,7 +607,7 @@ def talk_to_trakt(action, values, param = ""):
     try:
         if result['status'] == 'success':
             if not 'message' in result:
-                result['message'] = 'Unknown'
+                result['message'] = 'Unknown success'
             Log('Trakt responded with: %s' % result['message'])
             return {'status' : True, 'message' : result['message']}
         elif result['status'] == 'failure':
@@ -620,7 +627,6 @@ def get_metadata_from_pms(item_id):
         xml_file = HTTP.Request(pms_url)
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         for section in xml_content:
-            #Log(section)
             metadata = {'title' : section.get('title')}
 
             try:
@@ -682,9 +688,11 @@ def Scrobble():
             log_values = dict(LOG_REGEXP.findall(line))
             #Log(log_values)
             key = log_values.get('key', log_values.get('ratingKey', None))
-            if key is not None:
-                #Log('Playing something')
-                watch_or_scrobble(key, log_values['time'])
+            if is_number(key):
+                log_values['key'] = key
+                # If the client doesn't tell us what it is doing, but is updating the progress of an item guess that it is playing.
+                log_values['state'] = log_values.get('state', 'playing')
+                watch_or_scrobble(log_values)
         except:
             pass
 
