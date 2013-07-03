@@ -1,20 +1,22 @@
-import fileinput
 import time
+import websocket
+import ast
 
 NAME = L('Title')
 ART  = 'art-default.jpg'
 ICON = 'icon-default.png'
-PMS_URL = 'http://localhost:32400/%s'
+PMS_URL = 'http://localhost:32400%s'
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
-PLUGIN_VERSION = '0.5'
+PLUGIN_VERSION = '0.6'
 
 #Regexps to load data from strings
-LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
 MOVIE_REGEXP = Regex('com.plexapp.agents.*://(tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://([0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://([0-9]+)')
-TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
-TVSHOW1_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)')
+TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb)://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
+TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb)://([-a-z0-9\.]+)')
+
+OPCODE_DATA = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
 responses = {
     100: ('Continue', 'Request received, please continue'),
@@ -85,25 +87,36 @@ responses = {
 ####################################################################################################
 
 def Start():
-
+    
+    global ws
+    
     ObjectContainer.art = R(ART)
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
     
+    ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
+    
+    Dict['nowPlaying'] = dict()
+    
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
-        Thread.Create(Scrobble)
-
-    if Prefs['sync_startup'] and Prefs['username'] is not None:
-        Log('Will autosync in 1 minute')
-        Thread.CreateTimer(60, SyncTrakt)
+    else:
+        Dict["scrobble"] = False
+    
+    #if Prefs['sync_startup'] and Prefs['username'] is not None:
+    #    Log('Will autosync in 1 minute')
+    #    Thread.CreateTimer(60, SyncTrakt)
+    
+#    if Prefs['sync_collection'] and Prefs['username'] is not None:
+#        Log('Autostart Collection Sync')
+#        Thread.Create(CollectionSync)
+    
+    Thread.Create(SocketListen)
     
 ####################################################################################################
 def ValidatePrefs():
-    u = Prefs['username']
-    p = Prefs['password']
     
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
@@ -114,14 +127,13 @@ def ValidatePrefs():
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
 
-    status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
+    status = talk_to_trakt('account/test', {'username' : Prefs['username'], 'password' : Hash.SHA1(Prefs['password'])})
 
     if status['status']:
     
         if Prefs['start_scrobble']:
             Log('Autostart scrobbling')
             Dict["scrobble"] = True
-            Thread.Create(Scrobble)
     
         return MessageContainer(
             "Success",
@@ -138,13 +150,7 @@ def MainMenu():
 
     oc = ObjectContainer()
 
-    # Test if the user have the correct settings in the PMS.
-    for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
-        if setting.get('id') == 'logDebug' and setting.get('value') != 'true':
-            oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
-            Log('Logging is currently disabled')
-
-    oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
+    #oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
 
     oc.add(PrefsObject(title="Preferences", summary="Configure how to connect to Trakt.tv", thumb=R("icon-preferences.png")))
     return oc
@@ -182,16 +188,6 @@ def is_number(s):
         return False
 
 ####################################################################################################
-@route('/applications/trakttv/fixlogging')
-def FixLogging():
-    try:
-        request = HTTP.Request('http://localhost:32400/:/prefs?logDebug=1', method='PUT').content
-        return MessageContainer("Success", "The logging preferences is changed.")
-    except:
-        return MessageContainer("Error", "Failed to change the preferences on the Plex Media Server.")
-
-
-####################################################################################################
 @route('/applications/trakttv/manuallysync')
 def ManuallySync():
 
@@ -203,7 +199,7 @@ def ManuallySync():
     all_keys = []
 
     try:
-        sections = XML.ElementFromURL(PMS_URL % 'library/sections', errors='ignore').xpath('//Directory')
+        sections = XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
         for section in sections:
             key = section.get('key')
             title = section.get('title')
@@ -232,7 +228,7 @@ def SyncPlex():
         else:
             all_keys = []
             try:
-                sections = XML.ElementFromURL(PMS_URL % 'library/sections', errors='ignore').xpath('//Directory')
+                sections = XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
                 for section in sections:
                     if section.get('type') == 'show' or section.get('type') == 'movie':
                         all_keys.append(key)
@@ -246,7 +242,7 @@ def SyncPlex():
     except:
         all_keys = []
         try:
-            sections = XML.ElementFromURL(PMS_URL % 'library/sections', errors='ignore').xpath('//Directory')
+            sections = XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
             for section in sections:
                 if section.get('type') == 'show' or section.get('type') == 'movie':
                     all_keys.append(key)
@@ -290,8 +286,8 @@ def ManuallyTrakt():
     try:
         if Prefs['sync_watched'] is True:
             # Get data from Trakt.tv
-            movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
-            show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+            movie_list = talk_to_trakt('user//library/movies/watched.json', values, param = Prefs['username'])
+            show_list = talk_to_trakt('user//library/shows/watched.json', values, param = Prefs['username'])
     
         if Prefs['sync_ratings'] is True:
             # Get data from Trakt.tv
@@ -301,10 +297,10 @@ def ManuallyTrakt():
         return MessageContainer('Failed to load data from Trakt', 'Something went wrong while getting data from Trakt. Please check the log for details.')
 
     #Go through the Plex library and update flags
-    library_sections = XML.ElementFromURL(PMS_URL % 'library/sections', errors='ignore').xpath('//Directory')
+    library_sections = XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
         if library_section.get('type') == 'movie':
-            videos = XML.ElementFromURL(PMS_URL % ('library/sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
+            videos = XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Video')
             for video in videos:
                 metadata = get_metadata_from_pms(video.get('ratingKey'))
                 if 'imdb_id' in metadata:
@@ -325,16 +321,16 @@ def ManuallyTrakt():
                                     Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
                                     request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (video.get('ratingKey'), movie['rating_advanced'])).content
         elif library_section.get('type') == 'show':
-            directories = XML.ElementFromURL(PMS_URL % ('library/sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
+            directories = XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % library_section.get('key')), errors='ignore').xpath('//Directory')
             for directory in directories:
                 try:
-                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('library/metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
+                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(2)
                     if tvdb_id != None:
                         if Prefs['sync_watched'] is True:
                             for show in show_list:
                                 if tvdb_id == show['tvdb_id']:
                                     Log('We have a match for %s' % show['title'])
-                                    episodes = XML.ElementFromURL(PMS_URL % ('library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                    episodes = XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
                                     for episode in episodes:
                                         for season in show['seasons']:
                                             if int(season['season']) == int(episode.get('parentIndex')):
@@ -347,7 +343,7 @@ def ManuallyTrakt():
                         if Prefs['sync_ratings'] is True:
                             for show in episodes_rated_list:
                                 if int(tvdb_id) == int(show['show']['tvdb_id']):
-                                    episodes = XML.ElementFromURL(PMS_URL % ('library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                                    episodes = XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
                                     for episode in episodes:
                                         if int(show['episode']['season']) == int(episode.get('parentIndex')) and int(show['episode']['number']) == int(episode.get('index')):
                                             request = HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (episode.get('ratingKey'), show['rating_advanced'])).content
@@ -379,9 +375,9 @@ def SyncSection(key):
 
 
     for value in key.split(','):
-        item_kind = XML.ElementFromURL(PMS_URL % ('library/sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
+        item_kind = XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % value), errors='ignore').xpath('//MediaContainer')[0].get('viewGroup')
         if item_kind == 'movie':
-            videos = XML.ElementFromURL(PMS_URL % ('library/sections/%s/all' % value), errors='ignore').xpath('//Video')
+            videos = XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % value), errors='ignore').xpath('//Video')
             for video in videos:
                 pms_metadata = None
                 if Prefs['sync_collection'] is True:
@@ -408,10 +404,10 @@ def SyncSection(key):
                     rating_movie['rating'] = int(video.get('userRating'))
                     ratings_movies.append(rating_movie)
         elif item_kind == 'show':
-            directories = XML.ElementFromURL(PMS_URL % ('library/sections/%s/all' % value), errors='ignore').xpath('//Directory')
+            directories = XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % value), errors='ignore').xpath('//Directory')
             for directory in directories:
                 try:
-                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('library/metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(1)
+                    tvdb_id = TVSHOW1_REGEXP.search(XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % directory.get('ratingKey')), errors='ignore').xpath('//Directory')[0].get('guid')).group(2)
                 except:
                     tvdb_id = None
     
@@ -424,7 +420,7 @@ def SyncSection(key):
     
                 seen_episodes = []
                 collected_episodes = []
-                episodes = XML.ElementFromURL(PMS_URL % ('library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
+                episodes = XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % directory.get('ratingKey')), errors='ignore').xpath('//Video')
                 for episode in episodes:
                     try:
                         collected_episode = {}
@@ -518,72 +514,6 @@ def SyncSection(key):
     return MessageContainer('Done', 'Syncing is done!')
 
 ####################################################################################################
-@route('/applications/trakttv/watch_or_scrobble')
-def watch_or_scrobble(log_values):
-    # Function to add what currently is playing to trakt, decide o watch or scrobble
-    LAST_USED_ID = Dict['Last_used_id']
-    LAST_USED_ACTION = Dict['Last_used_action']
-    values = Dict['Last_used_metadata']
-    LAST_UPDATED = Dict['Last_updated']
-    Log('Current id: %s and previous id: %s using action: %s' % (log_values['key'], LAST_USED_ID, LAST_USED_ACTION))
-
-    if log_values['key'] != LAST_USED_ID:
-        # Reset all parameters since the user has changes what they are watching.
-        Log('Lets refresh the metadata')
-        values = get_metadata_from_pms(log_values['key'])
-        Dict['Last_used_metadata'] = values
-        Dict['Last_used_id'] = log_values['key']
-        LAST_USED_ACTION = None
-        LAST_UPDATED = None
-
-    progress = int(float(log_values['time'])/60000)
-    values['progress'] = round((float(progress)/values['duration'])*100, 0)
-    
-    # Add username and password to values
-    values['username'] = Prefs['username']
-    values['password'] =  Hash.SHA1(Prefs['password'])
-    values['plugin_version'] =  PLUGIN_VERSION
-    # TODO
-    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
-
-    # Is it a movie or a serie? Else return false
-    if 'tvdb_id' in values:
-        action = 'show/'
-    elif 'imdb_id' or 'tmdb_id' in values:
-        action = 'movie/'
-    else:
-        # Not a movie or TV-Show or have incorrect metadata!
-        Log('Unknown item, bail out!')
-        return false
-
-    if (log_values['key'] != LAST_USED_ID) or (LAST_USED_ACTION == 'cancel' and log_values['state'] == 'playing'):
-        action += 'watching'
-        USED_ACTION = 'watching'
-        Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 80:
-        Log('More than 10 minutes since last update')
-        action += 'watching'
-        USED_ACTION = 'watching'
-        Dict['Last_updated'] = Datetime.Now()
-    elif LAST_USED_ACTION == 'watching' and values['progress'] > 80:
-        action += 'scrobble'
-        USED_ACTION = 'scrobble'
-    elif LAST_USED_ACTION == 'watching' and log_values['state'] == 'stopped':
-        action += 'cancelwatching'
-        USED_ACTION = 'cancel'
-    else:
-        # Already watching or already scrobbled
-        Log('Nothing to do this time, all that could be done is done!')
-        return false
-    
-    result = talk_to_trakt(action, values)
-    # Only update the action if trakt responds with a success.
-    if result['status']:
-        Dict['Last_used_action'] = USED_ACTION
-
-    return result
-
-####################################################################################################
 @route('/applications/trakttv/talk_to_trakt')
 def talk_to_trakt(action, values, param = ""):
 
@@ -620,7 +550,7 @@ def talk_to_trakt(action, values, param = ""):
 @route('/applications/trakttv/get_metadata_from_pms')
 def get_metadata_from_pms(item_id):
     # Prepare a dict that contains all the metadata required for trakt.
-    pms_url = PMS_URL % ('library/metadata/' + str(item_id))
+    pms_url = PMS_URL % ('/library/metadata/' + str(item_id))
 
     try:
         xml_file = HTTP.Request(pms_url)
@@ -634,11 +564,14 @@ def get_metadata_from_pms(item_id):
 
             if section.get('year') is not None:
                 metadata['year'] = int(section.get('year'))
-
-            if section.get('type') == 'movie':
+            
+            metadata['type'] = section.get('type')
+            
+            if metadata['type'] == 'movie':
                 try:
                     metadata['imdb_id'] = MOVIE_REGEXP.search(section.get('guid')).group(1)
                 except:
+                    metadata['imdb_id'] = False
                     try:
                         metadata['tmdb_id'] = MOVIEDB_REGEXP.search(section.get('guid')).group(1)
                     except:
@@ -646,14 +579,17 @@ def get_metadata_from_pms(item_id):
                             metadata['tmdb_id'] = STANDALONE_REGEXP.search(section.get('guid')).group(1)
                         except:
                             Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
-            elif section.get('type') == 'episode':
+                            metadata['tmdb_id'] = False
+            
+            elif metadata['type'] == 'episode':
                 try:
                     m = TVSHOW_REGEXP.search(section.get('guid'))
-                    metadata['tvdb_id'] = m.group(1)
-                    metadata['season'] = m.group(2)
-                    metadata['episode'] = m.group(3)
+                    metadata['tvdb_id'] = m.group(2)
+                    metadata['season'] = m.group(3)
+                    metadata['episode'] = m.group(4)
                 except:
-                    Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
+                    Log('The episode %s doesn\'t have any tvdb id, it will not be scrobbled.' % section.get('title'))
+                    metadata['tvdb_id'] = False
             else:
                 Log('The content type %s is not supported, the item %s will not be scrobbled.' % (section.get('type'), section.get('title')))
 
@@ -666,102 +602,232 @@ def get_metadata_from_pms(item_id):
         return {'status' : False, 'message' : e.reason[0]}
 
 ####################################################################################################
-@route('/applications/trakttv/scrobble')
-def Scrobble():
+@route('/applications/trakttv/socketlisten')
+def SocketListen():
     
-    LAST_USED_ID = Dict['Last_used_id']
-    LAST_USED_ACTION = Dict['Last_used_action']
-    LAST_UPDATED = Dict['Last_updated']
+    def SocketRecv():
+        frame = ws.recv_frame()
+        if not frame:
+            raise websocket.WebSocketException("Not a valid frame %s" % frame)
+        elif frame.opcode in OPCODE_DATA:
+            return (frame.opcode, frame.data)
+        elif frame.opcode == websocket.ABNF.OPCODE_CLOSE:
+            ws.send_close()
+            return (frame.opcode, None)
+        elif frame.opcode == websocket.ABNF.OPCODE_PING:
+            ws.pong("Hi!")
     
-    while 1:
-        if not Dict["scrobble"]: break
-        else: pass
-        
-        try:
-            pms_url = PMS_URL % ('status/sessions/')
-            xml_file = HTTP.Request(pms_url)
-            xml_content = XML.ElementFromString(xml_file).xpath('//MediaContainer/Video')
-            for section in xml_content:
-                values = {'title' : section.get('title')}
+        return None, None
+    
+    while True:
+        opcode, data = SocketRecv()
+        msg = None
+        if opcode in OPCODE_DATA:
+            info = JSON.ObjectFromString(data)
+            
+            #scrobble
+            if Dict["scrobble"] and info['type'] == "playing":
+                sessionKey = str(info['_children'][0]['sessionKey'])
+                state = str(info['_children'][0]['state'])
+                viewOffset = str(info['_children'][0]['viewOffset'])
+                Log.Info(sessionKey + " - " + state + ' - ' + viewOffset)
+                Scrobble(sessionKey,state,viewOffset)
+            
+            #adding to collection
+            elif info['type'] == "timeline":
                 
-                try:
-                    values['duration'] = int(float(section.get('duration'))/60000)
-                except: pass
+                #episode
+                if info['_children'][0]['type'] == 4 and info['_children'][0]['state'] == 1:
+                    Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
                 
-                progress = int(float(section.get('viewOffset'))/60000)
-                values['progress'] = int(round((float(progress)/values['duration'])*100, 0))
+                #movie
+                elif info['_children'][0]['type'] == 1 and info['_children'][0]['state'] == 1:
+                    Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
                 
-                if section.get('year') is not None:
-                    values['year'] = int(section.get('year'))
+    return
 
-                if section.get('type') == 'movie':
-                    try:
-                        values['imdb_id'] = MOVIE_REGEXP.search(section.get('guid')).group(1)
-                    except:
-                        try:
-                            values['tmdb_id'] = MOVIEDB_REGEXP.search(section.get('guid')).group(1)
-                        except:
-                            try:
-                                values['tmdb_id'] = STANDALONE_REGEXP.search(section.get('guid')).group(1)
-                            except:
-                                Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
-                elif section.get('type') == 'episode':
-                    try:
-                        m = TVSHOW_REGEXP.search(section.get('guid'))
-                        values['tvdb_id'] = m.group(1)
-                        values['season'] = m.group(2)
-                        values['episode'] = m.group(3)
-                    except:
-                        Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
-                        break
-                else:
-                    Log('The content type %s is not supported, the item %s will not be scrobbled.' % (section.get('type'), section.get('title')))
-                    break
-                
-                # Add username and password to values
-                values['username'] = Prefs['username']
-                values['password'] =  Hash.SHA1(Prefs['password'])
-                values['plugin_version'] =  PLUGIN_VERSION
-                # TODO
-                values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
-                
-                # Is it a movie or a serie? Else return false
-                if 'tvdb_id' in values:
-                    action = 'show/'
-                elif 'imdb_id' or 'tmdb_id' in values:
-                    action = 'movie/'
-                else:
-                    # Not a movie or TV-Show or have incorrect metadata!
-                    Log('Unknown item, bail out!')
-                    break
-                
-                #if (log_values['key'] != LAST_USED_ID) or (LAST_USED_ACTION == 'cancel' and log_values['state'] == 'playing'):
-                #    action += 'watching'
-                #    USED_ACTION = 'watching'
-                #    Dict['Last_updated'] = Datetime.Now()
-                if (LAST_UPDATED + Datetime.Delta(minutes=10)) < Datetime.Now() and values['progress'] < 80:
-                    Log('More than 10 minutes since last update')
-                    action += 'watching'
-                    USED_ACTION = 'watching'
-                    Dict['Last_updated'] = Datetime.Now()
-                elif LAST_USED_ACTION == 'watching' and values['progress'] > 80:
-                    action += 'scrobble'
-                    USED_ACTION = 'scrobble'
-                else:
-                    # Already watching or already scrobbled
-                    Log('Nothing to do this time, all that could be done is done!')
-                    break
+@route('/applications/trakttv/scrobble')
+def Scrobble(sessionKey,state,viewOffset):
+ 
+    if not Dict["scrobble"]: return
+    else: pass
+    
+    if not sessionKey in Dict['nowPlaying']:
+        Log.Info('getting MetaData for current media')
+
+        try:
+            pms_url = PMS_URL % ('/status/sessions/')
+            xml_content = XML.ElementFromURL(pms_url).xpath('//MediaContainer/Video')
+            for section in xml_content:
+                if section.get('sessionKey') == sessionKey:
+                    Dict['nowPlaying'][sessionKey] = get_metadata_from_pms(section.get('ratingKey'))
                     
-                result = talk_to_trakt(action, values)
-                # Only update the action if trakt responds with a success.
-                if result['status']:
-                    Dict['Last_used_action'] = USED_ACTION
+                    Dict['nowPlaying'][sessionKey]['UserName'] = ''
+                    Dict['nowPlaying'][sessionKey]['UserID'] = ''
+                    
+                    for user in section.findall('User'):
+                        Dict['nowPlaying'][sessionKey]['UserName'] = user.get('title')
+                        Dict['nowPlaying'][sessionKey]['UserID'] = user.get('id')
+                    
+                    # setup some variables in Dict
+                    Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.FromTimestamp(0)
+                    Dict['nowPlaying'][sessionKey]['scrobbled'] = False
+                    Dict['nowPlaying'][sessionKey]['cur_state'] = state
+            
+            # if session wasn't found, return False
+            if not (sessionKey in Dict['nowPlaying']):
+                Log.Info('Session data not found')
+                return
                 
         except Ex.HTTPError, e:
-            Log('Failed to connect to %s.' % pms_url)
+            Log.Error('Failed to connect to %s.' % pms_url)
+            return
         except Ex.URLError, e:
-            Log('Failed to connect to %s.' % pms_url)
+            Log.Error('Failed to connect to %s.' % pms_url)
+            return
+    
+    # Is it played by the correct user? Else return false
+    if (Prefs['scrobble_names'] != "") and (Prefs['scrobble_names'] != Dict['nowPlaying'][sessionKey]['UserName']):
+        Log.Info('Ignoring item played by other user')
+        return
+    
+    # Is it a movie or a serie? Else return false
+    if Dict['nowPlaying'][sessionKey]['type'] == 'episode' and Dict['nowPlaying'][sessionKey]['tvdb_id'] != False:
+        action = 'show/'
+    elif Dict['nowPlaying'][sessionKey]['type'] == 'movie' and (Dict['nowPlaying'][sessionKey]['imdb_id'] != False or Dict['nowPlaying'][sessionKey]['tmdb_id'] != False):
+        action = 'movie/'
+    else:
+        # Not a movie or TV-Show or have incorrect metadata!
+        Log('Playing unknown item, will not be scrobbled!')
+        return
+    
+    # calculate play progress
+    Dict['nowPlaying'][sessionKey]['progress'] = int(round((float(viewOffset)/(Dict['nowPlaying'][sessionKey]['duration']*60*1000))*100, 0))
+    
+    if (Dict['nowPlaying'][sessionKey]['scrobbled'] != True):
+        # state changed, force update
+        if (state != Dict['nowPlaying'][sessionKey]['cur_state']):
+            if (state == 'stopped') or (state == 'paused'):
+                Log.Info('Media paused or stopped, cancel watching')
+                action += 'cancelwatching'
+            elif (state == 'playing'):
+                Log.Info('Updating watch status')
+                action += 'watching'
         
-        time.sleep(60) #only check once per minute
+        # update every 10 min
+        elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()) and Dict['nowPlaying'][sessionKey]['progress'] < 80:
+            Log.Info('Updating watch status')
+            action += 'watching'
+        
+        #scrobble item
+        elif state == 'playing' and Dict['nowPlaying'][sessionKey]['progress'] > 80:
+            Log.Info('Scrobble Item')
+            action += 'scrobble'
+            Dict['nowPlaying'][sessionKey]['scrobbled'] = True
+        else:
+            # Already watching or already scrobbled
+            Log.Info('Nothing to do this time, all that could be done is done!')
+            return
+    else:
+        # Already watching or already scrobbled
+        Log.Info('Nothing to do this time, all that could be done is done!')
+        return
+    
+    # Setup Data to send to Trakt
+    values = dict()
+    
+    if Dict['nowPlaying'][sessionKey]['type'] == 'episode':
+        values['tvdb_id'] = Dict['nowPlaying'][sessionKey]['tvdb_id']
+        values['season'] = Dict['nowPlaying'][sessionKey]['season']
+        values['episode'] = Dict['nowPlaying'][sessionKey]['episode']
+    elif Dict['nowPlaying'][sessionKey]['type'] == 'movie':
+        if (Dict['nowPlaying'][sessionKey]['imdb_id'] != False):
+            values['imdb_id'] = Dict['nowPlaying'][sessionKey]['imdb_id']
+        elif (Dict['nowPlaying'][sessionKey]['tmdb_id'] != False):
+            values['tmdb_id'] = Dict['nowPlaying'][sessionKey]['tmdb_id']
+    
+    values['duration'] = Dict['nowPlaying'][sessionKey]['duration']
+    values['progress'] = Dict['nowPlaying'][sessionKey]['progress']
+    
+    values['title'] = Dict['nowPlaying'][sessionKey]['title']
+    if ('year' in Dict['nowPlaying'][sessionKey]):
+        values['year'] = Dict['nowPlaying'][sessionKey]['year']
+    
+    values['username'] = Prefs['username']
+    values['password'] =  Hash.SHA1(Prefs['password'])
+    values['plugin_version'] =  PLUGIN_VERSION
+    # TODO
+    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
+    
+    
+    result = talk_to_trakt(action, values)
+    # Only update the action if trakt responds with a success.
+    if result['status']:
+        if (state == 'stopped'):
+            del Dict['nowPlaying'][sessionKey] #delete session from Dict
+        else:
+            Dict['nowPlaying'][sessionKey]['cur_state'] = state
+            Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
 
     return 
+
+####################################################################################################
+# @route('/applications/trakttv/collectionsync')
+# def CollectionSync():
+#     
+#     LAST_SYNCED_COLLECTION = Dict['Last_synced_collection']
+#     LAST_SYNCED_COLLECTION = "1372353400"
+#     
+#     while 1:
+#         if not Dict["scrobble"]: break
+#         else: pass
+#         
+#         try:
+#             pms_url = PMS_URL % ('/library/recentlyAdded/')
+#             xml_content = XML.ElementFromURL(pms_url).xpath('//MediaContainer/*')
+#             
+#             values = {}
+#             
+#             for section in xml_content:
+#                 if (section.get('addedAt') > LAST_SYNCED_COLLECTION):
+#                     xml_content2 = XML.ElementFromURL( PMS_URL % section.get('key') ).xpath('//MediaContainer/*')
+#                     for section2 in xml_content2:
+#                         if (section2.get('type') == 'episode'):
+#                             xml_content3 = XML.ElementFromURL( PMS_URL % section2.get('key') ).xpath('//MediaContainer/*')
+#                             for section3 in xml_content3:
+#                                 if (section3.get('addedAt') > LAST_SYNCED_COLLECTION):
+#                                     
+#                                     m = TVSHOW_REGEXP.search(section3.get('guid'))
+#                                     #values['tvdb_id'] = m.group(2)
+#                                     #values['season'] = m.group(3)
+#                                     #values['episode'] = m.group(4)
+#                                     
+#                                     
+#                         elif (section2.get('type') == 'movie'):
+#                             guid = section2.get('guid')
+#                             try:
+#                                 values['imdb_id'] = MOVIE_REGEXP.search(section2.get('guid')).group(1)
+#                             except:
+#                                 try:
+#                                     values['tmdb_id'] = MOVIEDB_REGEXP.search(section2.get('guid')).group(1)
+#                                 except:
+#                                     try:
+#                                         values['tmdb_id'] = STANDALONE_REGEXP.search(section2.get('guid')).group(1)
+#                                     except:
+#                                         Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section2.get('title'))
+#                             
+#                     
+#             
+#             
+#             Dict['Last_synced_collection'] = Datetime.Now()
+#              
+#         except Ex.HTTPError, e:
+#             Log('Failed to connect to %s.' % pms_url)
+#         except Ex.URLError, e:
+#             Log('Failed to connect to %s.' % pms_url)
+#         
+#         
+#         
+#         Thread.Sleep(60*60) #only check once per hour
+# 
+#     return
