@@ -30,6 +30,12 @@
         "default": "false"
     },
     {
+        "id": "scrobble_names",
+        "type": "text",
+        "label": "Scrobble only, if played by this MyPlex user",
+        "default": ""
+    },
+    {
         "id": "username",
         "type": "text",
         "label": "Username",
