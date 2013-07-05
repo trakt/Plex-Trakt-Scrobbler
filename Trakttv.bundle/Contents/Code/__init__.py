@@ -819,20 +819,19 @@ def CollectionSync(itemID,do):
             return
         
         values['tvdb_id'] = metadata['tvdb_id']
+        values['title'] = metadata['title']
+        if ('year' in metadata):
+            values['year'] = metadata['year']
         values['episodes'] = [{'season' : metadata['season'],'episode' : metadata['episode']}]
     elif metadata['type'] == 'movie':
         if metadata['imdb_id'] == False and 'tmdb_id' in metadata and metadata['tmdb_id'] == False:
             Log('Added movie has no imdb_id and no tmdb_id')
             return
-            
-        if (metadata['imdb_id'] != False):
-            values['imdb_id'] = metadata['imdb_id']
-        elif (metadata['tmdb_id'] != False):
-            values['tmdb_id'] = metadata['tmdb_id']
         
-    values['title'] = metadata['title']
-    if ('year' in metadata):
-        values['year'] = metadata['year']
+        if (metadata['imdb_id'] != False):
+            values['movies'] = [{'imdb_id' : metadata['imdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
+        elif (metadata['tmdb_id'] != False):
+            values['movies'] = [{'tmdb_id' : metadata['tmdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
     
     Log(values)
     
