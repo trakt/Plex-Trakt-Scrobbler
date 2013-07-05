@@ -109,9 +109,11 @@ def Start():
     #    Log('Will autosync in 1 minute')
     #    Thread.CreateTimer(60, SyncTrakt)
     
-#    if Prefs['sync_collection'] and Prefs['username'] is not None:
-#        Log('Autostart Collection Sync')
-#        Thread.Create(CollectionSync)
+    if Prefs['new_sync_collection'] and Prefs['username'] is not None:
+        Log('Automatically sync new Items to Collection')
+        Dict["new_sync_collection"] = True
+    else:
+        Dict["new_sync_collection"] = False
     
     Thread.Create(SocketListen)
     
@@ -134,6 +136,14 @@ def ValidatePrefs():
         if Prefs['start_scrobble']:
             Log('Autostart scrobbling')
             Dict["scrobble"] = True
+        else:
+            Dict['scrobble'] = False
+        
+        if Prefs['new_sync_collection']:
+            Log('Automatically sync new Items to Collection')
+            Dict["new_sync_collection"] = True
+        else:
+            Dict["new_sync_collection"] = False
     
         return MessageContainer(
             "Success",
@@ -522,6 +532,12 @@ def talk_to_trakt(action, values, param = ""):
     # Function to talk to the trakt.tv api
     data_url = TRAKT_URL % (action, param)
     
+    values['username'] = Prefs['username']
+    values['password'] =  Hash.SHA1(Prefs['password'])
+    values['plugin_version'] =  PLUGIN_VERSION
+    # TODO
+    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
+    
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
         headers = json_file.headers
@@ -556,8 +572,8 @@ def get_metadata_from_pms(item_id):
         xml_file = HTTP.Request(pms_url)
         xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         for section in xml_content:
-            metadata = {'title' : section.get('title')}
-
+            metadata = dict()
+            
             try:
                 metadata['duration'] = int(float(section.get('duration'))/60000)
             except: pass
@@ -568,6 +584,8 @@ def get_metadata_from_pms(item_id):
             metadata['type'] = section.get('type')
             
             if metadata['type'] == 'movie':
+                metadata['title'] = section.get('title')
+                
                 try:
                     metadata['imdb_id'] = MOVIE_REGEXP.search(section.get('guid')).group(1)
                 except:
@@ -582,16 +600,19 @@ def get_metadata_from_pms(item_id):
                             metadata['tmdb_id'] = False
             
             elif metadata['type'] == 'episode':
+                metadata['title'] = section.get('grandparentTitle')
+                metadata['episode_title'] = section.get('title')
+                
                 try:
                     m = TVSHOW_REGEXP.search(section.get('guid'))
                     metadata['tvdb_id'] = m.group(2)
                     metadata['season'] = m.group(3)
                     metadata['episode'] = m.group(4)
                 except:
-                    Log('The episode %s doesn\'t have any tvdb id, it will not be scrobbled.' % section.get('title'))
+                    Log('The episode %s doesn\'t have any tvdb id, it will not be ignored.' % section.get('title'))
                     metadata['tvdb_id'] = False
             else:
-                Log('The content type %s is not supported, the item %s will not be scrobbled.' % (section.get('type'), section.get('title')))
+                Log('The content type %s is not supported, the item %s will not be ignored.' % (section.get('type'), section.get('title')))
 
             return metadata
     except Ex.HTTPError, e:
@@ -626,7 +647,7 @@ def SocketListen():
             info = JSON.ObjectFromString(data)
             
             #scrobble
-            if Dict["scrobble"] and info['type'] == "playing":
+            if info['type'] == "playing" and Dict["scrobble"]:
                 sessionKey = str(info['_children'][0]['sessionKey'])
                 state = str(info['_children'][0]['state'])
                 viewOffset = str(info['_children'][0]['viewOffset'])
@@ -634,18 +655,23 @@ def SocketListen():
                 Scrobble(sessionKey,state,viewOffset)
             
             #adding to collection
-            elif info['type'] == "timeline":
-                
-                #episode
-                if info['_children'][0]['type'] == 4 and info['_children'][0]['state'] == 1:
+            elif info['type'] == "timeline" and Dict['new_sync_collection']:
+                if (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 0:
                     Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
+                    itemID = info['_children'][0]['itemID']
+                    # delay sync to wait for metadata
+                    Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
                 
-                #movie
-                elif info['_children'][0]['type'] == 1 and info['_children'][0]['state'] == 1:
-                    Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
-                
+                # #deleted file (doesn't work yet)
+                # elif (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 9:
+                #     Log.Info("File deleted from Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
+                #     itemID = info['_children'][0]['itemID']
+                #     # delay sync to wait for metadata
+                #     #Thread.CreateTimer(10, CollectionSync,True,itemID,'add')
+                #     CollectionSync(itemID,'delete')
     return
 
+####################################################################################################
 @route('/applications/trakttv/scrobble')
 def Scrobble(sessionKey,state,viewOffset):
  
@@ -753,17 +779,10 @@ def Scrobble(sessionKey,state,viewOffset):
     if ('year' in Dict['nowPlaying'][sessionKey]):
         values['year'] = Dict['nowPlaying'][sessionKey]['year']
     
-    values['username'] = Prefs['username']
-    values['password'] =  Hash.SHA1(Prefs['password'])
-    values['plugin_version'] =  PLUGIN_VERSION
-    # TODO
-    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
-    
-    
     result = talk_to_trakt(action, values)
     # Only update the action if trakt responds with a success.
     if result['status']:
-        if (state == 'stopped'):
+        if (state == 'stopped' or state == 'paused'):
             del Dict['nowPlaying'][sessionKey] #delete session from Dict
         else:
             Dict['nowPlaying'][sessionKey]['cur_state'] = state
@@ -772,62 +791,54 @@ def Scrobble(sessionKey,state,viewOffset):
     return 
 
 ####################################################################################################
-# @route('/applications/trakttv/collectionsync')
-# def CollectionSync():
-#     
-#     LAST_SYNCED_COLLECTION = Dict['Last_synced_collection']
-#     LAST_SYNCED_COLLECTION = "1372353400"
-#     
-#     while 1:
-#         if not Dict["scrobble"]: break
-#         else: pass
-#         
-#         try:
-#             pms_url = PMS_URL % ('/library/recentlyAdded/')
-#             xml_content = XML.ElementFromURL(pms_url).xpath('//MediaContainer/*')
-#             
-#             values = {}
-#             
-#             for section in xml_content:
-#                 if (section.get('addedAt') > LAST_SYNCED_COLLECTION):
-#                     xml_content2 = XML.ElementFromURL( PMS_URL % section.get('key') ).xpath('//MediaContainer/*')
-#                     for section2 in xml_content2:
-#                         if (section2.get('type') == 'episode'):
-#                             xml_content3 = XML.ElementFromURL( PMS_URL % section2.get('key') ).xpath('//MediaContainer/*')
-#                             for section3 in xml_content3:
-#                                 if (section3.get('addedAt') > LAST_SYNCED_COLLECTION):
-#                                     
-#                                     m = TVSHOW_REGEXP.search(section3.get('guid'))
-#                                     #values['tvdb_id'] = m.group(2)
-#                                     #values['season'] = m.group(3)
-#                                     #values['episode'] = m.group(4)
-#                                     
-#                                     
-#                         elif (section2.get('type') == 'movie'):
-#                             guid = section2.get('guid')
-#                             try:
-#                                 values['imdb_id'] = MOVIE_REGEXP.search(section2.get('guid')).group(1)
-#                             except:
-#                                 try:
-#                                     values['tmdb_id'] = MOVIEDB_REGEXP.search(section2.get('guid')).group(1)
-#                                 except:
-#                                     try:
-#                                         values['tmdb_id'] = STANDALONE_REGEXP.search(section2.get('guid')).group(1)
-#                                     except:
-#                                         Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section2.get('title'))
-#                             
-#                     
-#             
-#             
-#             Dict['Last_synced_collection'] = Datetime.Now()
-#              
-#         except Ex.HTTPError, e:
-#             Log('Failed to connect to %s.' % pms_url)
-#         except Ex.URLError, e:
-#             Log('Failed to connect to %s.' % pms_url)
-#         
-#         
-#         
-#         Thread.Sleep(60*60) #only check once per hour
-# 
-#     return
+@route('/applications/trakttv/collectionsync')
+def CollectionSync(itemID,do):
+    metadata = get_metadata_from_pms(itemID)
+    Log(metadata)
+    
+    #cancel, if metadata is not there yet
+    if not 'tvdb_id' in metadata and not 'imdb_id' in metadata and not 'tmdb_id' in metadata:
+        return
+    
+    if do == 'add':
+        do_action = 'library'
+    elif do == 'delete':
+        do_action = 'unlibrary'
+    
+    if metadata['type'] == 'episode':
+        action = 'show/episode/%s' % do_action
+    elif metadata['type'] == 'movie':
+        action = 'movie/%s' % do_action
+    
+    # Setup Data to send to Trakt
+    values = dict()
+    
+    if metadata['type'] == 'episode':
+        if metadata['tvdb_id'] == False:
+            Log('Added episode has no tvdb_id')
+            return
+        
+        values['tvdb_id'] = metadata['tvdb_id']
+        values['episodes'] = [{'season' : metadata['season'],'episode' : metadata['episode']}]
+    elif metadata['type'] == 'movie':
+        if metadata['imdb_id'] == False and 'tmdb_id' in metadata and metadata['tmdb_id'] == False:
+            Log('Added movie has no imdb_id and no tmdb_id')
+            return
+            
+        if (metadata['imdb_id'] != False):
+            values['imdb_id'] = metadata['imdb_id']
+        elif (metadata['tmdb_id'] != False):
+            values['tmdb_id'] = metadata['tmdb_id']
+        
+    values['title'] = metadata['title']
+    if ('year' in metadata):
+        values['year'] = metadata['year']
+    
+    Log(values)
+    
+    result = talk_to_trakt(action, values)
+    Log(result)
+    # if result['status']:    
+        
+    
+    return
