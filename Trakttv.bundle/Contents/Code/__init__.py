@@ -97,7 +97,8 @@ def Start():
     
     ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
     
-    Dict['nowPlaying'] = dict()
+    if not 'nowPlaying' in Dict:
+        Dict['nowPlaying'] = dict()
     
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
@@ -477,16 +478,12 @@ def SyncSection(key):
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
             values = {}
-            values['username'] = Prefs['username']
-            values['password'] = Hash.SHA1(Prefs['password'])
             values['episodes'] = ratings_episodes
             status = talk_to_trakt('rate/episodes', values)
             Log("Trakt responded with: %s " % status)
     
         if len(ratings_movies) > 0:
             values = {}
-            values['username'] = Prefs['username']
-            values['password'] = Hash.SHA1(Prefs['password'])
             values['movies'] = ratings_movies
             status = talk_to_trakt('rate/movies', values)
             Log("Trakt responded with: %s " % status)
@@ -494,28 +491,20 @@ def SyncSection(key):
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
             values = {}
-            values['username'] = Prefs['username']
-            values['password'] = Hash.SHA1(Prefs['password'])
             values['movies'] = all_movies
             status = talk_to_trakt('movie/seen', values)
             Log("Trakt responded with: %s " % status)
         for episode in all_episodes:
-            episode['username'] = Prefs['username']
-            episode['password'] = Hash.SHA1(Prefs['password'])
             status = talk_to_trakt('show/episode/seen', episode)
             Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
             values = {}
-            values['username'] = Prefs['username']
-            values['password'] = Hash.SHA1(Prefs['password'])
             values['movies'] = collection_movies
             status = talk_to_trakt('movie/library', values)
             Log("Trakt responded with: %s " % status)
         for episode in collection_episodes:
-            episode['username'] = Prefs['username']
-            episode['password'] = Hash.SHA1(Prefs['password'])
             status = talk_to_trakt('show/episode/library', episode)
             Log("Trakt responded with: %s " % status)
 
@@ -780,14 +769,18 @@ def Scrobble(sessionKey,state,viewOffset):
         values['year'] = Dict['nowPlaying'][sessionKey]['year']
     
     result = talk_to_trakt(action, values)
-    # Only update the action if trakt responds with a success.
-    if result['status']:
-        if (state == 'stopped' or state == 'paused'):
-            del Dict['nowPlaying'][sessionKey] #delete session from Dict
-        else:
-            Dict['nowPlaying'][sessionKey]['cur_state'] = state
-            Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
-
+    
+    if (state == 'stopped'):
+        del Dict['nowPlaying'][sessionKey] #delete session from Dict
+    
+    Dict['nowPlaying'][sessionKey]['cur_state'] = state
+    Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
+    
+    #check for old entries in Dict['nowPlaying']
+    for key,session in Dict['nowPlaying']:
+        if (Dict['nowPlaying'][key]['Last_updated'] + Datetime.Delta(minutes=60)) < Datetime.Now():
+            del Dict['nowPlaying'][key] #delete session from Dict
+    
     return 
 
 ####################################################################################################
