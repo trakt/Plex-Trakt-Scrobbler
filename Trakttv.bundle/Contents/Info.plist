@@ -14,14 +14,16 @@
     <key>PlexPluginCodePolicy</key>
     <string>Elevated</string>
     <key>PlexPluginMode</key>
-    <string>AlwaysOn</string>
+    <string>Daemon</string>
+    <key>PlexPluginConsoleLogging</key>
+    <string>1</string>
 	<key>PlexPluginDebug</key>
-	<string>1</string>
-	<key>PlexPluginClass</key>
-	<string>Resource</string>
-	<key>CFBundlePackageType</key>
-	<string>AAPL</string>
-	<key>CFBundleSignature</key>
-	<string>hook</string>
+    <string>1</string>
+    <key>PlexPluginClass</key>
+    <string>Resource</string>
+    <key>CFBundlePackageType</key>
+    <string>AAPL</string>
+    <key>CFBundleSignature</key>
+    <string>hook</string>
 </dict>
 </plist>

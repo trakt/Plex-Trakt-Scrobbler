@@ -95,6 +95,9 @@ def Start():
         
     if not 'nowPlaying' in Dict:
         Dict['nowPlaying'] = dict()
+        
+    if not 'addedMedia' in Dict:
+        Dict['addedMedia'] = list()
     
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
@@ -102,9 +105,9 @@ def Start():
     else:
         Dict["scrobble"] = False
     
-    #if Prefs['sync_startup'] and Prefs['username'] is not None:
-    #    Log('Will autosync in 1 minute')
-    #    Thread.CreateTimer(60, SyncTrakt)
+    if Prefs['sync_startup'] and Prefs['username'] is not None:
+        Log('Will autosync in 1 minute')
+        Thread.CreateTimer(60, SyncTrakt)
     
     if Prefs['new_sync_collection'] and Prefs['username'] is not None:
         Log('Automatically sync new Items to Collection')
@@ -113,10 +116,6 @@ def Start():
         Dict["new_sync_collection"] = False
     
     Thread.Create(SocketListen)
-    
-    # force plugin to stay awake
-    #while True:
-    #    Thread.Sleep(30)
     
     
 ####################################################################################################
@@ -401,7 +400,7 @@ def SyncSection(key):
                         if pms_metadata is None:
                             pms_metadata = get_metadata_from_pms(video.get('ratingKey'))
                         movie_dict = pms_metadata
-                        movie_dict['plays'] = int(video.get('viewCount'))
+                        #movie_dict['plays'] = int(video.get('viewCount'))
                         # Remove the duration value since we won't need that!
                         #movie_dict.pop('duration')
                         all_movies.append(movie_dict)
@@ -569,6 +568,12 @@ def get_metadata_from_pms(item_id):
             if section.get('year') is not None:
                 metadata['year'] = int(section.get('year'))
             
+            if section.get('lastViewedAt') is not None:
+                metadata['last_played'] = int(section.get('lastViewedAt'))    
+            
+            if section.get('viewCount') is not None:
+                metadata['plays'] = int(section.get('viewCount'))    
+            
             metadata['type'] = section.get('type')
             
             if metadata['type'] == 'movie':
@@ -651,8 +656,9 @@ def SocketListen():
                     Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
                     itemID = info['_children'][0]['itemID']
                     # delay sync to wait for metadata
-                    Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
-                
+                    #Thread.CreateTimer(120, CollectionSync,True,itemID,'add')
+                    Dict['addedMedia'].append(itemID)
+                    
                 # #deleted file (doesn't work yet)
                 # elif (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 9:
                 #     Log.Info("File deleted from Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
@@ -660,6 +666,16 @@ def SocketListen():
                 #     # delay sync to wait for metadata
                 #     #Thread.CreateTimer(10, CollectionSync,True,itemID,'add')
                 #     CollectionSync(itemID,'delete')
+            
+            elif info['type'] == "status" and Dict['new_sync_collection']:
+                if info['_children'][0]['title'] == "Library scan complete" and len(Dict['addedMedia']) > 0:
+                    Log.Info("Library Scan complete, Syncing added Media")
+                    for itemID in Dict['addedMedia']:
+                        #CollectionSync(itemID,'add')
+                        Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
+                        Dict['addedMedia'].remove(itemID)
+                    
+                
     return
 
 ####################################################################################################
@@ -727,29 +743,31 @@ def Scrobble(sessionKey,state,viewOffset):
         # state changed, force update
         if (state != Dict['nowPlaying'][sessionKey]['cur_state']):
             if (state == 'stopped') or (state == 'paused'):
-                Log.Info('Media paused or stopped, cancel watching')
+                Log.Debug('Media paused or stopped, cancel watching')
                 action += 'cancelwatching'
             elif (state == 'playing'):
-                Log.Info('Updating watch status')
+                Log.Debug('Updating watch status')
                 action += 'watching'
         
         # update every 10 min
         elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()) and Dict['nowPlaying'][sessionKey]['progress'] < 80:
-            Log.Info('Updating watch status')
+            Log.Debug('Updating watch status')
             action += 'watching'
         
         #scrobble item
         elif state == 'playing' and Dict['nowPlaying'][sessionKey]['progress'] > 80:
-            Log.Info('Scrobble Item')
+            Log.Debug('Scrobble Item')
             action += 'scrobble'
             Dict['nowPlaying'][sessionKey]['scrobbled'] = True
         else:
             # Already watching or already scrobbled
-            Log.Info('Nothing to do this time, all that could be done is done!')
+            Log.Debug('Nothing to do this time, all that could be done is done!')
             return
     else:
         # Already watching or already scrobbled
-        Log.Info('Nothing to do this time, all that could be done is done!')
+        Log.Debug('Media already scrobbled!')
+        if (state == 'stopped'):
+            del Dict['nowPlaying'][sessionKey] #delete session from Dict
         return
     
     # Setup Data to send to Trakt
@@ -817,7 +835,7 @@ def CollectionSync(itemID,do):
     
     if metadata['type'] == 'episode':
         if metadata['tvdb_id'] == False:
-            Log('Added episode has no tvdb_id')
+            Log.Info('Added episode has no tvdb_id')
             return
         
         values['tvdb_id'] = metadata['tvdb_id']
@@ -827,7 +845,7 @@ def CollectionSync(itemID,do):
         values['episodes'] = [{'season' : metadata['season'],'episode' : metadata['episode']}]
     elif metadata['type'] == 'movie':
         if metadata['imdb_id'] == False and 'tmdb_id' in metadata and metadata['tmdb_id'] == False:
-            Log('Added movie has no imdb_id and no tmdb_id')
+            Log.Info('Added movie has no imdb_id and no tmdb_id')
             return
         
         if (metadata['imdb_id'] != False):
@@ -835,11 +853,8 @@ def CollectionSync(itemID,do):
         elif (metadata['tmdb_id'] != False):
             values['movies'] = [{'tmdb_id' : metadata['tmdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
     
-    Log(values)
+    Log.Debug(values)
     
     result = talk_to_trakt(action, values)
-    Log(result)
-    # if result['status']:    
         
-    
     return
