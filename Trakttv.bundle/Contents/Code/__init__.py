@@ -774,11 +774,11 @@ def Scrobble(sessionKey,state,viewOffset):
     
     result = talk_to_trakt(action, values)
     
-    if (state == 'stopped'):
-        del Dict['nowPlaying'][sessionKey] #delete session from Dict
-    
     Dict['nowPlaying'][sessionKey]['cur_state'] = state
     Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
+    
+    if (state == 'stopped'):
+        del Dict['nowPlaying'][sessionKey] #delete session from Dict
     
     #check for old entries in Dict['nowPlaying']
     delete_sessions = list()
