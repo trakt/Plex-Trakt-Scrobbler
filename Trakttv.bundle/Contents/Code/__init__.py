@@ -88,15 +88,11 @@ responses = {
 
 def Start():
     
-    global ws
-    
     ObjectContainer.art = R(ART)
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
-    
-    ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
-    
+        
     if not 'nowPlaying' in Dict:
         Dict['nowPlaying'] = dict()
     
@@ -117,6 +113,11 @@ def Start():
         Dict["new_sync_collection"] = False
     
     Thread.Create(SocketListen)
+    
+    # force plugin to stay awake
+    #while True:
+    #    Thread.Sleep(30)
+    
     
 ####################################################################################################
 def ValidatePrefs():
@@ -161,7 +162,7 @@ def MainMenu():
 
     oc = ObjectContainer()
 
-    #oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
+    oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
 
     oc.add(PrefsObject(title="Preferences", summary="Configure how to connect to Trakt.tv", thumb=R("icon-preferences.png")))
     return oc
@@ -290,15 +291,13 @@ def ManuallyTrakt():
         return MessageContainer('No type selected', 'You need to enable at least one type of actions to sync first.')
 
     values = {}
-    values['username'] = Prefs['username']
-    values['password'] = Hash.SHA1(Prefs['password'])
     values['extended'] = 'min'
 
     try:
         if Prefs['sync_watched'] is True:
             # Get data from Trakt.tv
-            movie_list = talk_to_trakt('user//library/movies/watched.json', values, param = Prefs['username'])
-            show_list = talk_to_trakt('user//library/shows/watched.json', values, param = Prefs['username'])
+            movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
+            show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
     
         if Prefs['sync_ratings'] is True:
             # Get data from Trakt.tv
@@ -615,6 +614,8 @@ def get_metadata_from_pms(item_id):
 @route('/applications/trakttv/socketlisten')
 def SocketListen():
     
+    ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
+    
     def SocketRecv():
         frame = ws.recv_frame()
         if not frame:
@@ -640,8 +641,9 @@ def SocketListen():
                 sessionKey = str(info['_children'][0]['sessionKey'])
                 state = str(info['_children'][0]['state'])
                 viewOffset = str(info['_children'][0]['viewOffset'])
-                Log.Info(sessionKey + " - " + state + ' - ' + viewOffset)
-                Scrobble(sessionKey,state,viewOffset)
+                # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
+                if not sessionKey in Dict['nowPlaying'] or not 'skip' in Dict['nowPlaying'][sessionKey]:
+                    Scrobble(sessionKey,state,viewOffset)
             
             #adding to collection
             elif info['type'] == "timeline" and Dict['new_sync_collection']:
@@ -704,6 +706,7 @@ def Scrobble(sessionKey,state,viewOffset):
     # Is it played by the correct user? Else return false
     if (Prefs['scrobble_names'] != "") and (Prefs['scrobble_names'] != Dict['nowPlaying'][sessionKey]['UserName']):
         Log.Info('Ignoring item played by other user')
+        Dict['nowPlaying'][sessionKey]['skip'] = True
         return
     
     # Is it a movie or a serie? Else return false
@@ -713,7 +716,8 @@ def Scrobble(sessionKey,state,viewOffset):
         action = 'movie/'
     else:
         # Not a movie or TV-Show or have incorrect metadata!
-        Log('Playing unknown item, will not be scrobbled!')
+        Log.Info('Playing unknown item, will not be scrobbled!')
+        Dict['nowPlaying'][sessionKey]['skip'] = True
         return
     
     # calculate play progress
@@ -777,9 +781,14 @@ def Scrobble(sessionKey,state,viewOffset):
     Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
     
     #check for old entries in Dict['nowPlaying']
-    for key,session in Dict['nowPlaying']:
-        if (Dict['nowPlaying'][key]['Last_updated'] + Datetime.Delta(minutes=60)) < Datetime.Now():
-            del Dict['nowPlaying'][key] #delete session from Dict
+    delete_sessions = list()
+    for session in Dict['nowPlaying']:
+        if (Dict['nowPlaying'][session]['Last_updated'] + Datetime.Delta(minutes=60)) < Datetime.Now():
+            delete_sessions.append(session)
+    for session in delete_sessions:
+        del Dict['nowPlaying'][session] #delete session from Dict
+    
+    Dict.Save()
     
     return 
 
