@@ -1,6 +1,5 @@
 import fileinput
 import time
-from LogSucker import ReadLog
 
 NAME = L('Title')
 ART  = 'art-default.jpg'
@@ -139,7 +138,7 @@ def MainMenu():
 
     oc = ObjectContainer()
 
-    # Test if the user have the correct settings in the PMS.
+    # Test if the user has the correct settings in the PMS.
     for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
         if setting.get('id') == 'logDebug' and setting.get('value') != 'true':
             oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
@@ -301,7 +300,7 @@ def ManuallyTrakt():
     except:
         return MessageContainer('Failed to load data from Trakt', 'Something went wrong while getting data from Trakt. Please check the log for details.')
 
-    #Go through the Plex library and update flags
+    # Go through the Plex library and update flags
     library_sections = XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
     for library_section in library_sections:
         if library_section.get('type') == 'movie':
@@ -521,7 +520,7 @@ def SyncSection(key):
 ####################################################################################################
 @route('/applications/trakttv/watch_or_scrobble')
 def watch_or_scrobble(log_values):
-    # Function to add what currently is playing to trakt, decide o watch or scrobble
+    # Function to add what currently is playing to trakt, decide to watch or scrobble.
     LAST_USED_ID = Dict['Last_used_id']
     LAST_USED_ACTION = Dict['Last_used_action']
     values = Dict['Last_used_metadata']
@@ -529,7 +528,7 @@ def watch_or_scrobble(log_values):
     Log('Current id: %s and previous id: %s using action: %s' % (log_values['key'], LAST_USED_ID, LAST_USED_ACTION))
 
     if log_values['key'] != LAST_USED_ID:
-        # Reset all parameters since the user has changes what they are watching.
+        # Reset all parameters since the user has changed what they are watching.
         Log('Lets refresh the metadata')
         values = get_metadata_from_pms(log_values['key'])
         Dict['Last_used_metadata'] = values
@@ -537,17 +536,16 @@ def watch_or_scrobble(log_values):
         LAST_USED_ACTION = None
         LAST_UPDATED = None
 
-    progress = int(float(log_values['time'])/60000)
-    values['progress'] = round((float(progress)/values['duration'])*100, 0)
+    values['progress'] = log_values['progress']
     
-    # Add username and password to values
+    # Add username and password to values.
     values['username'] = Prefs['username']
     values['password'] =  Hash.SHA1(Prefs['password'])
     values['plugin_version'] =  PLUGIN_VERSION
     # TODO
     values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
 
-    # Is it a movie or a serie? Else return false
+    # Is it a movie or a series? Else return false.
     if 'tvdb_id' in values:
         action = 'show/'
     elif 'imdb_id' or 'tmdb_id' in values:
@@ -555,7 +553,7 @@ def watch_or_scrobble(log_values):
     else:
         # Not a movie or TV-Show or have incorrect metadata!
         Log('Unknown item, bail out!')
-        return false
+        return False
 
     if (log_values['key'] != LAST_USED_ID) or (LAST_USED_ACTION == 'cancel' and log_values['state'] == 'playing'):
         action += 'watching'
@@ -573,9 +571,9 @@ def watch_or_scrobble(log_values):
         action += 'cancelwatching'
         USED_ACTION = 'cancel'
     else:
-        # Already watching or already scrobbled
+        # Already watching or already scrobbled.
         Log('Nothing to do this time, all that could be done is done!')
-        return false
+        return False
     
     result = talk_to_trakt(action, values)
     # Only update the action if trakt responds with a success.
@@ -590,7 +588,7 @@ def talk_to_trakt(action, values, param = ""):
 
     if param != "":
         param = "/" + param
-    # Function to talk to the trakt.tv api
+    # Function to talk to the trakt.tv api.
     data_url = TRAKT_URL % (action, param)
     
     try:
@@ -666,34 +664,40 @@ def get_metadata_from_pms(item_id):
         Log('Failed to connect to %s.' % pms_url)
         return {'status' : False, 'message' : e.reason[0]}
 
-def LogPath():
-    return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
+#def LogPath():
+#    return Core.storage.abs_path(Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log'))
 
 ####################################################################################################
 @route('/applications/trakttv/scrobble')
 def Scrobble():
-    log_path = LogPath()
-    Log("LogPath='%s'" % log_path)
-    log_data = ReadLog(log_path, True)
-    line = log_data['line']
+    playing_url = 'http://localhost:32400/status/sessions/'
+    previously_playing = False
     
     while 1:
-        if not Dict["scrobble"]: break
+        if not Dict["scrobble"]: 
+            Log("Something went wrong... Exiting.")
+            break
         else: pass
 
-        #Grab the next line of the log#
-        log_data = ReadLog(log_path, False, log_data['where'])
-        line = log_data['line']
+        xml_file = HTTP.Request(playing_url)
+        xml_content = XML.ElementFromString(xml_file).xpath('//Video')
         try:
-            log_values = dict(LOG_REGEXP.findall(line))
-            #Log(log_values)
-            key = log_values.get('key', log_values.get('ratingKey', None))
-            if is_number(key):
-                log_values['key'] = key
-                # If the client doesn't tell us what it is doing, but is updating the progress of an item guess that it is playing.
-                log_values['state'] = log_values.get('state', 'playing')
-                watch_or_scrobble(log_values)
+            player = xml_content[0].find('Player')
+            playing = {'key' : xml_content[0].get('ratingKey')}
+            playing['state'] = player.get('state')
+            playing['progress'] = round(float(xml_content[0].get('viewOffset')) / int(xml_content[0].get('duration')) * 100,0)
+            previously_playing = True
+            watch_or_scrobble(playing)
+        
         except:
-            pass
+            # If the nothing is currently playing and this is not the first pass, mark the last item as stopped
+            if previously_playing == True:
+                playing['state'] = "stopped"
+                watch_or_scrobble(playing)
+                previously_playing = False
+            else: 
+                pass
+
+        time.sleep(60)
 
     return 
