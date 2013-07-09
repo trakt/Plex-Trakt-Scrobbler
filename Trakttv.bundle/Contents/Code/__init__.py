@@ -656,8 +656,8 @@ def SocketListen():
                     Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
                     itemID = info['_children'][0]['itemID']
                     # delay sync to wait for metadata
-                    #Thread.CreateTimer(120, CollectionSync,True,itemID,'add')
-                    Dict['addedMedia'].append(itemID)
+                    Thread.CreateTimer(120, CollectionSync,True,itemID,'add')
+                    #Dict['addedMedia'].append(itemID)
                     
                 # #deleted file (doesn't work yet)
                 # elif (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 9:
@@ -667,13 +667,13 @@ def SocketListen():
                 #     #Thread.CreateTimer(10, CollectionSync,True,itemID,'add')
                 #     CollectionSync(itemID,'delete')
             
-            elif info['type'] == "status" and Dict['new_sync_collection']:
-                if info['_children'][0]['title'] == "Library scan complete" and len(Dict['addedMedia']) > 0:
-                    Log.Info("Library Scan complete, Syncing added Media")
-                    for itemID in Dict['addedMedia']:
-                        #CollectionSync(itemID,'add')
-                        Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
-                        Dict['addedMedia'].remove(itemID)
+            # elif info['type'] == "status" and Dict['new_sync_collection']:
+            #     if info['_children'][0]['title'] == "Library scan complete" and len(Dict['addedMedia']) > 0:
+            #         Log.Info("Library Scan complete, Syncing added Media")
+            #         for itemID in Dict['addedMedia']:
+            #             #CollectionSync(itemID,'add')
+            #             Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
+            #             Dict['addedMedia'].remove(itemID)
                     
                 
     return
@@ -720,8 +720,9 @@ def Scrobble(sessionKey,state,viewOffset):
             return
     
     # Is it played by the correct user? Else return false
-    if (Prefs['scrobble_names'] != "") and (Prefs['scrobble_names'] != Dict['nowPlaying'][sessionKey]['UserName']):
-        Log.Info('Ignoring item played by other user')
+    
+    if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != Dict['nowPlaying'][sessionKey]['UserName']):
+        Log.Info('Ignoring item ('+Dict['nowPlaying'][sessionKey]['title']+') played by other user: '+Dict['nowPlaying'][sessionKey]['UserName'])
         Dict['nowPlaying'][sessionKey]['skip'] = True
         return
     
@@ -732,7 +733,7 @@ def Scrobble(sessionKey,state,viewOffset):
         action = 'movie/'
     else:
         # Not a movie or TV-Show or have incorrect metadata!
-        Log.Info('Playing unknown item, will not be scrobbled!')
+        Log.Info('Playing unknown item, will not be scrobbled: '+Dict['nowPlaying'][sessionKey]['title'])
         Dict['nowPlaying'][sessionKey]['skip'] = True
         return
     
@@ -743,29 +744,28 @@ def Scrobble(sessionKey,state,viewOffset):
         # state changed, force update
         if (state != Dict['nowPlaying'][sessionKey]['cur_state']):
             if (state == 'stopped') or (state == 'paused'):
-                Log.Debug('Media paused or stopped, cancel watching')
+                Log.Debug(Dict['nowPlaying'][sessionKey]['title']+' paused or stopped, cancel watching')
                 action += 'cancelwatching'
             elif (state == 'playing'):
-                Log.Debug('Updating watch status')
+                Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
                 action += 'watching'
         
         # update every 10 min
         elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()) and Dict['nowPlaying'][sessionKey]['progress'] < 80:
-            Log.Debug('Updating watch status')
+            Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
             action += 'watching'
         
         #scrobble item
         elif state == 'playing' and Dict['nowPlaying'][sessionKey]['progress'] > 80:
-            Log.Debug('Scrobble Item')
+            Log.Debug('Scrobbling '+Dict['nowPlaying'][sessionKey]['title'])
             action += 'scrobble'
-            Dict['nowPlaying'][sessionKey]['scrobbled'] = True
         else:
             # Already watching or already scrobbled
-            Log.Debug('Nothing to do this time, all that could be done is done!')
+            Log.Debug('Nothing to do this time for '+Dict['nowPlaying'][sessionKey]['title'])
             return
     else:
         # Already watching or already scrobbled
-        Log.Debug('Media already scrobbled!')
+        Log.Debug('Media already scrobbled: '+Dict['nowPlaying'][sessionKey]['title'])
         if (state == 'stopped'):
             del Dict['nowPlaying'][sessionKey] #delete session from Dict
         return
@@ -791,6 +791,9 @@ def Scrobble(sessionKey,state,viewOffset):
         values['year'] = Dict['nowPlaying'][sessionKey]['year']
     
     result = talk_to_trakt(action, values)
+    if result['status']:
+        if action.find('scrobble') > 0:
+            Dict['nowPlaying'][sessionKey]['scrobbled'] = True
     
     Dict['nowPlaying'][sessionKey]['cur_state'] = state
     Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
