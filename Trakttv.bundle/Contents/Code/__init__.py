@@ -95,9 +95,6 @@ def Start():
         
     if not 'nowPlaying' in Dict:
         Dict['nowPlaying'] = dict()
-        
-    if not 'addedMedia' in Dict:
-        Dict['addedMedia'] = list()
     
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
@@ -478,33 +475,33 @@ def SyncSection(key):
             values = {}
             values['episodes'] = ratings_episodes
             status = talk_to_trakt('rate/episodes', values)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
     
         if len(ratings_movies) > 0:
             values = {}
             values['movies'] = ratings_movies
             status = talk_to_trakt('rate/movies', values)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
             values = {}
             values['movies'] = all_movies
             status = talk_to_trakt('movie/seen', values)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
         for episode in all_episodes:
             status = talk_to_trakt('show/episode/seen', episode)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
             values = {}
             values['movies'] = collection_movies
             status = talk_to_trakt('movie/library', values)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
         for episode in collection_episodes:
             status = talk_to_trakt('show/episode/library', episode)
-            Log("Trakt responded with: %s " % status)
+            #Log("Trakt responded with: %s " % status)
 
     Log('Syncing is done!')
     Dict['Last_sync_up'] = Datetime.Now()
@@ -539,7 +536,10 @@ def talk_to_trakt(action, values, param = ""):
     try:
         if result['status'] == 'success':
             if not 'message' in result:
-                result['message'] = 'Unknown success'
+                if 'inserted' in result:
+                    result['message'] = "%s Movies inserted, %s Movies already existed, %s Movies skipped" % (result['inserted'], result['already_exist'], result['skipped'])
+                else:
+                    result['message'] = 'Unknown success'
             Log('Trakt responded with: %s' % result['message'])
             return {'status' : True, 'message' : result['message']}
         elif result['status'] == 'failure':
@@ -657,33 +657,29 @@ def SocketListen():
                     itemID = info['_children'][0]['itemID']
                     # delay sync to wait for metadata
                     Thread.CreateTimer(120, CollectionSync,True,itemID,'add')
-                    #Dict['addedMedia'].append(itemID)
                     
                 # #deleted file (doesn't work yet)
                 # elif (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 9:
                 #     Log.Info("File deleted from Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
                 #     itemID = info['_children'][0]['itemID']
                 #     # delay sync to wait for metadata
-                #     #Thread.CreateTimer(10, CollectionSync,True,itemID,'add')
                 #     CollectionSync(itemID,'delete')
-            
-            # elif info['type'] == "status" and Dict['new_sync_collection']:
-            #     if info['_children'][0]['title'] == "Library scan complete" and len(Dict['addedMedia']) > 0:
-            #         Log.Info("Library Scan complete, Syncing added Media")
-            #         for itemID in Dict['addedMedia']:
-            #             #CollectionSync(itemID,'add')
-            #             Thread.CreateTimer(60, CollectionSync,True,itemID,'add')
-            #             Dict['addedMedia'].remove(itemID)
-                    
                 
     return
 
 ####################################################################################################
 @route('/applications/trakttv/scrobble')
 def Scrobble(sessionKey,state,viewOffset):
- 
-    if not Dict["scrobble"]: return
-    else: pass
+    
+    #fix for pht (not sending pause or stop when finished playing)
+    #delete sessiondata if viewOffset is smaller than previous session viewOffset
+    #we assume, that in this case it could be a new file.
+    #if the user simply seeks backwards on the client, this is also triggered.
+    if sessionKey in Dict['nowPlaying']:
+        if Dict['nowPlaying'][sessionKey]['prev_viewOffset'] > viewOffset:
+            del Dict['nowPlaying'][sessionKey]
+        else:
+            Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = viewOffset
     
     if not sessionKey in Dict['nowPlaying']:
         Log.Info('getting MetaData for current media')
@@ -706,6 +702,7 @@ def Scrobble(sessionKey,state,viewOffset):
                     Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.FromTimestamp(0)
                     Dict['nowPlaying'][sessionKey]['scrobbled'] = False
                     Dict['nowPlaying'][sessionKey]['cur_state'] = state
+                    Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = 0
             
             # if session wasn't found, return False
             if not (sessionKey in Dict['nowPlaying']):
@@ -740,34 +737,28 @@ def Scrobble(sessionKey,state,viewOffset):
     # calculate play progress
     Dict['nowPlaying'][sessionKey]['progress'] = int(round((float(viewOffset)/(Dict['nowPlaying'][sessionKey]['duration']*60*1000))*100, 0))
     
-    if (Dict['nowPlaying'][sessionKey]['scrobbled'] != True):
-        # state changed, force update
-        if (state != Dict['nowPlaying'][sessionKey]['cur_state']):
-            if (state == 'stopped') or (state == 'paused'):
-                Log.Debug(Dict['nowPlaying'][sessionKey]['title']+' paused or stopped, cancel watching')
-                action += 'cancelwatching'
-            elif (state == 'playing'):
-                Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
-                action += 'watching'
-        
-        # update every 10 min
-        elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()) and Dict['nowPlaying'][sessionKey]['progress'] < 80:
+    if (state != Dict['nowPlaying'][sessionKey]['cur_state'] and state != 'buffering'):
+        if (state == 'stopped') or (state == 'paused'):
+            Log.Debug(Dict['nowPlaying'][sessionKey]['title']+' paused or stopped, cancel watching')
+            action += 'cancelwatching'
+        elif (state == 'playing'):
             Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
             action += 'watching'
-        
-        #scrobble item
-        elif state == 'playing' and Dict['nowPlaying'][sessionKey]['progress'] > 80:
-            Log.Debug('Scrobbling '+Dict['nowPlaying'][sessionKey]['title'])
-            action += 'scrobble'
-        else:
-            # Already watching or already scrobbled
-            Log.Debug('Nothing to do this time for '+Dict['nowPlaying'][sessionKey]['title'])
-            return
+    
+    #scrobble item
+    elif state == 'playing' and Dict['nowPlaying'][sessionKey]['scrobbled'] != True and Dict['nowPlaying'][sessionKey]['progress'] > 80:
+        Log.Debug('Scrobbling '+Dict['nowPlaying'][sessionKey]['title'])
+        action += 'scrobble'
+        Dict['nowPlaying'][sessionKey]['scrobbled'] = True
+    
+    # update every 10 min
+    elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()):
+        Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
+        action += 'watching'
+    
     else:
         # Already watching or already scrobbled
-        Log.Debug('Media already scrobbled: '+Dict['nowPlaying'][sessionKey]['title'])
-        if (state == 'stopped'):
-            del Dict['nowPlaying'][sessionKey] #delete session from Dict
+        Log.Debug('Nothing to do this time for '+Dict['nowPlaying'][sessionKey]['title'])
         return
     
     # Setup Data to send to Trakt
@@ -791,24 +782,19 @@ def Scrobble(sessionKey,state,viewOffset):
         values['year'] = Dict['nowPlaying'][sessionKey]['year']
     
     result = talk_to_trakt(action, values)
-    if result['status']:
-        if action.find('scrobble') > 0:
-            Dict['nowPlaying'][sessionKey]['scrobbled'] = True
     
     Dict['nowPlaying'][sessionKey]['cur_state'] = state
     Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
     
-    if (state == 'stopped'):
+    #if just scrobbled, force update on next status update to set as watching again
+    if action.find('scrobble') > 0:
+        Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now() - Datetime.Delta(minutes=20)
+    
+    # if stopped, remove data from Dict['nowPlaying']
+    if (state == 'stopped' or state == 'paused'):
         del Dict['nowPlaying'][sessionKey] #delete session from Dict
     
-    #check for old entries in Dict['nowPlaying']
-    delete_sessions = list()
-    for session in Dict['nowPlaying']:
-        if (Dict['nowPlaying'][session]['Last_updated'] + Datetime.Delta(minutes=60)) < Datetime.Now():
-            delete_sessions.append(session)
-    for session in delete_sessions:
-        del Dict['nowPlaying'][session] #delete session from Dict
-    
+    #make sure, that Dict is saved in case of plugin crash/restart
     Dict.Save()
     
     return 
@@ -817,7 +803,6 @@ def Scrobble(sessionKey,state,viewOffset):
 @route('/applications/trakttv/collectionsync')
 def CollectionSync(itemID,do):
     metadata = get_metadata_from_pms(itemID)
-    Log(metadata)
     
     #cancel, if metadata is not there yet
     if not 'tvdb_id' in metadata and not 'imdb_id' in metadata and not 'tmdb_id' in metadata:
@@ -827,6 +812,8 @@ def CollectionSync(itemID,do):
         do_action = 'library'
     elif do == 'delete':
         do_action = 'unlibrary'
+    else:
+        return
     
     if metadata['type'] == 'episode':
         action = 'show/episode/%s' % do_action
@@ -855,8 +842,6 @@ def CollectionSync(itemID,do):
             values['movies'] = [{'imdb_id' : metadata['imdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
         elif (metadata['tmdb_id'] != False):
             values['movies'] = [{'tmdb_id' : metadata['tmdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
-    
-    Log.Debug(values)
     
     result = talk_to_trakt(action, values)
         
