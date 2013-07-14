@@ -647,8 +647,7 @@ def SocketListen():
                 state = str(info['_children'][0]['state'])
                 viewOffset = str(info['_children'][0]['viewOffset'])
                 # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
-                if not sessionKey in Dict['nowPlaying'] or not 'skip' in Dict['nowPlaying'][sessionKey]:
-                    Scrobble(sessionKey,state,viewOffset)
+                Scrobble(sessionKey,state,viewOffset)
             
             #adding to collection
             elif info['type'] == "timeline" and Dict['new_sync_collection']:
@@ -676,10 +675,14 @@ def Scrobble(sessionKey,state,viewOffset):
     #we assume, that in this case it could be a new file.
     #if the user simply seeks backwards on the client, this is also triggered.
     if sessionKey in Dict['nowPlaying']:
-        if Dict['nowPlaying'][sessionKey]['prev_viewOffset'] > viewOffset:
+        if 'prev_viewOffset' in Dict['nowPlaying'][sessionKey] and Dict['nowPlaying'][sessionKey]['prev_viewOffset'] > viewOffset:
             del Dict['nowPlaying'][sessionKey]
         else:
             Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = viewOffset
+    
+    #skip over unkown items etc.        
+    if sessionKey in Dict['nowPlaying'] and 'skip' in Dict['nowPlaying'][sessionKey]:
+        return
     
     if not sessionKey in Dict['nowPlaying']:
         Log.Info('getting MetaData for current media')
