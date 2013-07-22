@@ -4,7 +4,7 @@
 import os, time
 
 def ReadLog(filename, first_read=False, where=None):
-    #Set the filename and open the file
+    # Set the filename and open the file
     file = open(filename,'r')
 
     st_results = os.stat(filename)
