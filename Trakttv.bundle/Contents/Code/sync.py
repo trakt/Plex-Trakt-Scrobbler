@@ -1,6 +1,6 @@
 from pms import PMS_URL, TVSHOW1_REGEXP, get_metadata_from_pms
 from helpers import SyncDownString, SyncUpString
-from trakt import talk_to_trakt
+from trakt import Trakt
 
 @route('/applications/trakttv/manuallysync')
 def ManuallySync():
@@ -105,13 +105,13 @@ def ManuallyTrakt():
     try:
         if Prefs['sync_watched'] is True:
             # Get data from Trakt.tv
-            movie_list = talk_to_trakt('user/library/movies/watched.json', values, param = Prefs['username'])
-            show_list = talk_to_trakt('user/library/shows/watched.json', values, param = Prefs['username'])
+            movie_list = Trakt.request('user/library/movies/watched.json', values, param = Prefs['username'])
+            show_list = Trakt.request('user/library/shows/watched.json', values, param = Prefs['username'])
 
         if Prefs['sync_ratings'] is True:
             # Get data from Trakt.tv
-            movies_rated_list = talk_to_trakt('user/ratings/movies.json', values, param = Prefs['username'])
-            episodes_rated_list = talk_to_trakt('user/ratings/episodes.json', values, param = Prefs['username'])
+            movies_rated_list = Trakt.request('user/ratings/movies.json', values, param = Prefs['username'])
+            episodes_rated_list = Trakt.request('user/ratings/episodes.json', values, param = Prefs['username'])
     except:
         return MessageContainer('Failed to load data from Trakt', 'Something went wrong while getting data from Trakt. Please check the log for details.')
 
@@ -294,7 +294,7 @@ def SyncSection(key):
                 'password': Hash.SHA1(Prefs['password']),
                 'episodes': ratings_episodes
             }
-            status = talk_to_trakt('rate/episodes', values)
+            status = Trakt.request('rate/episodes', values)
             Log("Trakt responded with: %s " % status)
 
         if len(ratings_movies) > 0:
@@ -303,7 +303,7 @@ def SyncSection(key):
                 'password': Hash.SHA1(Prefs['password']),
                 'movies': ratings_movies
             }
-            status = talk_to_trakt('rate/movies', values)
+            status = Trakt.request('rate/movies', values)
             Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_watched'] is True:
@@ -313,12 +313,12 @@ def SyncSection(key):
                 'password': Hash.SHA1(Prefs['password']),
                 'movies': all_movies
             }
-            status = talk_to_trakt('movie/seen', values)
+            status = Trakt.request('movie/seen', values)
             Log("Trakt responded with: %s " % status)
         for episode in all_episodes:
             episode['username'] = Prefs['username']
             episode['password'] = Hash.SHA1(Prefs['password'])
-            status = talk_to_trakt('show/episode/seen', episode)
+            status = Trakt.request('show/episode/seen', episode)
             Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_collection'] is True:
@@ -328,12 +328,12 @@ def SyncSection(key):
                 'password': Hash.SHA1(Prefs['password']),
                 'movies': collection_movies
             }
-            status = talk_to_trakt('movie/library', values)
+            status = Trakt.request('movie/library', values)
             Log("Trakt responded with: %s " % status)
         for episode in collection_episodes:
             episode['username'] = Prefs['username']
             episode['password'] = Hash.SHA1(Prefs['password'])
-            status = talk_to_trakt('show/episode/library', episode)
+            status = Trakt.request('show/episode/library', episode)
             Log("Trakt responded with: %s " % status)
 
     Log('Syncing is done!')

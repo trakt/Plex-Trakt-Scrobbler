@@ -1,11 +1,14 @@
 from plugin import ART, NAME, ICON
-from scrobbler import Scrobble
+from scrobbler import Scrobbler
 from sync import SyncTrakt, ManuallySync
-from trakt import talk_to_trakt
+from trakt import Trakt
+
+
+class Main:
+    scrobbler = Scrobbler()
 
 
 def Start():
-
     ObjectContainer.art = R(ART)
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
@@ -14,7 +17,7 @@ def Start():
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
-        Thread.Create(Scrobble)
+        Thread.Create(Main.scrobbler.poll)
 
     if Prefs['sync_startup'] and Prefs['username'] is not None:
         Log('Will autosync in 1 minute')
@@ -34,14 +37,14 @@ def ValidatePrefs():
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
 
-    status = talk_to_trakt('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
+    status = Trakt.request('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
 
     if status['status']:
 
         if Prefs['start_scrobble']:
             Log('Autostart scrobbling')
             Dict["scrobble"] = True
-            Thread.Create(Scrobble)
+            Thread.Create(Main.scrobbler.poll)
 
         return MessageContainer(
             "Success",
