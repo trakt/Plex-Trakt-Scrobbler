@@ -37,7 +37,7 @@ def ValidatePrefs():
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
 
-    status = Trakt.request('account/test', {'username' : u, 'password' : Hash.SHA1(p)})
+    status = Trakt.request('account/test', {'username': u, 'password': Hash.SHA1(p)})
 
     if status['status']:
 
@@ -65,12 +65,27 @@ def MainMenu():
     # Test if the user has the correct settings in the PMS.
     for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
         if setting.get('id') == 'logDebug' and setting.get('value') != 'true':
-            oc.add(DirectoryObject(key=Callback(FixLogging), title=L("Warning: Incorrect logging settings!"), summary=L("The logging is disabled on the Plex Media Server scrobbling won't work, click here to enable it."), thumb=R("icon-error.png")))
+            oc.add(DirectoryObject(
+                key=Callback(FixLogging),
+                title=L("Warning: Incorrect logging settings!"),
+                summary=L("The logging is disabled on the Plex Media Server "
+                          "scrobbling won't work, click here to enable it."),
+                thumb=R("icon-error.png")
+            ))
             Log('Logging is currently disabled')
 
-    oc.add(DirectoryObject(key=Callback(ManuallySync), title=L("Sync"), summary=L("Sync the Plex library with Trakt.tv"), thumb=R("icon-sync.png")))
+    oc.add(DirectoryObject(
+        key=Callback(ManuallySync),
+        title=L("Sync"),
+        summary=L("Sync the Plex library with Trakt.tv"),
+        thumb=R("icon-sync.png")
+    ))
 
-    oc.add(PrefsObject(title="Preferences", summary="Configure how to connect to Trakt.tv", thumb=R("icon-preferences.png")))
+    oc.add(PrefsObject(
+        title="Preferences",
+        summary="Configure how to connect to Trakt.tv",
+        thumb=R("icon-preferences.png")
+    ))
     return oc
 
 
