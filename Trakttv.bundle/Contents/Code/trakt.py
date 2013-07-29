@@ -1,6 +1,6 @@
 from plugin import PLUGIN_VERSION
-from pms import get_metadata_from_pms
 from http import responses
+from pms import PMS
 
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
@@ -100,7 +100,7 @@ class Trakt:
 
             # Reset all parameters since the user has changed what they are watching.
             Log('Lets refresh the metadata')
-            self.values = get_metadata_from_pms(key)
+            self.values = PMS.metadata(key)
             self.last_id = key
             self.last_updated = None
             self.scrobbled = False
