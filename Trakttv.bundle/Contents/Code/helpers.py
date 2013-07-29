@@ -30,3 +30,16 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+def try_convert(value, value_type):
+    try:
+        return value_type(value)
+    except ValueError:
+        return None
+
+
+def add_attribute(target, source, key, value_type=str, func=None):
+    value = try_convert(source.get(key, None), value_type)
+
+    if value:
+        target[key] = func(value) if func else value
