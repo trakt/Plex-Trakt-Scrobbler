@@ -59,7 +59,7 @@ class PMS:
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % key), errors='ignore', errors='ignore')
+        return XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % key), errors='ignore')
 
     @classmethod
     def get_sections(cls):
@@ -106,11 +106,12 @@ class PMS:
     @classmethod
     def scrobble(cls, video):
         if video.get('viewCount') > 0:
+            Log('video has already been marked as seen')
             return False
 
         HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
             video.get('ratingKey')
-        ))
+        ), immediate=True)
 
         return True
 
@@ -118,6 +119,6 @@ class PMS:
     def rate(cls, video, rating):
         HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
             video.get('ratingKey'), rating
-        ))
+        ), immediate=True)
 
         return True

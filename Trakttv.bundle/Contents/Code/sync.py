@@ -1,5 +1,5 @@
 from pms import TVSHOW1_REGEXP, PMS
-from helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches
+from helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all
 from trakt import Trakt
 
 
@@ -13,13 +13,17 @@ def parse_section(section):
 
 def itersections(types=('show', 'movie')):
     """Iterate over valid PMS sections of type 'show' or 'movie'"""
+    result = []
+
     for section in [parse_section(s) for s in PMS.get_sections()]:
         # Ensure fields exist
         if all(v is not None for v in section):
             section_type, key, title = section
             # Ensure section is of type 'show' or 'movie'
             if section_type in types:
-                yield section_type, key, title
+                result.append((section_type, key, title))
+
+    return result
 
 
 @route('/applications/trakttv/manuallysync')
@@ -86,6 +90,7 @@ def pull_movie(watched, rated, video):
     if Prefs['sync_watched'] is True:
         for movie in finditems(metadata, watched, 'imdb_id'):
             Log('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+
             if not PMS.scrobble(video):
                 Log('The movie %s is already marked as seen in the library.' % metadata['title'])
 
@@ -110,7 +115,8 @@ def pull_show(watched, rated, directory, tvdb_id):
 
                     if episode_num in season['episodes']:
                         Log('Marking %s episode %s with key: %s as seen.' % (
-                            episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')))
+                            episode.get('grandparentTitle'), episode.get('title'), episode.get('ratingKey')
+                        ))
 
                         if not PMS.scrobble(episode):
                             Log('The episode %s is already marked as seen in the library.' % episode.get('title'))

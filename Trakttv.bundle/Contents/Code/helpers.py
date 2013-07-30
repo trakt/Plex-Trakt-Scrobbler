@@ -47,6 +47,8 @@ def add_attribute(target, source, key, value_type=str, func=None):
 
 
 def iterget(items, keys):
+    result = []
+
     for item in items:
         values = [item]
 
@@ -56,19 +58,29 @@ def iterget(items, keys):
 
             values.append(value)
 
-        yield tuple(values)
+        result.append(values)
+
+    return result
 
 
 def finditems(subject, items, key):
+    result = []
+
     for item in items:
         if key in item and item[key] == subject[key]:
-            yield item
+            result.append(item)
+
+    return result
 
 
 def matches(subject, items, func):
+    result = []
+
     for item in items:
         if func(item) == subject:
-            yield item
+            result.append(item)
+
+    return result
 
 
 def extend(a, b=None):
@@ -79,3 +91,10 @@ def extend(a, b=None):
 
     c.update(b)
     return c
+
+
+def all(items):
+    for item in items:
+        if item is False:
+            return False
+    return True
