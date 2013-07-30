@@ -1,5 +1,5 @@
-from pms import PMS_URL, TVSHOW1_REGEXP, PMS
-from helpers import SyncDownString, SyncUpString
+from pms import TVSHOW1_REGEXP, PMS
+from helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches
 from trakt import Trakt
 
 
@@ -20,19 +20,6 @@ def itersections(types=('show', 'movie')):
             # Ensure section is of type 'show' or 'movie'
             if section_type in types:
                 yield section_type, key, title
-
-
-def finditems(subject, items, key):
-    for item in items:
-        if key in item and item[key] == subject[key]:
-            yield item
-
-
-def matches(subject, items, func):
-    for item in items:
-        if func(item) == subject:
-            yield item
-
 
 
 @route('/applications/trakttv/manuallysync')
@@ -190,6 +177,103 @@ def ManuallyTrakt():
 
     return MessageContainer('Done', 'Syncing is done!')
 
+
+def push_movie(all_movies, collected, rated, video):
+    pms_metadata = None
+
+    if Prefs['sync_collection'] is True:
+        pms_metadata = PMS.metadata(video.get('ratingKey'))
+        collected.append(pms_metadata)
+
+    if video.get('viewCount') > 0:
+        Log('You have seen %s', video.get('title'))
+        if video.get('type') == 'movie':
+            if pms_metadata is None:
+                pms_metadata = PMS.metadata(video.get('ratingKey'))
+
+            movie_dict = pms_metadata
+            movie_dict['plays'] = int(video.get('viewCount'))
+            #movie_dict.pop('duration')
+
+            all_movies.append(movie_dict)
+        else:
+            Log('Unknown item %s' % video.get('ratingKey'))
+
+    if video.get('userRating') is not None:
+        if pms_metadata is None:
+            pms_metadata = PMS.metadata(video.get('ratingKey'))
+
+        rating_movie = pms_metadata
+        rating_movie['rating'] = int(video.get('userRating'))
+
+        rated.append(rating_movie)
+
+
+def push_show(all_episodes, collected, rated, directory):
+    tvdb_id = TVSHOW1_REGEXP.search(PMS.get_metadata_guid(directory.get('ratingKey'))).group(1)
+
+    tv_show = {
+        'title': directory.get('title')
+    }
+
+    year = directory.get('year', None)
+    if year is not None:
+        tv_show['year'] = int(year)
+
+    if tvdb_id is not None:
+        tv_show['tvdb_id'] = tvdb_id
+
+    seen_episodes = []
+    collected_episodes = []
+
+    episodes = PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video')
+
+    for episode, parentIndex, index in iterget(episodes, ['parentIndex', 'index']):
+        season_num = int(parentIndex)
+        episode_num = int(index)
+
+        base_episode = {
+            'season': season_num,
+            'episode': episode_num
+        }
+
+        collected_episodes.append(base_episode)
+
+        if episode.get('viewCount') > 0:
+            seen_episodes.append(extend(base_episode))
+
+        if episode.get('userRating') is not None:
+            rating_episode = extend(base_episode, {
+                'title': directory.get('title'),
+                'rating': int(episode.get('userRating'))
+            })
+
+            if year is not None:
+                rating_episode['year'] = year
+
+            if tvdb_id is not None:
+                rating_episode['tvdb_id'] = tvdb_id
+
+            rated.append(rating_episode)
+
+    if len(seen_episodes) > 0:
+        seen_tv_show = {
+            'title': directory.get('title')
+        }
+
+        if year is not None:
+            seen_tv_show['year'] = year
+
+        if tvdb_id is not None:
+            seen_tv_show['tvdb_id'] = tvdb_id
+
+        seen_tv_show['episodes'] = seen_episodes
+        all_episodes.append(seen_tv_show)
+
+    tv_show['episodes'] = collected_episodes
+    collected.append(tv_show)
+
+
 @route('/applications/trakttv/syncsection')
 def SyncSection(key):
     if Prefs['username'] is None:
@@ -221,149 +305,57 @@ def SyncSection(key):
     for value in key.split(','):
         item_kind = PMS.get_section(value).xpath('//MediaContainer')[0].get('viewGroup')
 
+        # Sync movies
         if item_kind == 'movie':
             for video in PMS.get_section_videos(value):
-                pms_metadata = None
-                if Prefs['sync_collection'] is True:
-                    pms_metadata = PMS.metadata(video.get('ratingKey'))
-                    collection_movie = pms_metadata
-                    collection_movies.append(collection_movie)
+                push_movie(all_movies, collection_movies, ratings_movies, video)
 
-                if video.get('viewCount') > 0:
-                    Log('You have seen %s', video.get('title'))
-                    if video.get('type') == 'movie':
-                        if pms_metadata is None:
-                            pms_metadata = PMS.metadata(video.get('ratingKey'))
-                        movie_dict = pms_metadata
-                        movie_dict['plays'] = int(video.get('viewCount'))
-                        # Remove the duration value since we won't need that!
-                        #movie_dict.pop('duration')
-                        all_movies.append(movie_dict)
-                    else:
-                        Log('Unknown item %s' % video.get('ratingKey'))
-                if video.get('userRating') is not None:
-                    if pms_metadata is None:
-                        pms_metadata = PMS.metadata(video.get('ratingKey'))
-                    rating_movie = pms_metadata
-                    rating_movie['rating'] = int(video.get('userRating'))
-                    ratings_movies.append(rating_movie)
-        elif item_kind == 'show':
+        # Sync TV Shows
+        if item_kind == 'show':
             for directory in PMS.get_section_directories(value):
-                try:
-                    tvdb_id = TVSHOW1_REGEXP.search(PMS.get_metadata_guid(directory.get('ratingKey'))).group(1)
-                except:
-                    tvdb_id = None
-
-                tv_show = {
-                    'title': directory.get('title')
-                }
-                if directory.get('year') is not None:
-                    tv_show['year'] = int(directory.get('year'))
-                if tvdb_id is not None:
-                    tv_show['tvdb_id'] = tvdb_id
-
-                seen_episodes = []
-                collected_episodes = []
-
-                episodes = PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video')
-
-                for episode in episodes:
-                    try:
-                        collected_episode = {
-                            'season': int(episode.get('parentIndex')),
-                            'episode': int(episode.get('index'))
-                        }
-                        collected_episodes.append(collected_episode)
-                    except: pass
-                    if episode.get('viewCount') > 0:
-                        try:
-                            tv_episode = {
-                                'season': int(episode.get('parentIndex')),
-                                'episode': int(episode.get('index'))
-                            }
-                            seen_episodes.append(tv_episode)
-                        except:
-                            pass
-                    if episode.get('userRating') is not None:
-                        try:
-                            rating_episode = {
-                                'season': int(episode.get('parentIndex')),
-                                'episode': int(episode.get('index')),
-                                'rating': int(episode.get('userRating')),
-                                'title': directory.get('title')
-                            }
-                            if directory.get('year') is not None:
-                                rating_episode['year'] = int(directory.get('year'))
-                            if tvdb_id is not None:
-                                rating_episode['tvdb_id'] = tvdb_id
-                            ratings_episodes.append(rating_episode)
-                        except:
-                            pass
-                if len(seen_episodes) > 0:
-                    seen_tv_show = {
-                        'title': directory.get('title')
-                    }
-                    if directory.get('year') is not None:
-                        seen_tv_show['year'] = int(directory.get('year'))
-                    if tvdb_id is not None:
-                        seen_tv_show['tvdb_id'] = tvdb_id
-                    seen_tv_show['episodes'] = seen_episodes
-                    all_episodes.append(seen_tv_show)
-                tv_show['episodes'] = collected_episodes
-                collection_episodes.append(tv_show)
+                push_show(all_episodes, collection_episodes, ratings_episodes, directory)
 
     Log('Found %s movies' % len(all_movies))
     Log('Found %s series' % len(all_episodes))
 
+    base_request = {
+        'username': Prefs['username'],
+        'password': Hash.SHA1(Prefs['password'])
+    }
+
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
-            values = {
-                'username': Prefs['username'],
-                'password': Hash.SHA1(Prefs['password']),
+            status = Trakt.request('rate/episodes', extend(base_request, {
                 'episodes': ratings_episodes
-            }
-            status = Trakt.request('rate/episodes', values)
+            }))
             Log("Trakt responded with: %s " % status)
 
         if len(ratings_movies) > 0:
-            values = {
-                'username': Prefs['username'],
-                'password': Hash.SHA1(Prefs['password']),
+            status = Trakt.request('rate/movies', extend(base_request, {
                 'movies': ratings_movies
-            }
-            status = Trakt.request('rate/movies', values)
+            }))
             Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
-            values = {
-                'username': Prefs['username'],
-                'password': Hash.SHA1(Prefs['password']),
+            status = Trakt.request('movie/seen', extend(base_request, {
                 'movies': all_movies
-            }
-            status = Trakt.request('movie/seen', values)
+            }))
             Log("Trakt responded with: %s " % status)
 
         for episode in all_episodes:
-            episode['username'] = Prefs['username']
-            episode['password'] = Hash.SHA1(Prefs['password'])
-            status = Trakt.request('show/episode/seen', episode)
+            status = Trakt.request('show/episode/seen', extend(base_request, episode))
             Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
-            values = {
-                'username': Prefs['username'],
-                'password': Hash.SHA1(Prefs['password']),
+            status = Trakt.request('movie/library', extend(base_request, {
                 'movies': collection_movies
-            }
-            status = Trakt.request('movie/library', values)
+            }))
             Log("Trakt responded with: %s " % status)
 
         for episode in collection_episodes:
-            episode['username'] = Prefs['username']
-            episode['password'] = Hash.SHA1(Prefs['password'])
-            status = Trakt.request('show/episode/library', episode)
+            status = Trakt.request('show/episode/library', extend(base_request, episode))
             Log("Trakt responded with: %s " % status)
 
     Log('Syncing is done!')

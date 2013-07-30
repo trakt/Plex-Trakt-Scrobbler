@@ -31,6 +31,7 @@ def is_number(s):
     except ValueError:
         return False
 
+
 def try_convert(value, value_type):
     try:
         return value_type(value)
@@ -43,3 +44,38 @@ def add_attribute(target, source, key, value_type=str, func=None):
 
     if value:
         target[key] = func(value) if func else value
+
+
+def iterget(items, keys):
+    for item in items:
+        values = [item]
+
+        for key, value in [(key, item.get(key, None)) for key in keys]:
+            if value is None:
+                continue
+
+            values.append(value)
+
+        yield tuple(values)
+
+
+def finditems(subject, items, key):
+    for item in items:
+        if key in item and item[key] == subject[key]:
+            yield item
+
+
+def matches(subject, items, func):
+    for item in items:
+        if func(item) == subject:
+            yield item
+
+
+def extend(a, b=None):
+    c = a.copy()
+
+    if b is None:
+        return c
+
+    c.update(b)
+    return c
