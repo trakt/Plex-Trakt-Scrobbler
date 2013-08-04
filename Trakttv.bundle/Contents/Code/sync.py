@@ -122,7 +122,7 @@ def pull_show(watched, rated, directory, tvdb_id):
                             Log('The episode %s is already marked as seen in the library.' % episode.get('title'))
     # Sync ratings
     if Prefs['sync_ratings'] is True:
-        for show in [x for x in rated if rated['show']['tvdb_id'] == tvdb_id]:
+        for show in [x for x in rated if x['show']['tvdb_id'] == tvdb_id]:
             show_season = int(show['episode']['season'])
             show_episode = int(show['episode']['number'])
 
