@@ -691,7 +691,7 @@ def Scrobble(sessionKey,state,viewOffset):
             pms_url = PMS_URL % ('/status/sessions/')
             xml_content = XML.ElementFromURL(pms_url).xpath('//MediaContainer/Video')
             for section in xml_content:
-                if section.get('sessionKey') == sessionKey:
+                if section.get('sessionKey') == sessionKey and '/library/metadata' in section.get('key'):
                     Dict['nowPlaying'][sessionKey] = get_metadata_from_pms(section.get('ratingKey'))
                     
                     Dict['nowPlaying'][sessionKey]['UserName'] = ''
