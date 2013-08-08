@@ -13,8 +13,8 @@ PLUGIN_VERSION = '0.6'
 MOVIE_REGEXP = Regex('com.plexapp.agents.*://(tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://([0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://([0-9]+)')
-TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb)://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
-TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb)://([-a-z0-9\.]+)')
+TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)/([-a-z0-9\.]+)/([-a-z0-9\.]+)')
+TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)')
 
 OPCODE_DATA = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
