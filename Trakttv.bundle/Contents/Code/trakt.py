@@ -1,3 +1,4 @@
+import socket
 from plugin import PLUGIN_VERSION
 from http import responses
 from pms import PMS
@@ -19,27 +20,27 @@ class Trakt:
         try:
             json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
             result = JSON.ObjectFromString(json_file.content)
+        except socket.timeout:
+            result = {'status': 'failure', 'error': 'timeout'}
         except Ex.HTTPError, e:
             result = {'status': 'failure', 'error': responses[e.code][1]}
         except Ex.URLError, e:
-            return {'status': 'failure', 'error': e.reason[0]}
+            result = {'status': 'failure', 'error': e.reason[0]}
 
-        try:
+        if 'status' in result:
             if result['status'] == 'success':
                 if not 'message' in result:
                     result['message'] = 'Unknown success'
-
                 Log('Trakt responded with: %s' % result['message'])
 
-                return {'status' : True, 'message' : result['message']}
+                return {'status': True, 'message': result['message']}
             elif result['status'] == 'failure':
                 Log('Trakt responded with: %s' % result['error'])
 
-                return {'status' : False, 'message' : result['error']}
-        except:
-            Log('Return all')
+                return {'status': False, 'message': result['error']}
 
-            return result
+        Log('Return all')
+        return result
 
     def fill(self, values):
         values['username'] = Prefs['username']
