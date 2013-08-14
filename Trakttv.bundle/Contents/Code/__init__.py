@@ -112,6 +112,13 @@ def Start():
         Dict["new_sync_collection"] = True
     else:
         Dict["new_sync_collection"] = False
+
+    try:
+        # Get curret server version and save it to dict.
+        server_version = XML.ElementFromURL(PMS_URL % '', errors='ignore').attrib['version']
+        Log('Server Version is %s' % server_version)
+        Dict['server_version'] = server_version
+    except: pass
     
     Thread.Create(SocketListen)
     
@@ -520,8 +527,7 @@ def talk_to_trakt(action, values, param = ""):
     values['username'] = Prefs['username']
     values['password'] =  Hash.SHA1(Prefs['password'])
     values['plugin_version'] =  PLUGIN_VERSION
-    # TODO
-    values['media_center_version'] =  '%s, %s' % (Platform.OS, Platform.CPU)
+    values['media_center_version'] = Dict['server_version']
     
     try:
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
