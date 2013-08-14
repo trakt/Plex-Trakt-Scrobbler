@@ -1,6 +1,7 @@
 import time
 import websocket
 import ast
+import socket
 
 NAME = L('Title')
 ART  = 'art-default.jpg'
@@ -526,12 +527,12 @@ def talk_to_trakt(action, values, param = ""):
         json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
         headers = json_file.headers
         result = JSON.ObjectFromString(json_file.content)
-        #Log(result)
-
+    except socket.timeout:
+        result = {'status': 'failure', 'error': 'timeout'}
     except Ex.HTTPError, e:
-        result = {'status' : 'failure', 'error' : responses[e.code][1]}
+        result = {'status': 'failure', 'error': responses[e.code][1]}
     except Ex.URLError, e:
-        return {'status' : 'failure', 'error' : e.reason[0]}
+        result = {'status': 'failure', 'error': e.reason[0]}
 
     try:
         if result['status'] == 'success':
