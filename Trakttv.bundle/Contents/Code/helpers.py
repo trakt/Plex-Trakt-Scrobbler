@@ -37,6 +37,8 @@ def try_convert(value, value_type):
         return value_type(value)
     except ValueError:
         return None
+    except TypeError:
+        return None
 
 
 def add_attribute(target, source, key, value_type=str, func=None):
