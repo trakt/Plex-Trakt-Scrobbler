@@ -41,5 +41,11 @@
         "label": "Password",
         "default": "",
         "option": "hidden"
+    },
+    {
+        "id": "scrobble_users",
+        "type": "text",
+        "label": "Scrobble Plex users (comma separated)",
+        "default": ""
     }
 ]
