@@ -1,4 +1,5 @@
 import socket
+import time
 from plugin import PLUGIN_VERSION
 from http import responses
 from pms import PMS
@@ -21,11 +22,11 @@ class Trakt:
             json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
             result = JSON.ObjectFromString(json_file.content)
         except socket.timeout:
-            result = {'status': 'failure', 'error': 'timeout'}
+            result = {'status': 'failure', 'error_code': 408, 'error': 'timeout'}
         except Ex.HTTPError, e:
-            result = {'status': 'failure', 'error': responses[e.code][1]}
+            result = {'status': 'failure', 'error_code': e.code, 'error': responses[e.code][1]}
         except Ex.URLError, e:
-            result = {'status': 'failure', 'error': e.reason[0]}
+            result = {'status': 'failure', 'error_code': 0, 'error': e.reason[0]}
 
         if 'status' in result:
             if result['status'] == 'success':
@@ -35,11 +36,33 @@ class Trakt:
 
                 return {'status': True, 'message': result['message']}
             elif result['status'] == 'failure':
-                Log('Trakt responded with: %s' % result['error'])
+                Log('Trakt responded with: (%s) %s' % (result['error_code'], result['error']))
 
-                return {'status': False, 'message': result['error']}
+                return {'status': False, 'message': result['error'], 'result': result}
 
         Log('Return all')
+        return {'result': result}
+
+    @classmethod
+    @route('/applications/trakttv/trakt_request_retry')
+    def request_retry(cls, action, values, param='', max_retries=3, retry_sleep=30):
+        result = cls.request(action, values, param)
+
+        retry_num = 1
+        while 'status' in result and not result['status'] and retry_num <= max_retries:
+            if 'result' not in result:
+                break
+            if 'error_code' not in result['result']:
+                break
+
+            Log('Waiting %ss before retrying request' % retry_sleep)
+            time.sleep(retry_sleep)
+
+            if result['result']['error_code'] in [408, 504]:
+                Log('Retrying request, retry #%s' % retry_num)
+                result = cls.request(action, values, param)
+                retry_num += 1
+
         return result
 
     def fill(self, values):
@@ -68,7 +91,7 @@ class Trakt:
         Log('sent "cancelwatching" request')
 
     def scrobble(self):
-        self.request(self.get_media_type() + '/scrobble', self.values)
+        self.request_retry(self.get_media_type() + '/scrobble', self.values)
         Log('sent "scrobble" request')
 
     def reload(self):
