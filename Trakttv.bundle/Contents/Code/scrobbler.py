@@ -27,23 +27,22 @@ class Scrobbler:
         scrobble_users = Prefs['scrobble_users']
         scrobble_users = [su.strip() for su in scrobble_users.split(',')] if scrobble_users else None
 
+        if len(xml_content) == 0:
+            self.stop_playing()
+
         for media_container in xml_content:
-            try:
-                player = media_container.find('Player')
-                user = media_container.find('User')
+            player = media_container.find('Player')
+            user = media_container.find('User')
 
-                if not scrobble_users or user.get('title') in scrobble_users:
-                    self.playing = {
-                        'key': media_container.get('ratingKey'),
-                        'state': player.get('state'),
-                        'progress': round(float(media_container.get('viewOffset')) / int(media_container.get('duration')) * 100, 0)
-                    }
-                    self.trakt.submit(**self.playing)
-                else:
-                    Log('User "%s" not in Scrobble users list, ignoring' % user.get('title'))
-
-            except:  # TODO replace 'except' with proper checks
-                self.stop_playing()
+            if not scrobble_users or user.get('title') in scrobble_users:
+                self.playing = {
+                    'key': media_container.get('ratingKey'),
+                    'state': player.get('state'),
+                    'progress': round(float(media_container.get('viewOffset')) / int(media_container.get('duration')) * 100, 0)
+                }
+                self.trakt.submit(**self.playing)
+            else:
+                Log('User "%s" not in Scrobble users list, ignoring' % user.get('title'))
 
     @route('/applications/trakttv/scrobble_poll')
     def poll(self):
