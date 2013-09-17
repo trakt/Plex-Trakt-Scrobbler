@@ -38,12 +38,14 @@ class Scrobbler:
                 valid = True
 
                 for key in ['ratingKey', 'viewOffset', 'duration']:
-                    if key not in video or not video[key]:
+                    if video.get(key) is None:
                         valid = False
+                        Log("%s missing in video element" % key)
                         break
 
-                if 'state' not in player or not player['state']:
+                if player.get('state') is None:
                     valid = False
+                    Log("state missing in player element")
 
                 # Submit playing state if valid
                 if valid:
