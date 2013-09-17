@@ -30,10 +30,9 @@ class Scrobbler:
         if len(xml_content) == 0:
             self.stop_playing()
 
-        for media_container in xml_content:
-            video = media_container.find('Video')
-            player = media_container.find('Player')
-            user = media_container.find('User')
+        for video in xml_content:
+            player = video.find('Player')
+            user = video.find('User')
 
             if not scrobble_users or user.get('title') in scrobble_users:
                 valid = True
