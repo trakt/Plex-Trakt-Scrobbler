@@ -35,12 +35,24 @@ class Scrobbler:
             user = media_container.find('User')
 
             if not scrobble_users or user.get('title') in scrobble_users:
-                self.playing = {
-                    'key': media_container.get('ratingKey'),
-                    'state': player.get('state'),
-                    'progress': round(float(media_container.get('viewOffset')) / int(media_container.get('duration')) * 100, 0)
-                }
-                self.trakt.submit(**self.playing)
+                valid = True
+
+                for key in ['ratingKey', 'viewOffset', 'duration']:
+                    if key not in media_container or not media_container[key]:
+                        valid = False
+                        break
+
+                if 'state' not in player or not player['state']:
+                    valid = False
+
+                # Submit playing state if valid
+                if valid:
+                    self.playing = {
+                        'key': media_container.get('ratingKey'),
+                        'state': player.get('state'),
+                        'progress': round(float(media_container.get('viewOffset')) / int(media_container.get('duration')) * 100, 0)
+                    }
+                    self.trakt.submit(**self.playing)
             else:
                 Log('User "%s" not in Scrobble users list, ignoring' % user.get('title'))
 

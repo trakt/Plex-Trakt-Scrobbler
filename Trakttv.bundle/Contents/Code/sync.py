@@ -74,7 +74,7 @@ def SyncPlex():
 def SyncTrakt():
     LAST_SYNC_DOWN = Dict['Last_sync_down']
 
-    if (LAST_SYNC_DOWN + Datetime.Delta(minutes=360)) > Datetime.Now():
+    if LAST_SYNC_DOWN and (LAST_SYNC_DOWN + Datetime.Delta(minutes=360)) > Datetime.Now():
         Log('Not enough time since last sync, breaking!')
     else:
         ManuallyTrakt()
