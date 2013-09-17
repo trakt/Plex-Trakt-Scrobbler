@@ -156,12 +156,15 @@ def ManuallyTrakt():
 
     # Get watched and rated lists from trakt
     if Prefs['sync_watched'] is True:
-        movie_list = Trakt.request('user/library/movies/watched.json', values, param=Prefs['username'])
-        show_list = Trakt.request('user/library/shows/watched.json', values, param=Prefs['username'])
+        movie_list = Trakt.request('user/library/movies/watched.json', values, param=Prefs['username']).get('result')
+        show_list = Trakt.request('user/library/shows/watched.json', values, param=Prefs['username']).get('result')
 
     if Prefs['sync_ratings'] is True:
-        movies_rated_list = Trakt.request('user/ratings/movies.json', values, param=Prefs['username'])
-        episodes_rated_list = Trakt.request('user/ratings/episodes.json', values, param=Prefs['username'])
+        movies_rated_list = Trakt.request('user/ratings/movies.json', values, param=Prefs['username']).get('result')
+        episodes_rated_list = Trakt.request('user/ratings/episodes.json', values, param=Prefs['username']).get('result')
+
+    if not all([movie_list, show_list, movies_rated_list, episodes_rated_list]):
+        return MessageContainer('Network error', 'Network error while requesting current trakt data.')
 
     # Go through the Plex library and update flags
     for section_type, key, title in itersections():
