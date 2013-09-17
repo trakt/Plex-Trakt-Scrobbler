@@ -31,6 +31,7 @@ class Scrobbler:
             self.stop_playing()
 
         for media_container in xml_content:
+            video = media_container.find('Video')
             player = media_container.find('Player')
             user = media_container.find('User')
 
@@ -38,7 +39,7 @@ class Scrobbler:
                 valid = True
 
                 for key in ['ratingKey', 'viewOffset', 'duration']:
-                    if key not in media_container or not media_container[key]:
+                    if key not in video or not video[key]:
                         valid = False
                         break
 
@@ -48,11 +49,13 @@ class Scrobbler:
                 # Submit playing state if valid
                 if valid:
                     self.playing = {
-                        'key': media_container.get('ratingKey'),
+                        'key': video.get('ratingKey'),
                         'state': player.get('state'),
-                        'progress': round(float(media_container.get('viewOffset')) / int(media_container.get('duration')) * 100, 0)
+                        'progress': round(float(video.get('viewOffset')) / int(video.get('duration')) * 100, 0)
                     }
                     self.trakt.submit(**self.playing)
+                else:
+                    Log("Player/Video state doesn't look valid")
             else:
                 Log('User "%s" not in Scrobble users list, ignoring' % user.get('title'))
 
