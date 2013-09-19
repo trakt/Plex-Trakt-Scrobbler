@@ -62,6 +62,8 @@ class Trakt:
                 Log('Retrying request, retry #%s' % retry_num)
                 result = cls.request(action, values, param)
                 retry_num += 1
+            else:
+                break
 
         return result
 
