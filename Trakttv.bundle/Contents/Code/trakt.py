@@ -144,7 +144,7 @@ class Trakt:
             self.last_updated = Datetime.Now()
 
         # Update watching every 10 minutes
-        if self.is_watching and (self.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
+        if self.is_watching and not self.scrobbled and (self.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
             Log('More than 10 minutes since last update')
             self.watching()
             self.last_updated = Datetime.Now()
