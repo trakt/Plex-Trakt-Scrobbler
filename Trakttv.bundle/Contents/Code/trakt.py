@@ -36,7 +36,7 @@ class Trakt:
 
                 return {'status': True, 'message': result['message']}
             elif result['status'] == 'failure':
-                Log('Trakt responded with: (%s) %s' % (result['error_code'], result['error']))
+                Log('Trakt responded with: (%s) %s' % (result.get('error_code'), result.get('error')))
 
                 return {'status': False, 'message': result['error'], 'result': result}
 
