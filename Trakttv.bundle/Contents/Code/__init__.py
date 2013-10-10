@@ -1,4 +1,5 @@
 from plugin import ART, NAME, ICON
+from pms import PMS
 from scrobbler import Scrobbler
 from sync import SyncTrakt, ManuallySync
 from trakt import Trakt
@@ -14,20 +15,35 @@ def Start():
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
 
+    if not 'nowPlaying' in Dict:
+        Dict['nowPlaying'] = dict()
+
     if Prefs['start_scrobble'] and Prefs['username'] is not None:
         Log('Autostart scrobbling')
         Dict["scrobble"] = True
-        Thread.Create(Main.scrobbler.poll)
+    else:
+        Dict["scrobble"] = False
 
     if Prefs['sync_startup'] and Prefs['username'] is not None:
         Log('Will autosync in 1 minute')
         Thread.CreateTimer(60, SyncTrakt)
 
+    if Prefs['new_sync_collection'] and Prefs['username'] is not None:
+        Log('Automatically sync new Items to Collection')
+        Dict["new_sync_collection"] = True
+    else:
+        Dict["new_sync_collection"] = False
+
+    # Get current server version and save it to dict.
+    server_version = PMS.get_server_version()
+    if server_version:
+        Log('Server Version is %s' % server_version)
+        Dict['server_version'] = server_version
+
+    Thread.Create(Main.scrobbler.listen)
+
 
 def ValidatePrefs():
-    u = Prefs['username']
-    p = Prefs['password']
-
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
 
@@ -37,14 +53,21 @@ def ValidatePrefs():
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
 
-    status = Trakt.request('account/test', {'username': u, 'password': Hash.SHA1(p)})
+    status = Trakt.request('account/test')
 
     if status['status']:
 
         if Prefs['start_scrobble']:
             Log('Autostart scrobbling')
-            Dict["scrobble"] = True
-            Thread.Create(Main.scrobbler.poll)
+            Dict['scrobble'] = True
+        else:
+            Dict['scrobble'] = False
+
+        if Prefs['new_sync_collection']:
+            Log('Automatically sync new Items to Collection')
+            Dict["new_sync_collection"] = True
+        else:
+            Dict["new_sync_collection"] = False
 
         return MessageContainer(
             "Success",
@@ -62,18 +85,6 @@ def MainMenu():
 
     oc = ObjectContainer()
 
-    # Test if the user has the correct settings in the PMS.
-    for setting in XML.ElementFromURL('http://localhost:32400/:/prefs', errors='ignore').xpath('//Setting'):
-        if setting.get('id') == 'logDebug' and setting.get('value') != 'true':
-            oc.add(DirectoryObject(
-                key=Callback(FixLogging),
-                title=L("Warning: Incorrect logging settings!"),
-                summary=L("The logging is disabled on the Plex Media Server "
-                          "scrobbling won't work, click here to enable it."),
-                thumb=R("icon-error.png")
-            ))
-            Log('Logging is currently disabled')
-
     oc.add(DirectoryObject(
         key=Callback(ManuallySync),
         title=L("Sync"),
@@ -87,12 +98,3 @@ def MainMenu():
         thumb=R("icon-preferences.png")
     ))
     return oc
-
-
-@route('/applications/trakttv/fixlogging')
-def FixLogging():
-    try:
-        HTTP.Request('http://localhost:32400/:/prefs?logDebug=1', method='PUT')
-        return MessageContainer("Success", "The logging preferences is changed.")
-    except:
-        return MessageContainer("Error", "Failed to change the preferences on the Plex Media Server.")

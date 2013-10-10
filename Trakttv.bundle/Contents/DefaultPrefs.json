@@ -6,6 +6,12 @@
         "default": "false"
     },
     {
+        "id": "new_sync_collection",
+        "type": "bool",
+        "label": "Sync new items to Collection",
+        "default": "false"
+    },
+    {
         "id": "sync_startup",
         "type": "bool",
         "label": "Sync items from Trakt to Plex on startup",
@@ -14,20 +20,26 @@
     {
         "id": "sync_watched",
         "type": "bool",
-        "label": "Sync seen",
+        "label": "Sync seen (on manual sync)",
         "default": "true"
     },
     {
         "id": "sync_ratings",
         "type": "bool",
-        "label": "Sync ratings",
+        "label": "Sync ratings (on manual sync)",
         "default": "true"
     },
     {
         "id": "sync_collection",
         "type": "bool",
-        "label": "Sync collection",
+        "label": "Sync collection (on manual sync)",
         "default": "false"
+    },
+    {
+        "id": "scrobble_names",
+        "type": "text",
+        "label": "Restrict scrobbling to this MyPlex user",
+        "default": ""
     },
     {
         "id": "username",
@@ -41,11 +53,5 @@
         "label": "Password",
         "default": "",
         "option": "hidden"
-    },
-    {
-        "id": "scrobble_users",
-        "type": "text",
-        "label": "Scrobble Plex users (comma separated)",
-        "default": ""
     }
 ]

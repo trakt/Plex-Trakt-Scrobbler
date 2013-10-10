@@ -1,8 +1,11 @@
-import time
+from sync import CollectionSync
 from trakt import Trakt
+import websocket
 
 
 PLAYING_URL = 'http://localhost:32400/status/sessions/'
+
+OPCODE_DATA = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
 
 class Scrobbler:
@@ -11,64 +14,51 @@ class Scrobbler:
     def __init__(self):
         self.trakt = Trakt()
 
-    def stop_playing(self):
-    # If the nothing is currently playing and this is not the first pass, mark the last item as stopped
-        if self.playing is not None:
-            self.playing['state'] = "stopped"
+    @route('/applications/trakttv/socketlisten')
+    def listen(self):
+        ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
 
-            self.trakt.submit(**self.playing)
+        def SocketRecv():
+            frame = ws.recv_frame()
+            if not frame:
+                raise websocket.WebSocketException("Not a valid frame %s" % frame)
+            elif frame.opcode in OPCODE_DATA:
+                return (frame.opcode, frame.data)
+            elif frame.opcode == websocket.ABNF.OPCODE_CLOSE:
+                ws.send_close()
+                return (frame.opcode, None)
+            elif frame.opcode == websocket.ABNF.OPCODE_PING:
+                ws.pong("Hi!")
 
-            self.playing = None
+            return None, None
 
-    def update_playing(self):
-        xml_file = HTTP.Request(PLAYING_URL)
-        xml_content = XML.ElementFromString(xml_file).xpath('//Video')
+        while True:
+            opcode, data = SocketRecv()
+            msg = None
+            if opcode in OPCODE_DATA:
+                info = JSON.ObjectFromString(data)
 
-        scrobble_users = Prefs['scrobble_users']
-        scrobble_users = [su.strip() for su in scrobble_users.split(',')] if scrobble_users else None
+                #scrobble
+                if info['type'] == "playing" and Dict["scrobble"]:
+                    sessionKey = str(info['_children'][0]['sessionKey'])
+                    state = str(info['_children'][0]['state'])
+                    viewOffset = str(info['_children'][0]['viewOffset'])
+                    # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
+                    self.trakt.submit(sessionKey, state, viewOffset)
 
-        if len(xml_content) == 0:
-            self.stop_playing()
+                #adding to collection
+                elif info['type'] == "timeline" and Dict['new_sync_collection']:
+                    if (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 0:
+                        Log.Info("New File added to Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
+                        itemID = info['_children'][0]['itemID']
+                        # delay sync to wait for metadata
+                        Thread.CreateTimer(120, CollectionSync, True, itemID, 'add')
 
-        for video in xml_content:
-            player = video.find('Player')
-            user = video.find('User')
-
-            if not scrobble_users or user.get('title') in scrobble_users:
-                valid = True
-
-                for key in ['ratingKey', 'viewOffset', 'duration']:
-                    if video.get(key) is None:
-                        valid = False
-                        Log("%s missing in video element" % key)
-                        break
-
-                if player.get('state') is None:
-                    valid = False
-                    Log("state missing in player element")
-
-                # Submit playing state if valid
-                if valid:
-                    self.playing = {
-                        'key': video.get('ratingKey'),
-                        'state': player.get('state'),
-                        'progress': round(float(video.get('viewOffset')) / int(video.get('duration')) * 100, 0)
-                    }
-                    self.trakt.submit(**self.playing)
-                else:
-                    Log("Player/Video state doesn't look valid")
-            else:
-                Log('User "%s" not in Scrobble users list, ignoring' % user.get('title'))
-
-    @route('/applications/trakttv/scrobble_poll')
-    def poll(self):
-        while 1:
-            if not Dict["scrobble"]:
-                Log("Something went wrong... Exiting.")
-                break
-
-            self.update_playing()
-
-            time.sleep(60)
+                        # #deleted file (doesn't work yet)
+                        # elif (info['_children'][0]['type'] == 1 or info['_children'][0]['type'] == 4) and info['_children'][0]['state'] == 9:
+                        #     Log.Info("File deleted from Libray: " + info['_children'][0]['title'] + ' - ' + str(info['_children'][0]['itemID']))
+                        #     itemID = info['_children'][0]['itemID']
+                        #     # delay sync to wait for metadata
+                        #     CollectionSync(itemID,'delete')
 
         return

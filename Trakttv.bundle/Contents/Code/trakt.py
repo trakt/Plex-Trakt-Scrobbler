@@ -8,15 +8,20 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 
 class Trakt:
-    def __init__(self):
-        self.reload()
-
     @classmethod
     @route('/applications/trakttv/trakt_request')
-    def request(cls, action, values, param=''):
+    def request(cls, action, values=None, param=''):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
+
+        if values is None:
+            values = {}
+
+        values['username'] = Prefs['username']
+        values['password'] = Hash.SHA1(Prefs['password'])
+        values['plugin_version'] = PLUGIN_VERSION
+        values['media_center_version'] = Dict['server_version']
 
         try:
             json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
@@ -31,7 +36,13 @@ class Trakt:
         if 'status' in result:
             if result['status'] == 'success':
                 if not 'message' in result:
-                    result['message'] = 'Unknown success'
+                    if 'inserted' in result:
+                        result['message'] = "%s Movies inserted, %s Movies already existed, %s Movies skipped" % (
+                            result['inserted'], result['already_exist'], result['skipped']
+                        )
+                    else:
+                        result['message'] = 'Unknown success'
+
                 Log('Trakt responded with: %s' % result['message'])
 
                 return {'status': True, 'message': result['message']}
@@ -67,12 +78,6 @@ class Trakt:
 
         return result
 
-    def fill(self, values):
-        values['username'] = Prefs['username']
-        values['password'] = Hash.SHA1(Prefs['password'])
-        values['plugin_version'] = PLUGIN_VERSION
-        values['media_center_version'] = '%s, %s' % (Platform.OS, Platform.CPU)
-
     def get_media_type(self):
         # Is it a movie or a series? Else return false.
         if 'tvdb_id' in self.values:
@@ -96,74 +101,135 @@ class Trakt:
         self.request_retry(self.get_media_type() + '/scrobble', self.values)
         Log('sent "scrobble" request')
 
-    def reload(self):
-        self.last_id = Dict['last_used_id']
-        self.last_updated = Dict['last_updated']
-        self.is_watching = Dict['is_watching']
-        self.scrobbled = Dict['scrobbled']
-        self.values = Dict['last_used_metadata']
-
-    def save(self):
-        Dict['last_used_id'] = self.last_id
-        Dict['last_updated'] = self.last_updated
-        Dict['is_watching'] = self.is_watching
-        Dict['scrobbled'] = self.scrobbled
-        Dict['last_used_metadata'] = self.values
-
-    @route('/applications/trakttv/trakt_submit')
-    def submit(self, key, state, progress):
-        self.reload()
-
-        # Function to add what currently is playing to trakt, decide to watch or scrobble.
-        Log('Current id: %s and previous id: %s' % (key, self.last_id))
-
-        if key != self.last_id:
-            # Check if we have something leftover to scrobble
-            if self.is_watching and not self.scrobbled and self.values['progress'] > 80:
-                self.scrobble()
-                self.scrobbled = True
-                Log('Scrobbled leftovers')
-
-            # Reset all parameters since the user has changed what they are watching.
-            Log('Lets refresh the metadata')
-            self.values = PMS.metadata(key)
-            self.last_id = key
-            self.last_updated = None
-            self.scrobbled = False
-            self.is_watching = False
-            self.save()
-
-        # Fill with current account details and progress
-        self.fill(self.values)
-        self.values['progress'] = progress
-
-        # Started watching
-        if (key != self.last_id) or (not self.is_watching and state == 'playing'):
-            self.watching()
-            self.is_watching = True
-            self.last_updated = Datetime.Now()
-
-        # Update watching every 10 minutes
-        if self.is_watching and not self.scrobbled and (self.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-            Log('More than 10 minutes since last update')
-            self.watching()
-            self.last_updated = Datetime.Now()
-
-        # Scrobble when we hit 80% watched
-        if self.values['progress'] > 98 and not self.scrobbled:
-            self.scrobble()
-            self.scrobbled = True
-
-        # Cancel watching if playback has stopped
-        if self.is_watching and state == 'stopped':
-            # Scrobble leftovers
-            if not self.scrobbled and self.values['progress'] > 80:
-                self.scrobble()
-                self.scrobbled = True
-                Log('Scrobbled leftovers')
+    def submit(self, sessionKey, state, viewOffset):
+        #fix for pht (not sending pause or stop when finished playing)
+        #delete sessiondata if viewOffset is smaller than previous session viewOffset
+        #we assume, that in this case it could be a new file.
+        #if the user simply seeks backwards on the client, this is also triggered.
+        if sessionKey in Dict['nowPlaying']:
+            if 'prev_viewOffset' in Dict['nowPlaying'][sessionKey] and Dict['nowPlaying'][sessionKey]['prev_viewOffset'] > viewOffset:
+                del Dict['nowPlaying'][sessionKey]
             else:
-                self.cancel_watching()
+                Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = viewOffset
 
-            self.is_watching = False
+        #skip over unkown items etc.
+        if sessionKey in Dict['nowPlaying'] and 'skip' in Dict['nowPlaying'][sessionKey]:
+            return
 
-        self.save()
+        if not sessionKey in Dict['nowPlaying']:
+            Log.Info('getting MetaData for current media')
+
+            try:
+                xml_content = PMS.get_status().xpath('//MediaContainer/Video')
+
+                for section in xml_content:
+                    if section.get('sessionKey') == sessionKey and '/library/metadata' in section.get('key'):
+                        Dict['nowPlaying'][sessionKey] = PMS.metadata(section.get('ratingKey'))
+
+                        Dict['nowPlaying'][sessionKey]['UserName'] = ''
+                        Dict['nowPlaying'][sessionKey]['UserID'] = ''
+
+                        for user in section.findall('User'):
+                            Dict['nowPlaying'][sessionKey]['UserName'] = user.get('title')
+                            Dict['nowPlaying'][sessionKey]['UserID'] = user.get('id')
+
+                        # setup some variables in Dict
+                        Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.FromTimestamp(0)
+                        Dict['nowPlaying'][sessionKey]['scrobbled'] = False
+                        Dict['nowPlaying'][sessionKey]['cur_state'] = state
+                        Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = 0
+
+                # if session wasn't found, return False
+                if not (sessionKey in Dict['nowPlaying']):
+                    Log.Info('Session data not found')
+                    return
+
+            except Ex.HTTPError, e:
+                Log.Error('Failed to connect to PMS.')
+                return
+            except Ex.URLError, e:
+                Log.Error('Failed to connect to PMS.')
+                return
+
+        # Is it played by the correct user? Else return false
+
+        if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != Dict['nowPlaying'][sessionKey]['UserName']):
+            Log.Info('Ignoring item ('+Dict['nowPlaying'][sessionKey]['title']+') played by other user: '+Dict['nowPlaying'][sessionKey]['UserName'])
+            Dict['nowPlaying'][sessionKey]['skip'] = True
+            return
+
+        # Is it a movie or a serie? Else return false
+        if Dict['nowPlaying'][sessionKey]['type'] == 'episode' and Dict['nowPlaying'][sessionKey]['tvdb_id'] != False:
+            action = 'show/'
+        elif Dict['nowPlaying'][sessionKey]['type'] == 'movie' and (Dict['nowPlaying'][sessionKey]['imdb_id'] != False or Dict['nowPlaying'][sessionKey]['tmdb_id'] != False):
+            action = 'movie/'
+        else:
+            # Not a movie or TV-Show or have incorrect metadata!
+            Log.Info('Playing unknown item, will not be scrobbled: '+Dict['nowPlaying'][sessionKey]['title'])
+            Dict['nowPlaying'][sessionKey]['skip'] = True
+            return
+
+        # calculate play progress
+        Dict['nowPlaying'][sessionKey]['progress'] = int(round((float(viewOffset)/(Dict['nowPlaying'][sessionKey]['duration']*60*1000))*100, 0))
+
+        if (state != Dict['nowPlaying'][sessionKey]['cur_state'] and state != 'buffering'):
+            if (state == 'stopped') or (state == 'paused'):
+                Log.Debug(Dict['nowPlaying'][sessionKey]['title']+' paused or stopped, cancel watching')
+                action += 'cancelwatching'
+            elif (state == 'playing'):
+                Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
+                action += 'watching'
+
+        #scrobble item
+        elif state == 'playing' and Dict['nowPlaying'][sessionKey]['scrobbled'] != True and Dict['nowPlaying'][sessionKey]['progress'] > 80:
+            Log.Debug('Scrobbling '+Dict['nowPlaying'][sessionKey]['title'])
+            action += 'scrobble'
+            Dict['nowPlaying'][sessionKey]['scrobbled'] = True
+
+        # update every 10 min
+        elif state == 'playing' and ((Dict['nowPlaying'][sessionKey]['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()):
+            Log.Debug('Updating watch status for '+Dict['nowPlaying'][sessionKey]['title'])
+            action += 'watching'
+
+        else:
+            # Already watching or already scrobbled
+            Log.Debug('Nothing to do this time for '+Dict['nowPlaying'][sessionKey]['title'])
+            return
+
+        # Setup Data to send to Trakt
+        values = dict()
+
+        if Dict['nowPlaying'][sessionKey]['type'] == 'episode':
+            values['tvdb_id'] = Dict['nowPlaying'][sessionKey]['tvdb_id']
+            values['season'] = Dict['nowPlaying'][sessionKey]['season']
+            values['episode'] = Dict['nowPlaying'][sessionKey]['episode']
+        elif Dict['nowPlaying'][sessionKey]['type'] == 'movie':
+            if (Dict['nowPlaying'][sessionKey]['imdb_id'] != False):
+                values['imdb_id'] = Dict['nowPlaying'][sessionKey]['imdb_id']
+            elif (Dict['nowPlaying'][sessionKey]['tmdb_id'] != False):
+                values['tmdb_id'] = Dict['nowPlaying'][sessionKey]['tmdb_id']
+
+        values['duration'] = Dict['nowPlaying'][sessionKey]['duration']
+        values['progress'] = Dict['nowPlaying'][sessionKey]['progress']
+
+        values['title'] = Dict['nowPlaying'][sessionKey]['title']
+        if ('year' in Dict['nowPlaying'][sessionKey]):
+            values['year'] = Dict['nowPlaying'][sessionKey]['year']
+
+        self.request(action, values)
+
+        Dict['nowPlaying'][sessionKey]['cur_state'] = state
+        Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now()
+
+        #if just scrobbled, force update on next status update to set as watching again
+        if action.find('scrobble') > 0:
+            Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.Now() - Datetime.Delta(minutes=20)
+
+        # if stopped, remove data from Dict['nowPlaying']
+        if (state == 'stopped' or state == 'paused'):
+            del Dict['nowPlaying'][sessionKey] #delete session from Dict
+
+        #make sure, that Dict is saved in case of plugin crash/restart
+        Dict.Save()
+
+        return

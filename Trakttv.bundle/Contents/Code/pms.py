@@ -6,9 +6,9 @@ MOVIE_REGEXP = Regex('com.plexapp.agents.*://(?P<imdb_id>tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://(?P<tmdb_id>[0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://(?P<tmdb_id>[0-9]+)')
 
-TVSHOW_REGEXP = Regex('com.plexapp.agents.thetvdb://(?P<tvdb_id>[-a-z0-9\.]+)/'
+TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://(?P<tvdb_id>[-a-z0-9\.]+)/'
                       '(?P<season>[-a-z0-9\.]+)/(?P<episode>[-a-z0-9\.]+)')
-TVSHOW1_REGEXP = Regex('com.plexapp.agents.thetvdb://([-a-z0-9\.]+)')
+TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)')
 
 MOVIE_PATTERNS = [
     MOVIE_REGEXP,
@@ -16,7 +16,7 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
-PMS_URL = 'http://localhost:32400/library/%s'
+PMS_URL = 'http://localhost:32400%s'
 
 
 class PMS:
@@ -50,8 +50,24 @@ class PMS:
             ))
 
     @classmethod
+    def get_server_info(cls):
+        return XML.ElementFromURL(PMS_URL % '', errors='ignore')
+
+    @classmethod
+    def get_server_version(cls, default=None):
+        server_info = cls.get_server_info()
+        if not server_info:
+            return default
+
+        return server_info.attrib.get('version') or default
+
+    @classmethod
+    def get_status(cls):
+        return XML.ElementFromURL(PMS_URL % '/status/sessions', errors='ignore')
+
+    @classmethod
     def get_metadata(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('metadata/%s' % key), errors='ignore')
+        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % key), errors='ignore')
 
     @classmethod
     def get_metadata_guid(cls, key):
@@ -59,15 +75,15 @@ class PMS:
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('metadata/%s/allLeaves' % key), errors='ignore')
+        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % key), errors='ignore')
 
     @classmethod
     def get_sections(cls):
-        return XML.ElementFromURL(PMS_URL % 'sections', errors='ignore').xpath('//Directory')
+        return XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
 
     @classmethod
     def get_section(cls, name):
-        return XML.ElementFromURL(PMS_URL % ('sections/%s/all' % name), errors='ignore')
+        return XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % name), errors='ignore')
 
     @classmethod
     def get_section_directories(cls, section):
@@ -85,11 +101,23 @@ class PMS:
             xml_content = PMS.get_metadata(str(item_id)).xpath('//Video')
 
             for section in xml_content:
-                metadata = {'title': section.get('title')}
+                metadata = {}
 
                 # Add attributes if they exist
                 add_attribute(metadata, section, 'duration', float, lambda x: int(x / 60000))
                 add_attribute(metadata, section, 'year', int)
+
+                add_attribute(metadata, section, 'lastViewedAt', int, target_key='last_played')
+                add_attribute(metadata, section, 'viewCount', int, target_key='plays')
+
+                add_attribute(metadata, section, 'type')
+
+                if metadata['type'] == 'movie':
+                    metadata['title'] = section.get('title')
+
+                elif metadata['type'] == 'episode':
+                    metadata['title'] = section.get('grandparentTitle')
+                    metadata['episode_title'] = section.get('title')
 
                 # Add guid match data
                 cls.add_guid(metadata, section)
