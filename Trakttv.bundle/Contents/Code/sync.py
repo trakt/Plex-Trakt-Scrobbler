@@ -291,7 +291,7 @@ def SyncSection(key):
         )
 
     prefs = (Prefs['sync_watched'], Prefs['sync_ratings'], Prefs['sync_collection'])
-    if all(x for x in prefs if x is not True):
+    if all(x is not True for x in prefs):
         Log('You need to enable at least one type of actions to sync first.')
 
         return MessageContainer(
