@@ -20,6 +20,9 @@ PMS_URL = 'http://localhost:32400%s'
 
 
 class PMS:
+    def __init__(self):
+        pass
+
     @classmethod
     def add_guid(cls, metadata, section):
         guid = section.get('guid')

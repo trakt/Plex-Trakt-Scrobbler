@@ -62,6 +62,7 @@ def ManuallySync():
 
     return oc
 
+
 @route('/applications/trakttv/syncplex')
 def SyncPlex():
     if (Dict['Last_sync_up'] + Datetime.Delta(minutes=360)) > Datetime.Now():
@@ -69,6 +70,7 @@ def SyncPlex():
     else:
         for (_, key, _) in itersections():
             SyncSection(key)
+
 
 @route('/applications/trakttv/synctrakt')
 def SyncTrakt():
@@ -120,7 +122,7 @@ def pull_show(watched, rated, directory, tvdb_id):
 
                         if not PMS.scrobble(episode):
                             Log('The episode %s is already marked as seen in the library.' % episode.get('title'))
-    # Sync ratings
+        # Sync ratings
     if Prefs['sync_ratings'] is True:
         for show in [x for x in rated if x['show']['tvdb_id'] == tvdb_id]:
             show_season = int(show['episode']['season'])
@@ -133,7 +135,6 @@ def pull_show(watched, rated, directory, tvdb_id):
 
 @route('/applications/trakttv/manuallytrakt')
 def ManuallyTrakt():
-
     if Prefs['username'] is None:
         Log('You need to enter you login information first.')
         return MessageContainer('Login information missing', 'You need to enter you login information first.')
@@ -325,45 +326,40 @@ def SyncSection(key):
 
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
-            status = Trakt.request('rate/episodes', {
+            Trakt.request('rate/episodes', {
                 'episodes': ratings_episodes
             })
-            #Log("Trakt responded with: %s " % status)
 
         if len(ratings_movies) > 0:
-            status = Trakt.request('rate/movies', {
+            Trakt.request('rate/movies', {
                 'movies': ratings_movies
             })
-            #Log("Trakt responded with: %s " % status)
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
-            status = Trakt.request('movie/seen', {
+            Trakt.request('movie/seen', {
                 'movies': all_movies
             })
-            #Log("Trakt responded with: %s " % status)
 
         for episode in all_episodes:
-            status = Trakt.request('show/episode/seen', episode)
-            #Log("Trakt responded with: %s " % status)
+            Trakt.request('show/episode/seen', episode)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
-            status = Trakt.request('movie/library', {
+            Trakt.request('movie/library', {
                 'movies': collection_movies
             })
-            #Log("Trakt responded with: %s " % status)
 
         for episode in collection_episodes:
-            status = Trakt.request('show/episode/library', episode)
-            #Log("Trakt responded with: %s " % status)
+            Trakt.request('show/episode/library', episode)
 
     Log('Syncing is done!')
     Dict['Last_sync_up'] = Datetime.Now()
     return MessageContainer('Done', 'Syncing is done!')
 
+
 @route('/applications/trakttv/collectionsync')
-def CollectionSync(itemID,do):
+def CollectionSync(itemID, do):
     metadata = PMS.metadata(itemID)
 
     #cancel, if metadata is not there yet
@@ -384,27 +380,34 @@ def CollectionSync(itemID,do):
         action = 'movie/%s' % do_action
 
     # Setup Data to send to Trakt
-    values = dict()
+    values = {}
 
     if metadata['type'] == 'episode':
-        if metadata['tvdb_id'] == False:
+        if not metadata.get('tvdb_id'):
             Log.Info('Added episode has no tvdb_id')
             return
 
         values['tvdb_id'] = metadata['tvdb_id']
         values['title'] = metadata['title']
-        if ('year' in metadata):
+
+        if 'year' in metadata:
             values['year'] = metadata['year']
-        values['episodes'] = [{'season' : metadata['season'],'episode' : metadata['episode']}]
+
+        values['episodes'] = [{'season': metadata['season'], 'episode': metadata['episode']}]
+
     elif metadata['type'] == 'movie':
-        if metadata['imdb_id'] == False and 'tmdb_id' in metadata and metadata['tmdb_id'] == False:
+        if not metadata.get('imdb_id') and not metadata.get('tmdb_id'):
             Log.Info('Added movie has no imdb_id and no tmdb_id')
             return
 
-        if (metadata['imdb_id'] != False):
-            values['movies'] = [{'imdb_id' : metadata['imdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
-        elif (metadata['tmdb_id'] != False):
-            values['movies'] = [{'tmdb_id' : metadata['tmdb_id'],'title' : metadata['title'],'year' : metadata['year']}]
+        movie = {'title': metadata['title'], 'year': metadata['year']}
+
+        if metadata['imdb_id']:
+            movie['imdb_id'] = metadata['imdb_id']
+        elif metadata['tmdb_id']:
+            movie['tmdb_id'] = metadata['tmdb_id']
+
+        values['movies'] = [movie]
 
     if action:
         Trakt.request(action, values)

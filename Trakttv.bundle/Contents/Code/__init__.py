@@ -6,7 +6,40 @@ from trakt import Trakt
 
 
 class Main:
-    scrobbler = Scrobbler()
+    def __init__(self):
+        self.scrobbler = Scrobbler()
+
+        if not 'nowPlaying' in Dict:
+            Dict['nowPlaying'] = dict()
+
+        Main.update_config()
+
+    @staticmethod
+    def update_config():
+        if Prefs['start_scrobble'] and Prefs['username'] is not None:
+            Log('Autostart scrobbling')
+            Dict["scrobble"] = True
+        else:
+            Dict["scrobble"] = False
+
+        if Prefs['new_sync_collection'] and Prefs['username'] is not None:
+            Log('Automatically sync new Items to Collection')
+            Dict["new_sync_collection"] = True
+        else:
+            Dict["new_sync_collection"] = False
+
+    def start(self):
+        if Prefs['sync_startup'] and Prefs['username'] is not None:
+            Log('Will autosync in 1 minute')
+            Thread.CreateTimer(60, SyncTrakt)
+
+        # Get current server version and save it to dict.
+        server_version = PMS.get_server_version()
+        if server_version:
+            Log('Server Version is %s' % server_version)
+            Dict['server_version'] = server_version
+
+        Thread.Create(self.scrobbler.listen)
 
 
 def Start():
@@ -15,32 +48,8 @@ def Start():
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
 
-    if not 'nowPlaying' in Dict:
-        Dict['nowPlaying'] = dict()
-
-    if Prefs['start_scrobble'] and Prefs['username'] is not None:
-        Log('Autostart scrobbling')
-        Dict["scrobble"] = True
-    else:
-        Dict["scrobble"] = False
-
-    if Prefs['sync_startup'] and Prefs['username'] is not None:
-        Log('Will autosync in 1 minute')
-        Thread.CreateTimer(60, SyncTrakt)
-
-    if Prefs['new_sync_collection'] and Prefs['username'] is not None:
-        Log('Automatically sync new Items to Collection')
-        Dict["new_sync_collection"] = True
-    else:
-        Dict["new_sync_collection"] = False
-
-    # Get current server version and save it to dict.
-    server_version = PMS.get_server_version()
-    if server_version:
-        Log('Server Version is %s' % server_version)
-        Dict['server_version'] = server_version
-
-    Thread.Create(Main.scrobbler.listen)
+    main = Main()
+    main.start()
 
 
 def ValidatePrefs():
@@ -56,18 +65,7 @@ def ValidatePrefs():
     status = Trakt.request('account/test')
 
     if status['status']:
-
-        if Prefs['start_scrobble']:
-            Log('Autostart scrobbling')
-            Dict['scrobble'] = True
-        else:
-            Dict['scrobble'] = False
-
-        if Prefs['new_sync_collection']:
-            Log('Automatically sync new Items to Collection')
-            Dict["new_sync_collection"] = True
-        else:
-            Dict["new_sync_collection"] = False
+        Main.update_config()
 
         return MessageContainer(
             "Success",
@@ -82,7 +80,6 @@ def ValidatePrefs():
 
 @handler('/applications/trakttv', NAME, thumb=ICON, art=ART)
 def MainMenu():
-
     oc = ObjectContainer()
 
     oc.add(DirectoryObject(
@@ -97,4 +94,5 @@ def MainMenu():
         summary="Configure how to connect to Trakt.tv",
         thumb=R("icon-preferences.png")
     ))
+
     return oc
