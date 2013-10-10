@@ -26,6 +26,8 @@ class PMS:
     @classmethod
     def add_guid(cls, metadata, section):
         guid = section.get('guid')
+        if not guid:
+            return
 
         if section.get('type') == 'movie':
 
