@@ -119,9 +119,12 @@ class Trakt:
             return None
 
     def get_media_type(self, session):
-        if session['type'] == 'episode' and session['tvdb_id']:
+        if not session or not session.get('type'):
+            return None
+
+        if session.get('type') == 'episode' and session['tvdb_id']:
             return 'show'
-        elif session['type'] == 'movie' and (session['imdb_id'] or session['tmdb_id']):
+        elif session.get('type') == 'movie' and (session['imdb_id'] or session['tmdb_id']):
             return 'movie'
 
         return None
@@ -191,6 +194,9 @@ class Trakt:
                 return
         else:
             session = self.create_session(sessionKey, state)
+            if not session:
+                Log.Info('Invalid session, unable to continue')
+                return
 
         # Is it played by the correct user? Else return false
         if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != session['UserName']):
