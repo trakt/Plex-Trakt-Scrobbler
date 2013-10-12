@@ -186,13 +186,15 @@ class Trakt:
         if session:
             if 'prev_viewOffset' in session and session['prev_viewOffset'] > viewOffset:
                 del Dict['nowPlaying'][sessionKey]
+                session = None
             else:
                 session['prev_viewOffset'] = viewOffset
 
             #skip over unkown items etc.
             if 'skip' in session:
                 return
-        else:
+
+        if not session:
             session = self.create_session(sessionKey, state)
             if not session:
                 Log.Info('Invalid session, unable to continue')
