@@ -1,5 +1,6 @@
 import socket
 import time
+from watch_session import WatchSession
 from plugin import PLUGIN_VERSION
 from http import responses
 from pms import PMS
@@ -82,74 +83,58 @@ class Trakt:
         return result
 
     def create_session(self, sessionKey, state):
-        Log.Info('getting MetaData for current media')
+        """
+        :type sessionKey: str
+        :type state: str
+
+        :rtype: WatchSession or None
+        """
+
+        Log.Info('Creating a WatchSession for the current media')
 
         try:
             xml_content = PMS.get_status().xpath('//MediaContainer/Video')
 
             for section in xml_content:
                 if section.get('sessionKey') == sessionKey and '/library/metadata' in section.get('key'):
-                    session = PMS.metadata(section.get('ratingKey'))
+                    session = WatchSession.from_section(section, state)
+                    session.save()
 
-                    session['UserName'] = ''
-                    session['UserID'] = ''
-
-                    for user in section.findall('User'):
-                        session['UserName'] = user.get('title')
-                        session['UserID'] = user.get('id')
-
-                    # setup some variables in Dict
-                    session['Last_updated'] = Datetime.FromTimestamp(0)
-                    session['scrobbled'] = False
-                    session['cur_state'] = state
-                    session['prev_viewOffset'] = 0
-
-                    # store session in nowPlaying state
-                    Dict['nowPlaying'][sessionKey] = session
-
-            # if session wasn't found, return False
-            if sessionKey not in Dict['nowPlaying']:
-                Log.Info('Session data not found')
-                return None
-
-            return Dict['nowPlaying'][sessionKey]
+                    return session
 
         except Ex.HTTPError:
             Log.Error('Failed to connect to PMS.')
-            return None
         except Ex.URLError:
             Log.Error('Failed to connect to PMS.')
-            return None
 
-    def get_media_type(self, session):
-        if not session or not session.get('type'):
-            return None
-
-        if session.get('type') == 'episode' and session['tvdb_id']:
-            return 'show'
-        elif session.get('type') == 'movie' and (session['imdb_id'] or session['tmdb_id']):
-            return 'movie'
-
+        Log.Info('Session data not found')
         return None
 
     def get_action(self, session, state):
-        if state not in [session['cur_state'], 'buffering']:
+        """
+        :type session: WatchSession
+        :type state: str
+
+        :rtype: str or None
+        """
+
+        if state not in [session.cur_state, 'buffering']:
             if state in ['stopped', 'paused']:
-                Log.Debug(session['title'] + ' paused or stopped, cancel watching')
+                Log.Debug(session.get_title() + ' paused or stopped, cancel watching')
                 return 'cancelwatching'
 
             if state == 'playing':
-                Log.Debug('Updating watch status for ' + session['title'])
+                Log.Debug('Updating watch status for ' + session.get_title())
                 return 'watching'
 
         #scrobble item
-        elif state == 'playing' and not session['scrobbled'] and session['progress'] > 80:
-            Log.Debug('Scrobbling ' + session['title'])
+        elif state == 'playing' and not session.scrobbled and session.progress > 80:
+            Log.Debug('Scrobbling ' + session.get_title())
             return 'scrobble'
 
         # update every 10 min
-        elif state == 'playing' and ((session['Last_updated'] + Datetime.Delta(minutes=10)) < Datetime.Now()):
-            Log.Debug('Updating watch status for ' + session['title'])
+        elif state == 'playing' and ((session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now()):
+            Log.Debug('Updating watch status for ' + session.get_title())
             return 'watching'
 
         return None
@@ -157,29 +142,36 @@ class Trakt:
     def get_session_values(self, session):
         values = {}
 
-        if session['type'] == 'episode':
-            values['tvdb_id'] = session['tvdb_id']
-            values['season'] = session['season']
-            values['episode'] = session['episode']
+        session_type = session.get_type()
+        if not session_type:
+            return None
 
-        if session['type'] == 'movie':
-            if session['imdb_id']:
-                values['imdb_id'] = session['imdb_id']
-            elif session['tmdb_id']:
-                values['tmdb_id'] = session['tmdb_id']
+        if session_type == 'show':
+            values.update({
+                'tvdb_id': session.metadata['tvdb_id'],
+                'season': session.metadata['season'],
+                'episode': session.metadata['episode']
+            })
 
-        values['duration'] = session['duration']
-        values['progress'] = session['progress']
+        if session_type == 'movie':
+            if session.metadata['imdb_id']:
+                values['imdb_id'] = session.metadata['imdb_id']
+            elif session.metadata['tmdb_id']:
+                values['tmdb_id'] = session.metadata['tmdb_id']
 
-        values['title'] = session['title']
+        values.update({
+            'duration': session.metadata['duration'],
+            'progress': session.progress,
+            'title': session.get_title()
+        })
 
-        if 'year' in session:
-            values['year'] = session['year']
+        if 'year' in session.metadata:
+            values['year'] = session.metadata['year']
 
         return values
 
     def submit(self, sessionKey, state, viewOffset):
-        session = Dict['nowPlaying'].get(sessionKey)
+        session = WatchSession.load(sessionKey)
 
         # fix for pht (not sending pause or stop when finished playing)
         # delete sessiondata if viewOffset is smaller than previous session viewOffset
@@ -187,14 +179,14 @@ class Trakt:
         # if the user simply seeks backwards on the client, this is also triggered.
 
         if session:
-            if 'prev_viewOffset' in session and session['prev_viewOffset'] > viewOffset:
-                del Dict['nowPlaying'][sessionKey]
+            if session.last_view_offset and session.last_view_offset > viewOffset:
+                session.delete()
                 session = None
             else:
-                session['prev_viewOffset'] = viewOffset
+                session.last_view_offset = viewOffset
 
-            #skip over unkown items etc.
-            if 'skip' in session:
+            # skip over unknown items etc.
+            if not session or session.skip:
                 return
 
         if not session:
@@ -203,52 +195,52 @@ class Trakt:
                 Log.Info('Invalid session, unable to continue')
                 return
 
-        # Is it played by the correct user? Else return false
-        if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != session['UserName']):
-            Log.Info('Ignoring item (' + session['title'] + ') played by other user: ' + session['UserName'])
-            session['skip'] = True
+        # Ensure we are only scrobbling for the myPlex user listed in preferences
+        if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != session.user.title):
+            Log.Info('Ignoring item (' + session.get_title() + ') played by other user: ' + session.user.title)
+            session.skip = True
             return
 
-        # Is it a movie or a serie? Else return false
-        media_type = self.get_media_type(session)
+        session_type = session.get_type()
 
-        # Not a movie or TV-Show or have incorrect metadata!
-        if not media_type:
-            Log.Info('Playing unknown item, will not be scrobbled: ' + session['title'])
-            session['skip'] = True
+        # Check if we are scrobbling a known media type
+        if not session_type:
+            Log.Info('Playing unknown item, will not be scrobbled: ' + session.get_title())
+            session.skip = True
             return
 
-        # calculate play progress
-        session['progress'] = int(round((float(viewOffset) / (session['duration'] * 60 * 1000)) * 100, 0))
+        # Calculate progress
+        session.progress = int(round((float(viewOffset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
 
         action = self.get_action(session, state)
-        if not action:
-            # Already watching or already scrobbled
-            Log.Debug('Nothing to do this time for ' + session['title'])
-            return
 
-        if action == 'scrobble':
-            session['scrobbled'] = True
+        # No action needed, exit
+        if not action:
+            Log.Debug('Nothing to do this time for ' + session.get_title())
+            session.save()
+            return
 
         # Setup Data to send to Trakt
         values = self.get_session_values(session)
 
         if action == 'scrobble':
             # Ensure scrobbles are submitted, retry on network timeouts
-            self.request_retry(media_type + '/' + action, values)
+            self.request_retry(session_type + '/' + action, values)
+            session.scrobbled = True
         else:
-            self.request(media_type + '/' + action, values)
+            self.request(session_type + '/' + action, values)
 
-        session['cur_state'] = state
-        session['Last_updated'] = Datetime.Now()
+        session.cur_state = state
+        session.last_updated = Datetime.Now()
 
-        #if just scrobbled, force update on next status update to set as watching again
+        # If just scrobbled, force update on next status update to set as watching again
         if action == 'scrobble':
-            session['Last_updated'] = Datetime.Now() - Datetime.Delta(minutes=20)
+            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
-        # if stopped, remove data from Dict['nowPlaying']
+        # If stopped, delete the session, otherwise save the current session data
         if state in ['stopped', 'paused']:
-            del Dict['nowPlaying'][sessionKey]  # delete session from Dict
+            session.delete()
+        else:
+            session.save()
 
-        #make sure, that Dict is saved in case of plugin crash/restart
         Dict.Save()
