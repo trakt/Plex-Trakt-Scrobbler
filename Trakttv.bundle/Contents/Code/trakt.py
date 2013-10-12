@@ -89,23 +89,26 @@ class Trakt:
 
             for section in xml_content:
                 if section.get('sessionKey') == sessionKey and '/library/metadata' in section.get('key'):
-                    Dict['nowPlaying'][sessionKey] = PMS.metadata(section.get('ratingKey'))
+                    session = PMS.metadata(section.get('ratingKey'))
 
-                    Dict['nowPlaying'][sessionKey]['UserName'] = ''
-                    Dict['nowPlaying'][sessionKey]['UserID'] = ''
+                    session['UserName'] = ''
+                    session['UserID'] = ''
 
                     for user in section.findall('User'):
-                        Dict['nowPlaying'][sessionKey]['UserName'] = user.get('title')
-                        Dict['nowPlaying'][sessionKey]['UserID'] = user.get('id')
+                        session['UserName'] = user.get('title')
+                        session['UserID'] = user.get('id')
 
                     # setup some variables in Dict
-                    Dict['nowPlaying'][sessionKey]['Last_updated'] = Datetime.FromTimestamp(0)
-                    Dict['nowPlaying'][sessionKey]['scrobbled'] = False
-                    Dict['nowPlaying'][sessionKey]['cur_state'] = state
-                    Dict['nowPlaying'][sessionKey]['prev_viewOffset'] = 0
+                    session['Last_updated'] = Datetime.FromTimestamp(0)
+                    session['scrobbled'] = False
+                    session['cur_state'] = state
+                    session['prev_viewOffset'] = 0
+
+                    # store session in nowPlaying state
+                    Dict['nowPlaying'][sessionKey] = session
 
             # if session wasn't found, return False
-            if not (sessionKey in Dict['nowPlaying']):
+            if sessionKey not in Dict['nowPlaying']:
                 Log.Info('Session data not found')
                 return None
 
