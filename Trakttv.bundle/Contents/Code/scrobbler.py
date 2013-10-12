@@ -31,12 +31,14 @@ class Scrobbler:
         return None, None
 
     def scrobble(self, info):
-        sessionKey = str(info['_children'][0]['sessionKey'])
-        state = str(info['_children'][0]['state'])
-        viewOffset = str(info['_children'][0]['viewOffset'])
+        item = info['_children'][0]
+
+        session_key = str(item['sessionKey'])
+        state = str(item['state'])
+        view_offset = str(item['viewOffset'])
 
         # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
-        self.trakt.submit(sessionKey, state, viewOffset)
+        self.trakt.submit(session_key, state, view_offset)
 
     def update_collection(self, info):
         item = info['_children'][0]

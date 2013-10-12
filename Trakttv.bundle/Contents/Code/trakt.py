@@ -82,9 +82,9 @@ class Trakt:
 
         return result
 
-    def create_session(self, sessionKey, state):
+    def create_session(self, session_key, state):
         """
-        :type sessionKey: str
+        :type session_key: str
         :type state: str
 
         :rtype: WatchSession or None
@@ -96,7 +96,7 @@ class Trakt:
             xml_content = PMS.get_status().xpath('//MediaContainer/Video')
 
             for section in xml_content:
-                if section.get('sessionKey') == sessionKey and '/library/metadata' in section.get('key'):
+                if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
                     session = WatchSession.from_section(section, state)
                     session.save()
 
