@@ -119,9 +119,19 @@ class Trakt:
         """
 
         if state not in [session.cur_state, 'buffering']:
-            if state in ['stopped', 'paused']:
-                Log.Debug(session.get_title() + ' paused or stopped, cancel watching')
+            if state in 'stopped':
+                Log.Debug(session.get_title() + ' stopped, watching status cancelled')
                 return 'cancelwatching'
+
+            if state == 'paused':
+                if not session.paused_since:
+                    Log.Debug(session.get_title() + " just paused, waiting 15s before cancelling the watching status")
+                    session.paused_since = Datetime.Now()
+                    return None
+
+                if Datetime.Now() > session.paused_since + Datetime.Delta(seconds=15):
+                    Log.Debug(session.get_title() + " paused for 15s, watching status cancelled")
+                    return 'cancelwatching'
 
             if state == 'playing':
                 Log.Debug('Updating watch status for ' + session.get_title())
@@ -180,6 +190,7 @@ class Trakt:
 
         if session:
             if session.last_view_offset and session.last_view_offset > viewOffset:
+                Log.Debug('View offset has gone backwards, deleting the session')
                 session.delete()
                 session = None
             else:
@@ -214,6 +225,9 @@ class Trakt:
 
         action = self.get_action(session, state)
 
+        if state == 'playing':
+            session.paused_since = None
+
         # No action needed, exit
         if not action:
             Log.Debug('Nothing to do this time for ' + session.get_title())
@@ -239,6 +253,7 @@ class Trakt:
 
         # If stopped, delete the session, otherwise save the current session data
         if state in ['stopped', 'paused']:
+            Log.Debug(session.get_title() + ' paused or stopped, deleting the session')
             session.delete()
         else:
             session.save()
