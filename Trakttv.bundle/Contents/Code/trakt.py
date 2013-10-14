@@ -112,6 +112,7 @@ class Trakt:
             return False
 
         session.last_view_offset = view_offset
+        session.update_required = False
 
         return True
 
@@ -209,6 +210,9 @@ class Trakt:
             if not session or session.skip:
                 return
 
+            if state == 'playing' and session.update_required:
+                self.update_session(session, view_offset)
+
         if not session:
             session = self.create_session(session_key, state)
             if not session:
@@ -260,11 +264,17 @@ class Trakt:
         if action == 'scrobble':
             session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
-        # If stopped, delete the session, otherwise save the current session data
-        if state in ['stopped', 'paused']:
-            Log.Debug(session.get_title() + ' paused or stopped, deleting the session')
+        # If stopped, delete the session
+        if state == 'stopped':
+            Log.Debug(session.get_title() + ' stopped, deleting the session')
             session.delete()
-        else:
-            session.save()
+            Dict.Save()
+            return
 
+        # If paused, queue a session update when playing begins again
+        if state == 'paused':
+            Log.Debug(session.get_title() + ' paused, session update queued to run when resumed')
+            session.update_required = True
+
+        session.save()
         Dict.Save()

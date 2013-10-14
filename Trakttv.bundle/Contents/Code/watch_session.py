@@ -22,6 +22,7 @@ class WatchSession(DictObject):
 
         self.skip = False
         self.scrobbled = False
+        self.update_required = False
 
         self.progress = None
         self.cur_state = state
