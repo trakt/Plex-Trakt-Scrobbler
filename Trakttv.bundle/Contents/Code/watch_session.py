@@ -6,7 +6,7 @@ from pms import PMS
 class WatchSession(DictObject):
     root_key = 'nowPlaying'
 
-    def __init__(self, session_key=None, metadata=None, state=None, user=None):
+    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None):
         """
         :type metadata: ?
         :type state: str
@@ -14,6 +14,8 @@ class WatchSession(DictObject):
         """
 
         super(WatchSession, self).__init__(session_key)
+
+        self.item_key = item_key
 
         self.metadata = metadata
         self.user = user
@@ -74,6 +76,7 @@ class WatchSession(DictObject):
 
         return WatchSession(
             section.get('sessionKey'),
+            section.get('ratingKey'),
             PMS.metadata(section.get('ratingKey')),
             state, User.from_section(section)
         )

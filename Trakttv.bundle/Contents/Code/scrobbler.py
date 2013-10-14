@@ -1,3 +1,4 @@
+from helpers import try_convert
 from sync import CollectionSync
 from trakt import Trakt
 import websocket
@@ -35,7 +36,7 @@ class Scrobbler:
 
         session_key = str(item['sessionKey'])
         state = str(item['state'])
-        view_offset = str(item['viewOffset'])
+        view_offset = try_convert(item['viewOffset'], int)
 
         # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
         self.trakt.submit(session_key, state, view_offset)

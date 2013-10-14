@@ -90,25 +90,30 @@ class Trakt:
         :rtype: WatchSession or None
         """
 
-        Log.Info('Creating a WatchSession for the current media')
+        Log.Debug('Creating a WatchSession for the current media')
 
-        try:
-            xml_content = PMS.get_status().xpath('//MediaContainer/Video')
+        video_section = PMS.get_video_session(session_key)
+        if not video_section:
+            return None
 
-            for section in xml_content:
-                if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
-                    session = WatchSession.from_section(section, state)
-                    session.save()
+        session = WatchSession.from_section(video_section, state)
+        session.save()
 
-                    return session
+        return session
 
-        except Ex.HTTPError:
-            Log.Error('Failed to connect to PMS.')
-        except Ex.URLError:
-            Log.Error('Failed to connect to PMS.')
+    def update_session(self, session, view_offset):
+        Log.Debug('Trying to update the current WatchSession (session key: %s)' % session.key)
 
-        Log.Info('Session data not found')
-        return None
+        video_section = PMS.get_video_session(session.key)
+
+        Log.Debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
+
+        if session.item_key != video_section.get('ratingKey'):
+            return False
+
+        session.last_view_offset = view_offset
+
+        return True
 
     def get_action(self, session, state):
         """
@@ -180,28 +185,32 @@ class Trakt:
 
         return values
 
-    def submit(self, sessionKey, state, viewOffset):
-        session = WatchSession.load(sessionKey)
-
-        # fix for pht (not sending pause or stop when finished playing)
-        # delete sessiondata if viewOffset is smaller than previous session viewOffset
-        # we assume, that in this case it could be a new file.
-        # if the user simply seeks backwards on the client, this is also triggered.
+    def submit(self, session_key, state, view_offset):
+        session = WatchSession.load(session_key)
 
         if session:
-            if session.last_view_offset and session.last_view_offset > viewOffset:
-                Log.Debug('View offset has gone backwards, deleting the session')
-                session.delete()
-                session = None
+            if session.last_view_offset and session.last_view_offset > view_offset:
+                Log.Debug('View offset has gone backwards (last: %s, cur: %s)' % (
+                    session.last_view_offset, view_offset
+                ))
+
+                # First try update the session if the media hasn't changed
+                # otherwise delete the session
+                if self.update_session(session, view_offset):
+                    Log.Debug('Updated the current session')
+                else:
+                    Log.Debug('Deleted the current session')
+                    session.delete()
+                    session = None
             else:
-                session.last_view_offset = viewOffset
+                session.last_view_offset = view_offset
 
             # skip over unknown items etc.
             if not session or session.skip:
                 return
 
         if not session:
-            session = self.create_session(sessionKey, state)
+            session = self.create_session(session_key, state)
             if not session:
                 Log.Info('Invalid session, unable to continue')
                 return
@@ -221,7 +230,7 @@ class Trakt:
             return
 
         # Calculate progress
-        session.progress = int(round((float(viewOffset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
+        session.progress = int(round((float(view_offset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
 
         action = self.get_action(session, state)
 

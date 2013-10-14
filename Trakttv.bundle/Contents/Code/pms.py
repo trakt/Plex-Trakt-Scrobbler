@@ -71,6 +71,23 @@ class PMS:
         return XML.ElementFromURL(PMS_URL % '/status/sessions', errors='ignore')
 
     @classmethod
+    def get_video_session(cls, session_key):
+        try:
+            xml_content = cls.get_status().xpath('//MediaContainer/Video')
+
+            for section in xml_content:
+                if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                    return section
+
+        except Ex.HTTPError:
+            Log.Error('Failed to connect to PMS.')
+        except Ex.URLError:
+            Log.Error('Failed to connect to PMS.')
+
+        Log.Warn('Session not found')
+        return None
+
+    @classmethod
     def get_metadata(cls, key):
         return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % key), errors='ignore')
 
