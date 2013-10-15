@@ -1,4 +1,4 @@
-from plugin import ART, NAME, ICON
+from plugin import ART, NAME, ICON, PLUGIN_VERSION
 from pms import PMS
 from scrobbler import Scrobbler
 from sync import SyncTrakt, ManuallySync
@@ -7,12 +7,27 @@ from trakt import Trakt
 
 class Main:
     def __init__(self):
+        self.print_header()
+
         self.scrobbler = Scrobbler()
 
         if not 'nowPlaying' in Dict:
             Dict['nowPlaying'] = dict()
 
         Main.update_config()
+
+    def print_header(self):
+        header = [
+            '=' * 50,
+            '| Plex-Trakt-Scrobbler',
+            '| https://github.com/trakt/Plex-Trakt-Scrobbler',
+            '=' * 50,
+            '| Version: %s' % PLUGIN_VERSION,
+            '-' * 50,
+        ]
+
+        for line in header:
+            Log.Info(line)
 
     @staticmethod
     def update_config():
