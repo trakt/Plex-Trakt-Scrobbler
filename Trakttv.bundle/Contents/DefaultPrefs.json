@@ -38,7 +38,7 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Scrobble only, if played by this MyPlex user",
+        "label": "Restrict scrobbling to this MyPlex user",
         "default": ""
     },
     {
