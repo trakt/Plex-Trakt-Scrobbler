@@ -54,7 +54,9 @@ class Main:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version
 
-        Thread.Create(self.scrobbler.listen)
+        if PlexNowPlaying.test():
+            Thread.Create(PlexNowPlaying.run)
+            # Thread.Create(self.scrobbler.listen)
 
 
 def Start():
