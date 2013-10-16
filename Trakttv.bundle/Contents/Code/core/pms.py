@@ -1,5 +1,5 @@
-from helpers import add_attribute
-from http import responses
+from core.helpers import add_attribute
+from core.http import responses
 
 # Regular Expressions for GUID parsing
 MOVIE_REGEXP = Regex('com.plexapp.agents.*://(?P<imdb_id>tt[-a-z0-9\.]+)')

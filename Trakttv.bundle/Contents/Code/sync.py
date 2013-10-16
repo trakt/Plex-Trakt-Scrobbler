@@ -1,5 +1,5 @@
-from pms import TVSHOW1_REGEXP, PMS
-from helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all
+from core.pms import TVSHOW1_REGEXP, PMS
+from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all
 from trakt import Trakt
 
 

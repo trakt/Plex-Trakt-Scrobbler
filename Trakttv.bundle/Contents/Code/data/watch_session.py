@@ -1,6 +1,6 @@
-from dict_object import DictObject
-from user import User
-from pms import PMS
+from data.dict_object import DictObject
+from data.user import User
+from core.pms import PMS
 
 
 class WatchSession(DictObject):

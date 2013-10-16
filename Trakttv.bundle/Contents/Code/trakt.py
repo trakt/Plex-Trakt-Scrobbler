@@ -1,9 +1,9 @@
+from data.watch_session import WatchSession
+from core.plugin import PLUGIN_VERSION
+from core.http import responses
+from core.pms import PMS
 import socket
 import time
-from watch_session import WatchSession
-from plugin import PLUGIN_VERSION
-from http import responses
-from pms import PMS
 
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
