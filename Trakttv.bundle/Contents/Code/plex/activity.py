@@ -16,12 +16,6 @@ class ActivityMethod(object):
     def start(self):
         raise NotImplementedError()
 
-    def scrobble(self, *args, **kwargs):
-        # Log.Debug(sessionKey + " - " + state + ' - ' + viewOffset)
-        # self.trakt.submit(session_key, state, view_offset)
-
-        raise NotImplementedError()
-
     def update_collection(self, item_id, action):
         self.now_playing.update_collection(item_id, action)
 

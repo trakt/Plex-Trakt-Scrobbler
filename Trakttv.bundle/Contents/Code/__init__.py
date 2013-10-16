@@ -12,7 +12,11 @@ from plex.activity import PlexActivity
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS
+from core.trakt import Trakt
 from sync import SyncTrakt, ManuallySync, CollectionSync
+
+
+# test 4
 
 
 class Main:
@@ -79,7 +83,7 @@ def ValidatePrefs():
     if not Prefs['start_scrobble']:
         Dict["scrobble"] = False
 
-    status = Trakt.request('account/test')
+    status = Trakt.Account.test()
 
     if status['status']:
         Main.update_config()
