@@ -1,87 +1,83 @@
-from data.watch_session import WatchSession
-from core.plugin import PLUGIN_VERSION
-from core.http import responses
 from core.pms import PMS
-import socket
-import time
+from core.helpers import try_convert
+from core.trakt import Trakt
+from data.watch_session import WatchSession
+from plex.media_server import PlexMediaServer
+from plex.activity import ActivityMethod, PlexActivity
+import websocket
 
-TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
+class WebSocket(ActivityMethod):
+    name = 'WebSocket'
 
-class Trakt:
-    def __init__(self):
-        pass
+    opcode_data = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
+
+    def __init__(self, now_playing):
+        super(WebSocket, self).__init__(now_playing)
+
+        self.ws = None
+
+        self.scrobbler = WebSocketScrobbler()
 
     @classmethod
-    @route('/applications/trakttv/trakt_request')
-    def request(cls, action, values=None, param=''):
-        if param != "":
-            param = "/" + param
-        data_url = TRAKT_URL % (action, param)
-
-        if values is None:
-            values = {}
-
-        values['username'] = Prefs['username']
-        values['password'] = Hash.SHA1(Prefs['password'])
-        values['plugin_version'] = PLUGIN_VERSION
-        values['media_center_version'] = Dict['server_version']
-
+    def test(cls):
         try:
-            json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
-            result = JSON.ObjectFromString(json_file.content)
-        except socket.timeout:
-            result = {'status': 'failure', 'error_code': 408, 'error': 'timeout'}
-        except Ex.HTTPError, e:
-            result = {'status': 'failure', 'error_code': e.code, 'error': responses[e.code][1]}
-        except Ex.URLError, e:
-            result = {'status': 'failure', 'error_code': 0, 'error': e.reason[0]}
+            PlexMediaServer.request('status/sessions')
+            return True
+        except Ex.HTTPError:
+            pass
+        except Ex.URLError:
+            pass
 
-        if 'status' in result:
-            if result['status'] == 'success':
-                if not 'message' in result:
-                    if 'inserted' in result:
-                        result['message'] = "%s Movies inserted, %s Movies already existed, %s Movies skipped" % (
-                            result['inserted'], result['already_exist'], result['skipped']
-                        )
-                    else:
-                        result['message'] = 'Unknown success'
+        Log.Info('%s method not available' % cls.name)
+        return False
 
-                Log('Trakt responded with: %s' % result['message'])
+    def run(self):
+        self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
 
-                return {'status': True, 'message': result['message']}
-            elif result['status'] == 'failure':
-                Log('Trakt responded with: (%s) %s' % (result.get('error_code'), result.get('error')))
+        while True:
+            self.process(*self.receive())
 
-                return {'status': False, 'message': result['error'], 'result': result}
+    def receive(self):
+        frame = self.ws.recv_frame()
 
-        Log('Return all')
-        return {'result': result}
+        if not frame:
+            raise websocket.WebSocketException("Not a valid frame %s" % frame)
+        elif frame.opcode in self.opcode_data:
+            return frame.opcode, frame.data
+        elif frame.opcode == websocket.ABNF.OPCODE_CLOSE:
+            self.ws.send_close()
+            return frame.opcode, None
+        elif frame.opcode == websocket.ABNF.OPCODE_PING:
+            self.ws.pong("Hi!")
 
-    @classmethod
-    @route('/applications/trakttv/trakt_request_retry')
-    def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=30):
-        result = cls.request(action, values, param)
+        return None, None
 
-        retry_num = 1
-        while 'status' in result and not result['status'] and retry_num <= max_retries:
-            if 'result' not in result:
-                break
-            if 'error_code' not in result['result']:
-                break
+    def process(self, opcode, data):
+        if opcode not in self.opcode_data:
+            return
 
-            Log('Waiting %ss before retrying request' % retry_sleep)
-            time.sleep(retry_sleep)
+        info = JSON.ObjectFromString(data)
+        item = info['_children'][0]
 
-            if result['result']['error_code'] in [408, 504]:
-                Log('Retrying request, retry #%s' % retry_num)
-                result = cls.request(action, values, param)
-                retry_num += 1
-            else:
-                break
+        if info['type'] == "playing" and Dict["scrobble"]:
+            session_key = str(item['sessionKey'])
+            state = str(item['state'])
+            view_offset = try_convert(item['viewOffset'], int)
 
-        return result
+            self.scrobbler.update(session_key, state, view_offset)
 
+        if info['type'] == "timeline" and Dict['new_sync_collection']:
+            if item['type'] not in [1, 4]:
+                return
+
+            if item['state'] == 0:
+                Log.Info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
+
+                self.update_collection(item['itemID'], 'add')
+
+
+class WebSocketScrobbler(object):
     def create_session(self, session_key, state):
         """
         :type session_key: str
@@ -115,6 +111,34 @@ class Trakt:
         session.update_required = False
 
         return True
+
+    def get_session(self, session_key, state, view_offset):
+        session = WatchSession.load(session_key)
+
+        if session:
+            if session.last_view_offset and session.last_view_offset > view_offset:
+                Log.Debug('View offset has gone backwards (last: %s, cur: %s)' % (
+                    session.last_view_offset, view_offset
+                ))
+
+                # First try update the session if the media hasn't changed
+                # otherwise delete the session
+                if self.update_session(session, view_offset):
+                    Log.Debug('Updated the current session')
+                else:
+                    Log.Debug('Deleted the current session')
+                    session.delete()
+                    session = None
+
+            if not session or session.skip:
+                return None
+
+            if state == 'playing' and session.update_required:
+                self.update_session(session, view_offset)
+        else:
+            session = self.create_session(session_key, state)
+
+        return session
 
     def get_action(self, session, state):
         """
@@ -155,7 +179,7 @@ class Trakt:
 
         return None
 
-    def get_session_values(self, session):
+    def get_request_parameters(self, session):
         values = {}
 
         session_type = session.get_type()
@@ -186,38 +210,11 @@ class Trakt:
 
         return values
 
-    def submit(self, session_key, state, view_offset):
-        session = WatchSession.load(session_key)
-
-        if session:
-            if session.last_view_offset and session.last_view_offset > view_offset:
-                Log.Debug('View offset has gone backwards (last: %s, cur: %s)' % (
-                    session.last_view_offset, view_offset
-                ))
-
-                # First try update the session if the media hasn't changed
-                # otherwise delete the session
-                if self.update_session(session, view_offset):
-                    Log.Debug('Updated the current session')
-                else:
-                    Log.Debug('Deleted the current session')
-                    session.delete()
-                    session = None
-            else:
-                session.last_view_offset = view_offset
-
-            # skip over unknown items etc.
-            if not session or session.skip:
-                return
-
-            if state == 'playing' and session.update_required:
-                self.update_session(session, view_offset)
-
+    def update(self, session_key, state, view_offset):
+        session = self.get_session(session_key, state, view_offset)
         if not session:
-            session = self.create_session(session_key, state)
-            if not session:
-                Log.Info('Invalid session, unable to continue')
-                return
+            Log.Info('Invalid session, unable to continue')
+            return
 
         # Ensure we are only scrobbling for the myPlex user listed in preferences
         if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != session.user.title):
@@ -225,10 +222,10 @@ class Trakt:
             session.skip = True
             return
 
-        session_type = session.get_type()
+        media_type = session.get_type()
 
         # Check if we are scrobbling a known media type
-        if not session_type:
+        if not media_type:
             Log.Info('Playing unknown item, will not be scrobbled: ' + session.get_title())
             session.skip = True
             return
@@ -248,21 +245,21 @@ class Trakt:
             return
 
         # Setup Data to send to Trakt
-        values = self.get_session_values(session)
+        parameters = self.get_request_parameters(session)
+        if not parameters:
+            Log.Info('Invalid parameters, unable to continue')
+            return
+
+        Trakt.Media.action(media_type, action, **parameters)
 
         if action == 'scrobble':
-            # Ensure scrobbles are submitted, retry on network timeouts
-            self.request_retry(session_type + '/' + action, values)
             session.scrobbled = True
-        else:
-            self.request(session_type + '/' + action, values)
+
+            # If just scrobbled, force update on next status update to set as watching again
+            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
         session.cur_state = state
         session.last_updated = Datetime.Now()
-
-        # If just scrobbled, force update on next status update to set as watching again
-        if action == 'scrobble':
-            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
         # If stopped, delete the session
         if state == 'stopped':
@@ -278,3 +275,5 @@ class Trakt:
 
         session.save()
         Dict.Save()
+
+PlexActivity.register(WebSocket)

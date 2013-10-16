@@ -4,16 +4,15 @@
 # ------------------------------------------------
 import core
 import data
-import plex_api
+import plex
 # ------------------------------------------------
 
 
-from plex_api.activity import PlexActivity
+from plex.activity import PlexActivity
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS
 from sync import SyncTrakt, ManuallySync, CollectionSync
-from trakt import Trakt
 
 
 class Main:

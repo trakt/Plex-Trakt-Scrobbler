@@ -22,6 +22,9 @@ class ActivityMethod(object):
 
         raise NotImplementedError()
 
+    def update_collection(self, item_id, action):
+        self.now_playing.update_collection(item_id, action)
+
 
 class PlexActivity(object):
     available_methods = []

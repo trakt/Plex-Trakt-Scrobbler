@@ -1,4 +1,4 @@
-from plex_api.activity import ActivityMethod, PlexActivity
+from plex.activity import ActivityMethod, PlexActivity
 
 
 class Logging(ActivityMethod):

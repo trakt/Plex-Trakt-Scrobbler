@@ -19,3 +19,6 @@ sys.modules['core.http'] = http
 
 import pms
 sys.modules['core.pms'] = pms
+
+import trakt
+sys.modules['core.trakt'] = trakt
