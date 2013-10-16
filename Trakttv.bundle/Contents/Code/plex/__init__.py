@@ -6,6 +6,10 @@ import media_server
 sys.modules['plex.media_server'] = media_server
 
 
+import scrobbler_websocket
+sys.modules['plex.scrobbler_websocket'] = scrobbler_websocket
+
+
 import activity
 sys.modules['plex.activity'] = activity
 
