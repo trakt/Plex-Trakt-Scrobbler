@@ -1,9 +1,10 @@
 from core.pms import PMS
+from pts.scrobbler import Scrobbler
 from core.trakt import Trakt
 from data.watch_session import WatchSession
 
 
-class WebSocketScrobbler(object):
+class WebSocketScrobbler(Scrobbler):
     def create_session(self, session_key, state):
         """
         :type session_key: str

@@ -5,10 +5,11 @@
 import core
 import data
 import plex
+import pts
 # ------------------------------------------------
 
 
-from plex.activity import PlexActivity
+from pts.activity import PlexActivity
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS

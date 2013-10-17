@@ -1,0 +1,2 @@
+class Scrobbler(object):
+    pass

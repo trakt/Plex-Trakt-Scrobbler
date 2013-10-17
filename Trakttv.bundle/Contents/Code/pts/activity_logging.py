@@ -1,15 +1,24 @@
-from core.helpers import is_number
-from plex.activity import ActivityMethod, PlexActivity
+from pts.activity import ActivityMethod, PlexActivity
+from pts.scrobbler_logging import LoggingScrobbler
 from log_sucker import LogSucker
 
 
-LOG_REGEXP = Regex('(?P<key>\w*?)=(?P<value>\w+\w?)')
+CLIENT_REGEX = Regex(
+    '^.*?Client \[(?P<client_id>.*?)\] reporting timeline state (?P<state>playing|stopped|paused), '
+    'progress of (?P<time>\d+)/(?P<duration>\d+)ms for (?P<trailing>.*?)$'
+)
+CLIENT_PARAM_REGEX = Regex('(?P<key>\w+)=(?P<value>.*?)(?:,|\s|$)')
 
 
 class Logging(ActivityMethod):
     name = 'Logging'
 
     log_path = None
+
+    def __init__(self, now_playing):
+        super(Logging, self).__init__(now_playing)
+
+        self.scrobbler = LoggingScrobbler()
 
     @classmethod
     def get_path(cls):
@@ -23,6 +32,7 @@ class Logging(ActivityMethod):
 
     @classmethod
     def test(cls):
+        # TODO would rather do real checks here instead of try/except
         try:
             LogSucker.read(cls.get_path(), first_read=True)
             return True
@@ -43,20 +53,18 @@ class Logging(ActivityMethod):
             # Grab the next line of the log
             log_data = LogSucker.read(self.get_path(), False, log_data['where'])
 
-            self.process(dict(LOG_REGEXP.findall(log_data['line'])))
+            self.process(log_data['line'])
 
-    def process(self, log_values):
-        if not log_values:
+    def process(self, line):
+        match = CLIENT_REGEX.match(line)
+        if not match:
             return
 
-        Log.Debug(log_values)
+        info = match.groupdict()
 
-        key = log_values.get('key') or log_values.get('ratingKey')
+        if info.get('trailing'):
+            info.update(dict(CLIENT_PARAM_REGEX.findall(info.pop('trailing'))))
 
-        if is_number(key):
-            log_values['key'] = key
-            log_values['state'] = log_values.get('state', 'playing')  # Assume playing if a state doesn't exist
-        #    watch_or_scrobble(log_values)
-
+        self.scrobbler.update(info)
 
 PlexActivity.register(Logging)

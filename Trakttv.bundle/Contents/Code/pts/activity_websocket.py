@@ -1,7 +1,7 @@
 from core.helpers import try_convert
 from plex.media_server import PlexMediaServer
-from plex.activity import ActivityMethod, PlexActivity
-from plex.scrobbler_websocket import WebSocketScrobbler
+from pts.activity import ActivityMethod, PlexActivity
+from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
 
 
