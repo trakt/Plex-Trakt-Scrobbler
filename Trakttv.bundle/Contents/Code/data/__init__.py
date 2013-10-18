@@ -5,6 +5,9 @@ import sys
 import dict_object
 sys.modules['data.dict_object'] = dict_object
 
+import client
+sys.modules['data.client'] = client
+
 import user
 sys.modules['data.user'] = user
 

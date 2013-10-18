@@ -8,7 +8,7 @@
     {
         "id": "new_sync_collection",
         "type": "bool",
-        "label": "Sync new items to Collection",
+        "label": "Sync new items to Collection (Plex Pass required)",
         "default": "false"
     },
     {
@@ -36,12 +36,6 @@
         "default": "false"
     },
     {
-        "id": "scrobble_names",
-        "type": "text",
-        "label": "Restrict scrobbling to this MyPlex user",
-        "default": ""
-    },
-    {
         "id": "username",
         "type": "text",
         "label": "Username",
@@ -53,5 +47,17 @@
         "label": "Password",
         "default": "",
         "option": "hidden"
+    },
+    {
+        "id": "scrobble_names",
+        "type": "text",
+        "label": "Only scrobble this MyPlex user (Plex Pass required)",
+        "default": ""
+    },
+    {
+        "id": "scrobble_clients",
+        "type": "text",
+        "label": "Only scrobble these client names (comma separated)",
+        "default": ""
     }
 ]

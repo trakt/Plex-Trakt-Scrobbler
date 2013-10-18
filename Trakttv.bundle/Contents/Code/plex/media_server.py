@@ -63,8 +63,7 @@ class PlexMediaServer(object):
     def metadata(cls, item_id):
         # Prepare a dict that contains all the metadata required for trakt.
         try:
-            url = cls.base_url + ('/library/metadata/%s' % item_id)
-            xml_content = XML.ElementFromURL(url, errors='ignore').xpath('//Video')
+            xml_content = cls.request('library/metadata/%s' % item_id).xpath('//Video')
 
             for section in xml_content:
                 metadata = {}
@@ -96,3 +95,22 @@ class PlexMediaServer(object):
         except Ex.URLError, e:
             Log('Failed to connect to %s.' % cls.base_url)
             return {'status': False, 'message': e.reason[0]}
+
+    @classmethod
+    def client(cls, client_id):
+        if not client_id:
+            Log.Warn('Invalid client_id provided')
+            return None
+
+        xml_content = cls.request('clients').xpath('//Server')
+
+        found_clients = []
+
+        for section in xml_content:
+            found_clients.append(section.get('machineIdentifier'))
+
+            if section.get('machineIdentifier') == client_id:
+                return section
+
+        Log.Warn("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
+        return None

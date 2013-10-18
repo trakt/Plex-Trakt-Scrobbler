@@ -102,3 +102,17 @@ class Scrobbler(object):
             session.update_required = True
 
         session.save()
+
+    def valid_user(self, session):
+        if Prefs['scrobble_names'] is None:
+            return True
+
+        return session.user and Prefs['scrobble_names'].lower() == session.user.title.lower()
+
+    def valid_client(self, session):
+        if Prefs['scrobble_clients'] is None:
+            return True
+
+        clients = [x.strip().lower() for x in Prefs['scrobble_clients'].split(',')]
+
+        return session.client and session.client.name.lower() in clients

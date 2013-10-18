@@ -1,3 +1,4 @@
+from data.client import Client
 from data.watch_session import WatchSession
 from plex.media_server import PlexMediaServer
 from pts.scrobbler import Scrobbler
@@ -5,12 +6,10 @@ from pts.scrobbler import Scrobbler
 
 class LoggingScrobbler(Scrobbler):
     def create_session(self, info):
-        return WatchSession(
-            'logging',
-            info['ratingKey'],
+        return WatchSession.from_info(
+            info,
             PlexMediaServer.metadata(info['ratingKey']),
-            info['state'],
-            client_id=info.get('client_id')
+            PlexMediaServer.client(info.get('client_id'))
         )
 
     def session_changed(self, session, info):
@@ -36,11 +35,15 @@ class LoggingScrobbler(Scrobbler):
         return session
 
     def update(self, info):
-        Log.Info('[LoggingScrobbler](update) info: %s' % info)
-
         session = self.get_session(info)
         if not session:
             Log.Info('Invalid session, unable to continue')
+            return
+
+        # Ensure we are only scrobbling for the myPlex user listed in preferences
+        if not self.valid_client(session):
+            Log.Info('Ignoring item (' + session.get_title() + ') played by other client: ' + session.client.name)
+            session.skip = True
             return
 
         media_type = session.get_type()

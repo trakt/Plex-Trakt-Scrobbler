@@ -77,7 +77,7 @@ class WebSocketScrobbler(Scrobbler):
             return
 
         # Ensure we are only scrobbling for the myPlex user listed in preferences
-        if (Prefs['scrobble_names'] is not None) and (Prefs['scrobble_names'] != session.user.title):
+        if not self.valid_user(session):
             Log.Info('Ignoring item (' + session.get_title() + ') played by other user: ' + session.user.title)
             session.skip = True
             return
