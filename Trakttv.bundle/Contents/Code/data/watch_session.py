@@ -6,7 +6,7 @@ from core.pms import PMS
 class WatchSession(DictObject):
     root_key = 'nowPlaying'
 
-    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None):
+    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None, client_id=None):
         """
         :type metadata: ?
         :type state: str
@@ -19,6 +19,7 @@ class WatchSession(DictObject):
 
         self.metadata = metadata
         self.user = user
+        self.client_id = client_id
 
         self.skip = False
         self.scrobbled = False
@@ -64,7 +65,7 @@ class WatchSession(DictObject):
         return value
 
     @staticmethod
-    def from_section(section, state):
+    def from_section(section, state, metadata):
         """
         :type section: ?
         :type state: str
@@ -78,6 +79,6 @@ class WatchSession(DictObject):
         return WatchSession(
             section.get('sessionKey'),
             section.get('ratingKey'),
-            PMS.metadata(section.get('ratingKey')),
-            state, User.from_section(section)
+            metadata, state,
+            user=User.from_section(section)
         )

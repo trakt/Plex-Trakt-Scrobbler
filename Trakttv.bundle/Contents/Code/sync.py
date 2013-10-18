@@ -1,6 +1,7 @@
-from core.pms import TVSHOW1_REGEXP, PMS
+from core.pms import PMS
 from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all
 from core.trakt import Trakt
+from plex.media_server import PlexMediaServer, TVSHOW1_REGEXP
 
 
 def parse_section(section):
@@ -84,7 +85,7 @@ def SyncTrakt():
 
 def pull_movie(watched, rated, video):
     # Pull metadata
-    metadata = PMS.metadata(video.get('ratingKey'))
+    metadata = PlexMediaServer.metadata(video.get('ratingKey'))
     if 'imdb_id' not in metadata:
         return
 
@@ -188,14 +189,14 @@ def push_movie(all_movies, collected, rated, video):
     pms_metadata = None
 
     if Prefs['sync_collection'] is True:
-        pms_metadata = PMS.metadata(video.get('ratingKey'))
+        pms_metadata = PlexMediaServer.metadata(video.get('ratingKey'))
         collected.append(pms_metadata)
 
     if video.get('viewCount') > 0:
         Log('You have seen %s', video.get('title'))
         if video.get('type') == 'movie':
             if pms_metadata is None:
-                pms_metadata = PMS.metadata(video.get('ratingKey'))
+                pms_metadata = PlexMediaServer.metadata(video.get('ratingKey'))
 
             movie_dict = pms_metadata
             #movie_dict['plays'] = int(video.get('viewCount'))
@@ -207,7 +208,7 @@ def push_movie(all_movies, collected, rated, video):
 
     if video.get('userRating') is not None:
         if pms_metadata is None:
-            pms_metadata = PMS.metadata(video.get('ratingKey'))
+            pms_metadata = PlexMediaServer.metadata(video.get('ratingKey'))
 
         rating_movie = pms_metadata
         rating_movie['rating'] = int(video.get('userRating'))
@@ -360,7 +361,7 @@ def SyncSection(key):
 
 @route('/applications/trakttv/collectionsync')
 def CollectionSync(itemID, do):
-    metadata = PMS.metadata(itemID)
+    metadata = PlexMediaServer.metadata(itemID)
 
     #cancel, if metadata is not there yet
     if not 'tvdb_id' in metadata and not 'imdb_id' in metadata and not 'tmdb_id' in metadata:

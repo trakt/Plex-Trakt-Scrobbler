@@ -1,3 +1,4 @@
+from core.helpers import all
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
 from log_sucker import LogSucker
@@ -12,6 +13,7 @@ CLIENT_PARAM_REGEX = Regex('(?P<key>\w+)=(?P<value>.*?)(?:,|\s|$)')
 
 class Logging(ActivityMethod):
     name = 'Logging'
+    required_info = ['ratingKey', 'state', 'time', 'duration']
 
     log_path = None
 
@@ -65,6 +67,9 @@ class Logging(ActivityMethod):
         if info.get('trailing'):
             info.update(dict(CLIENT_PARAM_REGEX.findall(info.pop('trailing'))))
 
-        self.scrobbler.update(info)
+        valid = all([key in info for key in self.required_info])
+
+        if valid:
+            self.scrobbler.update(info)
 
 PlexActivity.register(Logging)
