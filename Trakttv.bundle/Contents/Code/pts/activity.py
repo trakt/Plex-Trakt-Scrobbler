@@ -27,8 +27,8 @@ class PlexActivity(object):
     on_update_collection = EventHandler()
 
     @classmethod
-    def register(cls, method):
-        cls.available_methods.append(method)
+    def register(cls, method, weight=1):
+        cls.available_methods.append((weight, method))
 
     @classmethod
     def update_collection(cls, item_id, action):
@@ -36,9 +36,13 @@ class PlexActivity(object):
 
     @classmethod
     def test(cls):
-        for m in cls.available_methods:
-            if m.test():
-                cls.current_method = m(cls)
+        # Sort available methods by weight first
+        cls.available_methods = sorted(cls.available_methods, key=lambda x: x[0], reverse=True)
+
+        # Test methods until an available method is found
+        for weight, method in cls.available_methods:
+            if method.test():
+                cls.current_method = method(cls)
                 Log.Info('Picked method %s' % cls.current_method.name)
                 break
 

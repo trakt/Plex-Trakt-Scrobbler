@@ -74,4 +74,4 @@ class WebSocket(ActivityMethod):
 
                 self.update_collection(item['itemID'], 'add')
 
-PlexActivity.register(WebSocket)
+PlexActivity.register(WebSocket, weight=10)
