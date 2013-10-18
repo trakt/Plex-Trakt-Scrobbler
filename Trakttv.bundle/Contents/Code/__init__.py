@@ -17,9 +17,6 @@ from core.trakt import Trakt
 from sync import SyncTrakt, ManuallySync, CollectionSync
 
 
-# test 4
-
-
 class Main:
     def __init__(self):
         Header.show()

@@ -68,7 +68,7 @@ class WatchSession(DictObject):
         return value
 
     @staticmethod
-    def from_section(section, state, metadata):
+    def from_section(section, state, metadata, client_section=None):
         """
         :type section: ?
         :type state: str
@@ -83,7 +83,8 @@ class WatchSession(DictObject):
             section.get('sessionKey'),
             section.get('ratingKey'),
             metadata, state,
-            user=User.from_section(section)
+            user=User.from_section(section),
+            client=Client.from_section(client_section)
         )
 
     @staticmethod
@@ -92,7 +93,7 @@ class WatchSession(DictObject):
             return None
 
         return WatchSession(
-            'logging',
+            'logging-%s' % info.get('client_id'),
             info['ratingKey'],
             metadata,
             info['state'],

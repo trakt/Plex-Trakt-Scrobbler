@@ -12,19 +12,25 @@ class LoggingScrobbler(Scrobbler):
             PlexMediaServer.client(info.get('client_id'))
         )
 
-    def session_changed(self, session, info):
+    def session_valid(self, session, info):
         if session.item_key != info['ratingKey']:
-            return True
+            Log.Debug('Invalid Session: Media changed')
+            return False
 
-        return False
+        if session.skip and info.get('state') == 'stopped':
+            Log.Debug('Invalid Session: Media stopped')
+            return False
+
+        return True
 
     def get_session(self, info):
-        session = WatchSession.load('logging')
+        session = WatchSession.load('logging-%s' % info.get('client_id'))
 
         if session:
-            if self.session_changed(session, info):
+            if not self.session_valid(session, info):
                 session.delete()
                 session = None
+                Log.Info('Session deleted')
 
             if not session or session.skip:
                 return None
@@ -40,10 +46,14 @@ class LoggingScrobbler(Scrobbler):
             Log.Info('Invalid session, unable to continue')
             return
 
-        # Ensure we are only scrobbling for the myPlex user listed in preferences
+        # Ensure we are only scrobbling for the client listed in preferences
         if not self.valid_client(session):
-            Log.Info('Ignoring item (' + session.get_title() + ') played by other client: ' + session.client.name)
+            Log.Info('Ignoring item (%s) played by other client: %s' % (
+                session.get_title(),
+                session.client.name if session.client else None
+            ))
             session.skip = True
+            session.save()
             return
 
         media_type = session.get_type()

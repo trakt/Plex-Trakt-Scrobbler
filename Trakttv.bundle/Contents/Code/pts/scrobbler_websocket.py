@@ -19,9 +19,14 @@ class WebSocketScrobbler(Scrobbler):
         if not video_section:
             return None
 
+        player_section = video_section.findall('Player')
+        if len(player_section):
+            player_section = player_section[0]
+
         session = WatchSession.from_section(
             video_section, state,
-            PlexMediaServer.metadata(video_section.get('ratingKey'))
+            PlexMediaServer.metadata(video_section.get('ratingKey')),
+            PlexMediaServer.client(player_section.get('machineIdentifier'))
         )
         session.save()
 
@@ -78,8 +83,22 @@ class WebSocketScrobbler(Scrobbler):
 
         # Ensure we are only scrobbling for the myPlex user listed in preferences
         if not self.valid_user(session):
-            Log.Info('Ignoring item (' + session.get_title() + ') played by other user: ' + session.user.title)
+            Log.Info('Ignoring item (%s) played by other user: %s' % (
+                session.get_title(),
+                session.user.title if session.user else None
+            ))
             session.skip = True
+
+        # Ensure we are only scrobbling for the client listed in preferences
+        if not self.valid_client(session):
+            Log.Info('Ignoring item (%s) played by other client: %s' % (
+                session.get_title(),
+                session.client.name if session.client else None
+            ))
+            session.skip = True
+
+        if session.skip:
+            session.save()
             return
 
         media_type = session.get_type()
