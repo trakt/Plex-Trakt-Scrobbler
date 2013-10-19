@@ -1,12 +1,12 @@
-from dict_object import DictObject
-from user import User
-from pms import PMS
+from data.client import Client
+from data.dict_object import DictObject
+from data.user import User
 
 
 class WatchSession(DictObject):
     root_key = 'nowPlaying'
 
-    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None):
+    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None, client=None):
         """
         :type metadata: ?
         :type state: str
@@ -19,6 +19,7 @@ class WatchSession(DictObject):
 
         self.metadata = metadata
         self.user = user
+        self.client = client
 
         self.skip = False
         self.scrobbled = False
@@ -61,10 +62,13 @@ class WatchSession(DictObject):
         if key == 'user':
             return User.from_json(value)
 
+        if key == 'client':
+            return Client.from_json(value)
+
         return value
 
     @staticmethod
-    def from_section(section, state):
+    def from_section(section, state, metadata, client_section=None):
         """
         :type section: ?
         :type state: str
@@ -78,6 +82,20 @@ class WatchSession(DictObject):
         return WatchSession(
             section.get('sessionKey'),
             section.get('ratingKey'),
-            PMS.metadata(section.get('ratingKey')),
-            state, User.from_section(section)
+            metadata, state,
+            user=User.from_section(section),
+            client=Client.from_section(client_section)
+        )
+
+    @staticmethod
+    def from_info(info, metadata, client_section):
+        if not info:
+            return None
+
+        return WatchSession(
+            'logging-%s' % info.get('client_id'),
+            info['ratingKey'],
+            metadata,
+            info['state'],
+            client=Client.from_section(client_section)
         )

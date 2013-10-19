@@ -30,6 +30,8 @@ def is_number(s):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 
 def try_convert(value, value_type):

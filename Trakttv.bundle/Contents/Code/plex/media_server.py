@@ -1,5 +1,6 @@
-from helpers import add_attribute
-from http import responses
+from core.helpers import add_attribute
+from core.http import responses
+
 
 # Regular Expressions for GUID parsing
 MOVIE_REGEXP = Regex('com.plexapp.agents.*://(?P<imdb_id>tt[-a-z0-9\.]+)')
@@ -16,12 +17,16 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
-PMS_URL = 'http://localhost:32400%s'
 
+class PlexMediaServer(object):
+    base_url = 'http://localhost:32400'
 
-class PMS:
-    def __init__(self):
-        pass
+    @classmethod
+    def request(cls, path):
+        if not path.startswith('/'):
+            path = '/' + path
+
+        return XML.ElementFromURL(cls.base_url + path, errors='ignore')
 
     @classmethod
     def add_guid(cls, metadata, section):
@@ -55,72 +60,10 @@ class PMS:
             ))
 
     @classmethod
-    def get_server_info(cls):
-        return XML.ElementFromURL(PMS_URL % '', errors='ignore')
-
-    @classmethod
-    def get_server_version(cls, default=None):
-        server_info = cls.get_server_info()
-        if not server_info:
-            return default
-
-        return server_info.attrib.get('version') or default
-
-    @classmethod
-    def get_status(cls):
-        return XML.ElementFromURL(PMS_URL % '/status/sessions', errors='ignore')
-
-    @classmethod
-    def get_video_session(cls, session_key):
-        try:
-            xml_content = cls.get_status().xpath('//MediaContainer/Video')
-
-            for section in xml_content:
-                if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
-                    return section
-
-        except Ex.HTTPError:
-            Log.Error('Failed to connect to PMS.')
-        except Ex.URLError:
-            Log.Error('Failed to connect to PMS.')
-
-        Log.Warn('Session not found')
-        return None
-
-    @classmethod
-    def get_metadata(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % key), errors='ignore')
-
-    @classmethod
-    def get_metadata_guid(cls, key):
-        return cls.get_metadata(key).xpath('//Directory')[0].get('guid')
-
-    @classmethod
-    def get_metadata_leaves(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % key), errors='ignore')
-
-    @classmethod
-    def get_sections(cls):
-        return XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
-
-    @classmethod
-    def get_section(cls, name):
-        return XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % name), errors='ignore')
-
-    @classmethod
-    def get_section_directories(cls, section):
-        return cls.get_section(section).xpath('//Directory')
-
-    @classmethod
-    def get_section_videos(cls, section):
-        return cls.get_section(section).xpath('//Video')
-
-    @classmethod
-    @route('/applications/trakttv/get_metadata_from_pms')
     def metadata(cls, item_id):
         # Prepare a dict that contains all the metadata required for trakt.
         try:
-            xml_content = PMS.get_metadata(str(item_id)).xpath('//Video')
+            xml_content = cls.request('library/metadata/%s' % item_id).xpath('//Video')
 
             for section in xml_content:
                 metadata = {}
@@ -147,28 +90,27 @@ class PMS:
                 return metadata
 
         except Ex.HTTPError, e:
-            Log('Failed to connect to %s.' % PMS_URL)
+            Log('Failed to connect to %s.' % cls.base_url)
             return {'status': False, 'message': responses[e.code][1]}
         except Ex.URLError, e:
-            Log('Failed to connect to %s.' % PMS_URL)
+            Log('Failed to connect to %s.' % cls.base_url)
             return {'status': False, 'message': e.reason[0]}
 
     @classmethod
-    def scrobble(cls, video):
-        if video.get('viewCount') > 0:
-            Log('video has already been marked as seen')
-            return False
+    def client(cls, client_id):
+        if not client_id:
+            Log.Warn('Invalid client_id provided')
+            return None
 
-        HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
-            video.get('ratingKey')
-        ), immediate=True)
+        xml_content = cls.request('clients').xpath('//Server')
 
-        return True
+        found_clients = []
 
-    @classmethod
-    def rate(cls, video, rating):
-        HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
-            video.get('ratingKey'), rating
-        ), immediate=True)
+        for section in xml_content:
+            found_clients.append(section.get('machineIdentifier'))
 
-        return True
+            if section.get('machineIdentifier') == client_id:
+                return section
+
+        Log.Warn("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
+        return None

@@ -1,4 +1,4 @@
-from dict_object import DictObject
+from data.dict_object import DictObject
 
 
 class User(DictObject):
