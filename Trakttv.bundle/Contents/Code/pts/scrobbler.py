@@ -56,9 +56,9 @@ class Scrobbler(object):
             })
 
         if session_type == 'movie':
-            if session.metadata['imdb_id']:
+            if session.metadata.get('imdb_id'):
                 values['imdb_id'] = session.metadata['imdb_id']
-            elif session.metadata['tmdb_id']:
+            elif session.metadata.get('tmdb_id'):
                 values['tmdb_id'] = session.metadata['tmdb_id']
 
         values.update({
