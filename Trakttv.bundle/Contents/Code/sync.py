@@ -174,7 +174,14 @@ def ManuallyTrakt():
         # Sync TV Shows
         if section_type == 'show':
             for directory in PMS.get_section_directories(key):
-                tvdb_id = TVSHOW1_REGEXP.search(PMS.get_metadata_guid(directory.get('ratingKey'))).group(2)
+                guid = PMS.get_metadata_guid(directory.get('ratingKey'))
+
+                match = TVSHOW1_REGEXP.search(guid)
+                if not match:
+                    Log.Warn('Guid matching failed on "%s"' % guid)
+                    continue
+
+                tvdb_id = match.group(2)
 
                 if tvdb_id is not None:
                     pull_show(show_list, episodes_rated_list, directory, tvdb_id)
