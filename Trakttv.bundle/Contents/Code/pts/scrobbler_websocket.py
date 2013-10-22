@@ -81,9 +81,14 @@ class WebSocketScrobbler(Scrobbler):
             Log.Info('Invalid session, unable to continue')
             return
 
+        # Ignore sessions flagged as 'skip'
+        if session.skip:
+            return
+
         # Ensure we are only scrobbling for the myPlex user listed in preferences
         if not self.valid_user(session):
-            Log.Info('Ignoring item (%s) played by other user: %s' % (
+            Log.Info('Ignoring item [%s](%s) played by other user: %s' % (
+                session_key,
                 session.get_title(),
                 session.user.title if session.user else None
             ))
@@ -91,7 +96,8 @@ class WebSocketScrobbler(Scrobbler):
 
         # Ensure we are only scrobbling for the client listed in preferences
         if not self.valid_client(session):
-            Log.Info('Ignoring item (%s) played by other client: %s' % (
+            Log.Info('Ignoring item [%s](%s) played by other client: %s' % (
+                session_key,
                 session.get_title(),
                 session.client.name if session.client else None
             ))
