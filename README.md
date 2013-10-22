@@ -17,6 +17,6 @@ Install the plugin from the [Unsupported Appstore](http://forums.plexapp.com/ind
 
 ## Issues
 
-The plugin is still work in progress so there may be bugs. Please report all bugs on the [Plex forum thread](http://forums.plexapp.com/index.php/topic/35626-plex-media-server-scrobbler-for-trakttv/).
+The plugin is still work in progress so there may be bugs. Please report all bugs to the issue tracker on this repository ([here](https://github.com/trakt/Plex-Trakt-Scrobbler/issues)).
 
 Code contributions are also welcome. Submit pull requests via GitHub and they will be reviewed and merged in.
