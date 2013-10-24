@@ -1,4 +1,5 @@
 from core.helpers import all
+from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
 from log_sucker import LogSucker
@@ -34,16 +35,23 @@ class Logging(ActivityMethod):
 
     @classmethod
     def test(cls):
+        # Try enable logging
+        if not PlexMediaServer.set_logging_state(True):
+            Log.Warn('Unable to enable logging')
+
+        # Test if logging is enabled
+        if not PlexMediaServer.get_logging_state():
+            Log.Warn('Debug logging not enabled, unable to use logging activity method.')
+            return False
+
         # TODO would rather do real checks here instead of try/except
         try:
             LogSucker.read(cls.get_path(), first_read=True)
             return True
-
-        except Exception, ex:
+        except:
             Log.Warn(str(ex))
-            Log.Warn('%s method not available' % cls.name)
 
-            return False
+        return False
 
     def run(self):
         log_data = LogSucker.read(self.get_path(), True)

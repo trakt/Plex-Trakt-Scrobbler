@@ -22,11 +22,19 @@ class PlexMediaServer(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path):
+    def request(cls, path, data_type='xml', method='GET'):
         if not path.startswith('/'):
             path = '/' + path
 
-        return XML.ElementFromURL(cls.base_url + path, errors='ignore')
+        url = cls.base_url + path
+
+        if data_type == 'xml':
+            return XML.ElementFromURL(url, errors='ignore')
+
+        if data_type == 'text':
+            return HTTP.Request(url, method=method)
+
+        raise ValueError()
 
     @classmethod
     def add_guid(cls, metadata, section):
@@ -114,3 +122,27 @@ class PlexMediaServer(object):
 
         Log.Warn("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
         return None
+
+    @classmethod
+    def set_logging_state(cls, state):
+        try:
+            response = cls.request(':/prefs?logDebug=%s' % int(state), data_type='text', method='PUT')
+            Log.Debug('Response: %s' % (response.content if response else None))
+            return True
+        except Ex.HTTPError:
+            pass
+        except Ex.URLError:
+            pass
+
+        return False
+
+    @classmethod
+    def get_logging_state(cls):
+        for setting in cls.request(':/prefs').xpath('//Setting'):
+
+            if setting.get('id') == 'logDebug' and setting.get('value'):
+                value = setting.get('value').lower()
+                return True if value == 'true' else False
+
+        Log.Warn('Unable to determine logging state, assuming disabled')
+        return False
