@@ -27,7 +27,6 @@ class WebSocket(ActivityMethod):
         except Ex.URLError:
             pass
 
-        Log.Info('%s method not available' % cls.name)
         return False
 
     def run(self):

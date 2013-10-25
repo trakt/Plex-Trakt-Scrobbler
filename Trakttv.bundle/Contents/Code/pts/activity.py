@@ -45,6 +45,8 @@ class PlexActivity(object):
                 cls.current_method = method(cls)
                 Log.Info('Picked method %s' % cls.current_method.name)
                 break
+            else:
+                Log.Info('%s method not available' % method.name)
 
         if not cls.current_method:
             Log.Warn('No method available to determine now playing status, auto-scrobbling not available.')
