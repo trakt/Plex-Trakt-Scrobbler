@@ -22,10 +22,10 @@ class WebSocket(ActivityMethod):
         try:
             PlexMediaServer.request('status/sessions')
             return True
-        except Ex.HTTPError:
-            pass
-        except Ex.URLError:
-            pass
+        except Ex.HTTPError, ex:
+            Log.Debug('HTTPError on websocket testing, %s' % str(ex))
+        except Ex.URLError, ex:
+            Log.Debug('URLError on websocket testing, %s' % str(ex))
 
         return False
 
