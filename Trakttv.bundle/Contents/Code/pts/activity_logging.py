@@ -3,6 +3,7 @@ from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
 from log_sucker import LogSucker
+import time
 
 
 CLIENT_REGEX = Regex(
@@ -53,18 +54,18 @@ class Logging(ActivityMethod):
     def read(cls, first_read=False, where=None):
         try:
             return LogSucker.read(cls.get_path(), first_read, where)
-        except IOError:
-            Log.Warn('IOError while trying to read the log file')
+        except IOError, ex:
+            Log.Debug('IOError while trying to read the log file, %s' % str(ex))
 
         return None
 
     @classmethod
     def try_read(cls, first_read=False, where=None, start_interval=1,
-                 interval_step=2, max_interval=30, max_tries=6):
+                 interval_step=1.6, max_interval=5, max_tries=4):
         result = None
 
         try_count = 0
-        retry_interval = start_interval
+        retry_interval = float(start_interval)
 
         while not result and try_count <= max_tries:
             try_count += 1
@@ -75,18 +76,19 @@ class Logging(ActivityMethod):
 
             # If we are below max_interval, keep increasing the interval
             if retry_interval < max_interval:
-                retry_interval *= interval_step
+                retry_interval = retry_interval * interval_step
 
                 # Ensure the new retry_interval is below max_interval
                 if retry_interval > max_interval:
                     retry_interval = max_interval
 
-            # Check if we have hit max_tries
-            if try_count >= max_tries:
-                break
+            # Sleep if we should still retry
+            if try_count <= max_tries:
+                Log.Info('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
+                time.sleep(retry_interval)
 
-            Log.Info('Log file reading failed, waiting %s seconds and then trying again' % retry_interval)
-            time.sleep(retry_interval)
+        if not result:
+            Log.Info('Finished retrying, still no success')
 
         return result
 
