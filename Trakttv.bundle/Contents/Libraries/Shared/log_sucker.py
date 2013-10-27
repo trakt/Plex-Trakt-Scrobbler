@@ -8,8 +8,8 @@ import time
 class LogSucker(object):
     @staticmethod
     def read(filename, first_read=False, where=None):
-        #Set the filename and open the file
-        fp = open(filename,'r')
+        # Set the filename and open the file
+        fp = open(filename, 'r')
 
         st_results = os.stat(filename)
         st_size = st_results[6]

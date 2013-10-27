@@ -44,26 +44,70 @@ class Logging(ActivityMethod):
             Log.Warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
-        # TODO would rather do real checks here instead of try/except
-        try:
-            LogSucker.read(cls.get_path(), first_read=True)
+        if cls.try_read(True):
             return True
-        except:
-            Log.Warn(str(ex))
 
         return False
 
+    @classmethod
+    def read(cls, first_read=False, where=None):
+        try:
+            return LogSucker.read(cls.get_path(), first_read, where)
+        except IOError:
+            Log.Warn('IOError while trying to read the log file')
+
+        return None
+
+    @classmethod
+    def try_read(cls, first_read=False, where=None, start_interval=1,
+                 interval_step=2, max_interval=30, max_tries=6):
+        result = None
+
+        try_count = 0
+        retry_interval = start_interval
+
+        while not result and try_count <= max_tries:
+            try_count += 1
+
+            result = cls.read(first_read, where)
+            if result:
+                return result
+
+            # If we are below max_interval, keep increasing the interval
+            if retry_interval < max_interval:
+                retry_interval *= interval_step
+
+                # Ensure the new retry_interval is below max_interval
+                if retry_interval > max_interval:
+                    retry_interval = max_interval
+
+            # Check if we have hit max_tries
+            if try_count >= max_tries:
+                break
+
+            Log.Info('Log file reading failed, waiting %s seconds and then trying again' % retry_interval)
+            time.sleep(retry_interval)
+
+        return result
+
     def run(self):
-        log_data = LogSucker.read(self.get_path(), True)
+        log_data = self.try_read(True)
+        if not log_data:
+            Log.Warn('Unable to read log file')
+            return
 
         while 1:
             if not Dict["scrobble"]:
                 break
 
             # Grab the next line of the log
-            log_data = LogSucker.read(self.get_path(), False, log_data['where'])
+            read_result = self.try_read(False, log_data['where'])
 
-            self.process(log_data['line'])
+            if read_result:
+                log_data = read_result
+                self.process(log_data['line'])
+            else:
+                Log.Warn('Unable to read log file')
 
     def process(self, line):
         match = CLIENT_REGEX.match(line)
