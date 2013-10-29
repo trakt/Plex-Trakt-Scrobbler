@@ -22,3 +22,6 @@ sys.modules['core.pms'] = pms
 
 import trakt
 sys.modules['core.trakt'] = trakt
+
+import update_checker
+sys.modules['core.update_checker'] = update_checker

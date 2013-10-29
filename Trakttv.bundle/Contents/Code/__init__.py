@@ -14,12 +14,17 @@ from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS
 from core.trakt import Trakt
+from core.update_checker import UpdateChecker
 from sync import SyncTrakt, ManuallySync, CollectionSync
 
 
 class Main:
     def __init__(self):
-        Header.show()
+        # Check for updates first (required for use in header)
+        self.update_checker = UpdateChecker()
+        self.update_checker.run_once()
+
+        Header.show(self)
 
         if not 'nowPlaying' in Dict:
             Dict['nowPlaying'] = dict()
@@ -43,6 +48,7 @@ class Main:
             Dict["new_sync_collection"] = False
 
     def start(self):
+        # Start syncing
         if Prefs['sync_startup'] and Prefs['username'] is not None:
             Log('Will autosync in 1 minute')
             Thread.CreateTimer(60, SyncTrakt)
@@ -53,9 +59,11 @@ class Main:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version
 
+        # Start the plex activity monitor
         if PlexActivity.test():
             Thread.Create(PlexActivity.run)
 
+    @staticmethod
     def update_collection(self, item_id, action):
         # delay sync to wait for metadata
         Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')

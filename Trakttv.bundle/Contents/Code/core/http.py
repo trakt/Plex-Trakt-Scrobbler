@@ -1,3 +1,81 @@
+import socket
+import urllib
+import urllib2
+
+
+def request(url, data=None, response_type='text', timeout=None):
+    if data and type(data) is not str:
+        data = JSON.StringFromObject(data)
+
+    parameters = {}
+    if timeout:
+        parameters['timeout'] = timeout
+
+    Log.Debug("Requesting '%s'" % url)
+
+    # Try get the response
+    response = None
+
+    try:
+        req = urllib2.Request(url)
+
+        if data:
+            req.data = data
+            req.add_header('Content-Length', '%d' % len(data))
+            req.add_header('Content-Type', 'application/octet-stream')
+
+        response = urllib2.urlopen(req, **parameters)
+    except Exception, e:
+        # Return a RequestError for known HTTP exceptions
+        request_error = RequestError.from_exception(e)
+        if request_error:
+            raise request_error
+
+        # If we caught an unknown exception, re-raise it
+        raise e
+
+    # Parse response content into specified response_type
+    content = response.read()
+
+    if response_type == 'json':
+        try:
+            return JSON.ObjectFromString(content)
+        except:
+            Log.Warn('JSON decoding failed, returning None')
+            return None
+
+    if response_type == 'text':
+        return content
+
+    raise ValueError('Unknown response_type specified, expecting "text" or "json"')
+
+
+class RequestError(Exception):
+    def __init__(self, inner_exception, message, code):
+        self.inner_exception = inner_exception
+        self.message = message
+        self.code = code
+
+    @staticmethod
+    def from_exception(e):
+        message = None
+        code = None
+
+        if type(e) is socket.timeout:
+            code = 408
+        elif type(e) is Ex.HTTPError:
+            code = e.code
+        elif type(e) is Ex.URLError:
+            code, message = e.reason
+        else:
+            return None
+
+        if not message and code:
+            message = responses[code][1] if code in responses else 'Unknown Error'
+
+        return RequestError(e, message, code)
+
+
 responses = {
     100: ('Continue', 'Request received, please continue'),
     101: ('Switching Protocols',

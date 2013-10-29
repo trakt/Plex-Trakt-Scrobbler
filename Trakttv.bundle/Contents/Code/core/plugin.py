@@ -1,3 +1,5 @@
+PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
+
 PLUGIN_VERSION_BASE = (0, 6, 7)
 PLUGIN_VERSION_BRANCH = 'develop'
 
