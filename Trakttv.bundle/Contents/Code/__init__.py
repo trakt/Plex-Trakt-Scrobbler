@@ -64,7 +64,7 @@ class Main:
             Thread.Create(PlexActivity.run)
 
     @staticmethod
-    def update_collection(self, item_id, action):
+    def update_collection(item_id, action):
         # delay sync to wait for metadata
         Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')
 
