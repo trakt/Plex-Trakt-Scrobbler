@@ -27,34 +27,23 @@ class UpdateChecker(object):
         if 'client_id' in Dict:
             self.client_id = Dict['client_id']
 
-    def run_once(self, first_run=True, timeout=3, async=False):
+    def run_once(self, first_run=True, async=False):
         if async:
-            Thread.Create(self.run, first_run=first_run, timeout=timeout)
+            Thread.Create(self.run, first_run=first_run)
         else:
-            self.run(first_run=first_run, timeout=timeout)
+            self.run(first_run=first_run)
 
-    def request(self, first_run=False, timeout=None):
+    def request(self, first_run=False):
         data = {
             'client_id': self.client_id,
             'version': self.version,
             'platform': Platform.OS.lower()
         }
 
-        parameters = {}
-        if timeout is not None:
-            parameters['timeout'] = timeout
-
         try:
-            return request(self.server + '/api/ping', data, 'json', **parameters)
+            return request(self.server + '/api/ping', data, 'json')
         except RequestError, e:
-            if first_run and e.code == 408:
-                Log.Info(
-                    "Unable to check for updates, on startup a "
-                    "response needs to be returned in %s seconds (%s)" % (timeout, e.code)
-                )
-            else:
-                Log.Warn("Unable to check for updates, network error (%s)" % e.code)
-
+            Log.Warn("Unable to check for updates, network error (%s)" % e.code)
             Log.Debug('"%s" (%s)' % (e.message, e.code))
 
         return None
@@ -63,8 +52,8 @@ class UpdateChecker(object):
         self.update_available = available
         self.update_detail = None
 
-    def run(self, first_run=False, timeout=None):
-        response = self.request(first_run, timeout)
+    def run(self, first_run=False):
+        response = self.request(first_run)
         if response is None:
             # Schedule a re-check in 30 seconds on errors
             self.reset()
