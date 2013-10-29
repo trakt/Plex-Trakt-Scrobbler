@@ -1,3 +1,4 @@
+import time
 from core.helpers import try_convert
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
@@ -14,6 +15,7 @@ class WebSocket(ActivityMethod):
         super(WebSocket, self).__init__(now_playing)
 
         self.ws = None
+        self.reconnects = 0
 
         self.scrobbler = WebSocketScrobbler()
 
@@ -29,11 +31,32 @@ class WebSocket(ActivityMethod):
 
         return False
 
-    def run(self):
+    def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
 
+    def run(self):
+        self.connect()
+
         while True:
-            self.process(*self.receive())
+            try:
+                self.process(*self.receive())
+
+                # successfully received data, reset reconnects counter
+                self.reconnects = 0
+
+            except websocket.WebSocketConnectionClosedException:
+                if self.reconnects <= 5:
+                    self.reconnects = self.reconnects + 1
+
+                    # Increasing sleep interval between reconnections
+                    if self.reconnects > 1:
+                        time.sleep(2 * (self.reconnects - 1))
+
+                    Log.Info('WebSocket connection has closed, reconnecting...')
+                    self.connect()
+                else:
+                    Log.Error('WebSocket connection unavailable, activity monitoring not available')
+                    break
 
     def receive(self):
         frame = self.ws.recv_frame()
