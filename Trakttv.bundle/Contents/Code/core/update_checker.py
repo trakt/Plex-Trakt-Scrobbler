@@ -78,9 +78,12 @@ class UpdateChecker(object):
             Dict['client_id'] = self.client_id
             Dict.Save()
 
-        log_func = Log.Info
-        if first_run:
-            log_func = Log.Debug
+        self.process_response(first_run, response)
+
+        self.schedule_next()
+
+    def process_response(self, first_run, response):
+        log_func = Log.Debug if first_run else Log.Info
 
         if response.get('update_error'):
             self.reset()
@@ -102,8 +105,6 @@ class UpdateChecker(object):
             self.reset(False)
 
             log_func("Up to date")
-
-        self.schedule_next()
 
     def schedule_next(self, interval=None):
         if interval is None:
