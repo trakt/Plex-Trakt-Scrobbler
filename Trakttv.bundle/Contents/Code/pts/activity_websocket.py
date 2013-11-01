@@ -21,15 +21,20 @@ class WebSocket(ActivityMethod):
 
     @classmethod
     def test(cls):
-        try:
-            PlexMediaServer.request('status/sessions')
-            return True
-        except Ex.HTTPError, ex:
-            Log.Debug('HTTPError on websocket testing, %s' % str(ex))
-        except Ex.URLError, ex:
-            Log.Debug('URLError on websocket testing, %s' % str(ex))
+        if PlexMediaServer.request('status/sessions', catch_exceptions=True) is None:
+            Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
+            return False
 
-        return False
+        server_info = PlexMediaServer.request(catch_exceptions=True)
+        if not server_info:
+            Log.Info('Error while retrieving server info for testing')
+            return False
+
+        multi_user = bool(server_info.get('multiuser', 0))
+        if not multi_user:
+            Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
+
+        return True
 
     def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
