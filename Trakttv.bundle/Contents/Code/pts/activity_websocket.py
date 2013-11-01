@@ -33,6 +33,7 @@ class WebSocket(ActivityMethod):
         multi_user = bool(server_info.get('multiuser', 0))
         if not multi_user:
             Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
+            return False
 
         return True
 
