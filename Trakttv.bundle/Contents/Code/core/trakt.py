@@ -9,6 +9,22 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 
 class Trakt(object):
+    retry_codes = [408, 500, (502, 504), 522, 524, (598, 599)]
+
+    @classmethod
+    def can_retry(cls, error_code):
+        for retry_code in cls.retry_codes:
+            if type(retry_code) is tuple and len(retry_code) == 2:
+                if retry_code[0] <= error_code <= retry_code[1]:
+                    return True
+            elif type(retry_code) is int:
+                if retry_code == error_code:
+                    return True
+            else:
+                raise ValueError("Invalid retry_code specified: %s" % retry_code)
+
+        return False
+
     @staticmethod
     def request(action, values=None, param=''):
         if param != "":
@@ -55,7 +71,7 @@ class Trakt(object):
         return {'result': result}
 
     @classmethod
-    def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=30):
+    def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=5):
         result = cls.request(action, values, param)
 
         retry_num = 1
@@ -65,14 +81,16 @@ class Trakt(object):
             if 'error_code' not in result['result']:
                 break
 
-            Log('Waiting %ss before retrying request' % retry_sleep)
-            time.sleep(retry_sleep)
+            if cls.can_retry(result['result'].get('error_code')):
+                Log.Info('Waiting %ss before retrying request' % retry_sleep)
+                time.sleep(retry_sleep)
 
-            if result['result']['error_code'] in [408, 504]:
-                Log('Retrying request, retry #%s' % retry_num)
+                Log.Info('Retrying request, retry #%s' % retry_num)
                 result = cls.request(action, values, param)
                 retry_num += 1
             else:
+                Log.Info('Not retrying the request, could be a client error (error with code %s was returned)' %
+                          result['result'].get('error_code'))
                 break
 
         return result
