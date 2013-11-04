@@ -37,7 +37,7 @@ class WatchSession(DictObject):
         :rtype: str or None
         """
 
-        if not self.metadata.get('type'):
+        if not self.metadata or not self.metadata.get('type'):
             return None
         media_type = self.metadata.get('type')
 

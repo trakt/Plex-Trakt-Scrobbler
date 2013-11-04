@@ -22,19 +22,29 @@ class PlexMediaServer(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path, data_type='xml', method='GET'):
+    def request(cls, path='/', data_type='xml', method='GET', catch_exceptions=False):
         if not path.startswith('/'):
             path = '/' + path
 
         url = cls.base_url + path
 
-        if data_type == 'xml':
-            return XML.ElementFromURL(url, errors='ignore')
+        try:
+            if data_type == 'xml':
+                return XML.ElementFromURL(url, errors='ignore')
+            elif data_type == 'text':
+                return HTTP.Request(url, method=method)
+            else:
+                raise ValueError()
 
-        if data_type == 'text':
-            return HTTP.Request(url, method=method)
-
-        raise ValueError()
+        except Ex.HTTPError, ex:
+            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
+            if not catch_exceptions:
+                raise ex
+        except Ex.URLError, ex:
+            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
+            if not catch_exceptions:
+                raise ex
+        return None
 
     @classmethod
     def add_guid(cls, metadata, section):
@@ -97,12 +107,16 @@ class PlexMediaServer(object):
 
                 return metadata
 
+            Log.Debug('xml_content = %s' % xml_content)
+            Log.Warn('Unable to find metadata for item %s' % item_id)
         except Ex.HTTPError, e:
-            Log('Failed to connect to %s.' % cls.base_url)
-            return {'status': False, 'message': responses[e.code][1]}
+            Log.Debug(str(e))
+            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
         except Ex.URLError, e:
-            Log('Failed to connect to %s.' % cls.base_url)
-            return {'status': False, 'message': e.reason[0]}
+            Log.Debug(str(e))
+            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
+
+        return None
 
     @classmethod
     def client(cls, client_id):

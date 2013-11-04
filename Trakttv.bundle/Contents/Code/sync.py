@@ -134,6 +134,21 @@ def pull_show(watched, rated, directory, tvdb_id):
                     PMS.rate(episode, show['rating_advanced'])
 
 
+def match_tvdb_id(rating_key):
+    if not rating_key:
+        Log.Warn("Guid matching failed, key isn't a valid string")
+        return None
+
+    guid = PMS.get_metadata_guid(rating_key)
+
+    match = TVSHOW1_REGEXP.search(guid)
+    if not match:
+        Log.Warn('Guid matching failed on "%s"' % guid)
+        return None
+
+    return match.group(2)
+
+
 @route('/applications/trakttv/manuallytrakt')
 def ManuallyTrakt():
     if Prefs['username'] is None:
@@ -174,14 +189,9 @@ def ManuallyTrakt():
         # Sync TV Shows
         if section_type == 'show':
             for directory in PMS.get_section_directories(key):
-                guid = PMS.get_metadata_guid(directory.get('ratingKey'))
-
-                match = TVSHOW1_REGEXP.search(guid)
-                if not match:
-                    Log.Warn('Guid matching failed on "%s"' % guid)
+                tvdb_id = match_tvdb_id(directory.get('ratingKey'))
+                if not tvdb_id:
                     continue
-
-                tvdb_id = match.group(2)
 
                 if tvdb_id is not None:
                     pull_show(show_list, episodes_rated_list, directory, tvdb_id)
@@ -224,7 +234,9 @@ def push_movie(all_movies, collected, rated, video):
 
 
 def push_show(all_episodes, collected, rated, directory):
-    tvdb_id = TVSHOW1_REGEXP.search(PMS.get_metadata_guid(directory.get('ratingKey'))).group(2)
+    tvdb_id = match_tvdb_id(directory.get('ratingKey'))
+    if not tvdb_id:
+        return
 
     tv_show = {
         'title': directory.get('title')

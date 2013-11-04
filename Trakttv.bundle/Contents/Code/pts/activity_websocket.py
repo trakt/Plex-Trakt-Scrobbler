@@ -1,3 +1,4 @@
+import time
 from core.helpers import try_convert
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
@@ -14,26 +15,54 @@ class WebSocket(ActivityMethod):
         super(WebSocket, self).__init__(now_playing)
 
         self.ws = None
+        self.reconnects = 0
 
         self.scrobbler = WebSocketScrobbler()
 
     @classmethod
     def test(cls):
-        try:
-            PlexMediaServer.request('status/sessions')
-            return True
-        except Ex.HTTPError:
-            pass
-        except Ex.URLError:
-            pass
+        if PlexMediaServer.request('status/sessions', catch_exceptions=True) is None:
+            Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
+            return False
 
-        return False
+        server_info = PlexMediaServer.request(catch_exceptions=True)
+        if not server_info:
+            Log.Info('Error while retrieving server info for testing')
+            return False
 
-    def run(self):
+        multi_user = bool(server_info.get('multiuser', 0))
+        if not multi_user:
+            Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
+            return False
+
+        return True
+
+    def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
 
+    def run(self):
+        self.connect()
+
         while True:
-            self.process(*self.receive())
+            try:
+                self.process(*self.receive())
+
+                # successfully received data, reset reconnects counter
+                self.reconnects = 0
+
+            except websocket.WebSocketConnectionClosedException:
+                if self.reconnects <= 5:
+                    self.reconnects = self.reconnects + 1
+
+                    # Increasing sleep interval between reconnections
+                    if self.reconnects > 1:
+                        time.sleep(2 * (self.reconnects - 1))
+
+                    Log.Info('WebSocket connection has closed, reconnecting...')
+                    self.connect()
+                else:
+                    Log.Error('WebSocket connection unavailable, activity monitoring not available')
+                    break
 
     def receive(self):
         frame = self.ws.recv_frame()

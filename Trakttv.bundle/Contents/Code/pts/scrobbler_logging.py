@@ -60,7 +60,7 @@ class LoggingScrobbler(Scrobbler):
 
         # Check if we are scrobbling a known media type
         if not media_type:
-            Log.Info('Playing unknown item, will not be scrobbled: ' + session.get_title())
+            Log.Info('Playing unknown item, will not be scrobbled: "%s"' % session.get_title())
             session.skip = True
             return
 
