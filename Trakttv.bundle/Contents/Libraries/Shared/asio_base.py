@@ -18,7 +18,11 @@ class BaseASIO(object):
         raise NotImplementedError()
 
     @classmethod
-    def size(cls, fp):
+    def get_size(cls, fp):
+        raise NotImplementedError()
+
+    @classmethod
+    def get_path(cls, fp):
         raise NotImplementedError()
 
     @classmethod
@@ -37,9 +41,6 @@ class BaseASIO(object):
 class BaseFile(object):
     platform_handler = None
 
-    def __init__(self, handle):
-        self.handle = handle
-
     def get_handler(self):
         """
         :rtype: BaseASIO
@@ -49,12 +50,19 @@ class BaseFile(object):
 
         return self.platform_handler
 
-    def size(self):
+    def get_size(self):
         """Get the current file size
 
         :rtype: int
         """
-        return self.get_handler().size(self)
+        return self.get_handler().get_size(self)
+
+    def get_path(self):
+        """Get the path of this file
+
+        :rtype: str
+        """
+        return self.get_handler().get_path(self)
 
     def seek(self, offset, origin):
         """Sets a reference point of a file to the given value.
@@ -87,7 +95,7 @@ class BaseFile(object):
         while not len(line_buf) or line_buf[-1] != '\n':
             ch = self.read(1)
 
-            if ch is None:
+            if not ch:
                 if timeout:
                     # Check if we have exceeded the timeout
                     if stale_since and (time.time() - stale_since) > timeout:
@@ -115,6 +123,3 @@ class BaseFile(object):
     def close(self):
         """Close the file handle"""
         return self.get_handler().close(self)
-
-    def __str__(self):
-        return "<asio_base.BaseFile handle: %s>" % self.handle

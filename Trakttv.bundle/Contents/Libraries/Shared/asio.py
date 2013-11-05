@@ -1,5 +1,7 @@
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio_windows import WindowsASIO
+from asio_posix import PosixASIO
+import sys
 import os
 
 
@@ -13,8 +15,12 @@ class ASIO(object):
 
         if os.name == 'nt':
             cls.platform_handler = WindowsASIO
+        elif os.name == 'posix':
+            cls.platform_handler = PosixASIO
         else:
             raise NotImplementedError()
+
+        print 'Picked %s handler' % cls.platform_handler
 
         return cls.platform_handler
 
@@ -29,6 +35,9 @@ class ASIO(object):
 
         :rtype: BaseFile
         """
+        if not parameters:
+            parameters = OpenParameters()
+
 
         if opener:
             return FileOpener(file_path, parameters)
@@ -44,10 +53,21 @@ class OpenParameters(object):
         self.handlers = {}
 
         # Update handler_parameters with defaults
+        self.posix()
         self.windows()
 
+    def posix(self, mode=None, buffering=None):
+        """
+        :type mode: str
+        :type buffering: int
+        """
+        self.handlers.update({PosixASIO: {
+            'mode': mode,
+            'buffering': buffering
+        }})
+
     def windows(self,
-                desired_access=WindowsASIO.DesiredAccess.READ,
+                desired_access=WindowsASIO.GenericAccess.READ,
                 share_mode=WindowsASIO.ShareMode.ALL,
                 creation_disposition=WindowsASIO.CreationDisposition.OPEN_EXISTING,
                 flags_and_attributes=0):
@@ -96,19 +116,49 @@ class FileOpener(object):
         self.file.close()
         self.file = None
 
-if __name__ == '__main__':
-    path = "C:\\Users\\Gardi_000\\AppData\\Local\\Plex Media Server\\Logs\\Plex Media Server.log"
 
-    params = OpenParameters()
+def read(path):
+    with ASIO.open(path) as f:
+        orig_path = f.get_path()
 
-    with ASIO.open(path, parameters=params) as f:
-        print "Handle: %s" % f.handle
-
-        size = f.size()
+        size = f.get_size()
         print "Seeking to end, %s" % size
         print f.seek(size, SEEK_ORIGIN_CURRENT)
 
         while True:
             line = f.read_line(timeout=1, timeout_type='return')
+            if not line and f.get_path() != orig_path:
+                return
 
             print line
+
+if __name__ == '__main__':
+    log_path_components = ['Plex Media Server', 'Logs', 'Plex Media Server.log']
+
+    path = None
+
+    if len(sys.argv) >= 2:
+        path = sys.argv[1]
+    else:
+        base_path = None
+
+        if os.name == 'nt':
+            base_path = os.environ.get('LOCALAPPDATA')
+        elif os.name == 'posix':
+            base_path = '/var/lib/plexmediaserver/Library/Application Support'
+
+        path = os.path.join(base_path, *log_path_components)
+
+    print 'Path: "%s"' % path
+
+    if not os.path.exists(path):
+        print 'File at "%s" not found' % path
+        path = None
+
+    if not path:
+        print 'Unknown path for "%s"' % os.name
+        exit()
+
+    while True:
+        read(path)
+        print 'file timeout, re-opening'
