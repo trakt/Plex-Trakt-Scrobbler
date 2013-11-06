@@ -2,7 +2,8 @@ from core.helpers import all
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
-from log_sucker import LogSucker
+from asio_base import SEEK_ORIGIN_CURRENT
+from asio import ASIO
 import time
 
 
@@ -18,6 +19,7 @@ class Logging(ActivityMethod):
     required_info = ['ratingKey', 'state', 'time', 'duration']
 
     log_path = None
+    log_file = None
 
     def __init__(self, now_playing):
         super(Logging, self).__init__(now_playing)
@@ -45,34 +47,38 @@ class Logging(ActivityMethod):
             Log.Warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
-        if cls.try_read(True):
+        if cls.try_read_line(True):
             return True
 
         return False
 
     @classmethod
-    def read(cls, first_read=False, where=None):
-        try:
-            return LogSucker.read(cls.get_path(), first_read, where)
-        except IOError, ex:
-            Log.Debug('IOError while trying to read the log file, %s' % str(ex))
+    def read_line(cls, timeout=30):
+        if not cls.log_file:
+            cls.log_file = ASIO.open(cls.get_path(), opener=False)
+            cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
+            cls.log_path = cls.log_file.get_path()
+            print 'Opened file path: "%s"' % cls.log_path
 
-        return None
+        return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
     @classmethod
-    def try_read(cls, first_read=False, where=None, start_interval=1,
-                 interval_step=1.6, max_interval=5, max_tries=4):
-        result = None
+    def try_read_line(cls, start_interval=1, interval_step=1.6, max_interval=5, max_tries=4, timeout=30):
+        line = None
 
         try_count = 0
         retry_interval = float(start_interval)
 
-        while not result and try_count <= max_tries:
+        while not line and try_count <= max_tries:
             try_count += 1
 
-            result = cls.read(first_read, where)
-            if result:
-                return result
+            line = cls.read_line(timeout)
+            if line:
+                break
+
+            if cls.log_file.get_path() != cls.log_path:
+                Log.Info("Log file moved (probably rotated), closing")
+                cls.close()
 
             # If we are below max_interval, keep increasing the interval
             if retry_interval < max_interval:
@@ -84,17 +90,27 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Info('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
+                Log.Info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
-        if not result:
-            Log.Info('Finished retrying, still no success')
+        if line and try_count > 1:
+            Log.Info('Successfully read the log file after retrying')
+        elif not line:
+            Log.Warn('Finished retrying, still no success')
 
-        return result
+        return line
+
+    @classmethod
+    def close(cls):
+        if not cls.log_file:
+            return
+
+        cls.log_file.close()
+        cls.log_file = None
 
     def run(self):
-        log_data = self.try_read(True)
-        if not log_data:
+        line = self.try_read_line()
+        if not line:
             Log.Warn('Unable to read log file')
             return
 
@@ -103,11 +119,10 @@ class Logging(ActivityMethod):
                 break
 
             # Grab the next line of the log
-            read_result = self.try_read(False, log_data['where'])
+            line = self.try_read_line()
 
-            if read_result:
-                log_data = read_result
-                self.process(log_data['line'])
+            if line:
+                self.process(line)
             else:
                 Log.Warn('Unable to read log file')
 
