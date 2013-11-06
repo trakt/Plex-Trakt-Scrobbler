@@ -83,7 +83,7 @@ class BaseFile(object):
         """
         return self.get_handler().read(self, buf_size)
 
-    def read_line(self, timeout=None, timeout_type='exception'):
+    def read_line(self, timeout=None, timeout_type='exception', empty_sleep=1000):
         """Read a single line from the file
 
         :rtype: str
@@ -110,6 +110,8 @@ class BaseFile(object):
                     # Update stale_since when we hit 'None' reads
                     if not stale_since:
                         stale_since = time.time()
+
+                time.sleep(empty_sleep / 1000)
 
                 continue
             elif timeout:

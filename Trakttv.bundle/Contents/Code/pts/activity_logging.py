@@ -53,23 +53,17 @@ class Logging(ActivityMethod):
         return False
 
     @classmethod
-    def read_line(cls):
+    def read_line(cls, timeout=30):
         if not cls.log_file:
             cls.log_file = ASIO.open(cls.get_path(), opener=False)
-            cls.log_file.seek(cls.log_file.size(), SEEK_ORIGIN_CURRENT)
+            cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
+            cls.log_path = cls.log_file.get_path()
+            print 'Opened file path: "%s"' % cls.log_path
 
-        return cls.log_file.read_line(timeout=30, timeout_type='return')
-
-    @classmethod
-    def close(cls):
-        if not cls.log_file:
-            return
-
-        cls.log_file.close()
-        cls.log_file = None
+        return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
     @classmethod
-    def try_read_line(cls, start_interval=1, interval_step=1.6, max_interval=5, max_tries=4):
+    def try_read_line(cls, start_interval=1, interval_step=1.6, max_interval=5, max_tries=4, timeout=30):
         line = None
 
         try_count = 0
@@ -78,12 +72,13 @@ class Logging(ActivityMethod):
         while not line and try_count <= max_tries:
             try_count += 1
 
-            line = cls.read_line()
+            line = cls.read_line(timeout)
             if line:
                 break
 
-            # Let's close the file (will re-open on next try)
-            cls.close()
+            if cls.log_file.get_path() != cls.log_path:
+                Log.Info("Log file moved (probably rotated), closing")
+                cls.close()
 
             # If we are below max_interval, keep increasing the interval
             if retry_interval < max_interval:
@@ -95,15 +90,23 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Warn('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
+                Log.Info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
         if line and try_count > 1:
             Log.Info('Successfully read the log file after retrying')
         elif not line:
-            Log.Info('Finished retrying, still no success')
+            Log.Warn('Finished retrying, still no success')
 
         return line
+
+    @classmethod
+    def close(cls):
+        if not cls.log_file:
+            return
+
+        cls.log_file.close()
+        cls.log_file = None
 
     def run(self):
         line = self.try_read_line()
