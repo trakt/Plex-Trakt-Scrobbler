@@ -80,7 +80,7 @@ class Logging(ActivityMethod):
 
             line = cls.read_line()
             if line:
-                return line
+                break
 
             # Let's close the file (will re-open on next try)
             cls.close()
@@ -95,10 +95,12 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Info('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
+                Log.Warn('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
-        if not line:
+        if line and try_count > 1:
+            Log.Info('Successfully read the log file after retrying')
+        elif not line:
             Log.Info('Finished retrying, still no success')
 
         return line
