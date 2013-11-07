@@ -58,18 +58,21 @@ class WebSocketScrobbler(Scrobbler):
 
                 # First try update the session if the media hasn't changed
                 # otherwise delete the session
-                if self.update_session(session, view_offset):
-                    Log.Debug('Updated the current session')
-                else:
-                    Log.Debug('Deleted the current session')
+                if not self.update_session(session, view_offset):
+                    Log.Debug('Media changed, deleting the session')
                     session.delete()
-                    session = None
+                    return None
 
-            if not session or session.skip:
+            if session.skip:
                 return None
 
             if state == 'playing' and session.update_required:
-                self.update_session(session, view_offset)
+                Log.Debug('Session update required, updating the session...')
+
+                if not self.update_session(session, view_offset):
+                    Log.Debug('Media changed, deleting the session')
+                    session.delete()
+                    return None
         else:
             session = self.create_session(session_key, state)
 
