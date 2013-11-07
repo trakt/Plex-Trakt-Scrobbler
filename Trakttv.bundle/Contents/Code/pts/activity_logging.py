@@ -109,7 +109,7 @@ class Logging(ActivityMethod):
         cls.log_file = None
 
     def run(self):
-        line = self.try_read_line()
+        line = self.try_read_line(timeout=60)
         if not line:
             Log.Warn('Unable to read log file')
             return
@@ -119,7 +119,7 @@ class Logging(ActivityMethod):
                 break
 
             # Grab the next line of the log
-            line = self.try_read_line()
+            line = self.try_read_line(timeout=60)
 
             if line:
                 self.process(line)
