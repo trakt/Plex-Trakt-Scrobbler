@@ -36,10 +36,14 @@ class WebSocketScrobbler(Scrobbler):
         Log.Debug('Trying to update the current WatchSession (session key: %s)' % session.key)
 
         video_section = PMS.get_video_session(session.key)
+        if not video_section:
+            Log.Warn('Session was not found on media server')
+            return False
 
         Log.Debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
 
         if session.item_key != video_section.get('ratingKey'):
+            Log.Info('Session media key mismatch, currently watching media has probably changed')
             return False
 
         session.last_view_offset = view_offset
