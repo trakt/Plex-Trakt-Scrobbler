@@ -58,7 +58,7 @@ class Logging(ActivityMethod):
             cls.log_file = ASIO.open(cls.get_path(), opener=False)
             cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
             cls.log_path = cls.log_file.get_path()
-            print 'Opened file path: "%s"' % cls.log_path
+            Log.Info('Opened file path: "%s"' % cls.log_path)
 
         return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
