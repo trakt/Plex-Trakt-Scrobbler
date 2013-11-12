@@ -1,4 +1,3 @@
-from core.helpers import all
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
@@ -6,17 +5,20 @@ from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
 import time
 
+LOG_PATTERN = r'^.*?\[\d+\]\s\w+\s-\s{message}$'
+REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
 
-CLIENT_REGEX = Regex(
-    '^.*?Client \[(?P<client_id>.*?)\] reporting timeline state (?P<state>playing|stopped|paused), '
-    'progress of (?P<time>\d+)/(?P<duration>\d+)ms for (?P<trailing>.*?)$'
-)
-CLIENT_PARAM_REGEX = Regex('(?P<key>\w+)=(?P<value>.*?)(?:,|\s|$)')
+PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
+
+PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
+RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
+CLIENT_REGEX = Regex(LOG_PATTERN.format(message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
 
 class Logging(ActivityMethod):
     name = 'Logging'
-    required_info = ['ratingKey', 'state', 'time', 'duration']
+    required_info = ['ratingKey', 'state', 'time']
+    extra_info = ['duration', 'machineIdentifier']
 
     log_path = None
     log_file = None
@@ -127,18 +129,113 @@ class Logging(ActivityMethod):
                 Log.Warn('Unable to read log file')
 
     def process(self, line):
-        match = CLIENT_REGEX.match(line)
+        header_match = PLAYING_HEADER_REGEX.match(line)
+        if not header_match:
+            return
+
+        activity_type = header_match.group('type')
+
+        # Get a match from the activity entries
+        if activity_type == 'timeline':
+            match = self.timeline()
+        elif activity_type == 'progress':
+            match = self.progress()
+        else:
+            Log.Warn('Unknown activity type "%s"', activity_type)
+            return
+
+        # Ensure we successfully matched a result
         if not match:
             return
 
-        info = match.groupdict()
+        # Sanitize the activity result
+        info = {}
 
-        if info.get('trailing'):
-            info.update(dict(CLIENT_PARAM_REGEX.findall(info.pop('trailing'))))
+        # - Get required info parameters
+        for key in self.required_info:
+            if key in match and match[key] is not None:
+                info[key] = match[key]
+            else:
+                Log.Warn('Invalid activity match, missing key %s (%s)', (key, match))
+                return
 
-        valid = all([key in info for key in self.required_info])
+        # - Add in any extra info parameters
+        for key in self.extra_info:
+            if key in match:
+                info[key] = match[key]
+            else:
+                info[key] = None
 
-        if valid:
-            self.scrobbler.update(info)
+        # Update the scrobbler with the current state
+        self.scrobbler.update(info)
+
+    def timeline(self):
+        return self.read_parameters(self.client_match, self.range_match)
+
+    def progress(self):
+        data = self.read_parameters()
+        if not data:
+            return None
+
+        # Translate parameters into timeline-style form
+        return {
+            'state': data.get('state'),
+            'ratingKey': data.get('key'),
+            'time': data.get('time')
+        }
+
+    def read_parameters(self, *match_functions):
+        match_functions = [self.parameter_match] + list(match_functions)
+
+        info = {}
+
+        while True:
+            line = self.try_read_line(timeout=5)
+            if not line:
+                Log.Warn('Unable to read log file')
+                return None
+
+            # Run through each match function to find a result
+            match = None
+            for func in match_functions:
+                match = func(line)
+
+                if match is not None:
+                    break
+
+            # Update info dict with result, otherwise finish reading
+            if match:
+                info.update(match)
+            elif match is None:
+                break
+
+        return info
+
+    @staticmethod
+    def parameter_match(line):
+        match = PARAM_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        match = match.groupdict()
+
+        return {match['key']: match['value']}
+
+    @staticmethod
+    def range_match(line):
+        match = RANGE_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        return match.groupdict()
+
+    @staticmethod
+    def client_match(line):
+        match = CLIENT_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        return match.groupdict()
+
 
 PlexActivity.register(Logging)

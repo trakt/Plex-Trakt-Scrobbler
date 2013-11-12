@@ -6,10 +6,16 @@ from pts.scrobbler import Scrobbler
 
 class LoggingScrobbler(Scrobbler):
     def create_session(self, info):
+        client = None
+        if info.get('machineIdentifier'):
+            PlexMediaServer.client(info['machineIdentifier'])
+        else:
+            Log.Info('No machineIdentifier available, client filtering not available')
+
         return WatchSession.from_info(
             info,
             PlexMediaServer.metadata(info['ratingKey']),
-            PlexMediaServer.client(info.get('client_id'))
+            client
         )
 
     def session_valid(self, session, info):
@@ -24,7 +30,7 @@ class LoggingScrobbler(Scrobbler):
         return True
 
     def get_session(self, info):
-        session = WatchSession.load('logging-%s' % info.get('client_id'))
+        session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
         if session:
             if not self.session_valid(session, info):
