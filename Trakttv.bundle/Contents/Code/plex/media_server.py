@@ -134,7 +134,7 @@ class PlexMediaServer(object):
             if section.get('machineIdentifier') == client_id:
                 return section
 
-        Log.Warn("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
+        Log.Info("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
         return None
 
     @classmethod
