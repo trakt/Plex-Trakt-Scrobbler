@@ -10,6 +10,14 @@ REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*
 
 PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
 
+IGNORE_PATTERNS = [
+    r'error parsing allowedNetworks.*?',
+    r'Comparing request from.*?',
+    r'We found auth token (.*?), enabling token-based authentication.'
+]
+
+IGNORE_REGEX = Regex(LOG_PATTERN.format(message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
+
 PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
 RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
 CLIENT_REGEX = Regex(LOG_PATTERN.format(message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
@@ -206,7 +214,7 @@ class Logging(ActivityMethod):
             # Update info dict with result, otherwise finish reading
             if match:
                 info.update(match)
-            elif match is None:
+            elif match is None and IGNORE_REGEX.match(line.strip()) is None:
                 break
 
         return info
