@@ -8,8 +8,7 @@ import time
 LOG_PATTERN = r'^.*?\[\d+\]\s\w+\s-\s{message}$'
 REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
 
-TIMELINE_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/timeline"))
-PROGRESS_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/progress"))
+PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
 
 PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
 RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
@@ -130,13 +129,29 @@ class Logging(ActivityMethod):
                 Log.Warn('Unable to read log file')
 
     def process(self, line):
-        match = self.timeline(line) or self.progress(line)
+        header_match = PLAYING_HEADER_REGEX.match(line)
+        if not header_match:
+            return
+
+        activity_type = header_match.group('type')
+
+        # Get a match from the activity entries
+        if activity_type == 'timeline':
+            match = self.timeline()
+        elif activity_type == 'progress':
+            match = self.progress()
+        else:
+            Log.Warn('Unknown activity type "%s"', activity_type)
+            return
+
+        # Ensure we successfully matched a result
         if not match:
             return
 
+        # Sanitize the activity result
         info = {}
 
-        # Get required info parameters
+        # - Get required info parameters
         for key in self.required_info:
             if key in match and match[key] is not None:
                 info[key] = match[key]
@@ -144,25 +159,20 @@ class Logging(ActivityMethod):
                 Log.Warn('Invalid activity match, missing key %s (%s)', (key, match))
                 return
 
-        # Add in any extra info parameters
+        # - Add in any extra info parameters
         for key in self.extra_info:
             if key in match:
                 info[key] = match[key]
             else:
                 info[key] = None
 
+        # Update the scrobbler with the current state
         self.scrobbler.update(info)
 
-    def timeline(self, line):
-        if not TIMELINE_HEADER_REGEX.match(line):
-            return None
-
+    def timeline(self):
         return self.read_parameters(self.client_match, self.range_match)
 
-    def progress(self, line):
-        if not PROGRESS_HEADER_REGEX.match(line):
-            return None
-
+    def progress(self):
         data = self.read_parameters()
         if not data:
             return None
