@@ -93,7 +93,7 @@ class WatchSession(DictObject):
             return None
 
         return WatchSession(
-            'logging-%s' % info.get('client_id'),
+            'logging-%s' % info.get('machineIdentifier'),
             info['ratingKey'],
             metadata,
             info['state'],

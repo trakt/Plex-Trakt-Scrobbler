@@ -36,10 +36,14 @@ class WebSocketScrobbler(Scrobbler):
         Log.Debug('Trying to update the current WatchSession (session key: %s)' % session.key)
 
         video_section = PMS.get_video_session(session.key)
+        if not video_section:
+            Log.Warn('Session was not found on media server')
+            return False
 
         Log.Debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
 
         if session.item_key != video_section.get('ratingKey'):
+            Log.Info('Session media key mismatch, currently watching media has probably changed')
             return False
 
         session.last_view_offset = view_offset
@@ -58,18 +62,21 @@ class WebSocketScrobbler(Scrobbler):
 
                 # First try update the session if the media hasn't changed
                 # otherwise delete the session
-                if self.update_session(session, view_offset):
-                    Log.Debug('Updated the current session')
-                else:
-                    Log.Debug('Deleted the current session')
+                if not self.update_session(session, view_offset):
+                    Log.Debug('Media changed, deleting the session')
                     session.delete()
-                    session = None
+                    return None
 
-            if not session or session.skip:
+            if session.skip:
                 return None
 
             if state == 'playing' and session.update_required:
-                self.update_session(session, view_offset)
+                Log.Debug('Session update required, updating the session...')
+
+                if not self.update_session(session, view_offset):
+                    Log.Debug('Media changed, deleting the session')
+                    session.delete()
+                    return None
         else:
             session = self.create_session(session_key, state)
 

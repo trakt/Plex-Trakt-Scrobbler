@@ -1,23 +1,35 @@
-from core.helpers import all
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
-from log_sucker import LogSucker
+from asio_base import SEEK_ORIGIN_CURRENT
+from asio import ASIO
 import time
 
+LOG_PATTERN = r'^.*?\[\d+\]\s\w+\s-\s{message}$'
+REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
 
-CLIENT_REGEX = Regex(
-    '^.*?Client \[(?P<client_id>.*?)\] reporting timeline state (?P<state>playing|stopped|paused), '
-    'progress of (?P<time>\d+)/(?P<duration>\d+)ms for (?P<trailing>.*?)$'
-)
-CLIENT_PARAM_REGEX = Regex('(?P<key>\w+)=(?P<value>.*?)(?:,|\s|$)')
+PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
+
+IGNORE_PATTERNS = [
+    r'error parsing allowedNetworks.*?',
+    r'Comparing request from.*?',
+    r'We found auth token (.*?), enabling token-based authentication.'
+]
+
+IGNORE_REGEX = Regex(LOG_PATTERN.format(message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
+
+PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
+RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
+CLIENT_REGEX = Regex(LOG_PATTERN.format(message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
 
 class Logging(ActivityMethod):
     name = 'Logging'
-    required_info = ['ratingKey', 'state', 'time', 'duration']
+    required_info = ['ratingKey', 'state', 'time']
+    extra_info = ['duration', 'machineIdentifier']
 
     log_path = None
+    log_file = None
 
     def __init__(self, now_playing):
         super(Logging, self).__init__(now_playing)
@@ -45,34 +57,38 @@ class Logging(ActivityMethod):
             Log.Warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
-        if cls.try_read(True):
+        if cls.try_read_line(True):
             return True
 
         return False
 
     @classmethod
-    def read(cls, first_read=False, where=None):
-        try:
-            return LogSucker.read(cls.get_path(), first_read, where)
-        except IOError, ex:
-            Log.Debug('IOError while trying to read the log file, %s' % str(ex))
+    def read_line(cls, timeout=30):
+        if not cls.log_file:
+            cls.log_file = ASIO.open(cls.get_path(), opener=False)
+            cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
+            cls.log_path = cls.log_file.get_path()
+            Log.Info('Opened file path: "%s"' % cls.log_path)
 
-        return None
+        return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
     @classmethod
-    def try_read(cls, first_read=False, where=None, start_interval=1,
-                 interval_step=1.6, max_interval=5, max_tries=4):
-        result = None
+    def try_read_line(cls, start_interval=1, interval_step=1.6, max_interval=5, max_tries=4, timeout=30):
+        line = None
 
         try_count = 0
         retry_interval = float(start_interval)
 
-        while not result and try_count <= max_tries:
+        while not line and try_count <= max_tries:
             try_count += 1
 
-            result = cls.read(first_read, where)
-            if result:
-                return result
+            line = cls.read_line(timeout)
+            if line:
+                break
+
+            if cls.log_file.get_path() != cls.log_path:
+                Log.Info("Log file moved (probably rotated), closing")
+                cls.close()
 
             # If we are below max_interval, keep increasing the interval
             if retry_interval < max_interval:
@@ -84,17 +100,27 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Info('Log file reading failed, waiting %.02f seconds and then trying again' % retry_interval)
+                Log.Info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
-        if not result:
-            Log.Info('Finished retrying, still no success')
+        if line and try_count > 1:
+            Log.Info('Successfully read the log file after retrying')
+        elif not line:
+            Log.Warn('Finished retrying, still no success')
 
-        return result
+        return line
+
+    @classmethod
+    def close(cls):
+        if not cls.log_file:
+            return
+
+        cls.log_file.close()
+        cls.log_file = None
 
     def run(self):
-        log_data = self.try_read(True)
-        if not log_data:
+        line = self.try_read_line(timeout=60)
+        if not line:
             Log.Warn('Unable to read log file')
             return
 
@@ -103,27 +129,121 @@ class Logging(ActivityMethod):
                 break
 
             # Grab the next line of the log
-            read_result = self.try_read(False, log_data['where'])
+            line = self.try_read_line(timeout=60)
 
-            if read_result:
-                log_data = read_result
-                self.process(log_data['line'])
+            if line:
+                self.process(line)
             else:
                 Log.Warn('Unable to read log file')
 
     def process(self, line):
-        match = CLIENT_REGEX.match(line)
+        header_match = PLAYING_HEADER_REGEX.match(line)
+        if not header_match:
+            return
+
+        activity_type = header_match.group('type')
+
+        # Get a match from the activity entries
+        if activity_type == 'timeline':
+            match = self.timeline()
+        elif activity_type == 'progress':
+            match = self.progress()
+        else:
+            Log.Warn('Unknown activity type "%s"', activity_type)
+            return
+
+        # Ensure we successfully matched a result
         if not match:
             return
 
-        info = match.groupdict()
+        # Sanitize the activity result
+        info = {}
 
-        if info.get('trailing'):
-            info.update(dict(CLIENT_PARAM_REGEX.findall(info.pop('trailing'))))
+        # - Get required info parameters
+        for key in self.required_info:
+            if key in match and match[key] is not None:
+                info[key] = match[key]
+            else:
+                Log.Warn('Invalid activity match, missing key %s (%s)', (key, match))
+                return
 
-        valid = all([key in info for key in self.required_info])
+        # - Add in any extra info parameters
+        for key in self.extra_info:
+            if key in match:
+                info[key] = match[key]
+            else:
+                info[key] = None
 
-        if valid:
-            self.scrobbler.update(info)
+        # Update the scrobbler with the current state
+        self.scrobbler.update(info)
+
+    def timeline(self):
+        return self.read_parameters(self.client_match, self.range_match)
+
+    def progress(self):
+        data = self.read_parameters()
+        if not data:
+            return None
+
+        # Translate parameters into timeline-style form
+        return {
+            'state': data.get('state'),
+            'ratingKey': data.get('key'),
+            'time': data.get('time')
+        }
+
+    def read_parameters(self, *match_functions):
+        match_functions = [self.parameter_match] + list(match_functions)
+
+        info = {}
+
+        while True:
+            line = self.try_read_line(timeout=5)
+            if not line:
+                Log.Warn('Unable to read log file')
+                return None
+
+            # Run through each match function to find a result
+            match = None
+            for func in match_functions:
+                match = func(line)
+
+                if match is not None:
+                    break
+
+            # Update info dict with result, otherwise finish reading
+            if match:
+                info.update(match)
+            elif match is None and IGNORE_REGEX.match(line.strip()) is None:
+                break
+
+        return info
+
+    @staticmethod
+    def parameter_match(line):
+        match = PARAM_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        match = match.groupdict()
+
+        return {match['key']: match['value']}
+
+    @staticmethod
+    def range_match(line):
+        match = RANGE_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        return match.groupdict()
+
+    @staticmethod
+    def client_match(line):
+        match = CLIENT_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        return match.groupdict()
+
 
 PlexActivity.register(Logging)
