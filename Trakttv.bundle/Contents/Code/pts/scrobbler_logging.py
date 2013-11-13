@@ -80,7 +80,10 @@ class LoggingScrobbler(Scrobbler):
 
         # No action needed, exit
         if not action:
-            Log.Debug('Nothing to do this time for ' + session.get_title())
+            Log.Debug('%s Nothing to do this time for %s' % (
+                self.get_status_label(session, info.get('state')),
+                session.get_title()
+            ))
             session.save()
             return
 

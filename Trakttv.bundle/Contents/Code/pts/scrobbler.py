@@ -2,6 +2,13 @@ from core.trakt import Trakt
 
 
 class Scrobbler(object):
+    @staticmethod
+    def get_status_label(session, state):
+        return '[{0:<2}{1:>3}]'.format(
+            state[:2].upper() if state else '?',
+            session.progress if session and session.progress else '?'
+        )
+
     def get_action(self, session, state):
         """
         :type session: WatchSession
@@ -10,33 +17,41 @@ class Scrobbler(object):
         :rtype: str or None
         """
 
+        status_label = self.get_status_label(session, state)
+
         if state not in [session.cur_state, 'buffering']:
             if state in 'stopped':
-                Log.Debug(session.get_title() + ' stopped, watching status cancelled')
+                Log.Debug('%s %s stopped, watching status cancelled' % (
+                    status_label, session.get_title()
+                ))
                 return 'cancelwatching'
 
             if state == 'paused':
                 if not session.paused_since:
-                    Log.Debug(session.get_title() + " just paused, waiting 15s before cancelling the watching status")
+                    Log.Debug("%s %s just paused, waiting 15s before cancelling the watching status" % (
+                        status_label, session.get_title()
+                    ))
                     session.paused_since = Datetime.Now()
                     return None
 
                 if Datetime.Now() > session.paused_since + Datetime.Delta(seconds=15):
-                    Log.Debug(session.get_title() + " paused for 15s, watching status cancelled")
+                    Log.Debug("%s %s paused for 15s, watching status cancelled" % (
+                        status_label, session.get_title()
+                    ))
                     return 'cancelwatching'
 
             if state == 'playing':
-                Log.Debug('Updating watch status for ' + session.get_title())
+                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
                 return 'watching'
 
         #scrobble item
         elif state == 'playing' and not session.scrobbled and session.progress > 80:
-            Log.Debug('Scrobbling ' + session.get_title())
+            Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
             return 'scrobble'
 
         # update every 10 min
         elif state == 'playing' and ((session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now()):
-            Log.Debug('Updating watch status for ' + session.get_title())
+            Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
             return 'watching'
 
         return None
