@@ -19,11 +19,13 @@ class Scrobbler(object):
 
         status_label = self.get_status_label(session, state)
 
+        # State has changed
         if state not in [session.cur_state, 'buffering']:
-            if state in 'stopped':
+            if state == 'stopped' and session.watching:
                 Log.Debug('%s %s stopped, watching status cancelled' % (
                     status_label, session.get_title()
                 ))
+                session.watching = False
                 return 'cancelwatching'
 
             if state == 'paused':
@@ -38,21 +40,34 @@ class Scrobbler(object):
                     Log.Debug("%s %s paused for 15s, watching status cancelled" % (
                         status_label, session.get_title()
                     ))
+                    session.watching = False
                     return 'cancelwatching'
 
             if state == 'playing':
-                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
+                Log.Debug('%s Sending watch status for %s' % (status_label, session.get_title()))
+                session.watching = True
                 return 'watching'
 
-        #scrobble item
-        elif state == 'playing' and not session.scrobbled and session.progress > 80:
-            Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
-            return 'scrobble'
+        elif state == 'playing':
+            # scrobble item
+            if not session.scrobbled and session.progress >= 80:
+                Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
+                return 'scrobble'
 
-        # update every 10 min
-        elif state == 'playing' and ((session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now()):
-            Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
-            return 'watching'
+            # update every 10 min if media hasn't finished
+            elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
+                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
+                session.watching = True
+                return 'watching'
+
+            # cancel watching status on items at 100% progress
+            elif session.progress >= 100 and session.watching:
+                Log.Debug('%s Media finished, cancelling watching status for %s' % (
+                    status_label,
+                    session.get_title()
+                ))
+                session.watching = False
+                return 'cancelwatching'
 
         return None
 
