@@ -122,6 +122,8 @@ class WebSocketScrobbler(Scrobbler):
             session.skip = True
             return
 
+        session.last_view_offset = view_offset
+
         # Calculate progress
         session.progress = int(round((float(view_offset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
 
