@@ -6,7 +6,7 @@ class Scrobbler(object):
     def get_status_label(session, state):
         return '[{0:<2}{1:>3}]'.format(
             state[:2].upper() if state else '?',
-            session.progress if session and session.progress else '?'
+            session.progress if session and session.progress is not None else '?'
         )
 
     def get_action(self, session, state):
