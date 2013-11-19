@@ -43,7 +43,15 @@ class WebSocketScrobbler(Scrobbler):
         Log.Debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
 
         if session.item_key != video_section.get('ratingKey'):
-            Log.Info('Session media key mismatch, currently watching media has probably changed')
+            Log.Info('Invalid Session: Media changed')
+            return False
+
+        if not session.metadata:
+            Log.Debug('Invalid Session: Missing metadata')
+            return False
+
+        if session.metadata.get('duration', 0) <= 0:
+            Log.Debug('Invalid Session: Invalid duration')
             return False
 
         session.last_view_offset = view_offset
@@ -125,7 +133,11 @@ class WebSocketScrobbler(Scrobbler):
         session.last_view_offset = view_offset
 
         # Calculate progress
-        session.progress = int(round((float(view_offset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
+        if not self.update_progress(session, view_offset):
+            Log.Warn('Error while updating session progress, queued session to be updated')
+            session.update_required = True
+            session.save()
+            return
 
         action = self.get_action(session, state)
 

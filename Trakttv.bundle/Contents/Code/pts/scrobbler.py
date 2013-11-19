@@ -133,6 +133,21 @@ class Scrobbler(object):
 
         session.save()
 
+    def update_progress(self, session, view_offset):
+        if not session or not session.metadata:
+            return False
+
+        # Ensure duration is positive
+        if session.metadata.get('duration', 0) <= 0:
+            return False
+
+        duration_millis = session.metadata['duration'] * 60 * 1000
+        perc_float = float(view_offset) / duration_millis
+
+        session.progress = int(round(perc_float * 100, 0))
+
+        return True
+
     def valid_user(self, session):
         if Prefs['scrobble_names'] is None:
             return True

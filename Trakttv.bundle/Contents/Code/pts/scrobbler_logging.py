@@ -27,6 +27,14 @@ class LoggingScrobbler(Scrobbler):
             Log.Debug('Invalid Session: Media stopped')
             return False
 
+        if not session.metadata:
+            Log.Debug('Invalid Session: Missing metadata')
+            return False
+
+        if session.metadata.get('duration', 0) <= 0:
+            Log.Debug('Invalid Session: Invalid duration')
+            return False
+
         return True
 
     def get_session(self, info):
@@ -71,7 +79,9 @@ class LoggingScrobbler(Scrobbler):
             return
 
         # Calculate progress
-        session.progress = int(round((float(info['time']) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
+        if not self.update_progress(session, info['time']):
+            Log.Warn('Error while updating session progress, queued session to be updated')
+            return
 
         action = self.get_action(session, info['state'])
 
