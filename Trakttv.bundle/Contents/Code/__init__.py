@@ -23,7 +23,6 @@ class Main:
     def __init__(self):
         # Check for updates first (required for use in header)
         self.update_checker = UpdateChecker()
-        self.update_checker.run_once()
 
         Header.show(self)
 
@@ -66,6 +65,8 @@ class Main:
         # Start the plex activity monitor
         if PlexActivity.test():
             Thread.Create(PlexActivity.run)
+
+        self.update_checker.run_once(async=True)
 
     @staticmethod
     def update_collection(item_id, action):
