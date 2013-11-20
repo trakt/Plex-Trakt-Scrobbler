@@ -141,17 +141,15 @@ class WebSocketScrobbler(Scrobbler):
 
         action = self.get_action(session, state)
 
-        if state == 'playing':
-            session.paused_since = None
-
-        # No action needed, exit
-        if not action:
+        if action:
+            self.handle_action(session, media_type, action, state)
+        else:
             Log.Debug('%s Nothing to do this time for %s' % (
                 self.get_status_label(session, state),
                 session.get_title()
             ))
             session.save()
-            return
 
-        if self.handle_action(session, media_type, action, state):
+        if self.handle_state(session, state) or action:
+            session.save()
             Dict.Save()

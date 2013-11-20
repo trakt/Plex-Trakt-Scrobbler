@@ -11,6 +11,18 @@ class DictObject(object):
         Dict[self.root_key][self.key] = self.to_json()
 
     @classmethod
+    def all(cls):
+        if not cls.root_key or cls.root_key not in Dict:
+            return []
+
+        items = []
+
+        for key, value in Dict[cls.root_key].items():
+            items.append((key, cls.from_json(value)))
+
+        return items
+
+    @classmethod
     def load(cls, key):
         if not cls.root_key:
             raise ValueError()

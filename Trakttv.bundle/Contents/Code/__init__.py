@@ -10,6 +10,7 @@ import pts
 
 
 from pts.activity import PlexActivity
+from pts.session_manager import SessionManager
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS
@@ -33,6 +34,8 @@ class Main:
             Dict['nowPlaying'] = dict()
 
         Main.update_config()
+
+        self.session_manager = SessionManager()
 
         PlexActivity.on_update_collection.subscribe(self.update_collection)
 
@@ -67,6 +70,8 @@ class Main:
             Thread.Create(PlexActivity.run)
 
         self.update_checker.run_once(async=True)
+
+        self.session_manager.start()
 
     @staticmethod
     def update_collection(item_id, action):
