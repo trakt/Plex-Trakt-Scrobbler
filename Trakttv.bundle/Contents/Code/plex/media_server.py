@@ -226,7 +226,7 @@ class PMS(object):
     @classmethod
     def scrobble(cls, video):
         if video.get('viewCount') > 0:
-            Log('video has already been marked as seen')
+            Log.Debug('video has already been marked as seen')
             return False
 
         result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
