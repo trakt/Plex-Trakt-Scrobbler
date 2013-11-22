@@ -9,7 +9,7 @@ HTTP_RETRY_CODES = [408, 500, (502, 504), 522, 524, (598, 599)]
 
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
-            timeout=None, max_retries=3, retry_sleep=5, **kwargs):
+            timeout=None, max_retries=3, retry_sleep=5, method=None, **kwargs):
     """Send an HTTP Request
 
     :param url: Request url
@@ -36,10 +36,16 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     :param retry_sleep: Number of seconds to sleep for between requests
     :type retry_sleep: int
 
+    :param method: HTTP method to use for this request, None = default method determined by urllib2
+    :type method: str or None
 
     :rtype: Response
     """
     req = urllib2.Request(url)
+
+    # Set request method (a dirty hack, but urllib...)
+    if method:
+        req.get_method = lambda: method
 
     # Add request body
     if data:
@@ -61,7 +67,7 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
             req.add_header('Content-Type', data_type)
 
     # Write request debug entry to log
-    internal_log_request(url, response_type, data, data_type, retry, timeout)
+    internal_log_request(url, response_type, data, data_type, retry, timeout, method)
 
     if timeout:
         kwargs['timeout'] = timeout
@@ -78,8 +84,10 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     )
 
 
-def internal_log_request(url, response_type, data, data_type, retry, timeout):
+def internal_log_request(url, response_type, data, data_type, retry, timeout, method):
     debug_values = [
+        method if method != 'GET' else None,
+
         "len(data): %s, data_type: '%s'" % (
             len(data) if data else None,
             data_type
