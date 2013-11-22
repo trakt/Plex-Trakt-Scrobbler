@@ -83,7 +83,13 @@ class WebSocket(ActivityMethod):
         if opcode not in self.opcode_data:
             return
 
-        info = JSON.ObjectFromString(data)
+        try:
+            info = JSON.ObjectFromString(data)
+        except Exception, e:
+            Log.Warn('Error decoding message from websocket: %s' % e)
+            Log.Debug(data)
+            return
+
         item = info['_children'][0]
 
         if info['type'] == "playing" and Dict["scrobble"]:
