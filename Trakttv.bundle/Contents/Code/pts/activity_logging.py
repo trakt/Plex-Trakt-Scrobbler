@@ -1,4 +1,4 @@
-from plex.media_server import PlexMediaServer
+from plex.media_server import PMS
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
 from asio_base import SEEK_ORIGIN_CURRENT
@@ -49,11 +49,11 @@ class Logging(ActivityMethod):
     @classmethod
     def test(cls):
         # Try enable logging
-        if not PlexMediaServer.set_logging_state(True):
+        if not PMS.set_logging_state(True):
             Log.Warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not PlexMediaServer.get_logging_state():
+        if not PMS.get_logging_state():
             Log.Warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 

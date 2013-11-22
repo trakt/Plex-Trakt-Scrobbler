@@ -126,7 +126,9 @@ class Scrobbler(object):
             Log.Info('Invalid parameters, unable to continue')
             return False
 
-        Trakt.Media.action(media_type, action, **parameters)
+        response = Trakt.Media.action(media_type, action, **parameters)
+        if not response['success']:
+            Log.Warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()
 

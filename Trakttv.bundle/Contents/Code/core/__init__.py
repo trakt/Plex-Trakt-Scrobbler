@@ -14,11 +14,8 @@ sys.modules['core.helpers'] = helpers
 import eventing
 sys.modules['core.eventing'] = eventing
 
-import http
-sys.modules['core.http'] = http
-
-import pms
-sys.modules['core.pms'] = pms
+import network
+sys.modules['core.network'] = network
 
 import trakt
 sys.modules['core.trakt'] = trakt
