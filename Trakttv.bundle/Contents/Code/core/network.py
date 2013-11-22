@@ -113,15 +113,18 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
     if not retry:
         return internal_request(req, **kwargs)
 
+    raise_exceptions = kwargs.get('raise_exceptions', False)
+
     kwargs['raise_exceptions'] = True
 
+    last_exception = None
     response = None
     retry_num = 0
 
     while response is None and retry_num < max_retries:
         if retry_num > 0:
             Log.Debug('Waiting %ss before retrying request' % retry_sleep)
-            time.sleep(retry_sleep)
+            time.sleep(retry_sleep * retry_num)
 
             Log.Debug('Retrying request, try #%s' % retry_num)
 
@@ -138,8 +141,12 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
         except RequestError, e:
             Log.Debug('Request returned exception: %s' % e)
             response = None
+            last_exception = e
 
         retry_num += 1
+
+    if raise_exceptions:
+        raise last_exception or RequestError('Unknown network error')
 
     return response
 

@@ -42,6 +42,9 @@ class Trakt(object):
 
     @classmethod
     def parse_response(cls, response):
+        if response is None:
+            return {'success': False, 'message': 'Unknown Failure'}
+
         result = None
 
         # Return on successful results without status detail
