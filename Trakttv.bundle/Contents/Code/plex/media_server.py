@@ -17,47 +17,26 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
+PMS_URL = 'http://localhost:32400%s'  # TODO remove this, replace with PMS.base_url
 
-class PlexMediaServer(object):
+
+class PMS(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path='/', response_type='xml', raise_exceptions=False):
+    def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3):
         if not path.startswith('/'):
             path = '/' + path
 
-        return request(cls.base_url + path, response_type, raise_exceptions=raise_exceptions)
+        return request(
+            cls.base_url + path,
+            response_type,
 
-    @classmethod
-    def add_guid(cls, metadata, section):
-        guid = section.get('guid')
-        if not guid:
-            return
+            raise_exceptions=raise_exceptions,
 
-        if section.get('type') == 'movie':
-
-            # Cycle through patterns and try get a result
-            for pattern in MOVIE_PATTERNS:
-                match = pattern.search(guid)
-
-                # If we have a match, update the metadata
-                if match:
-                    metadata.update(match.groupdict())
-                    return
-
-            Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
-        elif section.get('type') == 'episode':
-            match = TVSHOW_REGEXP.search(guid)
-
-            # If we have a match, update the metadata
-            if match:
-                metadata.update(match.groupdict())
-            else:
-                Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
-        else:
-            Log('The content type %s is not supported, the item %s will not be scrobbled.' % (
-                section.get('type'), section.get('title')
-            ))
+            retry=retry,
+            timeout=timeout
+        )
 
     @classmethod
     def metadata(cls, item_id):
@@ -93,6 +72,37 @@ class PlexMediaServer(object):
         Log.Warn('Unable to find metadata for item %s' % item_id)
         return None
 
+    @staticmethod
+    def add_guid(metadata, section):
+        guid = section.get('guid')
+        if not guid:
+            return
+
+        if section.get('type') == 'movie':
+
+            # Cycle through patterns and try get a result
+            for pattern in MOVIE_PATTERNS:
+                match = pattern.search(guid)
+
+                # If we have a match, update the metadata
+                if match:
+                    metadata.update(match.groupdict())
+                    return
+
+            Log('The movie %s doesn\'t have any imdb or tmdb id, it will be ignored.' % section.get('title'))
+        elif section.get('type') == 'episode':
+            match = TVSHOW_REGEXP.search(guid)
+
+            # If we have a match, update the metadata
+            if match:
+                metadata.update(match.groupdict())
+            else:
+                Log('The episode %s doesn\'t have any tmdb id, it will not be scrobbled.' % section.get('title'))
+        else:
+            Log('The content type %s is not supported, the item %s will not be scrobbled.' % (
+                section.get('type'), section.get('title')
+            ))
+
     @classmethod
     def client(cls, client_id):
         if not client_id:
@@ -116,6 +126,7 @@ class PlexMediaServer(object):
 
     @classmethod
     def set_logging_state(cls, state):
+        # TODO PUT METHOD
         response = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
         if not response:
             return False
@@ -137,3 +148,117 @@ class PlexMediaServer(object):
 
         Log.Warn('Unable to determine logging state, assuming disabled')
         return False
+
+    @classmethod
+    def get_server_info(cls):
+        response = request(PMS_URL % '', 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_server_version(cls, default=None):
+        server_info = cls.get_server_info()
+        if not server_info:
+            return default
+
+        return server_info.attrib.get('version') or default
+
+    @classmethod
+    def get_status(cls):
+        response = request(PMS_URL % '/status/sessions', 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_video_session(cls, session_key):
+        status = cls.get_status()
+        if not status:
+            Log.Warn('Status request failed, unable to connect to server')
+            return None
+
+        for section in status.xpath('//MediaContainer/Video'):
+            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                return section
+
+        Log.Warn('Session not found')
+        return None
+
+    @classmethod
+    def get_metadata(cls, key):
+        response = request(PMS_URL % ('/library/metadata/%s' % key), 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_metadata_guid(cls, key):
+        metadata = cls.get_metadata(key)
+        if not metadata:
+            return None
+
+        return metadata.xpath('//Directory')[0].get('guid')
+
+    @classmethod
+    def get_metadata_leaves(cls, key):
+        response = request(PMS_URL % ('/library/metadata/%s/allLeaves' % key), 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_sections(cls):
+        response = request(PMS_URL % '/library/sections', 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_section(cls, name):
+        response = request(PMS_URL % ('/library/sections/%s/all' % name), 'xml')
+        if not response:
+            return None
+
+        return response.data
+
+    @classmethod
+    def get_section_directories(cls, section_name):
+        section = cls.get_section(section_name)
+        if not section:
+            return None
+
+        return section.xpath('//Directory')
+
+    @classmethod
+    def get_section_videos(cls, section_name):
+        section = cls.get_metadata(section_name)
+        if not section:
+            return None
+
+        return section.xpath('//Video')
+
+    @classmethod
+    def scrobble(cls, video):
+        if video.get('viewCount') > 0:
+            Log('video has already been marked as seen')
+            return False
+
+        response = request(PMS_URL % '/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+            video.get('ratingKey')
+        ))
+
+        return response is not None
+
+    @classmethod
+    def rate(cls, video, rating):
+        response = request(PMS_URL % '/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+            video.get('ratingKey'), rating
+        ))
+
+        return response is not None

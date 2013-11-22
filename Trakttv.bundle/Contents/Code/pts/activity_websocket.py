@@ -1,5 +1,5 @@
 from core.helpers import try_convert
-from plex.media_server import PlexMediaServer
+from plex.media_server import PMS
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
@@ -21,11 +21,11 @@ class WebSocket(ActivityMethod):
 
     @classmethod
     def test(cls):
-        if not PlexMediaServer.request('status/sessions'):
+        if not PMS.request('status/sessions'):
             Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
-        server_info = PlexMediaServer.request()
+        server_info = PMS.request()
         if not server_info:
             Log.Info('Error while retrieving server info for testing')
             return False

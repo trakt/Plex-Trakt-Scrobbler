@@ -17,9 +17,6 @@ sys.modules['core.eventing'] = eventing
 import network
 sys.modules['core.network'] = network
 
-import pms
-sys.modules['core.pms'] = pms
-
 import trakt
 sys.modules['core.trakt'] = trakt
 

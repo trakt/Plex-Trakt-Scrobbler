@@ -13,7 +13,7 @@ from pts.activity import PlexActivity
 from pts.session_manager import SessionManager
 from core.plugin import ART, NAME, ICON
 from core.header import Header
-from core.pms import PMS
+from plex.media_server import PMS
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from sync import SyncTrakt, ManuallySync, CollectionSync
