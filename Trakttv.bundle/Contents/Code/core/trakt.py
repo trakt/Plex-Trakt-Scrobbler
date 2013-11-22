@@ -26,7 +26,7 @@ class Trakt(object):
         return False
 
     @classmethod
-    def request(cls, action, values=None, param=''):
+    def request(cls, action, values=None, param='', retry=False, timeout=None):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
@@ -42,7 +42,18 @@ class Trakt(object):
         result = None
 
         try:
-            response = request(data_url, 'json', data=values, data_type='json', raise_exceptions=True)
+            response = request(
+                data_url,
+                'json',
+
+                data=values,
+                data_type='json',
+
+                retry=retry,
+                timeout=timeout,
+
+                raise_exceptions=True
+            )
         except RequestError, e:
             Log.Warn('[trakt] Request error: (%s) %s' % (result.get('exception'), result.get('message')))
             return {'success': False, 'exception': e, 'message': e.message}
@@ -72,30 +83,6 @@ class Trakt(object):
 
         return result
 
-    # TODO this needs updating
-    @classmethod
-    def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=5):
-        result = cls.request(action, values, param)
-
-        retry_num = 1
-        while 'success' in result and not result['success'] and retry_num <= max_retries:
-            if 'error_code' not in result:
-                break
-
-            if cls.can_retry(result.get('error_code')):
-                Log.Info('Waiting %ss before retrying request' % retry_sleep)
-                time.sleep(retry_sleep)
-
-                Log.Info('Retrying request, retry #%s' % retry_num)
-                result = cls.request(action, values, param)
-                retry_num += 1
-            else:
-                Log.Info('Not retrying the request, could be a client error (error with code %s was returned)' %
-                         result.get('error_code'))
-                break
-
-        return result
-
     class Account(object):
         @staticmethod
         def test():
@@ -103,11 +90,14 @@ class Trakt(object):
 
     class Media(object):
         @staticmethod
-        def action(media_type, action, **kwargs):
+        def action(media_type, action, retry=False, timeout=None, **kwargs):
             if not all([x in kwargs for x in ['duration', 'progress', 'title']]):
                 raise ValueError()
 
+            # Retry scrobble requests as they are important (compared to watching requests)
             if action == 'scrobble':
-                return Trakt.request_retry(media_type + '/' + action, kwargs)
+                # Only change these values if they aren't already set
+                retry = retry or True
+                timeout = timeout or 3
 
-            return Trakt.request(media_type + '/' + action, kwargs)
+            return Trakt.request(media_type + '/' + action, kwargs, retry=retry, timeout=timeout)
