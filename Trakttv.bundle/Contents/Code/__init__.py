@@ -135,7 +135,7 @@ def ValidatePrefs():
 
     status = Trakt.Account.test()
 
-    if status['status']:
+    if status['success']:
         Main.update_config()
 
         return MessageContainer(

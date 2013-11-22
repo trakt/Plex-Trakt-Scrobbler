@@ -1,3 +1,5 @@
+from core.network import request
+
 PMS_URL = 'http://localhost:32400%s'
 
 
@@ -7,7 +9,11 @@ class PMS:
 
     @classmethod
     def get_server_info(cls):
-        return XML.ElementFromURL(PMS_URL % '', errors='ignore')
+        response = request(PMS_URL % '', 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
     def get_server_version(cls, default=None):
@@ -19,52 +25,81 @@ class PMS:
 
     @classmethod
     def get_status(cls):
-        return XML.ElementFromURL(PMS_URL % '/status/sessions', errors='ignore')
+        response = request(PMS_URL % '/status/sessions', 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
     def get_video_session(cls, session_key):
-        try:
-            xml_content = cls.get_status().xpath('//MediaContainer/Video')
+        status = cls.get_status()
+        if not status:
+            Log.Warn('Status request failed, unable to connect to server')
+            return None
 
-            for section in xml_content:
-                if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
-                    return section
-
-        except Ex.HTTPError:
-            Log.Error('Failed to connect to PMS.')
-        except Ex.URLError:
-            Log.Error('Failed to connect to PMS.')
+        for section in status.xpath('//MediaContainer/Video'):
+            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                return section
 
         Log.Warn('Session not found')
         return None
 
     @classmethod
     def get_metadata(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s' % key), errors='ignore')
+        response = request(PMS_URL % ('/library/metadata/%s' % key), 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
     def get_metadata_guid(cls, key):
-        return cls.get_metadata(key).xpath('//Directory')[0].get('guid')
+        metadata = cls.get_metadata(key)
+        if not metadata:
+            return None
+
+        return metadata.xpath('//Directory')[0].get('guid')
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        return XML.ElementFromURL(PMS_URL % ('/library/metadata/%s/allLeaves' % key), errors='ignore')
+        response = request(PMS_URL % ('/library/metadata/%s/allLeaves' % key), 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
     def get_sections(cls):
-        return XML.ElementFromURL(PMS_URL % '/library/sections', errors='ignore').xpath('//Directory')
+        response = request(PMS_URL % '/library/sections', 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
     def get_section(cls, name):
-        return XML.ElementFromURL(PMS_URL % ('/library/sections/%s/all' % name), errors='ignore')
+        response = request(PMS_URL % ('/library/sections/%s/all' % name), 'xml')
+        if not response:
+            return None
+
+        return response.data
 
     @classmethod
-    def get_section_directories(cls, section):
-        return cls.get_section(section).xpath('//Directory')
+    def get_section_directories(cls, section_name):
+        section = cls.get_section(section_name)
+        if not section:
+            return None
+
+        return section.xpath('//Directory')
 
     @classmethod
-    def get_section_videos(cls, section):
-        return cls.get_section(section).xpath('//Video')
+    def get_section_videos(cls, section_name):
+        section = cls.get_metadata(section_name)
+        if not section:
+            return None
+
+        return section.xpath('//Video')
 
     @classmethod
     def scrobble(cls, video):
@@ -72,16 +107,16 @@ class PMS:
             Log('video has already been marked as seen')
             return False
 
-        HTTP.Request('http://localhost:32400/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+        response = request(PMS_URL % '/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
             video.get('ratingKey')
-        ), immediate=True)
+        ))
 
-        return True
+        return response is not None
 
     @classmethod
     def rate(cls, video, rating):
-        HTTP.Request('http://localhost:32400/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+        response = request(PMS_URL % '/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
             video.get('ratingKey'), rating
-        ), immediate=True)
+        ))
 
-        return True
+        return response is not None

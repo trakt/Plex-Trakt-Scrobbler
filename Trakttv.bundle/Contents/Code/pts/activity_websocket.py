@@ -1,9 +1,9 @@
-import time
 from core.helpers import try_convert
 from plex.media_server import PlexMediaServer
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
+import time
 
 
 class WebSocket(ActivityMethod):
@@ -21,16 +21,16 @@ class WebSocket(ActivityMethod):
 
     @classmethod
     def test(cls):
-        if PlexMediaServer.request('status/sessions', catch_exceptions=True) is None:
+        if not PlexMediaServer.request('status/sessions'):
             Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
-        server_info = PlexMediaServer.request(catch_exceptions=True)
+        server_info = PlexMediaServer.request()
         if not server_info:
             Log.Info('Error while retrieving server info for testing')
             return False
 
-        multi_user = bool(server_info.get('multiuser', 0))
+        multi_user = bool(server_info.data.get('multiuser', 0))
         if not multi_user:
             Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
             return False

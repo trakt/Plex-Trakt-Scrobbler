@@ -1,5 +1,5 @@
 from core.helpers import add_attribute
-from core.http import responses
+from core.network import request
 
 
 # Regular Expressions for GUID parsing
@@ -22,29 +22,11 @@ class PlexMediaServer(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path='/', data_type='xml', method='GET', catch_exceptions=False):
+    def request(cls, path='/', response_type='xml', raise_exceptions=False):
         if not path.startswith('/'):
             path = '/' + path
 
-        url = cls.base_url + path
-
-        try:
-            if data_type == 'xml':
-                return XML.ElementFromURL(url, errors='ignore')
-            elif data_type == 'text':
-                return HTTP.Request(url, method=method)
-            else:
-                raise ValueError()
-
-        except Ex.HTTPError, ex:
-            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
-            if not catch_exceptions:
-                raise ex
-        except Ex.URLError, ex:
-            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
-            if not catch_exceptions:
-                raise ex
-        return None
+        return request(cls.base_url + path, response_type, raise_exceptions=raise_exceptions)
 
     @classmethod
     def add_guid(cls, metadata, section):
@@ -80,42 +62,35 @@ class PlexMediaServer(object):
     @classmethod
     def metadata(cls, item_id):
         # Prepare a dict that contains all the metadata required for trakt.
-        try:
-            xml_content = cls.request('library/metadata/%s' % item_id).xpath('//Video')
+        response = cls.request('library/metadata/%s' % item_id)
+        if not response:
+            return None
 
-            for section in xml_content:
-                metadata = {}
+        for section in response.data.xpath('//Video'):
+            metadata = {}
 
-                # Add attributes if they exist
-                add_attribute(metadata, section, 'duration', float, lambda x: int(x / 60000))
-                add_attribute(metadata, section, 'year', int)
+            # Add attributes if they exist
+            add_attribute(metadata, section, 'duration', float, lambda x: int(x / 60000))
+            add_attribute(metadata, section, 'year', int)
 
-                add_attribute(metadata, section, 'lastViewedAt', int, target_key='last_played')
-                add_attribute(metadata, section, 'viewCount', int, target_key='plays')
+            add_attribute(metadata, section, 'lastViewedAt', int, target_key='last_played')
+            add_attribute(metadata, section, 'viewCount', int, target_key='plays')
 
-                add_attribute(metadata, section, 'type')
+            add_attribute(metadata, section, 'type')
 
-                if metadata['type'] == 'movie':
-                    metadata['title'] = section.get('title')
+            if metadata['type'] == 'movie':
+                metadata['title'] = section.get('title')
 
-                elif metadata['type'] == 'episode':
-                    metadata['title'] = section.get('grandparentTitle')
-                    metadata['episode_title'] = section.get('title')
+            elif metadata['type'] == 'episode':
+                metadata['title'] = section.get('grandparentTitle')
+                metadata['episode_title'] = section.get('title')
 
-                # Add guid match data
-                cls.add_guid(metadata, section)
+            # Add guid match data
+            cls.add_guid(metadata, section)
 
-                return metadata
+            return metadata
 
-            Log.Debug('xml_content = %s' % xml_content)
-            Log.Warn('Unable to find metadata for item %s' % item_id)
-        except Ex.HTTPError, e:
-            Log.Debug(str(e))
-            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
-        except Ex.URLError, e:
-            Log.Debug(str(e))
-            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
-
+        Log.Warn('Unable to find metadata for item %s' % item_id)
         return None
 
     @classmethod
@@ -124,11 +99,13 @@ class PlexMediaServer(object):
             Log.Warn('Invalid client_id provided')
             return None
 
-        xml_content = cls.request('clients').xpath('//Server')
+        response = cls.request('clients')
+        if not response:
+            return None
 
         found_clients = []
 
-        for section in xml_content:
+        for section in response.data.xpath('//Server'):
             found_clients.append(section.get('machineIdentifier'))
 
             if section.get('machineIdentifier') == client_id:
@@ -139,20 +116,20 @@ class PlexMediaServer(object):
 
     @classmethod
     def set_logging_state(cls, state):
-        try:
-            response = cls.request(':/prefs?logDebug=%s' % int(state), data_type='text', method='PUT')
-            Log.Debug('Response: %s' % (response.content if response else None))
-            return True
-        except Ex.HTTPError:
-            pass
-        except Ex.URLError:
-            pass
+        response = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
+        if not response:
+            return False
 
-        return False
+        Log.Debug('Response: %s' % (response.data if response else None))
+        return True
 
     @classmethod
     def get_logging_state(cls):
-        for setting in cls.request(':/prefs').xpath('//Setting'):
+        response = cls.request(':/prefs')
+        if not response:
+            return False
+
+        for setting in response.data.xpath('//Setting'):
 
             if setting.get('id') == 'logDebug' and setting.get('value'):
                 value = setting.get('value').lower()

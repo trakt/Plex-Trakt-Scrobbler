@@ -1,4 +1,4 @@
-from core.http import responses
+from core.network import request, RequestError
 from core.plugin import PLUGIN_VERSION
 from core.helpers import all
 import socket
@@ -25,8 +25,8 @@ class Trakt(object):
 
         return False
 
-    @staticmethod
-    def request(action, values=None, param=''):
+    @classmethod
+    def request(cls, action, values=None, param=''):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
@@ -39,49 +39,50 @@ class Trakt(object):
         values['plugin_version'] = PLUGIN_VERSION
         values['media_center_version'] = Dict['server_version']
 
+        result = None
+
         try:
-            json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
-            result = JSON.ObjectFromString(json_file.content)
-        except socket.timeout:
-            result = {'status': 'failure', 'error_code': 408, 'error': 'timeout'}
-        except Ex.HTTPError, e:
-            result = {'status': 'failure', 'error_code': e.code, 'error': responses[e.code][1]}
-        except Ex.URLError, e:
-            result = {'status': 'failure', 'error_code': 0, 'error': e.reason[0]}
+            response = request(data_url, 'json', data=values, data_type='json', raise_exceptions=True)
+        except RequestError, e:
+            Log.Warn('[trakt] Request error: (%s) %s' % (result.get('exception'), result.get('message')))
+            return {'success': False, 'exception': e, 'message': e.message}
 
-        if 'status' in result:
-            if result['status'] == 'success':
-                if not 'message' in result:
-                    if 'inserted' in result:
-                        result['message'] = "%s Movies inserted, %s Movies already existed, %s Movies skipped" % (
-                            result['inserted'], result['already_exist'], result['skipped']
-                        )
-                    else:
-                        result['message'] = 'Unknown success'
+        return cls.parse_response(response)
 
-                Log('Trakt responded with: %s' % result['message'])
+    @classmethod
+    def parse_response(cls, response):
+        result = None
 
-                return {'status': True, 'message': result['message']}
-            elif result['status'] == 'failure':
-                Log('Trakt responded with: (%s) %s' % (result.get('error_code'), result.get('error')))
+        # Return on successful results without status detail
+        if type(response.data) is not dict or 'status' not in response.data:
+            return {'success': True, 'data': response.data}
 
-                return {'status': False, 'message': result['error'], 'result': result}
+        status = response.data.get('status')
 
-        Log('Return all')
-        return {'result': result}
+        if status == 'success':
+            result = {'success': True, 'message': response.data.get('message', 'Unknown success')}
+        elif status == 'failure':
+            result = {'success': False, 'message': response.data.get('error'), 'data': response.data}
 
+        # Log result for debugging
+        message = result.get('message', 'Unknown Result')
+
+        if not result.get('success'):
+            Log.Warn('[trakt] Request failure: (%s) %s' % (result.get('exception'), message))
+
+        return result
+
+    # TODO this needs updating
     @classmethod
     def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=5):
         result = cls.request(action, values, param)
 
         retry_num = 1
-        while 'status' in result and not result['status'] and retry_num <= max_retries:
-            if 'result' not in result:
-                break
-            if 'error_code' not in result['result']:
+        while 'success' in result and not result['success'] and retry_num <= max_retries:
+            if 'error_code' not in result:
                 break
 
-            if cls.can_retry(result['result'].get('error_code')):
+            if cls.can_retry(result.get('error_code')):
                 Log.Info('Waiting %ss before retrying request' % retry_sleep)
                 time.sleep(retry_sleep)
 
@@ -90,7 +91,7 @@ class Trakt(object):
                 retry_num += 1
             else:
                 Log.Info('Not retrying the request, could be a client error (error with code %s was returned)' %
-                          result['result'].get('error_code'))
+                         result.get('error_code'))
                 break
 
         return result
