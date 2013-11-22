@@ -131,6 +131,8 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
         try:
             response = internal_request(req, **kwargs)
         except NetworkError, e:
+            last_exception = e
+
             Log.Debug('Request returned a network error: (%s) %s' % (e.code, e))
 
             # If this is possibly a client error, stop retrying and just return
@@ -139,13 +141,14 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
                 return None
 
         except RequestError, e:
+            last_exception = e
+
             Log.Debug('Request returned exception: %s' % e)
             response = None
-            last_exception = e
 
         retry_num += 1
 
-    if raise_exceptions:
+    if response is None and raise_exceptions:
         raise last_exception or RequestError('Unknown network error')
 
     return response
