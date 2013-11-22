@@ -28,7 +28,7 @@ class PMS(object):
         if not path.startswith('/'):
             path = '/' + path
 
-        return request(
+        response = request(
             cls.base_url + path,
             response_type,
 
@@ -38,14 +38,16 @@ class PMS(object):
             timeout=timeout
         )
 
+        return response.data if response else None
+
     @classmethod
     def metadata(cls, item_id):
         # Prepare a dict that contains all the metadata required for trakt.
-        response = cls.request('library/metadata/%s' % item_id)
-        if not response:
+        result = cls.request('library/metadata/%s' % item_id)
+        if not result:
             return None
 
-        for section in response.data.xpath('//Video'):
+        for section in result.xpath('//Video'):
             metadata = {}
 
             # Add attributes if they exist
@@ -109,13 +111,13 @@ class PMS(object):
             Log.Warn('Invalid client_id provided')
             return None
 
-        response = cls.request('clients')
-        if not response:
+        result = cls.request('clients')
+        if not result:
             return None
 
         found_clients = []
 
-        for section in response.data.xpath('//Server'):
+        for section in result.xpath('//Server'):
             found_clients.append(section.get('machineIdentifier'))
 
             if section.get('machineIdentifier') == client_id:
@@ -127,20 +129,20 @@ class PMS(object):
     @classmethod
     def set_logging_state(cls, state):
         # TODO PUT METHOD
-        response = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
-        if not response:
+        result = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
+        if result is None:
             return False
 
-        Log.Debug('Response: %s' % (response.data if response else None))
+        Log.Debug('Response: %s' % result)
         return True
 
     @classmethod
     def get_logging_state(cls):
-        response = cls.request(':/prefs')
-        if not response:
+        result = cls.request(':/prefs')
+        if result is None:
             return False
 
-        for setting in response.data.xpath('//Setting'):
+        for setting in result.xpath('//Setting'):
 
             if setting.get('id') == 'logDebug' and setting.get('value'):
                 value = setting.get('value').lower()
@@ -151,36 +153,28 @@ class PMS(object):
 
     @classmethod
     def get_server_info(cls):
-        response = request(PMS_URL % '', 'xml')
-        if not response:
-            return None
-
-        return response.data
+        return cls.request()
 
     @classmethod
     def get_server_version(cls, default=None):
         server_info = cls.get_server_info()
-        if not server_info:
+        if server_info is None:
             return default
 
         return server_info.attrib.get('version') or default
 
     @classmethod
-    def get_status(cls):
-        response = request(PMS_URL % '/status/sessions', 'xml')
-        if not response:
-            return None
-
-        return response.data
+    def get_sessions(cls):
+        return cls.request('status/sessions')
 
     @classmethod
     def get_video_session(cls, session_key):
-        status = cls.get_status()
-        if not status:
+        sessions = cls.get_sessions()
+        if sessions is None:
             Log.Warn('Status request failed, unable to connect to server')
             return None
 
-        for section in status.xpath('//MediaContainer/Video'):
+        for section in sessions.xpath('//MediaContainer/Video'):
             if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
                 return section
 
@@ -189,48 +183,32 @@ class PMS(object):
 
     @classmethod
     def get_metadata(cls, key):
-        response = request(PMS_URL % ('/library/metadata/%s' % key), 'xml')
-        if not response:
-            return None
-
-        return response.data
+        return cls.request('library/metadata/%s' % key)
 
     @classmethod
     def get_metadata_guid(cls, key):
         metadata = cls.get_metadata(key)
-        if not metadata:
+        if metadata is None:
             return None
 
         return metadata.xpath('//Directory')[0].get('guid')
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        response = request(PMS_URL % ('/library/metadata/%s/allLeaves' % key), 'xml')
-        if not response:
-            return None
-
-        return response.data
+        return cls.request('library/metadata/%s/allLeaves' % key)
 
     @classmethod
     def get_sections(cls):
-        response = request(PMS_URL % '/library/sections', 'xml')
-        if not response:
-            return None
-
-        return response.data
+        return cls.request('library/sections')
 
     @classmethod
     def get_section(cls, name):
-        response = request(PMS_URL % ('/library/sections/%s/all' % name), 'xml')
-        if not response:
-            return None
-
-        return response.data
+        return cls.request('library/sections/%s/all' % name)
 
     @classmethod
     def get_section_directories(cls, section_name):
         section = cls.get_section(section_name)
-        if not section:
+        if section is None:
             return None
 
         return section.xpath('//Directory')
@@ -238,7 +216,7 @@ class PMS(object):
     @classmethod
     def get_section_videos(cls, section_name):
         section = cls.get_metadata(section_name)
-        if not section:
+        if section is None:
             return None
 
         return section.xpath('//Video')
@@ -249,16 +227,16 @@ class PMS(object):
             Log('video has already been marked as seen')
             return False
 
-        response = request(PMS_URL % '/:/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+        result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
             video.get('ratingKey')
         ))
 
-        return response is not None
+        return result is not None
 
     @classmethod
     def rate(cls, video, rating):
-        response = request(PMS_URL % '/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+        result = cls.request(':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
             video.get('ratingKey'), rating
         ))
 
-        return response is not None
+        return result is not None

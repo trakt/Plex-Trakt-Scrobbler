@@ -21,16 +21,16 @@ class WebSocket(ActivityMethod):
 
     @classmethod
     def test(cls):
-        if not PMS.request('status/sessions'):
+        if PMS.get_sessions() is None:
             Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
-        server_info = PMS.request()
-        if not server_info:
+        server_info = PMS.get_server_info()
+        if server_info is None:
             Log.Info('Error while retrieving server info for testing')
             return False
 
-        multi_user = bool(server_info.data.get('multiuser', 0))
+        multi_user = bool(server_info.get('multiuser', 0))
         if not multi_user:
             Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
             return False

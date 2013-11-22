@@ -8,7 +8,7 @@ class LoggingScrobbler(Scrobbler):
     def create_session(self, info):
         client = None
         if info.get('machineIdentifier'):
-            PMS.client(info['machineIdentifier'])
+            client = PMS.client(info['machineIdentifier'])
         else:
             Log.Info('No machineIdentifier available, client filtering not available')
 
