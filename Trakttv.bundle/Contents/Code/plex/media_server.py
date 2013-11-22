@@ -24,7 +24,7 @@ class PMS(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3):
+    def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3, **kwargs):
         if not path.startswith('/'):
             path = '/' + path
 
@@ -35,7 +35,9 @@ class PMS(object):
             raise_exceptions=raise_exceptions,
 
             retry=retry,
-            timeout=timeout
+            timeout=timeout,
+
+            **kwargs
         )
 
         return response.data if response else None

@@ -1,30 +1,12 @@
 from core.network import request, RequestError
 from core.plugin import PLUGIN_VERSION
 from core.helpers import all
-import socket
-import time
 
 
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 
 class Trakt(object):
-    retry_codes = [408, 500, (502, 504), 522, 524, (598, 599)]
-
-    @classmethod
-    def can_retry(cls, error_code):
-        for retry_code in cls.retry_codes:
-            if type(retry_code) is tuple and len(retry_code) == 2:
-                if retry_code[0] <= error_code <= retry_code[1]:
-                    return True
-            elif type(retry_code) is int:
-                if retry_code == error_code:
-                    return True
-            else:
-                raise ValueError("Invalid retry_code specified: %s" % retry_code)
-
-        return False
-
     @classmethod
     def request(cls, action, values=None, param='', retry=False, timeout=None):
         if param != "":

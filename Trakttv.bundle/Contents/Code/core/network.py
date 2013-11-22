@@ -1,7 +1,11 @@
 from lxml import etree
 import urllib2
+import socket
 import json
 import time
+
+
+HTTP_RETRY_CODES = [408, 500, (502, 504), 522, 524, (598, 599)]
 
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
@@ -23,14 +27,15 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     :param retry: Should the request be retried on errors?
     :type retry: bool
 
+    :param timeout: Request timeout seconds
+    :type timeout: int
+
     :param max_retries: Number of retries before we give up on the request
     :type max_retries: int
 
     :param retry_sleep: Number of seconds to sleep for between requests
     :type retry_sleep: int
 
-    :param timeout: Request timeout seconds
-    :type timeout: int
 
     :rtype: Response
     """
@@ -81,6 +86,7 @@ def internal_log_request(url, response_type, data, data_type, retry, timeout):
         ) if data else '',
 
         'retry' if retry else None,
+
         ('timeout: %s' % timeout) if timeout else None
     ]
 
@@ -113,6 +119,14 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
 
         try:
             response = internal_request(req, **kwargs)
+        except NetworkError, e:
+            Log.Debug('Request returned a network error: (%s) %s' % (e.code, e))
+
+            # If this is possibly a client error, stop retrying and just return
+            if not should_retry(e.code):
+                Log.Debug('Request error code %s is possibly client related, not retrying the request', e.code)
+                return None
+
         except RequestError, e:
             Log.Debug('Request returned exception: %s' % e)
             response = None
@@ -137,6 +151,24 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
         Log.Warn('Network request raised exception: %s' % ex)
 
     return default
+
+
+def should_retry(error_code):
+    # If there is no error code, assume we should retry
+    if error_code is None:
+        return True
+
+    for retry_code in HTTP_RETRY_CODES:
+        if type(retry_code) is tuple and len(retry_code) == 2:
+            if retry_code[0] <= error_code <= retry_code[1]:
+                return True
+        elif type(retry_code) is int:
+            if retry_code == error_code:
+                return True
+        else:
+            raise ValueError("Invalid retry_code specified: %s" % retry_code)
+
+    return False
 
 
 class Response(object):
@@ -196,9 +228,22 @@ class RequestError(Exception):
 
 
 class NetworkError(RequestError):
+    def __init__(self, message, code, inner_exception=None):
+        super(NetworkError, self).__init__(message, inner_exception)
+
+        self.code = code
+
     @classmethod
     def from_exception(cls, e):
-        return NetworkError(e.message or str(e), e)
+        code = None
+
+        if type(e) is urllib2.HTTPError:
+            code = e.code
+
+        if type(e) is socket.timeout:
+            code = 408
+
+        return NetworkError(e.message or str(e), code, e)
 
 
 class ParseError(RequestError):
