@@ -5,7 +5,7 @@ from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
 import time
 
-LOG_PATTERN = r'^.*?\[\d+\]\s\w+\s-\s{message}$'
+LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
 REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
 
 PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))

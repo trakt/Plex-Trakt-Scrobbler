@@ -2,6 +2,13 @@ from core.trakt import Trakt
 
 
 class Scrobbler(object):
+    @staticmethod
+    def get_status_label(session, state):
+        return '[{0:<2}{1:>3}]'.format(
+            state[:2].upper() if state else '?',
+            session.progress if session and session.progress is not None else '?'
+        )
+
     def get_action(self, session, state):
         """
         :type session: WatchSession
@@ -10,38 +17,57 @@ class Scrobbler(object):
         :rtype: str or None
         """
 
+        status_label = self.get_status_label(session, state)
+
+        # State has changed
         if state not in [session.cur_state, 'buffering']:
-            if state in 'stopped':
-                Log.Debug(session.get_title() + ' stopped, watching status cancelled')
+            session.cur_state = state
+
+            if state == 'stopped' and session.watching:
+                Log.Debug('%s %s stopped, watching status cancelled' % (
+                    status_label, session.get_title()
+                ))
+                session.watching = False
                 return 'cancelwatching'
 
-            if state == 'paused':
-                if not session.paused_since:
-                    Log.Debug(session.get_title() + " just paused, waiting 15s before cancelling the watching status")
-                    session.paused_since = Datetime.Now()
-                    return None
+            if state == 'paused' and not session.paused_since:
+                Log.Debug("%s %s just paused, waiting 15s before cancelling the watching status" % (
+                    status_label, session.get_title()
+                ))
 
-                if Datetime.Now() > session.paused_since + Datetime.Delta(seconds=15):
-                    Log.Debug(session.get_title() + " paused for 15s, watching status cancelled")
-                    return 'cancelwatching'
+                session.paused_since = Datetime.Now()
+                return None
 
-            if state == 'playing':
-                Log.Debug('Updating watch status for ' + session.get_title())
+            if state == 'playing' and not session.watching:
+                Log.Debug('%s Sending watch status for %s' % (status_label, session.get_title()))
+                session.watching = True
                 return 'watching'
 
-        #scrobble item
-        elif state == 'playing' and not session.scrobbled and session.progress > 80:
-            Log.Debug('Scrobbling ' + session.get_title())
-            return 'scrobble'
+        elif state == 'playing':
+            # scrobble item
+            if not session.scrobbled and session.progress >= 80:
+                Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
+                return 'scrobble'
 
-        # update every 10 min
-        elif state == 'playing' and ((session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now()):
-            Log.Debug('Updating watch status for ' + session.get_title())
-            return 'watching'
+            # update every 10 min if media hasn't finished
+            elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
+                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
+                session.watching = True
+                return 'watching'
+
+            # cancel watching status on items at 100% progress
+            elif session.progress >= 100 and session.watching:
+                Log.Debug('%s Media finished, cancelling watching status for %s' % (
+                    status_label,
+                    session.get_title()
+                ))
+                session.watching = False
+                return 'cancelwatching'
 
         return None
 
-    def get_request_parameters(self, session):
+    @staticmethod
+    def get_request_parameters(session):
         values = {}
 
         session_type = session.get_type()
@@ -72,23 +98,11 @@ class Scrobbler(object):
 
         return values
 
-    def handle_action(self, session, media_type, action, state):
-        # Setup Data to send to Trakt
-        parameters = self.get_request_parameters(session)
-        if not parameters:
-            Log.Info('Invalid parameters, unable to continue')
-            return False
-
-        Trakt.Media.action(media_type, action, **parameters)
-
-        session.cur_state = state
-        session.last_updated = Datetime.Now()
-
-        if action == 'scrobble':
-            session.scrobbled = True
-
-            # If just scrobbled, force update on next status update to set as watching again
-            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
+    @classmethod
+    def handle_state(cls, session, state):
+        if state == 'playing' and session.paused_since:
+            session.paused_since = None
+            return True
 
         # If stopped, delete the session
         if state == 'stopped':
@@ -97,19 +111,58 @@ class Scrobbler(object):
             return True
 
         # If paused, queue a session update when playing begins again
-        if state == 'paused':
+        if state == 'paused' and not session.update_required:
             Log.Debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
+            return True
+
+        return False
+
+    @classmethod
+    def handle_action(cls, session, media_type, action, state):
+        # Setup Data to send to Trakt
+        parameters = cls.get_request_parameters(session)
+        if not parameters:
+            Log.Info('Invalid parameters, unable to continue')
+            return False
+
+        Trakt.Media.action(media_type, action, **parameters)
+
+        session.last_updated = Datetime.Now()
+
+        if action == 'scrobble':
+            session.scrobbled = True
+
+            # If just scrobbled, force update on next status update to set as watching again
+            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
         session.save()
 
-    def valid_user(self, session):
+    @staticmethod
+    def update_progress(session, view_offset):
+        if not session or not session.metadata:
+            return False
+
+        # Ensure duration is positive
+        if session.metadata.get('duration', 0) <= 0:
+            return False
+
+        duration_millis = session.metadata['duration'] * 60 * 1000
+        perc_float = float(view_offset) / duration_millis
+
+        session.progress = int(round(perc_float * 100, 0))
+
+        return True
+
+    @staticmethod
+    def valid_user(session):
         if Prefs['scrobble_names'] is None:
             return True
 
         return session.user and Prefs['scrobble_names'].lower() == session.user.title.lower()
 
-    def valid_client(self, session):
+    @staticmethod
+    def valid_client(session):
         if Prefs['scrobble_clients'] is None:
             return True
 

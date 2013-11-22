@@ -43,7 +43,15 @@ class WebSocketScrobbler(Scrobbler):
         Log.Debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
 
         if session.item_key != video_section.get('ratingKey'):
-            Log.Info('Session media key mismatch, currently watching media has probably changed')
+            Log.Info('Invalid Session: Media changed')
+            return False
+
+        if not session.metadata:
+            Log.Debug('Invalid Session: Missing metadata')
+            return False
+
+        if session.metadata.get('duration', 0) <= 0:
+            Log.Debug('Invalid Session: Invalid duration')
             return False
 
         session.last_view_offset = view_offset
@@ -122,19 +130,26 @@ class WebSocketScrobbler(Scrobbler):
             session.skip = True
             return
 
+        session.last_view_offset = view_offset
+
         # Calculate progress
-        session.progress = int(round((float(view_offset) / (session.metadata['duration'] * 60 * 1000)) * 100, 0))
-
-        action = self.get_action(session, state)
-
-        if state == 'playing':
-            session.paused_since = None
-
-        # No action needed, exit
-        if not action:
-            Log.Debug('Nothing to do this time for ' + session.get_title())
+        if not self.update_progress(session, view_offset):
+            Log.Warn('Error while updating session progress, queued session to be updated')
+            session.update_required = True
             session.save()
             return
 
-        if self.handle_action(session, media_type, action, state):
+        action = self.get_action(session, state)
+
+        if action:
+            self.handle_action(session, media_type, action, state)
+        else:
+            Log.Debug('%s Nothing to do this time for %s' % (
+                self.get_status_label(session, state),
+                session.get_title()
+            ))
+            session.save()
+
+        if self.handle_state(session, state) or action:
+            session.save()
             Dict.Save()

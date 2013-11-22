@@ -10,26 +10,32 @@ import pts
 
 
 from pts.activity import PlexActivity
+from pts.session_manager import SessionManager
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from core.pms import PMS
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from sync import SyncTrakt, ManuallySync, CollectionSync
+from datetime import datetime
 
 
 class Main:
     def __init__(self):
         # Check for updates first (required for use in header)
         self.update_checker = UpdateChecker()
-        self.update_checker.run_once()
 
         Header.show(self)
 
-        if not 'nowPlaying' in Dict:
+        if 'nowPlaying' in Dict and type(Dict['nowPlaying']) is dict:
+            self.cleanup()
+            Dict.Save()
+        else:
             Dict['nowPlaying'] = dict()
 
         Main.update_config()
+
+        self.session_manager = SessionManager()
 
         PlexActivity.on_update_collection.subscribe(self.update_collection)
 
@@ -63,10 +69,48 @@ class Main:
         if PlexActivity.test():
             Thread.Create(PlexActivity.run)
 
+        self.update_checker.run_once(async=True)
+
+        self.session_manager.start()
+
     @staticmethod
     def update_collection(item_id, action):
         # delay sync to wait for metadata
         Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')
+
+    @staticmethod
+    def cleanup():
+        Log.Debug('Cleaning up stale or invalid sessions')
+
+        for key, session in Dict['nowPlaying'].items():
+            delete = False
+
+            # Destroy invalid sessions
+            if type(session) is not dict:
+                delete = True
+            elif 'update_required' not in session:
+                delete = True
+            elif 'last_updated' not in session:
+                delete = True
+            elif type(session['last_updated']) is not datetime:
+                delete = True
+            elif (datetime.now() - session['last_updated']).total_seconds() / 60 / 60 > 24:
+                # Destroy sessions last updated over 24 hours ago
+                Log.Debug('Session %s was last updated over 24 hours ago, queued for deletion', key)
+                delete = True
+
+            # Delete session or flag for update
+            if delete:
+                Log.Info('Session %s looks stale or invalid, deleting it now', key)
+                del Dict['nowPlaying'][key]
+            elif not session['update_required']:
+                Log.Info('Queueing session %s for update', key)
+                session['update_required'] = True
+
+                # Update session in storage
+                Dict['nowPlaying'][key] = session
+
+        Log.Debug('Finished cleaning up')
 
 
 def Start():
