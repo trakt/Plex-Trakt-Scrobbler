@@ -8,7 +8,7 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 class Trakt(object):
     @classmethod
-    def request(cls, action, values=None, param='', retry=False, timeout=None):
+    def request(cls, action, values=None, param='', retry=False, max_retries=3, timeout=None):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
@@ -30,6 +30,7 @@ class Trakt(object):
                 data_type='json',
 
                 retry=retry,
+                max_retries=max_retries,
                 timeout=timeout,
 
                 raise_exceptions=True
@@ -73,7 +74,7 @@ class Trakt(object):
 
     class Media(object):
         @staticmethod
-        def action(media_type, action, retry=False, timeout=None, **kwargs):
+        def action(media_type, action, retry=False, timeout=None, max_retries=3, **kwargs):
             if not all([x in kwargs for x in ['duration', 'progress', 'title']]):
                 raise ValueError()
 
@@ -82,5 +83,13 @@ class Trakt(object):
                 # Only change these values if they aren't already set
                 retry = retry or True
                 timeout = timeout or 3
+                max_retries = 5
 
-            return Trakt.request(media_type + '/' + action, kwargs, retry=retry, timeout=timeout)
+            return Trakt.request(
+                media_type + '/' + action,
+                kwargs,
+
+                retry=retry,
+                max_retries=max_retries,
+                timeout=timeout
+            )
