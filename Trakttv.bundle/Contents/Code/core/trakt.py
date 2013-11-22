@@ -21,8 +21,6 @@ class Trakt(object):
         values['plugin_version'] = PLUGIN_VERSION
         values['media_center_version'] = Dict['server_version']
 
-        result = None
-
         try:
             response = request(
                 data_url,
@@ -37,7 +35,7 @@ class Trakt(object):
                 raise_exceptions=True
             )
         except RequestError, e:
-            Log.Warn('[trakt] Request error: (%s) %s' % (result.get('exception'), result.get('message')))
+            Log.Warn('[trakt] Request error: (%s) %s' % (e, e.message))
             return {'success': False, 'exception': e, 'message': e.message}
 
         return cls.parse_response(response)
