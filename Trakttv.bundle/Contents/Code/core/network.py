@@ -124,7 +124,7 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
     while response is None and retry_num < max_retries:
         if retry_num > 0:
             sleep_time = retry_sleep * retry_num
-            
+
             Log.Debug('Waiting %ss before retrying request' % sleep_time)
             time.sleep(sleep_time)
 
