@@ -102,6 +102,6 @@ def extend(a, b=None):
 
 def all(items):
     for item in items:
-        if item is False:
+        if not item:
             return False
     return True

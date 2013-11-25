@@ -1,32 +1,14 @@
-from core.http import responses
+from core.network import request, RequestError
 from core.plugin import PLUGIN_VERSION
 from core.helpers import all
-import socket
-import time
 
 
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 
 class Trakt(object):
-    retry_codes = [408, 500, (502, 504), 522, 524, (598, 599)]
-
     @classmethod
-    def can_retry(cls, error_code):
-        for retry_code in cls.retry_codes:
-            if type(retry_code) is tuple and len(retry_code) == 2:
-                if retry_code[0] <= error_code <= retry_code[1]:
-                    return True
-            elif type(retry_code) is int:
-                if retry_code == error_code:
-                    return True
-            else:
-                raise ValueError("Invalid retry_code specified: %s" % retry_code)
-
-        return False
-
-    @staticmethod
-    def request(action, values=None, param=''):
+    def request(cls, action, values=None, param='', retry=False, max_retries=3, timeout=None):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
@@ -40,58 +22,48 @@ class Trakt(object):
         values['media_center_version'] = Dict['server_version']
 
         try:
-            json_file = HTTP.Request(data_url, data=JSON.StringFromObject(values))
-            result = JSON.ObjectFromString(json_file.content)
-        except socket.timeout:
-            result = {'status': 'failure', 'error_code': 408, 'error': 'timeout'}
-        except Ex.HTTPError, e:
-            result = {'status': 'failure', 'error_code': e.code, 'error': responses[e.code][1]}
-        except Ex.URLError, e:
-            result = {'status': 'failure', 'error_code': 0, 'error': e.reason[0]}
+            response = request(
+                data_url,
+                'json',
 
-        if 'status' in result:
-            if result['status'] == 'success':
-                if not 'message' in result:
-                    if 'inserted' in result:
-                        result['message'] = "%s Movies inserted, %s Movies already existed, %s Movies skipped" % (
-                            result['inserted'], result['already_exist'], result['skipped']
-                        )
-                    else:
-                        result['message'] = 'Unknown success'
+                data=values,
+                data_type='json',
 
-                Log('Trakt responded with: %s' % result['message'])
+                retry=retry,
+                max_retries=max_retries,
+                timeout=timeout,
 
-                return {'status': True, 'message': result['message']}
-            elif result['status'] == 'failure':
-                Log('Trakt responded with: (%s) %s' % (result.get('error_code'), result.get('error')))
+                raise_exceptions=True
+            )
+        except RequestError, e:
+            Log.Warn('[trakt] Request error: (%s) %s' % (e, e.message))
+            return {'success': False, 'exception': e, 'message': e.message}
 
-                return {'status': False, 'message': result['error'], 'result': result}
-
-        Log('Return all')
-        return {'result': result}
+        return cls.parse_response(response)
 
     @classmethod
-    def request_retry(cls, action, values=None, param='', max_retries=3, retry_sleep=5):
-        result = cls.request(action, values, param)
+    def parse_response(cls, response):
+        if response is None:
+            return {'success': False, 'message': 'Unknown Failure'}
 
-        retry_num = 1
-        while 'status' in result and not result['status'] and retry_num <= max_retries:
-            if 'result' not in result:
-                break
-            if 'error_code' not in result['result']:
-                break
+        result = None
 
-            if cls.can_retry(result['result'].get('error_code')):
-                Log.Info('Waiting %ss before retrying request' % retry_sleep)
-                time.sleep(retry_sleep)
+        # Return on successful results without status detail
+        if type(response.data) is not dict or 'status' not in response.data:
+            return {'success': True, 'data': response.data}
 
-                Log.Info('Retrying request, retry #%s' % retry_num)
-                result = cls.request(action, values, param)
-                retry_num += 1
-            else:
-                Log.Info('Not retrying the request, could be a client error (error with code %s was returned)' %
-                          result['result'].get('error_code'))
-                break
+        status = response.data.get('status')
+
+        if status == 'success':
+            result = {'success': True, 'message': response.data.get('message', 'Unknown success')}
+        elif status == 'failure':
+            result = {'success': False, 'message': response.data.get('error'), 'data': response.data}
+
+        # Log result for debugging
+        message = result.get('message', 'Unknown Result')
+
+        if not result.get('success'):
+            Log.Warn('[trakt] Request failure: (%s) %s' % (result.get('exception'), message))
 
         return result
 
@@ -102,11 +74,22 @@ class Trakt(object):
 
     class Media(object):
         @staticmethod
-        def action(media_type, action, **kwargs):
+        def action(media_type, action, retry=False, timeout=None, max_retries=3, **kwargs):
             if not all([x in kwargs for x in ['duration', 'progress', 'title']]):
                 raise ValueError()
 
+            # Retry scrobble requests as they are important (compared to watching requests)
             if action == 'scrobble':
-                return Trakt.request_retry(media_type + '/' + action, kwargs)
+                # Only change these values if they aren't already set
+                retry = retry or True
+                timeout = timeout or 3
+                max_retries = 5
 
-            return Trakt.request(media_type + '/' + action, kwargs)
+            return Trakt.request(
+                media_type + '/' + action,
+                kwargs,
+
+                retry=retry,
+                max_retries=max_retries,
+                timeout=timeout
+            )

@@ -1,4 +1,4 @@
-from core.http import request, RequestError
+from core.network import request, RequestError
 from core.plugin import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from threading import Timer
 import random
@@ -40,13 +40,11 @@ class UpdateChecker(object):
             'platform': Platform.OS.lower()
         }
 
-        try:
-            return request(self.server + '/api/ping', data, 'json')
-        except RequestError, e:
-            Log.Warn("Unable to check for updates, network error (%s)" % e.code)
-            Log.Debug('"%s" (%s)' % (e.message, e.code))
+        response = request(self.server + '/api/ping', 'json', data, data_type='json')
+        if not response:
+            return None
 
-        return None
+        return response.data
 
     def reset(self, available=None):
         self.update_available = available
@@ -82,7 +80,7 @@ class UpdateChecker(object):
 
             # Only log the warning on the first result, no need to spam with warnings
             if first_run:
-                Log.Warn(message)
+                Log.Info(message)
             else:
                 Log.Debug(message)
         elif response.get('update_available'):

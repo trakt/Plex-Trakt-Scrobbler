@@ -1,5 +1,5 @@
 from core.helpers import add_attribute
-from core.http import responses
+from core.network import request
 
 
 # Regular Expressions for GUID parsing
@@ -17,37 +17,67 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
+PMS_URL = 'http://localhost:32400%s'  # TODO remove this, replace with PMS.base_url
 
-class PlexMediaServer(object):
+
+class PMS(object):
     base_url = 'http://localhost:32400'
 
     @classmethod
-    def request(cls, path='/', data_type='xml', method='GET', catch_exceptions=False):
+    def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3, **kwargs):
         if not path.startswith('/'):
             path = '/' + path
 
-        url = cls.base_url + path
+        response = request(
+            cls.base_url + path,
+            response_type,
 
-        try:
-            if data_type == 'xml':
-                return XML.ElementFromURL(url, errors='ignore')
-            elif data_type == 'text':
-                return HTTP.Request(url, method=method)
-            else:
-                raise ValueError()
+            raise_exceptions=raise_exceptions,
 
-        except Ex.HTTPError, ex:
-            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
-            if not catch_exceptions:
-                raise ex
-        except Ex.URLError, ex:
-            Log.Debug('Network error on PlexMediaServer.request, %s' % ex)
-            if not catch_exceptions:
-                raise ex
-        return None
+            retry=retry,
+            timeout=timeout,
+
+            **kwargs
+        )
+
+        return response.data if response else None
 
     @classmethod
-    def add_guid(cls, metadata, section):
+    def metadata(cls, item_id):
+        # Prepare a dict that contains all the metadata required for trakt.
+        result = cls.request('library/metadata/%s' % item_id)
+        if not result:
+            return None
+
+        for section in result.xpath('//Video'):
+            metadata = {}
+
+            # Add attributes if they exist
+            add_attribute(metadata, section, 'duration', float, lambda x: int(x / 60000))
+            add_attribute(metadata, section, 'year', int)
+
+            add_attribute(metadata, section, 'lastViewedAt', int, target_key='last_played')
+            add_attribute(metadata, section, 'viewCount', int, target_key='plays')
+
+            add_attribute(metadata, section, 'type')
+
+            if metadata['type'] == 'movie':
+                metadata['title'] = section.get('title')
+
+            elif metadata['type'] == 'episode':
+                metadata['title'] = section.get('grandparentTitle')
+                metadata['episode_title'] = section.get('title')
+
+            # Add guid match data
+            cls.add_guid(metadata, section)
+
+            return metadata
+
+        Log.Warn('Unable to find metadata for item %s' % item_id)
+        return None
+
+    @staticmethod
+    def add_guid(metadata, section):
         guid = section.get('guid')
         if not guid:
             return
@@ -78,57 +108,18 @@ class PlexMediaServer(object):
             ))
 
     @classmethod
-    def metadata(cls, item_id):
-        # Prepare a dict that contains all the metadata required for trakt.
-        try:
-            xml_content = cls.request('library/metadata/%s' % item_id).xpath('//Video')
-
-            for section in xml_content:
-                metadata = {}
-
-                # Add attributes if they exist
-                add_attribute(metadata, section, 'duration', float, lambda x: int(x / 60000))
-                add_attribute(metadata, section, 'year', int)
-
-                add_attribute(metadata, section, 'lastViewedAt', int, target_key='last_played')
-                add_attribute(metadata, section, 'viewCount', int, target_key='plays')
-
-                add_attribute(metadata, section, 'type')
-
-                if metadata['type'] == 'movie':
-                    metadata['title'] = section.get('title')
-
-                elif metadata['type'] == 'episode':
-                    metadata['title'] = section.get('grandparentTitle')
-                    metadata['episode_title'] = section.get('title')
-
-                # Add guid match data
-                cls.add_guid(metadata, section)
-
-                return metadata
-
-            Log.Debug('xml_content = %s' % xml_content)
-            Log.Warn('Unable to find metadata for item %s' % item_id)
-        except Ex.HTTPError, e:
-            Log.Debug(str(e))
-            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
-        except Ex.URLError, e:
-            Log.Debug(str(e))
-            Log.Warn('Network error while fetching metadata, Failed to connect to %s.' % cls.base_url)
-
-        return None
-
-    @classmethod
     def client(cls, client_id):
         if not client_id:
             Log.Warn('Invalid client_id provided')
             return None
 
-        xml_content = cls.request('clients').xpath('//Server')
+        result = cls.request('clients')
+        if not result:
+            return None
 
         found_clients = []
 
-        for section in xml_content:
+        for section in result.xpath('//Server'):
             found_clients.append(section.get('machineIdentifier'))
 
             if section.get('machineIdentifier') == client_id:
@@ -139,20 +130,21 @@ class PlexMediaServer(object):
 
     @classmethod
     def set_logging_state(cls, state):
-        try:
-            response = cls.request(':/prefs?logDebug=%s' % int(state), data_type='text', method='PUT')
-            Log.Debug('Response: %s' % (response.content if response else None))
-            return True
-        except Ex.HTTPError:
-            pass
-        except Ex.URLError:
-            pass
+        # TODO PUT METHOD
+        result = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
+        if result is None:
+            return False
 
-        return False
+        Log.Debug('Response: %s' % result)
+        return True
 
     @classmethod
     def get_logging_state(cls):
-        for setting in cls.request(':/prefs').xpath('//Setting'):
+        result = cls.request(':/prefs')
+        if result is None:
+            return False
+
+        for setting in result.xpath('//Setting'):
 
             if setting.get('id') == 'logDebug' and setting.get('value'):
                 value = setting.get('value').lower()
@@ -160,3 +152,93 @@ class PlexMediaServer(object):
 
         Log.Warn('Unable to determine logging state, assuming disabled')
         return False
+
+    @classmethod
+    def get_server_info(cls):
+        return cls.request()
+
+    @classmethod
+    def get_server_version(cls, default=None):
+        server_info = cls.get_server_info()
+        if server_info is None:
+            return default
+
+        return server_info.attrib.get('version') or default
+
+    @classmethod
+    def get_sessions(cls):
+        return cls.request('status/sessions')
+
+    @classmethod
+    def get_video_session(cls, session_key):
+        sessions = cls.get_sessions()
+        if sessions is None:
+            Log.Warn('Status request failed, unable to connect to server')
+            return None
+
+        for section in sessions.xpath('//MediaContainer/Video'):
+            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                return section
+
+        Log.Warn('Session not found')
+        return None
+
+    @classmethod
+    def get_metadata(cls, key):
+        return cls.request('library/metadata/%s' % key)
+
+    @classmethod
+    def get_metadata_guid(cls, key):
+        metadata = cls.get_metadata(key)
+        if metadata is None:
+            return None
+
+        return metadata.xpath('//Directory')[0].get('guid')
+
+    @classmethod
+    def get_metadata_leaves(cls, key):
+        return cls.request('library/metadata/%s/allLeaves' % key)
+
+    @classmethod
+    def get_sections(cls):
+        return cls.request('library/sections')
+
+    @classmethod
+    def get_section(cls, name):
+        return cls.request('library/sections/%s/all' % name)
+
+    @classmethod
+    def get_section_directories(cls, section_name):
+        section = cls.get_section(section_name)
+        if section is None:
+            return None
+
+        return section.xpath('//Directory')
+
+    @classmethod
+    def get_section_videos(cls, section_name):
+        section = cls.get_metadata(section_name)
+        if section is None:
+            return None
+
+        return section.xpath('//Video')
+
+    @classmethod
+    def scrobble(cls, video):
+        if video.get('viewCount') > 0:
+            Log.Debug('video has already been marked as seen')
+            return False
+
+        result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+            video.get('ratingKey')
+        ))
+
+        return result is not None
+
+    @classmethod
+    def rate(cls, video, rating):
+        result = cls.request(':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+            video.get('ratingKey'), rating
+        ))
+
+        return result is not None
