@@ -30,6 +30,8 @@ def is_number(s):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 
 def try_convert(value, value_type):
@@ -41,11 +43,14 @@ def try_convert(value, value_type):
         return None
 
 
-def add_attribute(target, source, key, value_type=str, func=None):
+def add_attribute(target, source, key, value_type=str, func=None, target_key=None):
+    if target_key is None:
+        target_key = key
+
     value = try_convert(source.get(key, None), value_type)
 
     if value:
-        target[key] = func(value) if func else value
+        target[target_key] = func(value) if func else value
 
 
 def iterget(items, keys):
@@ -97,6 +102,6 @@ def extend(a, b=None):
 
 def all(items):
     for item in items:
-        if item is False:
+        if not item:
             return False
     return True
