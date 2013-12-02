@@ -254,6 +254,11 @@ def push_show(all_episodes, collected, rated, directory):
     episodes = PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video')
 
     for episode, parentIndex, index in iterget(episodes, ['parentIndex', 'index']):
+        # Ensure we have valid data
+        if parentIndex is None or index is None:
+            Log.Warn('Episode missing required data, skipping (key: %s)' % episode.get('ratingKey'))
+            continue
+
         season_num = int(parentIndex)
         episode_num = int(index)
 

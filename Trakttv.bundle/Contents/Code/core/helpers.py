@@ -60,9 +60,6 @@ def iterget(items, keys):
         values = [item]
 
         for key, value in [(key, item.get(key, None)) for key in keys]:
-            if value is None:
-                continue
-
             values.append(value)
 
         result.append(values)
