@@ -374,32 +374,44 @@ def SyncSection(key):
 
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
-            Trakt.request('rate/episodes', {
-                'episodes': ratings_episodes
-            })
+            Trakt.request(
+                'rate/episodes', {
+                    'episodes': ratings_episodes
+                },
+                retry=True
+            )
 
         if len(ratings_movies) > 0:
-            Trakt.request('rate/movies', {
-                'movies': ratings_movies
-            })
+            Trakt.request(
+                'rate/movies', {
+                    'movies': ratings_movies
+                },
+                retry=True
+            )
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
-            Trakt.request('movie/seen', {
-                'movies': all_movies
-            })
+            Trakt.request(
+                'movie/seen', {
+                    'movies': all_movies
+                },
+                retry=True
+            )
 
         for episode in all_episodes:
-            Trakt.request('show/episode/seen', episode)
+            Trakt.request('show/episode/seen', episode, retry=True)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
-            Trakt.request('movie/library', {
-                'movies': collection_movies
-            })
+            Trakt.request(
+                'movie/library', {
+                    'movies': collection_movies
+                },
+                retry=True
+            )
 
         for episode in collection_episodes:
-            Trakt.request('show/episode/library', episode)
+            Trakt.request('show/episode/library', episode, retry=True)
 
     Log.Info('Syncing is done!')
     Dict['Last_sync_up'] = Datetime.Now()
