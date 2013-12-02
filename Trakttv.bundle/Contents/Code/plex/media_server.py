@@ -237,8 +237,11 @@ class PMS(object):
 
     @classmethod
     def rate(cls, video, rating):
-        result = cls.request(':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
-            video.get('ratingKey'), rating
-        ))
+        result = cls.request(
+            ':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+                video.get('ratingKey'), rating
+            ),
+            response_type='text'
+        )
 
         return result is not None
