@@ -37,7 +37,7 @@ class PlexActivity(object):
     @classmethod
     def test(cls):
         # Check for force_legacy
-        if Dict['force_legacy']:
+        if Prefs['force_legacy']:
             Log.Info('force_legacy enabled, logging will be used over any other activity method')
             cls.available_methods = [
                 (weight, method)
