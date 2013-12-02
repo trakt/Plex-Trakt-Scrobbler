@@ -229,9 +229,12 @@ class PMS(object):
             Log.Debug('video has already been marked as seen')
             return False
 
-        result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
-            video.get('ratingKey')
-        ))
+        result = cls.request(
+            ':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+                video.get('ratingKey')
+            ),
+            response_type='text'
+        )
 
         return result is not None
 
