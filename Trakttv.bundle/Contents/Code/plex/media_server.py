@@ -217,7 +217,7 @@ class PMS(object):
 
     @classmethod
     def get_section_videos(cls, section_name):
-        section = cls.get_metadata(section_name)
+        section = cls.get_section(section_name)
         if section is None:
             return None
 
