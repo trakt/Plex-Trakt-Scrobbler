@@ -59,5 +59,11 @@
         "type": "text",
         "label": "Scrobble - Client names (comma separated)",
         "default": ""
+    },
+    {
+        "id": "force_legacy",
+        "type": "bool",
+        "label": "Force legacy activity method (restart required)",
+        "default": "false"
     }
 ]
