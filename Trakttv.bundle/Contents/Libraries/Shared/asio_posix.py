@@ -42,7 +42,7 @@ class PosixASIO(BaseASIO):
         :type fp: PosixFile
         :rtype: int
         """
-        return os.readlink("/proc/self/fd/%s" % fp.fd)
+        return os.readlink("/dev/fd/%s" % fp.fd)
 
     @classmethod
     def seek(cls, fp, offset, origin):

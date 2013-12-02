@@ -217,7 +217,7 @@ class PMS(object):
 
     @classmethod
     def get_section_videos(cls, section_name):
-        section = cls.get_metadata(section_name)
+        section = cls.get_section(section_name)
         if section is None:
             return None
 
@@ -229,16 +229,22 @@ class PMS(object):
             Log.Debug('video has already been marked as seen')
             return False
 
-        result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
-            video.get('ratingKey')
-        ))
+        result = cls.request(
+            ':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+                video.get('ratingKey')
+            ),
+            response_type='text'
+        )
 
         return result is not None
 
     @classmethod
     def rate(cls, video, rating):
-        result = cls.request(':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
-            video.get('ratingKey'), rating
-        ))
+        result = cls.request(
+            ':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+                video.get('ratingKey'), rating
+            ),
+            response_type='text'
+        )
 
         return result is not None

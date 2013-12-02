@@ -57,7 +57,7 @@ class LoggingScrobbler(Scrobbler):
     def update(self, info):
         session = self.get_session(info)
         if not session:
-            Log.Info('Invalid session, unable to continue')
+            Log.Info('Invalid session, ignoring')
             return
 
         # Ensure we are only scrobbling for the client listed in preferences
