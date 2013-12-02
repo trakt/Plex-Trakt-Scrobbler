@@ -168,15 +168,40 @@ def ManuallyTrakt():
 
     # Get watched and rated lists from trakt
     if Prefs['sync_watched'] is True:
-        movie_list = Trakt.request('user/library/movies/watched.json', values, param=Prefs['username']).get('data')
-        show_list = Trakt.request('user/library/shows/watched.json', values, param=Prefs['username']).get('data')
+        movie_list = Trakt.request(
+            'user/library/movies/watched.json',
+            values,
+            param=Prefs['username'],
+            retry=True
+        ).get('data')
+
+        show_list = Trakt.request(
+            'user/library/shows/watched.json',
+            values,
+            param=Prefs['username'],
+            retry=True
+        ).get('data')
+
+        if not all([x is not None for x in [movie_list, show_list]]):
+            return MessageContainer('Network error', 'Network error while requesting watched items from trakt.')
 
     if Prefs['sync_ratings'] is True:
-        movies_rated_list = Trakt.request('user/ratings/movies.json', values, param=Prefs['username']).get('data')
-        episodes_rated_list = Trakt.request('user/ratings/episodes.json', values, param=Prefs['username']).get('data')
+        movies_rated_list = Trakt.request(
+            'user/ratings/movies.json',
+            values,
+            param=Prefs['username'],
+            retry=True
+        ).get('data')
 
-    if not all([movie_list, show_list, movies_rated_list, episodes_rated_list]):
-        return MessageContainer('Network error', 'Network error while requesting current trakt data.')
+        episodes_rated_list = Trakt.request(
+            'user/ratings/episodes.json',
+            values,
+            param=Prefs['username'],
+            retry=True
+        ).get('data')
+
+        if not all([x is not None for x in [movies_rated_list, episodes_rated_list]]):
+            return MessageContainer('Network error', 'Network error while requesting rated items from trakt.')
 
     # Go through the Plex library and update flags
     for section_type, key, title in itersections():
