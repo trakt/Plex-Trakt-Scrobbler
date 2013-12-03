@@ -8,7 +8,7 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 class Trakt(object):
     @classmethod
-    def request(cls, action, values=None, param='', retry=False, max_retries=3, timeout=None):
+    def request(cls, action, values=None, param='', retry=True, max_retries=3, timeout=None):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
