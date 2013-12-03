@@ -171,15 +171,13 @@ def ManuallyTrakt():
         movie_list = Trakt.request(
             'user/library/movies/watched.json',
             values,
-            param=Prefs['username'],
-            retry=True
+            param=Prefs['username']
         ).get('data')
 
         show_list = Trakt.request(
             'user/library/shows/watched.json',
             values,
-            param=Prefs['username'],
-            retry=True
+            param=Prefs['username']
         ).get('data')
 
         if not all([x is not None for x in [movie_list, show_list]]):
@@ -189,15 +187,13 @@ def ManuallyTrakt():
         movies_rated_list = Trakt.request(
             'user/ratings/movies.json',
             values,
-            param=Prefs['username'],
-            retry=True
+            param=Prefs['username']
         ).get('data')
 
         episodes_rated_list = Trakt.request(
             'user/ratings/episodes.json',
             values,
-            param=Prefs['username'],
-            retry=True
+            param=Prefs['username']
         ).get('data')
 
         if not all([x is not None for x in [movies_rated_list, episodes_rated_list]]):
@@ -374,44 +370,32 @@ def SyncSection(key):
 
     if Prefs['sync_ratings'] is True:
         if len(ratings_episodes) > 0:
-            Trakt.request(
-                'rate/episodes', {
-                    'episodes': ratings_episodes
-                },
-                retry=True
-            )
+            Trakt.request('rate/episodes', {
+                'episodes': ratings_episodes
+            })
 
         if len(ratings_movies) > 0:
-            Trakt.request(
-                'rate/movies', {
-                    'movies': ratings_movies
-                },
-                retry=True
-            )
+            Trakt.request('rate/movies', {
+                'movies': ratings_movies
+            })
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
-            Trakt.request(
-                'movie/seen', {
-                    'movies': all_movies
-                },
-                retry=True
-            )
+            Trakt.request('movie/seen', {
+                'movies': all_movies
+            })
 
         for episode in all_episodes:
-            Trakt.request('show/episode/seen', episode, retry=True)
+            Trakt.request('show/episode/seen', episode)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
-            Trakt.request(
-                'movie/library', {
-                    'movies': collection_movies
-                },
-                retry=True
-            )
+            Trakt.request('movie/library', {
+                'movies': collection_movies
+            })
 
         for episode in collection_episodes:
-            Trakt.request('show/episode/library', episode, retry=True)
+            Trakt.request('show/episode/library', episode)
 
     Log.Info('Syncing is done!')
     Dict['Last_sync_up'] = Datetime.Now()
