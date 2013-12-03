@@ -1,9 +1,15 @@
 from asio_base import BaseASIO, DEFAULT_BUFFER_SIZE, BaseFile
+import sys
 import os
 
 if os.name == 'posix':
-    import fcntl
     import select
+
+    # fcntl is only required on darwin
+    if sys.platform == 'darwin':
+        import fcntl
+
+F_GETPATH = 50
 
 
 class PosixASIO(BaseASIO):
@@ -42,6 +48,11 @@ class PosixASIO(BaseASIO):
         :type fp: PosixFile
         :rtype: int
         """
+
+        # readlink /dev/fd fails on darwin, so instead use fcntl F_GETPATH
+        if sys.platform == 'darwin':
+            return fcntl.fcntl(fp.fd, F_GETPATH, '\0' * 1024).rstrip('\0')
+
         return os.readlink("/dev/fd/%s" % fp.fd)
 
     @classmethod
