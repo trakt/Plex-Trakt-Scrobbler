@@ -211,7 +211,7 @@ class PMS(object):
     def get_section_directories(cls, section_name):
         section = cls.get_section(section_name)
         if section is None:
-            return None
+            return []
 
         return section.xpath('//Directory')
 
@@ -219,7 +219,7 @@ class PMS(object):
     def get_section_videos(cls, section_name):
         section = cls.get_section(section_name)
         if section is None:
-            return None
+            return []
 
         return section.xpath('//Video')
 
