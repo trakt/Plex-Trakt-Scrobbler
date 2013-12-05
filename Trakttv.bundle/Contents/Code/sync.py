@@ -85,7 +85,8 @@ def SyncTrakt():
 def pull_movie(watched, rated, video):
     # Pull metadata
     metadata = PMS.metadata(video.get('ratingKey'))
-    if 'imdb_id' not in metadata:
+    if not metadata or 'imdb_id' not in metadata:
+        Log.Warn('Invalid metadata for movie with key %s (network error or missing IMDB ID)' % video.get('ratingKey'))
         return
 
     # Sync watched
@@ -109,7 +110,12 @@ def pull_show(watched, rated, directory, tvdb_id):
         for show in [x for x in watched if x['tvdb_id'] == tvdb_id]:
             Log.Debug('We have a match for %s' % show['title'])
 
-            for episode in PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video'):
+            episodes = PMS.get_metadata_leaves(directory.get('ratingKey'))
+            if not episodes:
+                Log.Warn('Unable to fetch episodes for show with id %s' % directory.get('ratingKey'))
+                continue
+
+            for episode in episodes.xpath('//Video'):
                 season_num = int(episode.get('parentIndex'))
                 episode_num = int(episode.get('index'))
 
@@ -128,7 +134,12 @@ def pull_show(watched, rated, directory, tvdb_id):
             show_season = int(show['episode']['season'])
             show_episode = int(show['episode']['number'])
 
-            for episode in PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video'):
+            episodes = PMS.get_metadata_leaves(directory.get('ratingKey'))
+            if not episodes:
+                Log.Warn('Unable to fetch episodes for show with id %s' % directory.get('ratingKey'))
+                continue
+
+            for episode in episodes.xpath('//Video'):
                 if show_season == int(episode.get('parentIndex')) and show_episode == int(episode.get('index')):
                     PMS.rate(episode, show['rating_advanced'])
 
@@ -272,9 +283,12 @@ def push_show(all_episodes, collected, rated, directory):
     seen_episodes = []
     collected_episodes = []
 
-    episodes = PMS.get_metadata_leaves(directory.get('ratingKey')).xpath('//Video')
+    episodes = PMS.get_metadata_leaves(directory.get('ratingKey'))
+    if not episodes:
+        Log.Warn('Unable to fetch episodes for show with id %s' % directory.get('ratingKey'))
+        return
 
-    for episode, parentIndex, index in iterget(episodes, ['parentIndex', 'index']):
+    for episode, parentIndex, index in iterget(episodes.xpath('//Video'), ['parentIndex', 'index']):
         # Ensure we have valid data
         if parentIndex is None or index is None:
             Log.Warn('Episode missing required data, skipping (key: %s)' % episode.get('ratingKey'))
@@ -353,7 +367,12 @@ def SyncSection(key):
     collection_episodes = []
 
     for value in key.split(','):
-        item_kind = PMS.get_section(value).xpath('//MediaContainer')[0].get('viewGroup')
+        section = PMS.get_section(value)
+        if not section:
+            Log.Warn('Unable to get section with key "%s"' % value)
+            continue
+
+        item_kind = section.xpath('//MediaContainer')[0].get('viewGroup')
 
         # Sync movies
         if item_kind == 'movie':
@@ -405,6 +424,9 @@ def SyncSection(key):
 @route('/applications/trakttv/collectionsync')
 def CollectionSync(itemID, do):
     metadata = PMS.metadata(itemID)
+    if not metadata:
+        Log.Warn('Unable to fetch metadata for media with id %s' % itemID)
+        return
 
     #cancel, if metadata is not there yet
     if not 'tvdb_id' in metadata and not 'imdb_id' in metadata and not 'tmdb_id' in metadata:
