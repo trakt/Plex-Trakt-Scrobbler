@@ -67,6 +67,29 @@ def iterget(items, keys):
     return result
 
 
+def parse_section(section):
+    return (
+        section.get('type', None),
+        section.get('key', None),
+        section.get('title', None)
+    )
+
+
+def itersections(sections, types=('show', 'movie')):
+    """Iterate over valid PMS sections of type 'show' or 'movie'"""
+    result = []
+
+    for section in [parse_section(s) for s in sections]:
+        # Ensure fields exist
+        if all(v is not None for v in section):
+            section_type, key, title = section
+            # Ensure section is of type 'show' or 'movie'
+            if section_type in types:
+                result.append((section_type, key, title))
+
+    return result
+
+
 def finditems(subject, items, key):
     result = []
 

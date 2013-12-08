@@ -18,7 +18,8 @@ from core.header import Header
 from plex.media_server import PMS
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
-from sync.legacy import SyncTrakt, ManuallySync, CollectionSync
+from sync.legacy import SyncTrakt, CollectionSync
+from sync.manager import SyncManager
 from interface.main_menu import MainMenu
 from datetime import datetime
 
@@ -39,6 +40,7 @@ class Main:
         Main.update_config()
 
         self.session_manager = SessionManager()
+        SyncManager.construct()
 
         PlexActivity.on_update_collection.subscribe(self.update_collection)
 
@@ -75,6 +77,7 @@ class Main:
         self.update_checker.run_once(async=True)
 
         self.session_manager.start()
+        SyncManager.start()
 
     @staticmethod
     def update_collection(item_id, action):

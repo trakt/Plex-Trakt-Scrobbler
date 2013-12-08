@@ -3,66 +3,6 @@ from core.trakt import Trakt
 from plex.media_server import PMS, TVSHOW1_REGEXP
 
 
-def parse_section(section):
-    return (
-        section.get('type', None),
-        section.get('key', None),
-        section.get('title', None)
-    )
-
-
-def itersections(types=('show', 'movie')):
-    """Iterate over valid PMS sections of type 'show' or 'movie'"""
-    result = []
-
-    for section in [parse_section(s) for s in PMS.get_sections()]:
-        # Ensure fields exist
-        if all(v is not None for v in section):
-            section_type, key, title = section
-            # Ensure section is of type 'show' or 'movie'
-            if section_type in types:
-                result.append((section_type, key, title))
-
-    return result
-
-
-@route('/applications/trakttv/manuallysync')
-def ManuallySync():
-    if Prefs['username'] is None:
-        return MessageContainer("Error", "No login information entered.")
-
-    oc = ObjectContainer(title2=L("Sync"))
-    all_keys = []
-
-    for _, key, title in itersections():
-        oc.add(DirectoryObject(
-            key=Callback(SyncSection, key=[key]),
-            title='Sync items in "' + title + '" to Trakt.tv',
-            summary='Sync your ' + SyncUpString() + ' in the "' + title +
-                    '" section of your Plex library with your Trakt.tv account.',
-            thumb=R("icon-sync_up.png")
-        ))
-        all_keys.append(key)
-
-    if len(all_keys) > 1:
-        oc.add(DirectoryObject(
-            key=Callback(SyncSection, key=",".join(all_keys)),
-            title='Sync items in ALL sections to Trakt.tv',
-            summary='Sync your ' + SyncUpString() +
-                    ' in all sections of your Plex library with your Trakt.tv account.',
-            thumb=R("icon-sync_up.png")
-        ))
-
-    oc.add(DirectoryObject(
-        key=Callback(ManuallyTrakt),
-        title='Sync items from Trakt.tv',
-        summary='Sync your ' + SyncDownString() + ' items on Trakt.tv with your Plex library.',
-        thumb=R("icon-sync_down.png")
-    ))
-
-    return oc
-
-
 @route('/applications/trakttv/syncplex')
 def SyncPlex():
     if (Dict['Last_sync_up'] + Datetime.Delta(minutes=360)) > Datetime.Now():
