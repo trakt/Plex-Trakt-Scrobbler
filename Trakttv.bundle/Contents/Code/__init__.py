@@ -6,6 +6,7 @@ import core
 import data
 import plex
 import pts
+import interface
 # ------------------------------------------------
 
 
@@ -17,6 +18,7 @@ from plex.media_server import PMS
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from sync import SyncTrakt, ManuallySync, CollectionSync
+from interface.main_menu import MainMenu
 from datetime import datetime
 
 
@@ -147,23 +149,3 @@ def ValidatePrefs():
             "Error",
             "Trakt responded with: %s " % status['message']
         )
-
-
-@handler('/applications/trakttv', NAME, thumb=ICON, art=ART)
-def MainMenu():
-    oc = ObjectContainer()
-
-    oc.add(DirectoryObject(
-        key=Callback(ManuallySync),
-        title=L("Sync"),
-        summary=L("Sync the Plex library with Trakt.tv"),
-        thumb=R("icon-sync.png")
-    ))
-
-    oc.add(PrefsObject(
-        title="Preferences",
-        summary="Configure how to connect to Trakt.tv",
-        thumb=R("icon-preferences.png")
-    ))
-
-    return oc
