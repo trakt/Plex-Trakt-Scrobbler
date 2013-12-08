@@ -1,6 +1,6 @@
 import sys
 
-# Modules???
+# submodules for Plex plugins "hack"
 
 import plugin
 sys.modules['core.plugin'] = plugin

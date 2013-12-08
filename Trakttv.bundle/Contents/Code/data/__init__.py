@@ -1,6 +1,6 @@
 import sys
 
-# Will inject modules into sys.modules manually for money...
+# submodules for Plex plugins "hack"
 
 import dict_object
 sys.modules['data.dict_object'] = dict_object

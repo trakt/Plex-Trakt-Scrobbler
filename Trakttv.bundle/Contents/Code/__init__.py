@@ -6,6 +6,7 @@ import core
 import data
 import plex
 import pts
+import sync
 import interface
 # ------------------------------------------------
 
@@ -17,7 +18,7 @@ from core.header import Header
 from plex.media_server import PMS
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
-from sync import SyncTrakt, ManuallySync, CollectionSync
+from sync.legacy import SyncTrakt, ManuallySync, CollectionSync
 from interface.main_menu import MainMenu
 from datetime import datetime
 
