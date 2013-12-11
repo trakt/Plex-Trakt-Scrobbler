@@ -1,4 +1,4 @@
-from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all
+from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all, try_convert
 from core.trakt import Trakt
 from plex.media_server import PMS, TVSHOW1_REGEXP
 
@@ -116,8 +116,12 @@ def pull_show(watched, rated, directory, tvdb_id):
                 continue
 
             for episode in episodes.xpath('//Video'):
-                season_num = int(episode.get('parentIndex'))
-                episode_num = int(episode.get('index'))
+                season_num = try_convert(episode.get('parentIndex'), int)
+                episode_num = try_convert(episode.get('index'), int)
+
+                # Skip episodes with missing season or episode numbers
+                if season_num is None or episode_num is None:
+                    continue
 
                 for season in matches(season_num, show['seasons'], lambda x: int(x['season'])):
 
@@ -128,11 +132,16 @@ def pull_show(watched, rated, directory, tvdb_id):
 
                         if not PMS.scrobble(episode):
                             Log.Debug('The episode %s is already marked as seen in the library.' % episode.get('title'))
-        # Sync ratings
+
+    # Sync ratings
     if Prefs['sync_ratings'] is True:
         for show in [x for x in rated if x['show']['tvdb_id'] == tvdb_id]:
-            show_season = int(show['episode']['season'])
-            show_episode = int(show['episode']['number'])
+            show_season = try_convert(show['episode']['season'], int)
+            show_episode = try_convert(show['episode']['number'], int)
+
+            # Skip episodes with missing season or episode numbers
+            if show_season is None or show_episode is None:
+                continue
 
             episodes = PMS.get_metadata_leaves(directory.get('ratingKey'))
             if not episodes:
