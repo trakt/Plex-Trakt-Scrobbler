@@ -1,6 +1,6 @@
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 
-PLUGIN_VERSION_BASE = (0, 7, 3)
+PLUGIN_VERSION_BASE = (0, 7, 4)
 PLUGIN_VERSION_BRANCH = 'master'
 
 PLUGIN_VERSION = ''.join([
