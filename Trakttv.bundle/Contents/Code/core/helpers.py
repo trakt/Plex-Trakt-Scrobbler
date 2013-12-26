@@ -102,3 +102,56 @@ def all(items):
         if not item:
             return False
     return True
+
+
+def json_import():
+    try:
+        import simplejson as json
+
+        Log.Info("Using 'simplejson' module for JSON serialization")
+        return json, 'json'
+    except ImportError:
+        pass
+
+    # Try fallback to 'json' module
+    try:
+        import json
+
+        Log.Info("Using 'json' module for JSON serialization")
+        return json, 'json'
+    except ImportError:
+        pass
+
+    # Try fallback to 'demjson' module
+    try:
+        import demjson
+
+        Log.Info("Using 'demjson' module for JSON serialization")
+        return demjson, 'demjson'
+    except ImportError:
+        Log.Warn("Unable to find json module for serialization")
+        raise Exception("Unable to find json module for serialization")
+
+# Import json serialization module
+JSON, JSON_MODULE = json_import()
+
+
+# JSON serialization wrappers to simplejson/json or demjson
+def json_decode(s):
+    if JSON_MODULE == 'json':
+        return JSON.loads(s)
+
+    if JSON_MODULE == 'demjson':
+        return JSON.decode(s)
+
+    raise NotImplementedError()
+
+
+def json_encode(obj):
+    if JSON_MODULE == 'json':
+        return JSON.dumps(obj)
+
+    if JSON_MODULE == 'demjson':
+        return JSON.encode(obj)
+
+    raise NotImplementedError()
