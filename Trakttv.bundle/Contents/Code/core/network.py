@@ -1,9 +1,8 @@
+from core.helpers import json_decode, json_encode
 from lxml import etree
 import urllib2
 import socket
-import json
 import time
-
 
 HTTP_RETRY_CODES = [408, 500, (502, 504), 522, 524, (598, 599)]
 
@@ -50,10 +49,10 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     # Add request body
     if data:
         # Convert request data
-        if data_type == 'json' and type(data) is not str:
-            data = json.dumps(data)
+        if data_type == 'json' and not isinstance(data, basestring):
+            data = json_encode(data)
 
-        if type(data) is not str:
+        if not isinstance(data, basestring):
             raise ValueError("Request data is not in a valid format, type(data) = %s, data_type = \"%s\"" % (
                 type(data), data_type)
             )
@@ -218,7 +217,7 @@ class Response(object):
     @classmethod
     def parse_json(cls, data):
         try:
-            return json.loads(data)
+            return json_decode(data)
         except Exception, e:
             raise ParseError.from_exception(e)
 
