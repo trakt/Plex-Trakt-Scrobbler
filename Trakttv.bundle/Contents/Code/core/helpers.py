@@ -1,3 +1,9 @@
+import sys
+
+
+PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
+
+
 def SyncDownString():
 
     if Prefs['sync_watched'] and Prefs['sync_ratings']:
