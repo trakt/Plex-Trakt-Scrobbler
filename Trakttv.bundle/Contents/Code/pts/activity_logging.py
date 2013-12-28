@@ -41,8 +41,8 @@ class Logging(ActivityMethod):
     @classmethod
     def get_path(cls):
         if not cls.log_path:
-            cls.log_path = Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
-            cls.log_path = Core.storage.abs_path(cls.log_path)
+            cls.log_path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+            cls.log_path = os.path.abspath(cls.log_path)
 
             Log.Info('log_path = "%s"' % cls.log_path)
 
