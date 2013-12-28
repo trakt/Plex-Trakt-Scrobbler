@@ -208,3 +208,25 @@ def str_format(s, *args, **kwargs):
 
     return s
 
+
+def str_pad(s, length, align='left', pad_char=' '):
+    if not s:
+        return s
+
+    s = str(s)
+
+    if len(s) == length:
+        return s
+
+    if align == 'left':
+        if len(s) > length:
+            return s[:length]
+        else:
+            return s + (pad_char * (length - len(s)))
+    elif align == 'right':
+        if len(s) > length:
+            return s[len(s) - length:]
+        else:
+            return (pad_char * (length - len(s))) + s
+    else:
+        raise ValueError("Unknown align type, expected either 'left' or 'right'")
