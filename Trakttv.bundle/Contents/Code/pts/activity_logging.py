@@ -1,14 +1,16 @@
+from core.helpers import str_format
 from plex.media_server import PMS
 from pts.activity import ActivityMethod, PlexActivity
 from pts.scrobbler_logging import LoggingScrobbler
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
 import time
+import os
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
-REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
+REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: {method} {path}.*?")
 
-PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
+PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
 
 IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
@@ -16,11 +18,11 @@ IGNORE_PATTERNS = [
     r'We found auth token (.*?), enabling token-based authentication.'
 ]
 
-IGNORE_REGEX = Regex(LOG_PATTERN.format(message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
+IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
 
-PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
-RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
-CLIENT_REGEX = Regex(LOG_PATTERN.format(message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
+PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
+RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
+CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
 
 class Logging(ActivityMethod):
