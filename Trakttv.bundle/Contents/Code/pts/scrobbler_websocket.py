@@ -144,7 +144,7 @@ class WebSocketScrobbler(Scrobbler):
             self.handle_action(session, media_type, action, state)
         else:
             Log.Debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session, state),
+                self.get_status_label(session.progress, state),
                 session.get_title()
             ))
             session.save()

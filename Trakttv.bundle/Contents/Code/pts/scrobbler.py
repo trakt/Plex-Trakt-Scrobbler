@@ -1,12 +1,13 @@
+from core.helpers import str_pad
 from core.trakt import Trakt
 
 
 class Scrobbler(object):
     @staticmethod
-    def get_status_label(session, state):
-        return '[{0:<2}{1:>3}]'.format(
-            state[:2].upper() if state else '?',
-            session.progress if session and session.progress is not None else '?'
+    def get_status_label(progress, state):
+        return '[%s%s]' % (
+            str_pad(state[:2].upper() if state else '?', 2),
+            str_pad(progress if progress is not None else '?', 3, 'right')
         )
 
     def get_action(self, session, state):
@@ -17,7 +18,7 @@ class Scrobbler(object):
         :rtype: str or None
         """
 
-        status_label = self.get_status_label(session, state)
+        status_label = self.get_status_label(session.progress, state)
 
         # State has changed
         if state not in [session.cur_state, 'buffering']:

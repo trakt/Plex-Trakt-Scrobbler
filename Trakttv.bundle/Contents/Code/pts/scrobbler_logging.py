@@ -89,7 +89,7 @@ class LoggingScrobbler(Scrobbler):
             self.handle_action(session, media_type, action, info['state'])
         else:
             Log.Debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session, info.get('state')),
+                self.get_status_label(session.progress, info.get('state')),
                 session.get_title()
             ))
             session.save()

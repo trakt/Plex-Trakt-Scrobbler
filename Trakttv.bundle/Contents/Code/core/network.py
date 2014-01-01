@@ -1,4 +1,4 @@
-from core.helpers import json_decode, json_encode
+from core.helpers import json_decode, json_encode, PY25
 from lxml import etree
 import urllib2
 import socket
@@ -68,7 +68,8 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     # Write request debug entry to log
     internal_log_request(url, response_type, data, data_type, retry, timeout, method)
 
-    if timeout:
+    # (Python 2.5 urlopen doesn't support timeouts)
+    if timeout and not PY25:
         kwargs['timeout'] = timeout
 
     return internal_retry(
