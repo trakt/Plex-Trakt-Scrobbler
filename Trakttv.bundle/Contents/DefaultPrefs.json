@@ -32,7 +32,7 @@
     {
         "id": "new_sync_collection",
         "type": "bool",
-        "label": "Sync - Update trakt collection instantly",
+        "label": "Sync - Update trakt collection instantly (PlexPass)",
         "default": "false"
     },
     {
@@ -51,7 +51,7 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Scrobble - MyPlex users",
+        "label": "Scrobble - MyPlex users (PlexPass)",
         "default": ""
     },
     {
