@@ -1,3 +1,17 @@
+# Copyright 2013 Dean Gardiner <gardiner91@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio_windows import WindowsASIO
 from asio_posix import PosixASIO
@@ -19,6 +33,8 @@ class ASIO(object):
             cls.platform_handler = PosixASIO
         else:
             raise NotImplementedError()
+
+        print 'Picked %s handler' % cls.platform_handler
 
         return cls.platform_handler
 
@@ -116,19 +132,22 @@ class FileOpener(object):
 
 
 def read(path):
-    with ASIO.open(path) as f:
-        orig_path = f.get_path()
+    f = ASIO.open(path, opener=False)
+    orig_path = f.get_path()
 
-        size = f.get_size()
-        print "Seeking to end, %s" % size
-        print f.seek(size, SEEK_ORIGIN_CURRENT)
+    size = f.get_size()
+    print "Seeking to end, %s" % size
+    print f.seek(size, SEEK_ORIGIN_CURRENT)
 
-        while True:
-            line = f.read_line(timeout=1, timeout_type='return')
-            if not line and f.get_path() != orig_path:
-                return
+    while True:
+        line = f.read_line(timeout=1, timeout_type='return')
+        if not line and f.get_path() != orig_path:
+            f.close()
+            return
 
-            print line
+        print line
+
+    f.close()
 
 if __name__ == '__main__':
     log_path_components = ['Plex Media Server', 'Logs', 'Plex Media Server.log']
