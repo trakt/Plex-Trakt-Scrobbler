@@ -8,7 +8,7 @@ def SyncMenu():
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
 
-    oc = ObjectContainer(title2=L("Sync"))
+    oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
     all_keys = []
 
     oc.add(DirectoryObject(
@@ -20,7 +20,7 @@ def SyncMenu():
 
     for _, key, title in itersections(PMS.get_sections()):
         oc.add(DirectoryObject(
-            key=Callback(Push, key=[key]),
+            key=Callback(Push, sections=[key]),
             title='Push items in "' + title + '" to trakt.',
             summary='Push your ' + SyncUpString() + ' in the "' + title + '" section to trakt.',
             thumb=R("icon-sync_up.png")
@@ -29,7 +29,7 @@ def SyncMenu():
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
-            key=Callback(Push, key=",".join(all_keys)),
+            key=Callback(Push, sections=",".join(all_keys)),
             title='Push items in ALL sections to trakt.',
             summary='Push your ' + SyncUpString() + ' items in all sections to trakt.',
             thumb=R("icon-sync_up.png")
@@ -55,7 +55,7 @@ def Synchronize():
 
 
 @route('/applications/trakttv/sync/push')
-def Push():
+def Push(sections):
     if not SyncManager.trigger_push():
         return MessageContainer('Unable to sync', 'Sync process already running, unable to start')
 
