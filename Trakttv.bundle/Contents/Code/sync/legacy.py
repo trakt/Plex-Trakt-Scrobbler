@@ -1,4 +1,4 @@
-from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all, try_convert
+from core.helpers import finditems, iterget, extend, matches, all, try_convert, itersections
 from core.trakt import Trakt
 from plex.media_server import PMS, TVSHOW1_REGEXP
 
@@ -8,7 +8,7 @@ def SyncPlex():
     if (Dict['Last_sync_up'] + Datetime.Delta(minutes=360)) > Datetime.Now():
         Log.Info('Not enough time since last sync, breaking!')
     else:
-        for (_, key, _) in itersections():
+        for (_, key, _) in itersections(PMS.get_sections()):
             SyncSection(key)
 
 
@@ -160,7 +160,7 @@ def ManuallyTrakt():
             return MessageContainer('Network error', 'Network error while requesting rated items from trakt.')
 
     # Go through the Plex library and update flags
-    for section_type, key, title in itersections():
+    for section_type, key, title in itersections(PMS.get_sections()):
         # Sync movies
         if section_type == 'movie':
             for video in PMS.get_section_videos(key):
