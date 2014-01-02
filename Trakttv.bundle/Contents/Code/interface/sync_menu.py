@@ -39,7 +39,7 @@ def SyncMenu(refresh=None):
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize),
-        title='Synchronize items in ALL sections with trakt.',
+        title='Synchronize',
         summary='Synchronize your ' + SyncDownString() + ' items with trakt.',
         thumb=R("icon-sync.png")
     ))
@@ -47,7 +47,7 @@ def SyncMenu(refresh=None):
     for _, key, title in itersections(PMS.get_sections()):
         oc.add(DirectoryObject(
             key=Callback(Push, sections=[key]),
-            title='Push items in "' + title + '" to trakt.',
+            title='Push "' + title + '" to trakt',
             summary='Push your ' + SyncUpString() + ' in the "' + title + '" section to trakt.',
             thumb=R("icon-sync_up.png")
         ))
@@ -56,14 +56,14 @@ def SyncMenu(refresh=None):
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
             key=Callback(Push, sections=",".join(all_keys)),
-            title='Push items in ALL sections to trakt.',
+            title='Push all to trakt',
             summary='Push your ' + SyncUpString() + ' items in all sections to trakt.',
             thumb=R("icon-sync_up.png")
         ))
 
     oc.add(DirectoryObject(
         key=Callback(Pull),
-        title='Pull items from Trakt.tv',
+        title='Pull from trakt',
         summary='Pull your ' + SyncDownString() + ' items from trakt.',
         thumb=R("icon-sync_down.png")
     ))
