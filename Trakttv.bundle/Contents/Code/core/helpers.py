@@ -1,4 +1,5 @@
 import sys
+import time
 
 
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
@@ -253,3 +254,20 @@ def str_pad(s, length, align='left', pad_char=' '):
             return (pad_char * (length - len(s))) + s
     else:
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
+
+
+def total_seconds(span):
+    return (span.microseconds + (span.seconds + span.days * 24 * 3600) * 1e6) / 1e6
+
+
+def sum(values):
+    result = 0
+
+    for x in values:
+        result = result + x
+
+    return result
+
+
+def timestamp():
+    return int(time.time())

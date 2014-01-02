@@ -1,15 +1,43 @@
-from core.helpers import SyncDownString, SyncUpString, finditems, iterget, extend, matches, all, itersections
+from core.helpers import SyncDownString, SyncUpString, itersections, timestamp
 from plex.media_server import PMS
 from sync.manager import SyncManager
 
 
 @route('/applications/trakttv/sync')
-def SyncMenu():
+def SyncMenu(refresh=None):
     if Prefs['username'] is None:
         return MessageContainer("Error", "No login information entered.")
 
     oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
     all_keys = []
+
+    # Display details of active sync process
+    work, status, handler = SyncManager.get_active()
+
+    if work:
+        progress = status['progress']
+
+        if progress:
+            progress = ('%d%%' % (progress * 100))
+
+        time_rem = status['time']['remaining']
+
+        if time_rem:
+            time_rem = int(round(time_rem, 0))
+
+        oc.add(DirectoryObject(
+            key=Callback(SyncMenu, refresh=timestamp()),
+            title=('%s - Status' % handler.title) + ((' (%s)' % progress) if progress else ''),
+            summary='Progress: %s, Estimated time remaining: %s (click to refresh)' % (
+                progress or '?',
+                '~%s seconds' % (time_rem or '?')
+            )
+        ))
+
+        oc.add(DirectoryObject(
+            key=Callback(Cancel),
+            title='%s - Cancel' % handler.title
+        ))
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize),
@@ -48,7 +76,7 @@ def SyncMenu():
 @route('/applications/trakttv/sync/synchronize')
 def Synchronize():
     if not SyncManager.trigger_synchronize():
-        return MessageContainer('Unable to sync', 'Sync process already running, unable to start')
+        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
 
     return MessageContainer('Syncing started', 'Synchronize has started and will continue in the background')
 
@@ -57,7 +85,7 @@ def Synchronize():
 @route('/applications/trakttv/sync/push')
 def Push(sections):
     if not SyncManager.trigger_push():
-        return MessageContainer('Unable to sync', 'Sync process already running, unable to start')
+        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
 
     return MessageContainer('Syncing started', 'Push has been triggered and will continue in the background')
 
@@ -65,6 +93,14 @@ def Push(sections):
 @route('/applications/trakttv/sync/pull')
 def Pull():
     if not SyncManager.trigger_pull():
-        return MessageContainer('Unable to sync', 'Sync process already running, unable to start')
+        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
 
     return MessageContainer('Syncing started', 'Pull has been triggered and will continue in the background')
+
+
+@route('/applications/trakttv/sync/cancel')
+def Cancel():
+    if not SyncManager.cancel():
+        return MessageContainer('Unable to cancel', 'There is no syncing task running')
+
+    return MessageContainer('Syncing cancelled', 'Syncing task has been notified to cancel')

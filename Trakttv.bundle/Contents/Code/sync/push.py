@@ -2,4 +2,5 @@ from sync.base import SyncBase
 
 
 class Push(SyncBase):
-    pass
+    def run(self):
+        pass
