@@ -26,7 +26,7 @@ def SyncMenu(refresh=None):
         oc.add(DirectoryObject(
             key=Callback(SyncMenu, refresh=timestamp()),
             title=('%s - Status' % handler.title) + ((' (%s)' % progress) if progress else ''),
-            summary='Progress: %s, Estimated time remaining: %s (click to refresh)' % (
+            summary='Progress: %s, estimated time remaining: %s (click to refresh)' % (
                 progress or '?',
                 '~%s seconds' % (time_rem or '?')
             )
