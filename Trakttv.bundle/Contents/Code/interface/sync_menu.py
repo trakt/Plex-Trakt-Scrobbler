@@ -11,17 +11,15 @@ def SyncMenu(refresh=None):
     oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
     all_keys = []
 
-    # Display details of active sync process
-    work, status, handler = SyncManager.get_active()
+    # Display details of current sync process
+    task, handler = SyncManager.get_current()
 
-    if work:
-        progress = status['progress']
-
+    if task:
+        progress = task.status.progress
         if progress:
             progress = ('%d%%' % (progress * 100))
 
-        time_rem = status['time']['remaining']
-
+        time_rem = task.status.seconds_remaining
         if time_rem:
             time_rem = int(round(time_rem, 0))
 

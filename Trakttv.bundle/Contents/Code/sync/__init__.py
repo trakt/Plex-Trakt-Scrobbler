@@ -5,6 +5,9 @@ import sys
 import base
 sys.modules['sync.base'] = base
 
+import task
+sys.modules['sync.task'] = task
+
 import push
 sys.modules['sync.push'] = push
 
