@@ -34,8 +34,6 @@ class ASIO(object):
         else:
             raise NotImplementedError()
 
-        print 'Picked %s handler' % cls.platform_handler
-
         return cls.platform_handler
 
     @classmethod
