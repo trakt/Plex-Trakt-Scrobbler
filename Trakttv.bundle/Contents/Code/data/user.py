@@ -1,7 +1,7 @@
-from data.dict_object import DictObject
+from core.model import DictModel
 
 
-class User(DictObject):
+class User(DictModel):
     def __init__(self, user_id=None, title=None):
         """
         :type user_id: str

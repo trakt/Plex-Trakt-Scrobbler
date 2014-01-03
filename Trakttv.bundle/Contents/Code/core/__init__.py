@@ -8,6 +8,9 @@ sys.modules['core.plugin'] = plugin
 import header
 sys.modules['core.header'] = header
 
+import model
+sys.modules['core.model'] = model
+
 import helpers
 sys.modules['core.helpers'] = helpers
 
