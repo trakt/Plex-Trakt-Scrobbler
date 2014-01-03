@@ -1,17 +1,18 @@
 class SyncTask(object):
-    def __init__(self, handler, kwargs):
-        self.handler = handler
+    def __init__(self, key, kwargs):
+        self.key = key
         self.kwargs = kwargs
 
-        self.status = SyncStatus()
+        self.statistics = SyncTaskStatistics()
 
         self.start_time = None
         self.end_time = None
+        self.success = None
 
         self.stopping = False
 
 
-class SyncStatus(object):
+class SyncTaskStatistics(object):
     def __init__(self):
         self.progress = None
         self.seconds_remaining = None

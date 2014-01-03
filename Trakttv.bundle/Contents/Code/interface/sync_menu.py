@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from ago import human
 from core.helpers import SyncDownString, SyncUpString, itersections, timestamp
 from plex.media_server import PMS
 from sync.manager import SyncManager
@@ -15,11 +17,11 @@ def SyncMenu(refresh=None):
     task, handler = SyncManager.get_current()
 
     if task:
-        progress = task.status.progress
+        progress = task.statistics.progress
         if progress:
             progress = ('%d%%' % (progress * 100))
 
-        time_rem = task.status.seconds_remaining
+        time_rem = task.statistics.seconds_remaining
         if time_rem:
             time_rem = int(round(time_rem, 0))
 
@@ -40,7 +42,7 @@ def SyncMenu(refresh=None):
     oc.add(DirectoryObject(
         key=Callback(Synchronize),
         title='Synchronize',
-        summary='Synchronize your ' + SyncDownString() + ' items with trakt.',
+        summary=get_task_status('synchronize'),
         thumb=R("icon-sync.png")
     ))
 
@@ -48,7 +50,7 @@ def SyncMenu(refresh=None):
         oc.add(DirectoryObject(
             key=Callback(Push, sections=[key]),
             title='Push "' + title + '" to trakt',
-            summary='Push your ' + SyncUpString() + ' in the "' + title + '" section to trakt.',
+            summary=get_task_status('push', key),
             thumb=R("icon-sync_up.png")
         ))
         all_keys.append(key)
@@ -57,18 +59,41 @@ def SyncMenu(refresh=None):
         oc.add(DirectoryObject(
             key=Callback(Push, sections=",".join(all_keys)),
             title='Push all to trakt',
-            summary='Push your ' + SyncUpString() + ' items in all sections to trakt.',
+            summary=get_task_status('push'),
             thumb=R("icon-sync_up.png")
         ))
 
     oc.add(DirectoryObject(
         key=Callback(Pull),
         title='Pull from trakt',
-        summary='Pull your ' + SyncDownString() + ' items from trakt.',
+        summary=get_task_status('pull'),
         thumb=R("icon-sync_down.png")
     ))
 
     return oc
+
+
+def get_task_status(key, section=None):
+    result = []
+
+    status = SyncManager.get_status(key, section)
+
+    if status.last_run:
+        result.append('Last run %s' % human(datetime.now() - status.last_run, precision=1))
+
+    if status.last_elapsed:
+        result.append('taking %s' % human(status.last_elapsed, precision=1, past_tense='%s'))
+
+    if status.last_success is True:
+        result.append('was successful')
+    elif status.last_run:
+        # Only add 'failed' fragment if there was actually a previous run
+        result.append('failed')
+
+    if len(result):
+        return ', '.join(result) + '.'
+
+    return ''
 
 
 @route('/applications/trakttv/sync/synchronize')

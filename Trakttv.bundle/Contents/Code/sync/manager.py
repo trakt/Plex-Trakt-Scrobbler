@@ -1,5 +1,6 @@
 from datetime import datetime
 from core.helpers import total_seconds, sum
+from data.sync_status import SyncStatus
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
@@ -39,7 +40,7 @@ class SyncManager(object):
         def update_progress(*args, **kwargs):
             cls.update_progress(*args, **kwargs)
 
-        for name, handler in cls.handlers.items():
+        for key, handler in cls.handlers.items():
             handler.is_stopping = is_stopping
             handler.update_progress = update_progress
 
@@ -61,40 +62,52 @@ class SyncManager(object):
 
             cls.acquire()
 
-            cls.current.start_time = datetime.now()
-
             if not cls.run_work():
                 if cls.current.stopping:
                     Log.Info('Syncing task stopped as requested')
                 else:
                     Log.Warn('Error occurred while running work')
 
-            cls.current.end_time = datetime.now()
-
             cls.release()
 
     @classmethod
     def run_work(cls):
         # Get work details
-        handler_name = cls.current.handler
+        key = cls.current.key
         kwargs = cls.current.kwargs or {}
+        section = kwargs.get('section')
 
         # Find handler
-        handler = cls.handlers.get(handler_name)
+        handler = cls.handlers.get(key)
         if not handler:
-            Log.Warn('Unknown handler "%s"' % handler_name)
+            Log.Warn('Unknown handler "%s"' % key)
             return False
 
-        Log.Debug('Processing work with handler "%s" and kwargs: %s' % (handler_name, kwargs))
+        Log.Debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
+
+        cls.current.start_time = datetime.now()
 
         try:
-            return handler.run(**kwargs)
+            cls.current.success = handler.run(**kwargs)
         except Exception, e:
+            cls.current.success = False
+
             Log.Warn('Exception raised in handler for "%s" (%s): %s' % (
-                handler_name, type(e), e)
+                key, type(e), e)
             )
 
-        return False
+        cls.current.end_time = datetime.now()
+
+        # Update task status
+        status = cls.get_status(key, section)
+        status.update(cls.current)
+        status.save()
+
+        # Save to disk
+        Dict.Save()
+
+        # Return task success result
+        return cls.current.success
 
     @classmethod
     def acquire(cls):
@@ -119,11 +132,24 @@ class SyncManager(object):
         if not current:
             return None, None
 
-        return current, cls.handlers.get(current.handler)
+        return current, cls.handlers.get(current.key)
+
+    @classmethod
+    def get_status(cls, key, section=None):
+        if section:
+            key = (key, section)
+
+        status = SyncStatus.load(key)
+
+        if not status:
+            status = SyncStatus(key)
+            status.save()
+
+        return status
 
     @classmethod
     def update_progress(cls, current, start=0, end=100):
-        status = cls.current.status
+        statistics = cls.current.statistics
 
         # Remove offset
         current = current - start
@@ -131,38 +157,38 @@ class SyncManager(object):
 
         # Calculate progress and difference since last update
         progress = float(current) / end
-        progress_diff = progress - (status.progress or 0)
+        progress_diff = progress - (statistics.progress or 0)
 
-        if status.last_update:
-            diff_seconds = total_seconds(datetime.now() - status.last_update)
+        if statistics.last_update:
+            diff_seconds = total_seconds(datetime.now() - statistics.last_update)
 
             # Plot current percent/sec
-            status.plots.append(diff_seconds / (progress_diff * 100))
+            statistics.plots.append(diff_seconds / (progress_diff * 100))
 
             # Calculate average percent/sec
-            status.per_perc = sum(status.plots) / len(status.plots)
+            statistics.per_perc = sum(statistics.plots) / len(statistics.plots)
 
             # Calculate estimated time remaining
-            status.seconds_remaining = ((1 - progress) * 100) * status.per_perc
+            statistics.seconds_remaining = ((1 - progress) * 100) * statistics.per_perc
 
         Log.Debug('[Sync][Progress] Progress: %02d%%, Estimated time remaining: ~%s seconds' % (
             progress * 100,
-            int(round(status.seconds_remaining, 0)) if status.seconds_remaining else '?'
+            int(round(statistics.seconds_remaining, 0)) if statistics.seconds_remaining else '?'
         ))
 
-        status.progress = progress
-        status.last_update = datetime.now()
+        statistics.progress = progress
+        statistics.last_update = datetime.now()
 
     # Trigger
 
     @classmethod
-    def trigger(cls, handler, blocking=False, **kwargs):
+    def trigger(cls, key, blocking=False, **kwargs):
         if not cls.lock.acquire(blocking):
             return False
 
         cls.reset()
 
-        cls.current = SyncTask(handler, kwargs)
+        cls.current = SyncTask(key, kwargs)
 
         cls.lock.release()
         return True
