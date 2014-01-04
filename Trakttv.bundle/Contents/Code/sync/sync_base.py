@@ -1,3 +1,7 @@
+# from core.trakt import Trakt
+# from plex.media_server_new import PlexMediaServer
+
+
 class SyncBase(object):
     title = "Unknown"
     children = []
@@ -26,3 +30,32 @@ class SyncBase(object):
     @staticmethod
     def is_stopping():
         raise ReferenceError()
+
+    #
+    # Trakt
+    #
+
+    # # TODO per-sync cached results
+    # @classmethod
+    # def get_trakt_library(cls, media, marked):
+    #     return Trakt.User.get_library(media, marked)
+    #
+    # # TODO per-sync cached results
+    # @classmethod
+    # def get_trakt_ratings(cls, media):
+    #     return Trakt.User.get_ratings(media)
+
+    #
+    # Plex Media Server
+    #
+
+    # # TODO per-sync cached results
+    # @classmethod
+    # def get_plex_sections(cls, types=None, keys=None):
+    #     return PlexMediaServer.get_sections(types, keys)
+    #
+    #
+    # # TODO per-sync cached results
+    # @classmethod
+    # def get_plex_library(cls, types=None, keys=None):
+    #     return PlexMediaServer.get_library(types, keys)

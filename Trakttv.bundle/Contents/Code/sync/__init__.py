@@ -2,8 +2,8 @@ import sys
 
 # submodules for Plex plugins "hack"
 
-import base
-sys.modules['sync.base'] = base
+import sync_base
+sys.modules['sync.sync_base'] = sync_base
 
 import task
 sys.modules['sync.task'] = task

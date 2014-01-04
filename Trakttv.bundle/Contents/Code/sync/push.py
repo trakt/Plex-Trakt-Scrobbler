@@ -1,4 +1,4 @@
-from sync.base import SyncBase
+from sync.sync_base import SyncBase
 
 
 class Push(SyncBase):

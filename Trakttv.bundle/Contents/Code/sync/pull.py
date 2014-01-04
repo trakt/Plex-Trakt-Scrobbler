@@ -1,5 +1,5 @@
 from core.trakt import Trakt
-from sync.base import SyncBase
+from sync.sync_base import SyncBase
 
 
 class Base(SyncBase):
