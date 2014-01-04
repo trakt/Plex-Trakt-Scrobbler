@@ -93,8 +93,8 @@ class SyncManager(object):
             cls.current.success = False
 
             Log.Warn('Exception raised in handler for "%s" (%s): %s' % (
-                key, type(e), e)
-            )
+                key, type(e), e
+            ))
 
         cls.current.end_time = datetime.now()
 
@@ -183,11 +183,15 @@ class SyncManager(object):
 
     @classmethod
     def trigger(cls, key, blocking=False, **kwargs):
+        # Ensure sync task isn't already running
         if not cls.lock.acquire(blocking):
             return False
 
-        cls.reset()
+        # Ensure account details are set
+        if not Prefs['username'] or not Prefs['password']:
+            return False
 
+        cls.reset()
         cls.current = SyncTask(key, kwargs)
 
         cls.lock.release()

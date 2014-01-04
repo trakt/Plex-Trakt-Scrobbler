@@ -340,30 +340,30 @@ def SyncSection(key):
         if len(ratings_episodes) > 0:
             Trakt.request('rate/episodes', {
                 'episodes': ratings_episodes
-            })
+            }, authenticate=True)
 
         if len(ratings_movies) > 0:
             Trakt.request('rate/movies', {
                 'movies': ratings_movies
-            })
+            }, authenticate=True)
 
     if Prefs['sync_watched'] is True:
         if len(all_movies) > 0:
             Trakt.request('movie/seen', {
                 'movies': all_movies
-            })
+            }, authenticate=True)
 
         for episode in all_episodes:
-            Trakt.request('show/episode/seen', episode)
+            Trakt.request('show/episode/seen', episode, authenticate=True)
 
     if Prefs['sync_collection'] is True:
         if len(collection_movies) > 0:
             Trakt.request('movie/library', {
                 'movies': collection_movies
-            })
+            }, authenticate=True)
 
         for episode in collection_episodes:
-            Trakt.request('show/episode/library', episode)
+            Trakt.request('show/episode/library', episode, authenticate=True)
 
     Log.Info('Syncing is done!')
     Dict['Last_sync_up'] = Datetime.Now()
@@ -425,4 +425,4 @@ def CollectionSync(itemID, do):
         values['movies'] = [movie]
 
     if action:
-        Trakt.request(action, values)
+        Trakt.request(action, values, authenticate=True)
