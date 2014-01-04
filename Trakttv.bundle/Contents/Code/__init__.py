@@ -70,13 +70,16 @@ class Main:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version
 
-        # Start the plex activity monitor
-        if PlexActivity.test():
-            Thread.Create(PlexActivity.run)
-
+        # Check for updates
         self.update_checker.run_once(async=True)
 
+        # Plex Activity Monitor
+        PlexActivity.start()
+
+        # Session Manager
         self.session_manager.start()
+
+        # Sync manager
         SyncManager.start()
 
     @staticmethod

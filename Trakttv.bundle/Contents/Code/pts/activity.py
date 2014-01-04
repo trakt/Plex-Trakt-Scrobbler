@@ -1,4 +1,5 @@
 from core.eventing import EventHandler
+import threading
 
 
 class ActivityMethod(object):
@@ -21,10 +22,17 @@ class ActivityMethod(object):
 
 
 class PlexActivity(object):
+    thread = None
+    running = False
+
     available_methods = []
     current_method = None
 
     on_update_collection = EventHandler()
+
+    @classmethod
+    def construct(cls):
+        cls.thread = threading.Thread(target=cls.run, name="PlexActivity")
 
     @classmethod
     def register(cls, method, weight=1):
@@ -65,7 +73,18 @@ class PlexActivity(object):
         return True
 
     @classmethod
+    def start(cls):
+        if not cls.thread:
+            cls.construct()
+
+        cls.running = True
+        cls.thread.start()
+
+    @classmethod
     def run(cls):
+        if not PlexActivity.test():
+            return
+
         if not cls.current_method:
             return
 
