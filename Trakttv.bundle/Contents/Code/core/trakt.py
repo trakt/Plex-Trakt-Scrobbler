@@ -8,33 +8,34 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 class Trakt(object):
     @classmethod
-    def request(cls, action, values=None, param='', retry=True, max_retries=3, timeout=None):
+    def request(cls, action, values=None, param='', authenticate=False, retry=True, max_retries=3, timeout=None):
         if param != "":
             param = "/" + param
         data_url = TRAKT_URL % (action, param)
 
-        if values is None:
-            values = {}
+        if authenticate:
+            if values is None:
+                values = {}
 
-        values['username'] = Prefs['username']
-        values['password'] = Hash.SHA1(Prefs['password'])
-        values['plugin_version'] = PLUGIN_VERSION
-        values['media_center_version'] = Dict['server_version']
+            values['username'] = Prefs['username']
+            values['password'] = Hash.SHA1(Prefs['password'])
+            values['plugin_version'] = PLUGIN_VERSION
+            values['media_center_version'] = Dict['server_version']
 
         try:
-            response = request(
-                data_url,
-                'json',
+            kwargs = {
+                'retry': retry,
+                'max_retries': max_retries,
+                'timeout': timeout,
 
-                data=values,
-                data_type='json',
+                'raise_exceptions': True
+            }
 
-                retry=retry,
-                max_retries=max_retries,
-                timeout=timeout,
+            if values is not None:
+                kwargs['data'] = values
+                kwargs['data_type'] = 'json'
 
-                raise_exceptions=True
-            )
+            response = request(data_url, 'json', **kwargs)
         except RequestError, e:
             Log.Warn('[trakt] Request error: (%s) %s' % (e, e.message))
             return {'success': False, 'exception': e, 'message': e.message}
@@ -70,7 +71,7 @@ class Trakt(object):
     class Account(object):
         @staticmethod
         def test():
-            return Trakt.request('account/test')
+            return Trakt.request('account/test', authenticate=True)
 
     class Media(object):
         @staticmethod
@@ -88,6 +89,7 @@ class Trakt(object):
             return Trakt.request(
                 media_type + '/' + action,
                 kwargs,
+                authenticate=True,
 
                 retry=retry,
                 max_retries=max_retries,
