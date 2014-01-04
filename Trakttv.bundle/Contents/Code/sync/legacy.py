@@ -131,13 +131,13 @@ def ManuallyTrakt():
         movie_list = Trakt.request(
             'user/library/movies/watched.json',
             values,
-            param=Prefs['username']
+            params=Prefs['username']
         ).get('data')
 
         show_list = Trakt.request(
             'user/library/shows/watched.json',
             values,
-            param=Prefs['username']
+            params=Prefs['username']
         ).get('data')
 
         if not all([x is not None for x in [movie_list, show_list]]):
@@ -147,13 +147,13 @@ def ManuallyTrakt():
         movies_rated_list = Trakt.request(
             'user/ratings/movies.json',
             values,
-            param=Prefs['username']
+            params=Prefs['username']
         ).get('data')
 
         episodes_rated_list = Trakt.request(
             'user/ratings/episodes.json',
             values,
-            param=Prefs['username']
+            params=Prefs['username']
         ).get('data')
 
         if not all([x is not None for x in [movies_rated_list, episodes_rated_list]]):

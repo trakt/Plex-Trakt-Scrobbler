@@ -8,10 +8,14 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 class Trakt(object):
     @classmethod
-    def request(cls, action, values=None, param='', authenticate=False, retry=True, max_retries=3, timeout=None):
-        if param != "":
-            param = "/" + param
-        data_url = TRAKT_URL % (action, param)
+    def request(cls, action, values=None, params=None, authenticate=False, retry=True, max_retries=3, timeout=None):
+        if isinstance(params, basestring):
+            params = [params]
+
+        data_url = TRAKT_URL % (
+            action,
+            ('/' + '/'.join(params)) if params else ''
+        )
 
         if authenticate:
             if values is None:
@@ -72,6 +76,25 @@ class Trakt(object):
         @staticmethod
         def test():
             return Trakt.request('account/test', authenticate=True)
+
+    class User(object):
+        @staticmethod
+        def get_library(media, marked, extended='min', retry=True):
+            return Trakt.request(
+                'user/library/%s/%s.json' % (media, marked),
+                params=[Prefs['username'], extended],
+
+                retry=retry
+            )
+
+        @staticmethod
+        def get_ratings(media, retry=True):
+            return Trakt.request(
+                'user/ratings/%s.json' % media,
+                params=Prefs['username'],
+
+                retry=retry
+            )
 
     class Media(object):
         @staticmethod
