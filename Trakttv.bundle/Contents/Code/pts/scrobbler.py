@@ -2,7 +2,8 @@ from core.helpers import str_pad
 from core.trakt import Trakt
 
 
-class Scrobbler(object):
+
+class ScrobblerMethod(object):
     @staticmethod
     def get_status_label(progress, state):
         return '[%s%s]' % (

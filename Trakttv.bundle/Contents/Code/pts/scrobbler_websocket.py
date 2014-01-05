@@ -1,9 +1,9 @@
 from plex.media_server import PMS
-from pts.scrobbler import Scrobbler
+from pts.scrobbler import ScrobblerMethod
 from data.watch_session import WatchSession
 
 
-class WebSocketScrobbler(Scrobbler):
+class WebSocketScrobbler(ScrobblerMethod):
     def create_session(self, session_key, state):
         """
         :type session_key: str

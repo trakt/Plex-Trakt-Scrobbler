@@ -1,10 +1,10 @@
 from data.client import Client
 from data.watch_session import WatchSession
 from plex.media_server import PMS
-from pts.scrobbler import Scrobbler
+from pts.scrobbler import ScrobblerMethod
 
 
-class LoggingScrobbler(Scrobbler):
+class LoggingScrobbler(ScrobblerMethod):
     def create_session(self, info):
         client = None
         if info.get('machineIdentifier'):
