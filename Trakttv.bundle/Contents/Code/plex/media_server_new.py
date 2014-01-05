@@ -73,13 +73,12 @@ class PlexMediaServer(PlexBase):
         return section.xpath('//Video')
 
     @classmethod
-    def get_library(cls, types, keys):
+    def get_library(cls, types=None, keys=None):
         # Get all sections or filter based on 'types' and 'sections'
         sections = [(type, key) for (type, key, _) in cls.get_sections(types, keys)]
 
         movies = {}
         shows = {}
-
 
         for type, key in sections:
             if type == 'movie':

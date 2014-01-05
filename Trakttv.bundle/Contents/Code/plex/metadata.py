@@ -6,24 +6,24 @@ SHOW_SID_REGEX = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0
 
 class PlexMetadata(PlexBase):
     @classmethod
-    def get(cls, rating_key):
-        return cls.request('library/metadata/%s' % rating_key)
+    def get(cls, key):
+        return cls.request('library/metadata/%s' % key)
 
     @classmethod
-    def get_guid(cls, rating_key):
-        metadata = cls.get(rating_key)
+    def get_guid(cls, key):
+        metadata = cls.get(key)
         if metadata is None:
             return None
 
         return metadata.xpath('//Directory')[0].get('guid')
 
     @classmethod
-    def get_show_sid(cls, rating_key):
-        if not rating_key:
+    def get_show_sid(cls, key):
+        if not key:
             Log.Warn("SID matching failed, ratingKey isn't valid")
             return None
 
-        guid = PlexMetadata.get_guid(rating_key)
+        guid = PlexMetadata.get_guid(key)
 
         match = SHOW_SID_REGEX.search(guid)
         if not match:
