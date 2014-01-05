@@ -1,6 +1,9 @@
 from core.helpers import str_pad
+from core.logger import Logger
 from core.trakt import Trakt
+import threading
 
+log = Logger('pts.scrobbler')
 
 
 class ScrobblerMethod(object):
@@ -26,14 +29,14 @@ class ScrobblerMethod(object):
             session.cur_state = state
 
             if state == 'stopped' and session.watching:
-                Log.Debug('%s %s stopped, watching status cancelled' % (
+                log.debug('%s %s stopped, watching status cancelled' % (
                     status_label, session.get_title()
                 ))
                 session.watching = False
                 return 'cancelwatching'
 
             if state == 'paused' and not session.paused_since:
-                Log.Debug("%s %s just paused, waiting 15s before cancelling the watching status" % (
+                log.debug("%s %s just paused, waiting 15s before cancelling the watching status" % (
                     status_label, session.get_title()
                 ))
 
@@ -41,25 +44,25 @@ class ScrobblerMethod(object):
                 return None
 
             if state == 'playing' and not session.watching:
-                Log.Debug('%s Sending watch status for %s' % (status_label, session.get_title()))
+                log.debug('%s Sending watch status for %s' % (status_label, session.get_title()))
                 session.watching = True
                 return 'watching'
 
         elif state == 'playing':
             # scrobble item
             if not session.scrobbled and session.progress >= 80:
-                Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
+                log.debug('%s Scrobbling %s' % (status_label, session.get_title()))
                 return 'scrobble'
 
             # update every 10 min if media hasn't finished
             elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
+                log.debug('%s Updating watch status for %s' % (status_label, session.get_title()))
                 session.watching = True
                 return 'watching'
 
             # cancel watching status on items at 100% progress
             elif session.progress >= 100 and session.watching:
-                Log.Debug('%s Media finished, cancelling watching status for %s' % (
+                log.debug('%s Media finished, cancelling watching status for %s' % (
                     status_label,
                     session.get_title()
                 ))
@@ -108,13 +111,13 @@ class ScrobblerMethod(object):
 
         # If stopped, delete the session
         if state == 'stopped':
-            Log.Debug(session.get_title() + ' stopped, deleting the session')
+            log.debug(session.get_title() + ' stopped, deleting the session')
             session.delete()
             return True
 
         # If paused, queue a session update when playing begins again
         if state == 'paused' and not session.update_required:
-            Log.Debug(session.get_title() + ' paused, session update queued to run when resumed')
+            log.debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
             return True
 
@@ -125,12 +128,12 @@ class ScrobblerMethod(object):
         # Setup Data to send to Trakt
         parameters = cls.get_request_parameters(session)
         if not parameters:
-            Log.Info('Invalid parameters, unable to continue')
+            log.info('Invalid parameters, unable to continue')
             return False
 
         response = Trakt.Media.action(media_type, action, **parameters)
         if not response['success']:
-            Log.Warn('Unable to send scrobbler action')
+            log.warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()
 
@@ -173,3 +176,66 @@ class ScrobblerMethod(object):
         clients = [x.strip().lower() for x in Prefs['scrobble_clients'].split(',')]
 
         return session.client and session.client.name.lower() in clients
+
+
+class Scrobbler(object):
+    thread = None
+    running = False
+
+    available_methods = []
+    current_method = None
+
+    @classmethod
+    def construct(cls):
+        cls.thread = threading.Thread(target=cls.run, name="Scrobbler")
+
+    @classmethod
+    def register(cls, method, weight=1):
+        cls.available_methods.append((weight, method))
+
+    @classmethod
+    def test(cls):
+        # Check for force_legacy
+        if Prefs['force_legacy']:
+            log.info('force_legacy enabled, logging will be used over any other activity method')
+            cls.available_methods = [
+                (weight, method)
+                for weight, method in cls.available_methods
+                if method.name == 'Logging'
+            ]
+
+        # Sort available methods by weight first
+        cls.available_methods = sorted(cls.available_methods, key=lambda x: x[0], reverse=True)
+
+        # Test methods until an available method is found
+        for weight, method in cls.available_methods:
+            if method.test():
+                cls.current_method = method(cls)
+                log.info('Picked method: %s' % cls.current_method.name)
+                break
+            else:
+                log.info('%s method not available' % method.name)
+
+        if not cls.current_method:
+            log.warn('No method available to determine now playing status, auto-scrobbling not available.')
+            return False
+
+        return True
+
+    @classmethod
+    def start(cls):
+        if not cls.thread:
+            cls.construct()
+
+        cls.running = True
+        cls.thread.start()
+
+    @classmethod
+    def run(cls):
+        if not Scrobbler.test():
+            return
+
+        if not cls.current_method:
+            return
+
+        cls.current_method.run()
