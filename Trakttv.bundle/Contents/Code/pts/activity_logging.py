@@ -1,6 +1,6 @@
 from core.helpers import str_format
 from plex.media_server import PMS
-from pts.activity import ActivityMethod, PlexActivity
+from pts.activity import ActivityMethod, Activity
 from pts.scrobbler_logging import LoggingScrobbler
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
@@ -119,6 +119,9 @@ class Logging(ActivityMethod):
 
         cls.log_file.close()
         cls.log_file = None
+
+    def start(self):
+        raise NotImplementedError()
 
     def run(self):
         line = self.try_read_line(timeout=60)
@@ -248,4 +251,4 @@ class Logging(ActivityMethod):
         return match.groupdict()
 
 
-PlexActivity.register(Logging)
+Activity.register(Logging)

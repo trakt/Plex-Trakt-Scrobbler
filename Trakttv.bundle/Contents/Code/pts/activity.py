@@ -1,5 +1,8 @@
 from core.eventing import EventHandler
+from core.logger import Logger
 import threading
+
+log = Logger('pts.activity')
 
 
 class ActivityMethod(object):
@@ -21,18 +24,11 @@ class ActivityMethod(object):
         self.now_playing.update_collection(item_id, action)
 
 
-class PlexActivity(object):
-    thread = None
-    running = False
-
+class Activity(object):
     available_methods = []
-    current_method = None
+    enabled_methods = []
 
     on_update_collection = EventHandler()
-
-    @classmethod
-    def construct(cls):
-        cls.thread = threading.Thread(target=cls.run, name="PlexActivity")
 
     @classmethod
     def register(cls, method, weight=1):
@@ -44,48 +40,44 @@ class PlexActivity(object):
 
     @classmethod
     def test(cls):
-        # Check for force_legacy
-        if Prefs['force_legacy']:
-            Log.Info('force_legacy enabled, logging will be used over any other activity method')
-            cls.available_methods = [
-                (weight, method)
-                for weight, method in cls.available_methods
-                if method.name == 'Logging'
-            ]
+        def method_sort_key((weight, _)):
+            if weight is None:
+                return 1000
 
+            return weight
 
         # Sort available methods by weight first
-        cls.available_methods = sorted(cls.available_methods, key=lambda x: x[0], reverse=True)
+        cls.available_methods = sorted(
+            cls.available_methods,
+            key=method_sort_key,
+            reverse=True
+        )
+
+        cls.enabled_methods = []
 
         # Test methods until an available method is found
         for weight, method in cls.available_methods:
             if method.test():
-                cls.current_method = method(cls)
-                Log.Info('Picked method %s' % cls.current_method.name)
-                break
+                cls.enabled_methods.append(method(cls))
+
+                if not Prefs['force_legacy']:
+                    break
+            elif weight is None:
+                cls.enabled_methods.append(method(cls))
             else:
-                Log.Info('%s method not available' % method.name)
+                log.info('%s method not available' % method.name)
 
-        if not cls.current_method:
-            Log.Warn('No method available to determine now playing status, auto-scrobbling not available.')
-            return False
+        if cls.enabled_methods:
+            log.info('Enabled methods: %s' % ', '.join([x.name for x in cls.enabled_methods]))
+            return True
 
-        return True
+        log.error('No activity methods available, unable to start.')
+        return False
 
     @classmethod
     def start(cls):
-        if not cls.thread:
-            cls.construct()
-
-        cls.running = True
-        cls.thread.start()
-
-    @classmethod
-    def run(cls):
-        if not PlexActivity.test():
+        if not Activity.test() or not cls.enabled_methods:
             return
 
-        if not cls.current_method:
-            return
-
-        cls.current_method.run()
+        for method in cls.enabled_methods:
+            method.start()

@@ -1,6 +1,6 @@
 from core.helpers import try_convert
 from plex.media_server import PMS
-from pts.activity import ActivityMethod, PlexActivity
+from pts.activity import ActivityMethod, Activity
 from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
 import time
@@ -36,6 +36,9 @@ class WebSocket(ActivityMethod):
             return False
 
         return True
+
+    def start(self):
+        raise NotImplementedError()
 
     def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
@@ -108,4 +111,4 @@ class WebSocket(ActivityMethod):
 
                 self.update_collection(item['itemID'], 'add')
 
-PlexActivity.register(WebSocket, weight=10)
+Activity.register(WebSocket, weight=None)

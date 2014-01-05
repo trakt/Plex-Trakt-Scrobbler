@@ -11,7 +11,8 @@ import interface
 # ------------------------------------------------
 
 
-from pts.activity import PlexActivity
+from pts.activity import Activity
+from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from core.plugin import ART, NAME, ICON
 from core.header import Header
@@ -42,7 +43,7 @@ class Main:
         self.session_manager = SessionManager()
         SyncManager.construct()
 
-        PlexActivity.on_update_collection.subscribe(self.update_collection)
+        Activity.on_update_collection.subscribe(self.update_collection)
 
     @staticmethod
     def update_config():
@@ -73,8 +74,9 @@ class Main:
         # Check for updates
         self.update_checker.run_once(async=True)
 
-        # Plex Activity Monitor
-        PlexActivity.start()
+        # Activity and Scrobbler
+        Activity.start()
+        Scrobbler.start()
 
         # Session Manager
         self.session_manager.start()

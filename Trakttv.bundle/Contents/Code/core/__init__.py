@@ -5,6 +5,9 @@ import sys
 import plugin
 sys.modules['core.plugin'] = plugin
 
+import logger
+sys.modules['core.logger'] = logger
+
 import header
 sys.modules['core.header'] = header
 
