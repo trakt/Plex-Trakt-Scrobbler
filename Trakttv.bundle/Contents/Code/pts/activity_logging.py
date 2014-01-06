@@ -1,4 +1,5 @@
 from core.helpers import str_format
+from core.logger import Logger
 from plex.media_server import PMS
 from pts.activity import ActivityMethod, Activity
 from pts.scrobbler_logging import LoggingScrobbler
@@ -24,6 +25,8 @@ PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>\w+) =\> (?P<v
 RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
 CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
+log = Logger('pts.activity_logging')
+
 
 class Logging(ActivityMethod):
     name = 'Logging'
@@ -44,7 +47,7 @@ class Logging(ActivityMethod):
             cls.log_path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
             cls.log_path = os.path.abspath(cls.log_path)
 
-            Log.Info('log_path = "%s"' % cls.log_path)
+            log.info('log_path = "%s"' % cls.log_path)
 
         return cls.log_path
 
@@ -52,11 +55,11 @@ class Logging(ActivityMethod):
     def test(cls):
         # Try enable logging
         if not PMS.set_logging_state(True):
-            Log.Warn('Unable to enable logging')
+            log.warn('Unable to enable logging')
 
         # Test if logging is enabled
         if not PMS.get_logging_state():
-            Log.Warn('Debug logging not enabled, unable to use logging activity method.')
+            log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
         if cls.try_read_line(True):
@@ -70,7 +73,7 @@ class Logging(ActivityMethod):
             cls.log_file = ASIO.open(cls.get_path(), opener=False)
             cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
             cls.log_path = cls.log_file.get_path()
-            Log.Info('Opened file path: "%s"' % cls.log_path)
+            log.info('Opened file path: "%s"' % cls.log_path)
 
         return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
@@ -89,7 +92,7 @@ class Logging(ActivityMethod):
                 break
 
             if cls.log_file.get_path() != cls.log_path:
-                Log.Info("Log file moved (probably rotated), closing")
+                log.info("Log file moved (probably rotated), closing")
                 cls.close()
 
             # If we are below max_interval, keep increasing the interval
@@ -102,13 +105,13 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
+                log.info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
         if line and try_count > 1:
-            Log.Info('Successfully read the log file after retrying')
+            log.info('Successfully read the log file after retrying')
         elif not line:
-            Log.Warn('Finished retrying, still no success')
+            log.warn('Finished retrying, still no success')
 
         return line
 
@@ -123,7 +126,7 @@ class Logging(ActivityMethod):
     def run(self):
         line = self.try_read_line(timeout=60)
         if not line:
-            Log.Warn('Unable to read log file')
+            log.warn('Unable to read log file')
             return
 
         while 1:
@@ -136,7 +139,7 @@ class Logging(ActivityMethod):
             if line:
                 self.process(line)
             else:
-                Log.Warn('Unable to read log file')
+                log.warn('Unable to read log file')
 
     def process(self, line):
         header_match = PLAYING_HEADER_REGEX.match(line)
@@ -151,7 +154,7 @@ class Logging(ActivityMethod):
         elif activity_type == 'progress':
             match = self.progress()
         else:
-            Log.Warn('Unknown activity type "%s"', activity_type)
+            log.warn('Unknown activity type "%s"', activity_type)
             return
 
         # Ensure we successfully matched a result
@@ -166,7 +169,7 @@ class Logging(ActivityMethod):
             if key in match and match[key] is not None:
                 info[key] = match[key]
             else:
-                Log.Warn('Invalid activity match, missing key %s (%s)', (key, match))
+                log.warn('Invalid activity match, missing key %s (%s)', (key, match))
                 return
 
         # - Add in any extra info parameters
@@ -202,7 +205,7 @@ class Logging(ActivityMethod):
         while True:
             line = self.try_read_line(timeout=5)
             if not line:
-                Log.Warn('Unable to read log file')
+                log.warn('Unable to read log file')
                 return None
 
             # Run through each match function to find a result

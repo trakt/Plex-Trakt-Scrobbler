@@ -1,10 +1,13 @@
 from core.helpers import json_decode, json_encode, PY25
+from core.logger import Logger
 from lxml import etree
 import urllib2
 import socket
 import time
 
 HTTP_RETRY_CODES = [408, 500, (502, 504), 522, 524, (598, 599)]
+
+log = Logger('core.network')
 
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
@@ -101,7 +104,7 @@ def internal_log_request(url, response_type, data, data_type, retry, timeout, me
     # Filter empty values
     debug_values = [x for x in debug_values if x]
 
-    Log.Debug("Requesting '%s' (%s) %s" % (
+    log.debug("Requesting '%s' (%s) %s" % (
         url,
         response_type,
 
@@ -125,27 +128,27 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
         if retry_num > 0:
             sleep_time = retry_sleep * retry_num
 
-            Log.Debug('Waiting %ss before retrying request' % sleep_time)
+            log.debug('Waiting %ss before retrying request' % sleep_time)
             time.sleep(sleep_time)
 
-            Log.Debug('Retrying request, try #%s' % retry_num)
+            log.debug('Retrying request, try #%s' % retry_num)
 
         try:
             response = internal_request(req, **kwargs)
         except NetworkError, e:
             last_exception = e
 
-            Log.Debug('Request returned a network error: (%s) %s' % (e.code, e))
+            log.debug('Request returned a network error: (%s) %s' % (e.code, e))
 
             # If this is possibly a client error, stop retrying and just return
             if not should_retry(e.code):
-                Log.Debug('Request error code %s is possibly client related, not retrying the request', e.code)
+                log.debug('Request error code %s is possibly client related, not retrying the request', e.code)
                 return None
 
         except RequestError, e:
             last_exception = e
 
-            Log.Debug('Request returned exception: %s' % e)
+            log.debug('Request returned exception: %s' % e)
             response = None
 
         retry_num += 1
@@ -168,7 +171,7 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
     if raise_exceptions:
         raise ex
     else:
-        Log.Warn('Network request raised exception: %s' % ex)
+        log.warn('Network request raised exception: %s' % ex)
 
     return default
 

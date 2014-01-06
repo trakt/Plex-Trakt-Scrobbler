@@ -130,12 +130,10 @@ class PMS(object):
 
     @classmethod
     def set_logging_state(cls, state):
-        # TODO PUT METHOD
         result = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
         if result is None:
             return False
 
-        Log.Debug('Response: %s' % result)
         return True
 
     @classmethod

@@ -1,9 +1,12 @@
 from core.helpers import try_convert
+from core.logger import Logger
 from plex.media_server import PMS
 from pts.activity import ActivityMethod, Activity
 from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
 import time
+
+log = Logger('pts.activity_websocket')
 
 
 class WebSocket(ActivityMethod):
@@ -22,17 +25,17 @@ class WebSocket(ActivityMethod):
     @classmethod
     def test(cls):
         if PMS.get_sessions() is None:
-            Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
+            log.info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
         server_info = PMS.get_server_info()
         if server_info is None:
-            Log.Info('Error while retrieving server info for testing')
+            log.info('Error while retrieving server info for testing')
             return False
 
         multi_user = bool(server_info.get('multiuser', 0))
         if not multi_user:
-            Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
+            log.info("Server info indicates multi-user support isn't available, WebSocket method not available")
             return False
 
         return True
@@ -60,10 +63,10 @@ class WebSocket(ActivityMethod):
                     if self.reconnects > 1:
                         time.sleep(2 * (self.reconnects - 1))
 
-                    Log.Info('WebSocket connection has closed, reconnecting...')
+                    log.info('WebSocket connection has closed, reconnecting...')
                     self.connect()
                 else:
-                    Log.Error('WebSocket connection unavailable, activity monitoring not available')
+                    log.error('WebSocket connection unavailable, activity monitoring not available')
                     break
 
     def receive(self):
@@ -88,8 +91,8 @@ class WebSocket(ActivityMethod):
         try:
             info = JSON.ObjectFromString(data)
         except Exception, e:
-            Log.Warn('Error decoding message from websocket: %s' % e)
-            Log.Debug(data)
+            log.warn('Error decoding message from websocket: %s' % e)
+            log.debug(data)
             return
 
         item = info['_children'][0]
@@ -106,7 +109,7 @@ class WebSocket(ActivityMethod):
                 return
 
             if item['state'] == 0:
-                Log.Info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
+                log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
 
                 self.update_collection(item['itemID'], 'add')
 
