@@ -5,17 +5,22 @@ class Logger(object):
     def __init__(self, tag):
         self.tag = tag
 
-    def write(self, func, message, *args):
-        func(ENTRY_FORMAT % (self.tag,(message % args)))
+    def write(self, func, message, *args, **kwargs):
+        tag = self.tag
 
-    def debug(self, message, *args):
-        self.write(Log.Debug, message, *args)
+        if 'tag' in kwargs:
+            tag = kwargs.pop('tag')
 
-    def info(self, message, *args):
-        self.write(Log.Info, message, *args)
+        func(ENTRY_FORMAT % (tag, (message % args)))
 
-    def warn(self, message, *args):
-        self.write(Log.Warn, message, *args)
+    def debug(self, message, *args, **kwargs):
+        self.write(Log.Debug, message, *args, **kwargs)
 
-    def error(self, message, *args):
-        self.write(Log.Error, message, *args)
+    def info(self, message, *args, **kwargs):
+        self.write(Log.Info, message, *args, **kwargs)
+
+    def warn(self, message, *args, **kwargs):
+        self.write(Log.Warn, message, *args, **kwargs)
+
+    def error(self, message, *args, **kwargs):
+        self.write(Log.Error, message, *args, **kwargs)

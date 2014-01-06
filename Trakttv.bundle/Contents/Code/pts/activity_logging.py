@@ -1,8 +1,8 @@
+from core.eventing import EventManager
 from core.helpers import str_format
 from core.logger import Logger
 from plex.media_server import PMS
 from pts.activity import ActivityMethod, Activity
-from pts.scrobbler_logging import LoggingScrobbler
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
 import time
@@ -35,11 +35,6 @@ class Logging(ActivityMethod):
 
     log_path = None
     log_file = None
-
-    def __init__(self, now_playing):
-        super(Logging, self).__init__(now_playing)
-
-        self.scrobbler = LoggingScrobbler()
 
     @classmethod
     def get_path(cls):
@@ -180,7 +175,7 @@ class Logging(ActivityMethod):
                 info[key] = None
 
         # Update the scrobbler with the current state
-        self.scrobbler.update(info)
+        EventManager.fire('scrobbler.logging.update', info)
 
     def timeline(self):
         return self.read_parameters(self.client_match, self.range_match)

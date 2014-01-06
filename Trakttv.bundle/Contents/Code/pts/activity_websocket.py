@@ -1,8 +1,7 @@
+from core.eventing import EventManager
 from core.helpers import try_convert
 from core.logger import Logger
-from plex.media_server import PMS
 from pts.activity import ActivityMethod, Activity
-from pts.scrobbler_websocket import WebSocketScrobbler
 import websocket
 import time
 
@@ -14,31 +13,11 @@ class WebSocket(ActivityMethod):
 
     opcode_data = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
-    def __init__(self, now_playing):
-        super(WebSocket, self).__init__(now_playing)
+    def __init__(self):
+        super(WebSocket, self).__init__()
 
         self.ws = None
         self.reconnects = 0
-
-        self.scrobbler = WebSocketScrobbler()
-
-    @classmethod
-    def test(cls):
-        if PMS.get_sessions() is None:
-            log.info("Error while retrieving sessions, assuming WebSocket method isn't available")
-            return False
-
-        server_info = PMS.get_server_info()
-        if server_info is None:
-            log.info('Error while retrieving server info for testing')
-            return False
-
-        multi_user = bool(server_info.get('multiuser', 0))
-        if not multi_user:
-            log.info("Server info indicates multi-user support isn't available, WebSocket method not available")
-            return False
-
-        return True
 
     def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
@@ -102,7 +81,7 @@ class WebSocket(ActivityMethod):
             state = str(item['state'])
             view_offset = try_convert(item['viewOffset'], int)
 
-            self.scrobbler.update(session_key, state, view_offset)
+            EventManager.fire('scrobbler.websocket.update', session_key, state, view_offset)
 
         if info['type'] == "timeline" and Dict['new_sync_collection']:
             if item['type'] not in [1, 4]:
@@ -111,6 +90,6 @@ class WebSocket(ActivityMethod):
             if item['state'] == 0:
                 log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
 
-                self.update_collection(item['itemID'], 'add')
+                EventManager.fire('collection.added', item['itemID'])
 
 Activity.register(WebSocket, weight=None)
