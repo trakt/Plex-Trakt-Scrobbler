@@ -14,7 +14,7 @@ class WebSocketScrobbler(ScrobblerMethod):
     def __init__(self):
         super(WebSocketScrobbler, self).__init__()
 
-        EventManager.subscribe('scrobbler.websocket.update', self.update)
+        EventManager.subscribe('notifications.playing', self.update)
 
     @classmethod
     def test(cls):
@@ -120,6 +120,9 @@ class WebSocketScrobbler(ScrobblerMethod):
         return session
 
     def update(self, session_key, state, view_offset):
+        if not Dict["scrobble"]:
+            return
+        
         session = self.get_session(session_key, state, view_offset)
         if not session:
             log.info('Invalid session, unable to continue')

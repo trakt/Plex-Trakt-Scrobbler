@@ -8,6 +8,18 @@ import time
 log = Logger('pts.activity_websocket')
 
 
+
+TIMELINE_STATES = {
+    0: 'created',
+    2: 'matching',
+    3: 'downloading',
+    4: 'loading',
+    5: 'finished',
+    6: 'analyzing',
+    9: 'deleted'
+}
+
+
 class WebSocket(ActivityMethod):
     name = 'WebSocket'
 
@@ -76,23 +88,34 @@ class WebSocket(ActivityMethod):
             log.debug(data)
             return
 
-        item = info['_children'][0]
         type = info.get('type')
 
-        if type == "playing" and Dict["scrobble"]:
-            session_key = str(item['sessionKey'])
-            state = str(item['state'])
-            view_offset = try_convert(item['viewOffset'], int)
+        if not hasattr(self, 'process_%s' % type):
+            log.debug('Unknown notification with type "%s"', type)
+            log.debug('info: %s', info)
+            return
 
-            EventManager.fire('scrobbler.websocket.update', session_key, state, view_offset)
-        elif type == "timeline" and Dict['new_sync_collection']:
-            if item['type'] not in [1, 4]:
-                return
+        process_func = getattr(self, 'process_%s' % type)
 
-            if item['state'] == 0:
-                log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
-                EventManager.fire('collection.added', item['itemID'])
-        else:
-            log.debug('Unknown notification with type "%s", item: %s', type, item)
+        # Process each notification item
+        for item in info['_children']:
+            process_func(item)
+
+    @staticmethod
+    def process_playing(item):
+        session_key = str(item['sessionKey'])
+        state = str(item['state'])
+        view_offset = try_convert(item['viewOffset'], int)
+
+        EventManager.fire('notifications.playing', session_key, state, view_offset)
+
+    @staticmethod
+    def process_timeline(item):
+        state_key = TIMELINE_STATES.get(item['state'])
+        if state_key is None:
+            log.warn('Unknown timeline state "%s"', item['state'])
+            return
+
+        EventManager.fire('notifications.timeline.%s' % state_key, item)
 
 Activity.register(WebSocket, weight=None)

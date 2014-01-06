@@ -11,19 +11,23 @@ import interface
 # ------------------------------------------------
 
 
+from core.eventing import EventManager
+from core.header import Header
+from core.logger import Logger
+from core.plugin import ART, NAME, ICON
+from core.trakt import Trakt
+from core.update_checker import UpdateChecker
+from interface.main_menu import MainMenu
+from plex.media_server import PMS
 from pts.activity import Activity
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
-from core.eventing import EventManager
-from core.plugin import ART, NAME, ICON
-from core.header import Header
-from plex.media_server import PMS
-from core.trakt import Trakt
-from core.update_checker import UpdateChecker
 from sync.legacy import SyncTrakt, CollectionSync
 from sync.manager import SyncManager
-from interface.main_menu import MainMenu
 from datetime import datetime
+
+
+log = Logger('Code')
 
 
 class Main:
@@ -44,7 +48,7 @@ class Main:
         self.session_manager = SessionManager()
         SyncManager.construct()
 
-        EventManager.subscribe('collection.added', self.collection_added)
+        EventManager.subscribe('notifications.timeline.created', self.timeline_created)
 
     @staticmethod
     def update_config():
@@ -85,9 +89,14 @@ class Main:
         # Sync manager
         SyncManager.start()
 
-    def collection_added(self, item_id, action):
+    def timeline_created(self, item):
+        if not Dict['new_sync_collection']:
+            return
+
+        log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
+
         # delay sync to wait for metadata
-        Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')
+        Thread.CreateTimer(120, CollectionSync, True, item['itemID'], 'add')
 
     @staticmethod
     def cleanup():
