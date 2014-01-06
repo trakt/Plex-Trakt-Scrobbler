@@ -1,12 +1,15 @@
 from core.helpers import str_pad
 from core.logger import Logger
+from core.method_manager import Method, Manager
 from core.trakt import Trakt
-import threading
 
 log = Logger('pts.scrobbler')
 
 
-class ScrobblerMethod(object):
+class ScrobblerMethod(Method):
+    def __init__(self):
+        super(ScrobblerMethod, self).__init__(create_thread=False)
+
     @staticmethod
     def get_status_label(progress, state):
         return '[%s%s]' % (
@@ -178,64 +181,8 @@ class ScrobblerMethod(object):
         return session.client and session.client.name.lower() in clients
 
 
-class Scrobbler(object):
-    thread = None
-    running = False
+class Scrobbler(Manager):
+    tag = 'pts.scrobbler'
 
-    available_methods = []
-    current_method = None
-
-    @classmethod
-    def construct(cls):
-        cls.thread = threading.Thread(target=cls.run, name="Scrobbler")
-
-    @classmethod
-    def register(cls, method, weight=1):
-        cls.available_methods.append((weight, method))
-
-    @classmethod
-    def test(cls):
-        # Check for force_legacy
-        if Prefs['force_legacy']:
-            log.info('force_legacy enabled, logging will be used over any other activity method')
-            cls.available_methods = [
-                (weight, method)
-                for weight, method in cls.available_methods
-                if method.name == 'Logging'
-            ]
-
-        # Sort available methods by weight first
-        cls.available_methods = sorted(cls.available_methods, key=lambda x: x[0], reverse=True)
-
-        # Test methods until an available method is found
-        for weight, method in cls.available_methods:
-            if method.test():
-                cls.current_method = method(cls)
-                log.info('Picked method: %s' % cls.current_method.name)
-                break
-            else:
-                log.info('%s method not available' % method.name)
-
-        if not cls.current_method:
-            log.warn('No method available to determine now playing status, auto-scrobbling not available.')
-            return False
-
-        return True
-
-    @classmethod
-    def start(cls):
-        if not cls.thread:
-            cls.construct()
-
-        cls.running = True
-        cls.thread.start()
-
-    @classmethod
-    def run(cls):
-        if not Scrobbler.test():
-            return
-
-        if not cls.current_method:
-            return
-
-        cls.current_method.run()
+    available = []
+    enabled = []

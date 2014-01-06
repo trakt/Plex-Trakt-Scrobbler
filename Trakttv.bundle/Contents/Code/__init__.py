@@ -14,6 +14,7 @@ import interface
 from pts.activity import Activity
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
+from core.eventing import EventManager
 from core.plugin import ART, NAME, ICON
 from core.header import Header
 from plex.media_server import PMS
@@ -43,7 +44,7 @@ class Main:
         self.session_manager = SessionManager()
         SyncManager.construct()
 
-        Activity.on_update_collection.subscribe(self.update_collection)
+        EventManager.subscribe('collection.added', self.collection_added)
 
     @staticmethod
     def update_config():
@@ -84,8 +85,7 @@ class Main:
         # Sync manager
         SyncManager.start()
 
-    @staticmethod
-    def update_collection(item_id, action):
+    def collection_added(self, item_id, action):
         # delay sync to wait for metadata
         Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')
 

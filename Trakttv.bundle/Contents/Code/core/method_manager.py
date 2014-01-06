@@ -7,8 +7,8 @@ log = Logger('core.method_manager')
 class Method(object):
     name = None
 
-    def __init__(self):
-        self.thread = threading.Thread(target=self.run, name=self.get_name())
+    def __init__(self, create_thread=True):
+        self.thread = threading.Thread(target=self.run, name=self.get_name()) if create_thread else None
         self.running = False
 
     def get_name(self):
@@ -22,13 +22,19 @@ class Method(object):
         if self.running:
             return
 
-        self.thread.start()
+        if self.thread:
+            self.thread.start()
+            self.running = True
+        else:
+            raise NotImplementedError()
 
     def run(self):
         raise NotImplementedError()
 
 
 class Manager(object):
+    tag = None
+
     available = []
     enabled = []
 
@@ -56,27 +62,35 @@ class Manager(object):
     def test(cls):
         # Test methods until an available method is found
         for weight, method in cls.available:
-            if method.test():
-                cls.enabled.append(method(cls))
+            if weight is None:
+                cls.enabled.append(method())
+            elif method.test():
+                cls.enabled.append(method())
 
                 if not Prefs['force_legacy']:
                     break
-            elif weight is None:
-                cls.enabled.append(method(cls))
             else:
-                log.info('%s method not available' % method.name)
+                log.info('%s method not available' % method.name, tag=cls.tag)
 
         if cls.enabled:
-            log.info('Enabled methods: %s' % ', '.join([x.name for x in cls.enabled]))
+            log.info('Enabled methods: %s' % ', '.join([x.name for x in cls.enabled]), tag=cls.tag)
             return True
 
-        log.error('No activity methods available, unable to start.')
+        log.error('No methods available, unable to start', tag=cls.tag)
         return False
 
     @classmethod
     def start(cls):
         if not cls.test() or not cls.enabled:
             return
+
+        log.info(
+            'Starting %d enabled method%s',
+            len(cls.enabled),
+            's' if len(cls.enabled) > 1 else '',
+
+            tag=cls.tag
+        )
 
         for method in cls.enabled:
             method.start()
