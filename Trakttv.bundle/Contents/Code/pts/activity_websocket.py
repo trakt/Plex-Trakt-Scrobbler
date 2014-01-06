@@ -77,21 +77,22 @@ class WebSocket(ActivityMethod):
             return
 
         item = info['_children'][0]
+        type = info.get('type')
 
-        if info['type'] == "playing" and Dict["scrobble"]:
+        if type == "playing" and Dict["scrobble"]:
             session_key = str(item['sessionKey'])
             state = str(item['state'])
             view_offset = try_convert(item['viewOffset'], int)
 
             EventManager.fire('scrobbler.websocket.update', session_key, state, view_offset)
-
-        if info['type'] == "timeline" and Dict['new_sync_collection']:
+        elif type == "timeline" and Dict['new_sync_collection']:
             if item['type'] not in [1, 4]:
                 return
 
             if item['state'] == 0:
                 log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
-
                 EventManager.fire('collection.added', item['itemID'])
+        else:
+            log.debug('Unknown notification with type "%s", item: %s', type, item)
 
 Activity.register(WebSocket, weight=None)
