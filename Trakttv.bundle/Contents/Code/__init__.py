@@ -19,6 +19,7 @@ from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plex.media_server import PMS
+from plex.metadata import PlexMetadata
 from pts.activity import Activity
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
@@ -32,9 +33,15 @@ log = Logger('Code')
 
 class Main(object):
     modules = [
+        # pts
         Activity,
         Scrobbler,
-        SyncManager
+
+        # sync
+        SyncManager,
+
+        # plex
+        PlexMetadata
     ]
 
     def __init__(self):
@@ -51,7 +58,11 @@ class Main(object):
 
         Main.update_config()
 
-        SyncManager.construct()
+        # Initialize modules
+        for module in self.modules:
+            if hasattr(module, 'initialize'):
+                log.debug("Initializing module %s", module)
+                module.initialize()
 
         EventManager.subscribe('notifications.timeline.created', self.timeline_created)
 
@@ -88,13 +99,12 @@ class Main(object):
 
         # Start modules
         for module in self.modules:
-            if not hasattr(module, 'start'):
-                log.warn('Module %s has no "start" method', module)
-                continue
+            if hasattr(module, 'start'):
+                log.debug("Starting module %s", module)
+                module.start()
 
-            module.start()
-
-    def timeline_created(self, item):
+    @staticmethod
+    def timeline_created(item):
         if not Dict['new_sync_collection']:
             return
 

@@ -20,7 +20,7 @@ class SyncManager(object):
     handlers = None
 
     @classmethod
-    def construct(cls):
+    def initialize(cls):
         cls.thread = threading.Thread(target=cls.run, name="SyncManager")
         cls.lock = threading.Lock()
 
