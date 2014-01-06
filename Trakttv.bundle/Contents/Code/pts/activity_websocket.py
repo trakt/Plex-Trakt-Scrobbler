@@ -27,6 +27,8 @@ class WebSocket(ActivityMethod):
     def run(self):
         self.connect()
 
+        log.debug('Ready')
+
         while True:
             try:
                 self.process(*self.receive())

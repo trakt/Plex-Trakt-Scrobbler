@@ -1,3 +1,4 @@
+from core.eventing import EventManager
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS

@@ -124,7 +124,9 @@ class Logging(ActivityMethod):
             log.warn('Unable to read log file')
             return
 
-        while 1:
+        log.debug('Ready')
+
+        while True:
             if not Dict["scrobble"]:
                 break
 

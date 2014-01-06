@@ -1,5 +1,6 @@
-import sys
+import threading
 import time
+import sys
 
 
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
@@ -271,3 +272,11 @@ def sum(values):
 
 def timestamp():
     return int(time.time())
+
+
+def apply_async(func, *args, **kwargs):
+    def runnable():
+        func(*args, **kwargs)
+
+    thread = threading.Thread(target=runnable)
+    thread.start()
