@@ -4,7 +4,9 @@ log = Logger('core.eventing')
 
 
 class EventHandler(object):
-    def __init__(self):
+    def __init__(self, key=None):
+        self.key = key
+
         self.handlers = []
 
     def subscribe(self, handler):
@@ -21,7 +23,15 @@ class EventHandler(object):
         results = []
 
         for handler in self.handlers:
-            results.append(handler(*args, **kwargs))
+            try:
+                results.append(handler(*args, **kwargs))
+            except Exception, e:
+                log.warn(
+                    'Exception in handler for event with key "%s", (%s) %s',
+                    self.key,
+                    type(e),
+                    e
+                )
 
         if single:
             return results[0] if results else None
@@ -37,7 +47,7 @@ class EventManager(object):
         if key in cls.events:
             return
 
-        cls.events[key] = EventHandler()
+        cls.events[key] = EventHandler(key)
         log.debug('Created event with key "%s"', key)
 
     @classmethod
