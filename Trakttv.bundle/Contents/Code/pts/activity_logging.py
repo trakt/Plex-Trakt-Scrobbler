@@ -120,9 +120,6 @@ class Logging(ActivityMethod):
         cls.log_file.close()
         cls.log_file = None
 
-    def start(self):
-        raise NotImplementedError()
-
     def run(self):
         line = self.try_read_line(timeout=60)
         if not line:
@@ -251,4 +248,4 @@ class Logging(ActivityMethod):
         return match.groupdict()
 
 
-Activity.register(Logging)
+Activity.register(Logging, weight=1)

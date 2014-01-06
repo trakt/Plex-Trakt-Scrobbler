@@ -37,11 +37,10 @@ class WebSocket(ActivityMethod):
 
         return True
 
-    def start(self):
-        raise NotImplementedError()
-
     def connect(self):
         self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
+        
+        log.info('Connected to notifications websocket')
 
     def run(self):
         self.connect()
