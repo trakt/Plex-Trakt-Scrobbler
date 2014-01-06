@@ -47,7 +47,7 @@ class Logging(ActivityMethod):
             cls.log_path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
             cls.log_path = os.path.abspath(cls.log_path)
 
-            log.info('log_path = "%s"' % cls.log_path)
+            log.debug('log_path = "%s"' % cls.log_path)
 
         return cls.log_path
 
@@ -92,7 +92,7 @@ class Logging(ActivityMethod):
                 break
 
             if cls.log_file.get_path() != cls.log_path:
-                log.info("Log file moved (probably rotated), closing")
+                log.debug("Log file moved (probably rotated), closing")
                 cls.close()
 
             # If we are below max_interval, keep increasing the interval
@@ -105,11 +105,11 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                log.info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
+                log.debug('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
         if line and try_count > 1:
-            log.info('Successfully read the log file after retrying')
+            log.debug('Successfully read the log file after retrying')
         elif not line:
             log.warn('Finished retrying, still no success')
 
