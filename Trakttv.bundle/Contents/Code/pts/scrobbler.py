@@ -8,7 +8,7 @@ log = Logger('pts.scrobbler')
 
 class ScrobblerMethod(Method):
     def __init__(self):
-        super(ScrobblerMethod, self).__init__(create_thread=False)
+        super(ScrobblerMethod, self).__init__(threaded=False)
 
     @staticmethod
     def get_status_label(progress, state):

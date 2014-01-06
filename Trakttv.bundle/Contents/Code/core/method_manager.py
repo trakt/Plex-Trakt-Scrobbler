@@ -7,9 +7,12 @@ log = Logger('core.method_manager')
 class Method(object):
     name = None
 
-    def __init__(self, create_thread=True):
-        self.thread = threading.Thread(target=self.run, name=self.get_name()) if create_thread else None
-        self.running = False
+    def __init__(self, threaded=True):
+        if threaded:
+            self.thread = threading.Thread(target=self.run, name=self.get_name())
+            self.running = False
+
+        self.threaded = threaded
 
     def get_name(self):
         return self.name
@@ -19,14 +22,11 @@ class Method(object):
         raise NotImplementedError()
 
     def start(self):
-        if self.running:
-            return
+        if not self.threaded or self.running:
+            return False
 
-        if self.thread:
-            self.thread.start()
-            self.running = True
-        else:
-            raise NotImplementedError()
+        self.thread.start()
+        self.running = True
 
     def run(self):
         raise NotImplementedError()

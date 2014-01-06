@@ -15,7 +15,9 @@ class EventHandler(object):
         self.handlers.remove(handler)
         return self
 
-    def fire(self, single=False, *args, **kwargs):
+    def fire(self, *args, **kwargs):
+        single = kwargs.get('single', None)
+
         results = []
 
         for handler in self.handlers:
@@ -57,6 +59,6 @@ class EventManager(object):
         return True
 
     @classmethod
-    def fire(cls, key, single=False, *args, **kwargs):
+    def fire(cls, key, *args, **kwargs):
         cls.ensure_exists(key)
-        return cls.events[key].fire(single, *args, **kwargs)
+        return cls.events[key].fire(*args, **kwargs)

@@ -10,6 +10,11 @@ log = Logger('pts.scrobbler_websocket')
 class WebSocketScrobbler(ScrobblerMethod):
     name = 'WebSocket'
 
+    def __init__(self):
+        super(WebSocketScrobbler, self).__init__()
+
+        EventManager.subscribe('scrobbler.websocket.update', self.update)
+
     @classmethod
     def test(cls):
         if PMS.get_sessions() is None:
