@@ -122,7 +122,7 @@ class WebSocketScrobbler(ScrobblerMethod):
     def update(self, session_key, state, view_offset):
         if not Dict["scrobble"]:
             return
-        
+
         session = self.get_session(session_key, state, view_offset)
         if not session:
             log.info('Invalid session, unable to continue')

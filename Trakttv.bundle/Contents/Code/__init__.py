@@ -30,10 +30,16 @@ from datetime import datetime
 log = Logger('Code')
 
 
-class Main:
+class Main(object):
+    modules = [
+        Activity,
+        Scrobbler,
+        SyncManager
+    ]
+
     def __init__(self):
-        # Check for updates first (required for use in header)
         self.update_checker = UpdateChecker()
+        self.session_manager = SessionManager()
 
         Header.show(self)
 
@@ -45,7 +51,6 @@ class Main:
 
         Main.update_config()
 
-        self.session_manager = SessionManager()
         SyncManager.construct()
 
         EventManager.subscribe('notifications.timeline.created', self.timeline_created)
@@ -79,15 +84,15 @@ class Main:
         # Check for updates
         self.update_checker.run_once(async=True)
 
-        # Activity and Scrobbler
-        Activity.start()
-        Scrobbler.start()
-
-        # Session Manager
         self.session_manager.start()
 
-        # Sync manager
-        SyncManager.start()
+        # Start modules
+        for module in self.modules:
+            if not hasattr(module, 'start'):
+                log.warn('Module %s has no "start" method', module)
+                continue
+
+            module.start()
 
     def timeline_created(self, item):
         if not Dict['new_sync_collection']:
