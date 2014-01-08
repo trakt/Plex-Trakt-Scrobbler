@@ -65,6 +65,11 @@ class PosixASIO(BaseASIO):
         if sys.platform == 'darwin':
             return fcntl.fcntl(fp.fd, F_GETPATH, '\0' * 1024).rstrip('\0')
 
+        # Use /proc/self/fd if available
+        if os.path.lexists("/proc/self/fd/%s" % fp.fd):
+            return os.readlink("/proc/self/fd/%s" % fp.fd)
+
+        # Fallback to /dev/fd
         return os.readlink("/dev/fd/%s" % fp.fd)
 
     @classmethod
