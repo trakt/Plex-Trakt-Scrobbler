@@ -1,4 +1,5 @@
 from core.logger import Logger
+import traceback
 
 log = Logger('core.eventing')
 
@@ -18,7 +19,7 @@ class EventHandler(object):
         return self
 
     def fire(self, *args, **kwargs):
-        single = kwargs.get('single', None)
+        single = kwargs.pop('single', False)
 
         results = []
 
@@ -27,10 +28,11 @@ class EventHandler(object):
                 results.append(handler(*args, **kwargs))
             except Exception, e:
                 log.warn(
-                    'Exception in handler for event with key "%s", (%s) %s',
+                    'Exception in handler for event with key "%s", (%s) %s: %s',
                     self.key,
                     type(e),
-                    e
+                    e,
+                    traceback.format_exc()
                 )
 
         if single:

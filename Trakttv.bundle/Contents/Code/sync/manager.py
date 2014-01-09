@@ -1,12 +1,13 @@
 from datetime import datetime
 from core.helpers import total_seconds, sum
 from data.sync_status import SyncStatus
+from sync.task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
 import threading
+import traceback
 import time
-from sync.task import SyncTask
 
 
 class SyncManager(object):
@@ -92,8 +93,8 @@ class SyncManager(object):
         except Exception, e:
             cls.current.success = False
 
-            Log.Warn('Exception raised in handler for "%s" (%s): %s' % (
-                key, type(e), e
+            Log.Warn('Exception raised in handler for "%s" (%s) %s: %s' % (
+                key, type(e), e, traceback.format_exc()
             ))
 
         cls.current.end_time = datetime.now()

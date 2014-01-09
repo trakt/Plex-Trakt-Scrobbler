@@ -1,3 +1,4 @@
+from core.cache import Cache
 from core.eventing import EventManager
 from core.logger import Logger
 from plex.plex_base import PlexBase
@@ -9,15 +10,23 @@ log = Logger('plex.metadata')
 
 
 class PlexMetadata(PlexBase):
+    cache = Cache('metadata')
+
     @classmethod
     def initialize(cls):
         EventManager.subscribe('notifications.timeline.created', cls.timeline_created)
         EventManager.subscribe('notifications.timeline.deleted', cls.timeline_deleted)
         EventManager.subscribe('notifications.timeline.finished', cls.timeline_finished)
 
+        cls.cache.on_refresh.subscribe(cls.on_refresh)
+
+    @classmethod
+    def on_refresh(cls, key):
+        return cls.request('library/metadata/%s' % key)
+
     @classmethod
     def get(cls, key):
-        return cls.request('library/metadata/%s' % key)
+        return cls.cache.get(key, refresh=True)
 
     @classmethod
     def get_guid(cls, key):
@@ -50,6 +59,10 @@ class PlexMetadata(PlexBase):
     def timeline_deleted(cls, item):
         log.debug('timeline_deleted(%s)', item)
 
+        cls.cache.remove(item['itemID'])
+
     @classmethod
     def timeline_finished(cls, item):
         log.debug('timeline_finished(%s)', item)
+
+        cls.cache.invalidate(item['itemID'], refresh=True)
