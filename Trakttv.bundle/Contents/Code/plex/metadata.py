@@ -59,10 +59,10 @@ class PlexMetadata(PlexBase):
     def timeline_deleted(cls, item):
         log.debug('timeline_deleted(%s)', item)
 
-        cls.cache.remove(item['itemID'])
+        cls.cache.remove(str(item['itemID']))
 
     @classmethod
     def timeline_finished(cls, item):
         log.debug('timeline_finished(%s)', item)
 
-        cls.cache.invalidate(item['itemID'], refresh=True)
+        cls.cache.invalidate(str(item['itemID']), refresh=True)

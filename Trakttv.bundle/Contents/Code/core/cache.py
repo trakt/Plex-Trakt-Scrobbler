@@ -29,7 +29,7 @@ class Cache(object):
 
             return default
 
-        log.debug('Returned cached %s for key "%s"', self.key, key)
+        log.debug('Returned cached %s for key %s', self.key, repr(key))
         return self.data_store[key].data
 
     def is_valid(self, key):
@@ -50,7 +50,7 @@ class Cache(object):
         return self.refresh(key) if refresh else True
 
     def refresh(self, key):
-        log.debug('Refreshing %s cache for key "%s"', self.key, key)
+        log.debug('Refreshing %s cache for key %s', self.key, repr(key))
         data = self.on_refresh.fire(key, single=True)
         if not data:
             return False
