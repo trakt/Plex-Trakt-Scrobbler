@@ -1,4 +1,5 @@
 from core.logger import Logger
+from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
 
 
@@ -9,13 +10,59 @@ class Base(SyncBase):
     pass
 
 
+class Episode(Base):
+    key = 'episode'
+
+    auto_run = False
+
+    def run_watched(self, season_num, p_episodes, t_episodes):
+        for t_episode_num in t_episodes:
+            # Check if episode exists in plex library
+            if t_episode_num not in p_episodes:
+                log.info('S%02dE%02d is missing from plex library', season_num, t_episode_num)
+                continue
+
+            p_episode = p_episodes[t_episode_num]
+
+            # Ignore already seen episodes
+            if p_episode.seen:
+                continue
+
+            PlexMediaServer.scrobble(p_episode.key)
+
+
+class Season(Base):
+    key = 'season'
+
+    children = [Episode]
+    auto_run = False
+
+    def run_watched(self, p_seasons, t_seasons):
+        for t_season_num, t_episodes in [(x.get('season'), x.get('episodes')) for x in t_seasons]:
+            # Check if season exists in plex library
+            if t_season_num not in p_seasons:
+                log.info('S%02d is missing from plex library', t_season_num)
+                continue
+
+            # Pass on to Episode task
+            self.trigger('episode', 'watched',
+                season_num=t_season_num,
+                p_episodes=p_seasons[t_season_num],
+                t_episodes=t_episodes
+            )
+
+
 class Show(Base):
+    key = 'show'
+
+    children = [Season]
+
     def run_watched(self):
         if Prefs['sync_watched'] is not True:
             log.debug('Ignoring watched sync, not enabled')
             return
 
-        movies, shows = self.plex.library('show')
+        _, p_shows = self.plex.library('show')
 
         watched = self.trakt.library('shows', 'watched')
 
@@ -24,7 +71,7 @@ class Show(Base):
 
             key = 'thetvdb', item.get('tvdb_id')
             
-            if key is None or key not in shows:
+            if key is None or key not in p_shows:
                 log.info('trakt watched item with key: %s, invalid or not in library', key)
                 continue
 
@@ -32,32 +79,11 @@ class Show(Base):
                 log.warn('Watched item is missing "seasons" data, ignoring')
                 continue
 
-            for show in shows[key]:
-                self.update_show_watched(item, show)
-
-    def update_show_watched(self, item, show):
-        show_seasons = self.plex.episodes(show.key)
-
-        for season, episodes in [(x.get('season'), x.get('episodes')) for x in item['seasons']]:
-
-            if season not in show_seasons:
-                log.info('S%02d is missing from plex library', season)
-                continue
-
-            show_episodes = show_seasons[season]
-
-            for episode in episodes:
-                if episode not in show_episodes:
-                    log.info('S%02dE%02d is missing from plex library', season, episode)
-                    continue
-
-                show_episode = show_episodes[episode]
-
-                # Ignore already seen episodes
-                if show_episode.seen:
-                    continue
-
-                log.info('TODO: mark episode S%02dE%02d seen, ratingKey: "%s"', season, episode, show_episode.key)
+            for p_show in p_shows[key]:
+                self.trigger('season', 'watched',
+                    p_seasons=self.plex.episodes(p_show.key),
+                    t_seasons=item['seasons']
+                )
 
     # def run_ratings(self):
     #     if Prefs['sync_ratings'] is not True:
@@ -69,12 +95,14 @@ class Show(Base):
 
 
 class Movie(Base):
+    key = 'movie'
+
     def run_watched(self):
         if Prefs['sync_watched'] is not True:
             log.debug('Ignoring watched sync, not enabled')
             return
 
-        movies, shows = self.plex.library('movie')
+        movies, _ = self.plex.library('movie')
 
 
 class Pull(Base):

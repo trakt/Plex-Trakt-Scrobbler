@@ -68,7 +68,7 @@ class PlexVideo(PlexMedia):
 
     @property
     def seen(self):
-        return self.view_count > 0
+        return self.view_count and self.view_count > 0
 
 
 class PlexShow(PlexMedia):

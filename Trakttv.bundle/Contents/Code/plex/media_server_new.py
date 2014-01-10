@@ -10,8 +10,7 @@ log = Logger('plex.media_server_new')
 class PlexMediaServer(PlexBase):
     @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):
-        """Get the current sections available on the server, optionally
-        filtering by type and/or key
+        """Get the current sections available on the server, optionally filtering by type and/or key
 
         :param types: Section type filter
         :type types: str or list of str
@@ -22,6 +21,7 @@ class PlexMediaServer(PlexBase):
         :return: List of sections found
         :rtype: (type, key, title)
         """
+
         if types and isinstance(types, basestring):
             types = [types]
 
@@ -127,7 +127,19 @@ class PlexMediaServer(PlexBase):
 
     @classmethod
     def get_episodes(cls, key, cache_id=None):
-        result = {}  # {season_num: {episode_num: <PlexEpisode>}}
+        """Fetch the episodes for a show from the Plex library
+
+        :param key: Key of show to fetch episodes for
+        :type key: str
+
+        :param cache_id: Cached response identifier
+        :type cache_id: str
+
+        :return: Dictionary containing the episodes in this form: {season_num: {episode_num: <PlexEpisode>}}
+        :rtype: dict
+        """
+
+        result = {}
 
         container = cls.request('library/metadata/%s/allLeaves' % key, cache_id=cache_id)
 
@@ -146,3 +158,21 @@ class PlexMediaServer(PlexBase):
             result[season][episode] = PlexEpisode.create(video, season, episode)
 
         return result
+
+    @classmethod
+    def scrobble(cls, key):
+        result = cls.request(
+            ':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % key,
+            response_type='text'
+        )
+
+        return result is not None
+
+    @classmethod
+    def rate(cls, key, value):
+        result = cls.request(
+            ':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (key, value),
+            response_type='text'
+        )
+
+        return result is not None

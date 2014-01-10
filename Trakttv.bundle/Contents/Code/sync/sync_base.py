@@ -40,15 +40,18 @@ class TraktInterface(Base):
 
 
 class SyncBase(Base):
+    key = None
     title = "Unknown"
     children = []
+
+    auto_run = True
 
     plex = PlexInterface
     trakt = TraktInterface
 
     def __init__(self):
         # Activate children and create dictionary map
-        self.children = [x() for x in self.children]
+        self.children = dict([(x.key, x()) for x in self.children])
 
     def run(self):
         # Run sub functions (starting with 'run_')
@@ -59,9 +62,32 @@ class SyncBase(Base):
             func()
 
         # Run child tasks
-        for child in self.children:
+        for key, child in self.children.items():
+            if not child.auto_run:
+                continue
+
             log.debug('Running child task %s' % child)
             child.run()
+
+    def trigger(self, key, sub_name=None, *args, **kwargs):
+        if key not in self.children:
+            log.warn('Unable to find task to trigger with key "%s"', key)
+            return None
+
+        task = self.children[key]
+
+        if not sub_name:
+            log.debug('Running child task %s' % task)
+            return task.run(*args, **kwargs)
+
+        if not hasattr(task, 'run_' + sub_name):
+            log.warn('Unable to find sub-function with name "%s"' % sub_name)
+            return None
+
+        func = getattr(task, 'run_' + sub_name)
+
+        log.debug('Running sub-function in task %s with name "%s"' % (task, sub_name))
+        return func(*args, **kwargs)
 
     @staticmethod
     def update_progress(current, start=0, end=100):
