@@ -29,8 +29,17 @@ class Cache(object):
 
             return default
 
-        log.debug('Returned cached %s for key %s', self.key, repr(key))
+        log.debug('Cached data has been returned for key %s', repr(key), tag='core.cache.%s' % self.key)
         return self.data_store[key].data
+
+    def update(self, key, data):
+        if key not in self.data_store:
+            self.data_store[key] = CacheItem()
+
+        self.data_store[key].data = data
+        self.data_store[key].invalidated = False
+
+        log.debug('Cached item with key %s has been updated', repr(key), tag='core.cache.%s' % self.key)
 
     def is_valid(self, key):
         if key not in self.data_store:
@@ -50,13 +59,12 @@ class Cache(object):
         return self.refresh(key) if refresh else True
 
     def refresh(self, key):
-        log.debug('Refreshing %s cache for key %s', self.key, repr(key))
+        log.debug('Refreshing cached data for key %s', repr(key), tag='core.cache.%s' % self.key)
         data = self.on_refresh.fire(key, single=True)
         if not data:
             return False
 
-        self.data_store[key].data = data
-        self.data_store[key].invalidated = False
+        self.update(key, data)
 
         return True
 
