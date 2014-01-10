@@ -79,8 +79,6 @@ class PlexMediaServer(PlexBase):
     def get_library_key(cls, key):
         parsed_guid = PlexMetadata.get_parsed_guid(key=key)
 
-        log.debug('get_library_key key: %s, parsed_guid: %s', key, parsed_guid)
-
         # Ensure service id is valid
         if not parsed_guid.sid:
             log.warn('Missing service identifier for movie with ratingKey "%s"', key)
@@ -120,11 +118,9 @@ class PlexMediaServer(PlexBase):
 
                     shows[key].append(PlexShow.create(directory, parsed_guid))
 
-        log.debug('movies: %s', movies)
-        log.debug('shows: %s', shows)
-
         return movies, shows
 
+    # TODO move to plex.metadata, cache results
     @classmethod
     def get_episodes(cls, key, cache_id=None):
         """Fetch the episodes for a show from the Plex library

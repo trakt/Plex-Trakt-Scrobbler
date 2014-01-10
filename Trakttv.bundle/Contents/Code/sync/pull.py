@@ -67,7 +67,7 @@ class Show(Base):
         watched = self.trakt.library('shows', 'watched')
 
         for item in watched:
-            log.debug('item: %s', item)
+            log.info('Updating watched states for "%s"', item.get('title'))
 
             key = 'thetvdb', item.get('tvdb_id')
             
