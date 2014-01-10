@@ -1,4 +1,5 @@
 from datetime import datetime
+from core.eventing import EventManager
 from core.helpers import total_seconds, sum
 from data.sync_status import SyncStatus
 from sync.task import SyncTask
@@ -16,6 +17,7 @@ class SyncManager(object):
 
     running = False
 
+    cache_id = None
     current = None
 
     handlers = None
@@ -25,6 +27,8 @@ class SyncManager(object):
         cls.thread = threading.Thread(target=cls.run, name="SyncManager")
         cls.lock = threading.Lock()
 
+        EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
+
         cls.handlers = {
             'pull': Pull(),
             'push': Push(),
@@ -32,6 +36,10 @@ class SyncManager(object):
         }
 
         cls.bind_handlers()
+
+    @classmethod
+    def get_cache_id(cls):
+        return cls.cache_id
 
     @classmethod
     def bind_handlers(cls):
@@ -87,6 +95,9 @@ class SyncManager(object):
         Log.Debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
 
         cls.current.start_time = datetime.now()
+
+        # Update cache_id to ensure we trigger new requests
+        cls.cache_id = str(time.time())
 
         try:
             cls.current.success = handler.run(**kwargs)

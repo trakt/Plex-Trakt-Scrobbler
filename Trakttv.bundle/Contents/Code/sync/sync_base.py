@@ -1,3 +1,4 @@
+from core.eventing import EventManager
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
@@ -27,6 +28,10 @@ class SyncBase(object):
             log.debug('Running child task %s' % child)
             child.run()
 
+    @classmethod
+    def get_cache_id(cls):
+        return EventManager.fire('sync.get_cache_id', single=True)
+
     @staticmethod
     def update_progress(current, start=0, end=100):
         raise ReferenceError()
@@ -53,13 +58,10 @@ class SyncBase(object):
     # Plex Media Server
     #
 
-    # TODO per-sync cached results
     @classmethod
     def get_plex_sections(cls, types=None, keys=None):
-        return PlexMediaServer.get_sections(types, keys)
+        return PlexMediaServer.get_sections(types, keys, cache_id=cls.get_cache_id())
 
-
-    # TODO per-sync cached results
     @classmethod
-    def get_plex_library(cls, types=None, keys=None):
-        return PlexMediaServer.get_library(types, keys)
+    def get_plex_library(cls, types=None, keys=None, cache_id=None):
+        return PlexMediaServer.get_library(types, keys, cache_id=cls.get_cache_id())

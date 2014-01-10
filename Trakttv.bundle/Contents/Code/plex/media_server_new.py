@@ -6,7 +6,7 @@ from plex.plex_objects import PlexShow
 
 class PlexMediaServer(PlexBase):
     @classmethod
-    def get_sections(cls, types=None, keys=None):
+    def get_sections(cls, types=None, keys=None, cache_id=None):
         """Get the current sections available on the server, optionally
         filtering by type and/or key
 
@@ -25,7 +25,7 @@ class PlexMediaServer(PlexBase):
         if keys and isinstance(keys, basestring):
             keys = [keys]
 
-        container = cls.request('library/sections')
+        container = cls.request('library/sections', cache_id=cache_id)
 
         sections = []
         for section in container:
@@ -73,9 +73,9 @@ class PlexMediaServer(PlexBase):
         return section.xpath('//Video')
 
     @classmethod
-    def get_library(cls, types=None, keys=None):
+    def get_library(cls, types=None, keys=None, cache_id=None):
         # Get all sections or filter based on 'types' and 'sections'
-        sections = [(type, key) for (type, key, _) in cls.get_sections(types, keys)]
+        sections = [(type, key) for (type, key, _) in cls.get_sections(types, keys, cache_id=cache_id)]
 
         movies = {}
         shows = {}
