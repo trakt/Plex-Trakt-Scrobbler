@@ -12,6 +12,8 @@ class Trakt(object):
         if isinstance(params, basestring):
             params = [params]
 
+        params = [x for x in params if x]
+
         data_url = TRAKT_URL % (
             action,
             ('/' + '/'.join(params)) if params else ''
@@ -79,7 +81,7 @@ class Trakt(object):
 
     class User(object):
         @staticmethod
-        def get_library(media, marked, extended='min', retry=True):
+        def get_library(media, marked, extended=None, retry=True):
             return Trakt.request(
                 'user/library/%s/%s.json' % (media, marked),
                 params=[Prefs['username'], extended],

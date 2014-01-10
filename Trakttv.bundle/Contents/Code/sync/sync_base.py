@@ -46,8 +46,8 @@ class SyncBase(object):
 
     # TODO per-sync cached results
     @classmethod
-    def get_trakt_library(cls, media, marked):
-        return Trakt.User.get_library(media, marked)
+    def get_trakt_library(cls, media, marked, extended='min'):
+        return Trakt.User.get_library(media, marked, extended).get('data')
 
     # TODO per-sync cached results
     @classmethod

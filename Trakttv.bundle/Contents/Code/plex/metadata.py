@@ -2,9 +2,7 @@ from core.cache import Cache
 from core.eventing import EventManager
 from core.logger import Logger
 from plex.plex_base import PlexBase
-
-
-SHOW_SID_REGEX = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)')
+from plex.plex_objects import PlexParsedGuid
 
 log = Logger('plex.metadata')
 
@@ -34,22 +32,17 @@ class PlexMetadata(PlexBase):
         if metadata is None:
             return None
 
-        return metadata.xpath('//Directory')[0].get('guid')
+        return metadata[0].get('guid')
 
     @classmethod
-    def get_show_sid(cls, key):
-        if not key:
-            Log.Warn("SID matching failed, ratingKey isn't valid")
-            return None
+    def get_parsed_guid(cls, guid=None, key=None):
+        if not guid:
+            if not key:
+                raise ValueError("Either guid or key is required")
 
-        guid = PlexMetadata.get_guid(key)
+            guid = cls.get_guid(key)
 
-        match = SHOW_SID_REGEX.search(guid)
-        if not match:
-            Log.Warn('SID matching failed on guid: "%s"' % guid)
-            return None
-
-        return match.group(2)
+        return PlexParsedGuid.from_guid(guid)
 
     @classmethod
     def timeline_created(cls, item):

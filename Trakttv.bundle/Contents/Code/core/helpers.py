@@ -280,3 +280,14 @@ def apply_async(func, *args, **kwargs):
 
     thread = threading.Thread(target=runnable)
     thread.start()
+
+
+def build_repr(obj, keys):
+    key_part = ', '.join([
+        ('%s: %s' % (key, repr(getattr(obj, key))))
+        for key in keys
+    ])
+
+    cls = getattr(obj, '__class__')
+
+    return '<%s %s>' % (getattr(cls, '__name__'), key_part)

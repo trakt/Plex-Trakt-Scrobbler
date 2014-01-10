@@ -76,6 +76,20 @@ class PlexMediaServer(PlexBase):
         return section.xpath('//Video')
 
     @classmethod
+    def get_library_key(cls, key):
+        parsed_guid = PlexMetadata.get_parsed_guid(key=key)
+
+        log.debug('get_library_key key: %s, parsed_guid: %s', key, parsed_guid)
+
+        # Ensure service id is valid
+        if not parsed_guid.sid:
+            log.warn('Missing service identifier for movie with ratingKey "%s"', video.get('ratingKey'))
+            return None, None
+
+        agent = parsed_guid.agent
+        return parsed_guid, (agent[agent.rfind('.') + 1:], parsed_guid.sid)
+
+    @classmethod
     def get_library(cls, types=None, keys=None, cache_id=None):
         # Get all sections or filter based on 'types' and 'sections'
         sections = [(type, key) for (type, key, _) in cls.get_sections(types, keys, cache_id=cache_id)]
@@ -86,18 +100,27 @@ class PlexMediaServer(PlexBase):
         for type, key in sections:
             if type == 'movie':
                 for video in cls.get_videos(key, cache_id=cache_id):
-                    metadata = PlexMetadata.get(video.get('ratingKey'))
-                    log.debug('ratingKey: %s, imdb_id: %s', video.get('ratingKey'), metadata.get('imdb_id', None))
+                    parsed_guid, key = cls.get_library_key(video.get('ratingKey'))
+                    if parsed_guid is None:
+                        continue
+
+                    if key not in shows:
+                        movies[key] = []
+
+                    movies[key].append(PlexShow.create(video, parsed_guid))
 
             if type == 'show':
                 for directory in cls.get_directories(key, cache_id=cache_id):
-                    sid = PlexMetadata.get_show_sid(directory.get('ratingKey'))
-                    log.debug('ratingKey: %s, sid: %s', directory.get('ratingKey'), sid)
+                    parsed_guid, key = cls.get_library_key(directory.get('ratingKey'))
+                    if parsed_guid is None:
+                        continue
 
-                    if sid not in shows:
-                        shows[sid] = []
+                    if key not in shows:
+                        shows[key] = []
 
-                    shows[sid].append(PlexShow.create(directory, sid))
+                    shows[key].append(PlexShow.create(directory, parsed_guid))
 
         log.debug('movies: %s', movies)
         log.debug('shows: %s', shows)
+
+        return movies, shows
