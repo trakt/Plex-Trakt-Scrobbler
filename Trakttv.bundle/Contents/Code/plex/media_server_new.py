@@ -1,7 +1,10 @@
 from core.helpers import all
+from core.logger import Logger
 from plex.metadata import PlexMetadata
 from plex.plex_base import PlexBase
 from plex.plex_objects import PlexShow
+
+log = Logger('plex.media_server_new')
 
 
 class PlexMediaServer(PlexBase):
@@ -53,20 +56,20 @@ class PlexMediaServer(PlexBase):
         return sections
 
     @classmethod
-    def get_section(cls, key):
-        return cls.request('library/sections/%s/all' % key)
+    def get_section(cls, key, cache_id=None):
+        return cls.request('library/sections/%s/all' % key, cache_id=cache_id)
 
     @classmethod
-    def get_directories(cls, key):
-        section = cls.get_section(key)
+    def get_directories(cls, key, cache_id=None):
+        section = cls.get_section(key, cache_id=cache_id)
         if section is None:
             return []
 
         return section.xpath('//Directory')
 
     @classmethod
-    def get_videos(cls, key):
-        section = cls.get_section(key)
+    def get_videos(cls, key, cache_id=None):
+        section = cls.get_section(key, cache_id=cache_id)
         if section is None:
             return []
 
@@ -82,19 +85,19 @@ class PlexMediaServer(PlexBase):
 
         for type, key in sections:
             if type == 'movie':
-                for video in cls.get_videos(key):
+                for video in cls.get_videos(key, cache_id=cache_id):
                     metadata = PlexMetadata.get(video.get('ratingKey'))
-                    Log.Debug('ratingKey: %s, imdb_id: %s' % (video.get('ratingKey'), metadata.get('imdb_id', None)))
+                    log.debug('ratingKey: %s, imdb_id: %s', video.get('ratingKey'), metadata.get('imdb_id', None))
 
             if type == 'show':
-                for directory in cls.get_directories(key):
+                for directory in cls.get_directories(key, cache_id=cache_id):
                     sid = PlexMetadata.get_show_sid(directory.get('ratingKey'))
-                    Log.Debug('ratingKey: %s, sid: %s' % (directory.get('ratingKey'), sid))
+                    log.debug('ratingKey: %s, sid: %s', directory.get('ratingKey'), sid)
 
                     if sid not in shows:
                         shows[sid] = []
 
                     shows[sid].append(PlexShow.create(directory, sid))
 
-        Log.Debug('movies: %s' % movies)
-        Log.Debug('shows: %s' % shows)
+        log.debug('movies: %s', movies)
+        log.debug('shows: %s', shows)
