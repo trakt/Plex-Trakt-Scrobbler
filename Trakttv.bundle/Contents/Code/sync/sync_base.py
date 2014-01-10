@@ -1,5 +1,9 @@
+from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
+
+
+log = Logger('sync.sync_base')
 
 
 class SyncBase(object):
@@ -15,12 +19,12 @@ class SyncBase(object):
         sub_functions = [(x, getattr(self, x)) for x in dir(self) if x.startswith('run_')]
 
         for name, func in sub_functions:
-            Log.Debug('Running sub-function in task %s with name "%s"' % (self, name))
+            log.debug('Running sub-function in task %s with name "%s"' % (self, name))
             func()
 
         # Run child tasks
         for child in self.children:
-            Log.Debug('Running child task %s' % child)
+            log.debug('Running child task %s' % child)
             child.run()
 
     @staticmethod
