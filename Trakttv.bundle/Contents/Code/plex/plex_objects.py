@@ -56,16 +56,27 @@ class PlexParsedGuid(object):
 
 
 class PlexMedia(object):
-    def __init__(self, rating_key):
-        self.rating_key = rating_key
+    def __init__(self, key):
+        self.key = key
 
-        self.agent = None
-        self.sid = None
+
+class PlexVideo(PlexMedia):
+    def __init__(self, key):
+        super(PlexVideo, self).__init__(key)
+
+        self.view_count = 0
+
+    @property
+    def seen(self):
+        return self.view_count > 0
 
 
 class PlexShow(PlexMedia):
-    def __init__(self, rating_key):
-        super(PlexShow, self).__init__(rating_key)
+    def __init__(self, key):
+        super(PlexShow, self).__init__(key)
+
+        self.agent = None
+        self.sid = None
 
     @classmethod
     def create(cls, directory, parsed_guid):
@@ -79,12 +90,40 @@ class PlexShow(PlexMedia):
         return show
 
     def __repr__(self):
-        return build_repr(self, ['agent', 'sid'])
+        return build_repr(self, ['key', 'agent', 'sid'])
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class PlexEpisode(PlexVideo):
+    def __init__(self, key):
+        super(PlexEpisode, self).__init__(key)
+
+        self.season_num = None
+        self.episode_num = None
+
+    @classmethod
+    def create(cls, video, season_num, episode_num):
+        if season_num is None or episode_num is None:
+            raise ValueError('season_num and episode_num required for PlexEpisode')
+
+        episode = cls(video.get('ratingKey'))
+        episode.season_num = season_num
+        episode.episode_num = episode_num
+
+        episode.view_count = video.get('viewCount')
+
+        return episode
+
+
+    def __repr__(self):
+        return build_repr(self, ['key'])
 
     def __str__(self):
         return self.__repr__()
 
 
 class PlexMovie(PlexMedia):
-    def __init__(self, rating_key):
-        super(PlexMovie, self).__init__(rating_key)
+    def __init__(self, key):
+        super(PlexMovie, self).__init__(key)

@@ -1,8 +1,8 @@
-from core.helpers import all
+from core.helpers import all, try_convert
 from core.logger import Logger
 from plex.metadata import PlexMetadata
 from plex.plex_base import PlexBase
-from plex.plex_objects import PlexShow
+from plex.plex_objects import PlexShow, PlexEpisode
 
 log = Logger('plex.media_server_new')
 
@@ -83,7 +83,7 @@ class PlexMediaServer(PlexBase):
 
         # Ensure service id is valid
         if not parsed_guid.sid:
-            log.warn('Missing service identifier for movie with ratingKey "%s"', video.get('ratingKey'))
+            log.warn('Missing service identifier for movie with ratingKey "%s"', key)
             return None, None
 
         agent = parsed_guid.agent
@@ -124,3 +124,25 @@ class PlexMediaServer(PlexBase):
         log.debug('shows: %s', shows)
 
         return movies, shows
+
+    @classmethod
+    def get_episodes(cls, key, cache_id=None):
+        result = {}  # {season_num: {episode_num: <PlexEpisode>}}
+
+        container = cls.request('library/metadata/%s/allLeaves' % key, cache_id=cache_id)
+
+        for video in container:
+            season = try_convert(video.get('parentIndex'), int)
+            episode = try_convert(video.get('index'), int)
+
+            # Ensure season and episode numbers are valid
+            if season is None or episode is None:
+                log.warn('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
+                continue
+
+            if season not in result:
+                result[season] = {}
+
+            result[season][episode] = PlexEpisode.create(video, season, episode)
+
+        return result
