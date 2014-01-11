@@ -45,7 +45,8 @@ class Season(Base):
                 continue
 
             # Pass on to Episode task
-            self.trigger('episode', 'watched',
+            self.trigger(
+                'episode', 'watched',
                 season_num=t_season_num,
                 p_episodes=p_seasons[t_season_num],
                 t_episodes=t_episodes
@@ -64,25 +65,26 @@ class Show(Base):
 
         _, p_shows = self.plex.library('show')
 
-        watched = self.trakt.library('shows', 'watched')
+        t_shows = self.trakt.library('shows', 'watched')
 
-        for item in watched:
-            log.info('Updating watched states for "%s"', item.get('title'))
+        for t_show in t_shows:
+            log.info('Updating watched states for "%s"', t_show.get('title'))
 
-            key = 'thetvdb', item.get('tvdb_id')
+            key = 'thetvdb', t_show.get('tvdb_id')
             
             if key is None or key not in p_shows:
                 log.info('trakt watched item with key: %s, invalid or not in library', key)
                 continue
 
-            if 'seasons' not in item:
+            if 'seasons' not in t_show:
                 log.warn('Watched item is missing "seasons" data, ignoring')
                 continue
 
             for p_show in p_shows[key]:
-                self.trigger('season', 'watched',
+                self.trigger(
+                    'season', 'watched',
                     p_seasons=self.plex.episodes(p_show.key),
-                    t_seasons=item['seasons']
+                    t_seasons=t_show['seasons']
                 )
 
     # def run_ratings(self):
@@ -102,7 +104,26 @@ class Movie(Base):
             log.debug('Ignoring watched sync, not enabled')
             return
 
-        movies, _ = self.plex.library('movie')
+        p_movies, _ = self.plex.library('movie')
+        log.debug('p_movies: %s', p_movies)
+
+        t_movies = self.trakt.library('movies', 'watched')
+
+        for t_movie in t_movies:
+            log.info('Updating watched states for "%s"', t_movie.get('title'))
+
+            key = 'imdb', t_movie.get('imdb_id')
+
+            if key is None or key not in p_movies:
+                log.info('trakt watched item with key: %s, invalid or not in library', key)
+                continue
+
+            for p_movie in p_movies[key]:
+                # Ignore already seen episodes
+                if p_movie.seen:
+                    continue
+
+                PlexMediaServer.scrobble(p_movie.key)
 
 
 class Pull(Base):

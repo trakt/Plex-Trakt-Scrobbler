@@ -116,14 +116,32 @@ class PlexEpisode(PlexVideo):
 
         return episode
 
-
     def __repr__(self):
-        return build_repr(self, ['key'])
+        return build_repr(self, ['key', 'season_num', 'episode_num', 'view_count'])
 
     def __str__(self):
         return self.__repr__()
 
 
-class PlexMovie(PlexMedia):
+class PlexMovie(PlexVideo):
     def __init__(self, key):
         super(PlexMovie, self).__init__(key)
+
+    @classmethod
+    def create(cls, video, parsed_guid):
+        if parsed_guid.season or parsed_guid.episode:
+            raise ValueError('parsed_guid is not valid for PlexShow')
+
+        movie = cls(video.get('ratingKey'))
+        movie.agent = parsed_guid.agent
+        movie.sid = parsed_guid.sid
+
+        movie.view_count = video.get('viewCount')
+
+        return movie
+
+    def __repr__(self):
+        return build_repr(self, ['key', 'agent', 'sid', 'view_count'])
+
+    def __str__(self):
+        return self.__repr__()

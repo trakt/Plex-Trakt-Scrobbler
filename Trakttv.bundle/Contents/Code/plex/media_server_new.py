@@ -2,7 +2,7 @@ from core.helpers import all, try_convert
 from core.logger import Logger
 from plex.metadata import PlexMetadata
 from plex.plex_base import PlexBase
-from plex.plex_objects import PlexShow, PlexEpisode
+from plex.plex_objects import PlexShow, PlexEpisode, PlexMovie
 
 log = Logger('plex.media_server_new')
 
@@ -105,7 +105,7 @@ class PlexMediaServer(PlexBase):
                     if key not in shows:
                         movies[key] = []
 
-                    movies[key].append(PlexShow.create(video, parsed_guid))
+                    movies[key].append(PlexMovie.create(video, parsed_guid))
 
             if type == 'show':
                 for directory in cls.get_directories(key, cache_id=cache_id):
