@@ -11,7 +11,7 @@ class Logger(object):
         if 'tag' in kwargs:
             tag = kwargs.pop('tag')
 
-        func(ENTRY_FORMAT % (tag, (message % args)))
+        func(ENTRY_FORMAT % (tag, (str(message) % args)))
 
     def debug(self, message, *args, **kwargs):
         self.write(Log.Debug, message, *args, **kwargs)
