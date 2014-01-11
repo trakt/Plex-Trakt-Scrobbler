@@ -257,6 +257,12 @@ def str_pad(s, length, align='left', pad_char=' '):
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
 
 
+# TODO ensure longer titles aren't trimmed
+def pad_title(value):
+    """Pad a title to 30 characters to force the 'details' view."""
+    return str_pad(value, 30, pad_char=' ')
+
+
 def total_seconds(span):
     return (span.microseconds + (span.seconds + span.days * 24 * 3600) * 1e6) / 1e6
 

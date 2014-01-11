@@ -1,9 +1,11 @@
-from datetime import datetime, timedelta
-from ago import human
-from core.helpers import SyncDownString, SyncUpString, itersections, timestamp
+from core.helpers import itersections, timestamp, pad_title
 from plex.media_server import PMS
 from sync.manager import SyncManager
+from datetime import datetime
+from ago import human
 
+
+# NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
 @route('/applications/trakttv/sync')
 def SyncMenu(refresh=None):
@@ -27,7 +29,7 @@ def SyncMenu(refresh=None):
 
         oc.add(DirectoryObject(
             key=Callback(SyncMenu, refresh=timestamp()),
-            title=('%s - Status' % handler.title) + ((' (%s)' % progress) if progress else ''),
+            title=pad_title(('%s - Status' % handler.title) + ((' (%s)' % progress) if progress else '')),
             summary='Progress: %s, estimated time remaining: %s (click to refresh)' % (
                 progress or '?',
                 '~%s seconds' % (time_rem or '?')
@@ -36,12 +38,12 @@ def SyncMenu(refresh=None):
 
         oc.add(DirectoryObject(
             key=Callback(Cancel),
-            title='%s - Cancel' % handler.title
+            title=pad_title('%s - Cancel' % handler.title)
         ))
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize),
-        title='Synchronize',
+        title=pad_title('Synchronize'),
         summary=get_task_status('synchronize'),
         thumb=R("icon-sync.png")
     ))
@@ -49,7 +51,7 @@ def SyncMenu(refresh=None):
     for _, key, title in itersections(PMS.get_sections()):
         oc.add(DirectoryObject(
             key=Callback(Push, sections=[key]),
-            title='Push "' + title + '" to trakt',
+            title=pad_title('Push "' + title + '" to trakt'),
             summary=get_task_status('push', key),
             thumb=R("icon-sync_up.png")
         ))
@@ -58,14 +60,14 @@ def SyncMenu(refresh=None):
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
             key=Callback(Push, sections=",".join(all_keys)),
-            title='Push all to trakt',
+            title=pad_title('Push all to trakt'),
             summary=get_task_status('push'),
             thumb=R("icon-sync_up.png")
         ))
 
     oc.add(DirectoryObject(
         key=Callback(Pull),
-        title='Pull from trakt',
+        title=pad_title('Pull from trakt'),
         summary=get_task_status('pull'),
         thumb=R("icon-sync_down.png")
     ))
@@ -93,7 +95,7 @@ def get_task_status(key, section=None):
     if len(result):
         return ', '.join(result) + '.'
 
-    return ''
+    return 'Not run yet.'
 
 
 @route('/applications/trakttv/sync/synchronize')
