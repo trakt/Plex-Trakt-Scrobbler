@@ -1,3 +1,4 @@
+from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
 from interface.sync_menu import SyncMenu
 
@@ -32,7 +33,7 @@ def AboutMenu():
 
     oc.add(DirectoryObject(
         key='',
-        title="Version: %s" % PLUGIN_VERSION
+        title=pad_title("Version: %s" % PLUGIN_VERSION)
     ))
 
     return oc
