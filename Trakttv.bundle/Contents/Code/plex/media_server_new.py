@@ -89,6 +89,9 @@ class PlexMediaServer(PlexBase):
 
     @classmethod
     def get_library(cls, types=None, keys=None, cache_id=None):
+        if types and isinstance(types, basestring):
+            types = [types]
+
         # Get all sections or filter based on 'types' and 'sections'
         sections = [(type, key) for (type, key, _) in cls.get_sections(types, keys, cache_id=cache_id)]
 
@@ -117,6 +120,13 @@ class PlexMediaServer(PlexBase):
                         shows[key] = []
 
                     shows[key].append(PlexShow.create(directory, parsed_guid))
+
+        if len(types) == 1:
+            if types[0] == 'movie':
+                return movies
+
+            if types[0] == 'show':
+                return shows
 
         return movies, shows
 
