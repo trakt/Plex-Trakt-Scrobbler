@@ -9,7 +9,9 @@ TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 class Trakt(object):
     @classmethod
     def request(cls, action, values=None, params=None, authenticate=False, retry=True, max_retries=3, timeout=None):
-        if isinstance(params, basestring):
+        if params is None:
+            params = []
+        elif isinstance(params, basestring):
             params = [params]
 
         params = [x for x in params if x]
