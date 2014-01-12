@@ -30,6 +30,9 @@ sys.modules['core.network'] = network
 import method_manager
 sys.modules['core.method_manager'] = method_manager
 
+import trakt_objects
+sys.modules['core.trakt_objects'] = trakt_objects
+
 import trakt
 sys.modules['core.trakt'] = trakt
 

@@ -30,6 +30,11 @@ class PlexInterface(Base):
 class TraktInterface(Base):
     # TODO per-sync cached results
     @classmethod
+    def merged(cls, media, marked, include_ratings=False, extended='min'):
+        return Trakt.User.get_merged(media, marked, include_ratings, extended)
+
+    # TODO per-sync cached results
+    @classmethod
     def library(cls, media, marked, extended='min'):
         return Trakt.User.get_library(media, marked, extended).get('data')
 
