@@ -45,8 +45,8 @@ class Season(Base):
                 continue
 
             # Pass on to Episode task
-            self.trigger(
-                'episode', 'watched',
+            self.child('episode').trigger(
+                'watched',
                 season_num=t_season_num,
                 p_episodes=p_seasons[t_season_num],
                 t_episodes=t_episodes
@@ -81,8 +81,8 @@ class Show(Base):
                 continue
 
             for p_show in p_shows[key]:
-                self.trigger(
-                    'season', 'watched',
+                self.child('season').trigger(
+                    'watched',
                     p_seasons=self.plex.episodes(p_show.key),
                     t_seasons=t_show['seasons']
                 )
