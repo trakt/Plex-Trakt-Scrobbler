@@ -50,7 +50,7 @@ class Trakt(object):
 
             response = request(data_url, 'json', **kwargs)
         except RequestError, e:
-            Log.Warn('[trakt] Request error: (%s) %s' % (e, e.message))
+            log.warn('[trakt] Request error: (%s) %s' % (e, e.message))
             return {'success': False, 'exception': e, 'message': e.message}
 
         return cls.parse_response(response)
@@ -77,7 +77,7 @@ class Trakt(object):
         message = result.get('message', 'Unknown Result')
 
         if not result.get('success'):
-            Log.Warn('[trakt] Request failure: (%s) %s' % (result.get('exception'), message))
+            log.warn('[trakt] Request failure: (%s) %s' % (result.get('exception'), message))
 
         return result
 
