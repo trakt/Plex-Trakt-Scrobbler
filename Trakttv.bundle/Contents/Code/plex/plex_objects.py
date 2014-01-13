@@ -1,4 +1,4 @@
-from core.helpers import build_repr
+from core.helpers import build_repr, try_convert
 from core.logger import Logger
 from urlparse import urlparse
 
@@ -59,24 +59,52 @@ class PlexMedia(object):
     def __init__(self, key):
         self.key = key
 
+        self.agent = None
+        self.sid = None
+
+    @staticmethod
+    def fill(obj, video, parsed_guid=None):
+        if parsed_guid is None:
+            return
+
+        obj.agent = parsed_guid.agent
+        obj.sid = parsed_guid.sid
+
+    def get_repr_keys(self):
+        return ['key', 'agent', 'sid']
+
+    def __repr__(self):
+        return build_repr(self, self.get_repr_keys())
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class PlexVideo(PlexMedia):
     def __init__(self, key):
         super(PlexVideo, self).__init__(key)
 
         self.view_count = 0
+        self.user_rating = None
 
     @property
     def seen(self):
         return self.view_count and self.view_count > 0
 
+    @staticmethod
+    def fill(obj, video, parsed_guid=None):
+        PlexMedia.fill(obj, video, parsed_guid)
+
+        obj.view_count = try_convert(video.get('viewCount'), int)
+        obj.user_rating = try_convert(video.get('userRating'), int)
+
+    def get_repr_keys(self):
+        return super(PlexVideo, self).get_repr_keys() + ['view_count', 'user_rating']
+
 
 class PlexShow(PlexMedia):
     def __init__(self, key):
         super(PlexShow, self).__init__(key)
-
-        self.agent = None
-        self.sid = None
 
     @classmethod
     def create(cls, directory, parsed_guid):
@@ -84,16 +112,9 @@ class PlexShow(PlexMedia):
             raise ValueError('parsed_guid is not valid for PlexShow')
 
         show = cls(directory.get('ratingKey'))
-        show.agent = parsed_guid.agent
-        show.sid = parsed_guid.sid
 
+        cls.fill(show, directory, parsed_guid)
         return show
-
-    def __repr__(self):
-        return build_repr(self, ['key', 'agent', 'sid'])
-
-    def __str__(self):
-        return self.__repr__()
 
 
 class PlexEpisode(PlexVideo):
@@ -112,15 +133,11 @@ class PlexEpisode(PlexVideo):
         episode.season_num = season_num
         episode.episode_num = episode_num
 
-        episode.view_count = video.get('viewCount')
-
+        cls.fill(episode, video)
         return episode
 
-    def __repr__(self):
-        return build_repr(self, ['key', 'season_num', 'episode_num', 'view_count'])
-
-    def __str__(self):
-        return self.__repr__()
+    def get_repr_keys(self):
+        super(PlexEpisode, self).get_repr_keys() + ['season_num', 'episode_num']
 
 
 class PlexMovie(PlexVideo):
@@ -133,15 +150,6 @@ class PlexMovie(PlexVideo):
             raise ValueError('parsed_guid is not valid for PlexShow')
 
         movie = cls(video.get('ratingKey'))
-        movie.agent = parsed_guid.agent
-        movie.sid = parsed_guid.sid
 
-        movie.view_count = video.get('viewCount')
-
+        cls.fill(movie, video, parsed_guid)
         return movie
-
-    def __repr__(self):
-        return build_repr(self, ['key', 'agent', 'sid', 'view_count'])
-
-    def __str__(self):
-        return self.__repr__()
