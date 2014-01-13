@@ -12,60 +12,53 @@ class Base(SyncBase):
 
 class Episode(Base):
     key = 'episode'
-
     auto_run = False
 
-    def run_watched(self, season_num, p_episodes, t_episodes):
-        for t_episode_num in t_episodes:
-            # Check if episode exists in plex library
-            if t_episode_num not in p_episodes:
-                log.info('S%02dE%02d is missing from plex library', season_num, t_episode_num)
+    def run(self, p_episodes, t_episodes):
+        enabled_funcs = self.get_enabled_functions()
+
+        for key, t_episode in t_episodes.items():
+            log.info('Updating S%02dE%02d', *key)
+
+            if key is None or key not in p_episodes:
+                log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
-            p_episode = p_episodes[t_episode_num]
+            self.trigger(enabled_funcs, p_episode=p_episodes[key], t_episode=t_episode)
 
-            # Ignore already seen episodes
-            if p_episode.seen:
-                continue
+    def run_watched(self, p_episode, t_episode):
+        if not t_episode.is_watched:
+            return
 
-            PlexMediaServer.scrobble(p_episode.key)
+        # Ignore already seen episodes
+        if p_episode.seen:
+            return
 
+        PlexMediaServer.scrobble(p_episode.key)
 
-class Season(Base):
-    key = 'season'
+    def run_ratings(self, p_episode, t_episode):
+        if t_episode.rating_advanced is None:
+            return
 
-    children = [Episode]
-    auto_run = False
+        rating = t_episode.rating_advanced
 
-    def run_watched(self, p_seasons, t_seasons):
-        for t_season_num, t_episodes in [(x.get('season'), x.get('episodes')) for x in t_seasons]:
-            # Check if season exists in plex library
-            if t_season_num not in p_seasons:
-                log.info('S%02d is missing from plex library', t_season_num)
-                continue
+        # Ignore already rated episodes
+        if p_episode.user_rating == rating:
+            return
 
-            # Pass on to Episode task
-            self.child('episode').trigger(
-                'watched',
-                season_num=t_season_num,
-                p_episodes=p_seasons[t_season_num],
-                t_episodes=t_episodes
-            )
+        PlexMediaServer.rate(p_episode.key, rating)
 
 
 class Show(Base):
     key = 'show'
 
-    children = [Season]
+    children = [Episode]
 
-    def run_watched(self):
-        if Prefs['sync_watched'] is not True:
-            log.debug('Ignoring watched sync, not enabled')
-            return
+    def run(self):
+        enabled_funcs = self.get_enabled_functions()
 
-        _, p_shows = self.plex.library('show')
-
-        t_shows = self.trakt.library('shows', 'watched')
+        p_shows = self.plex.library('show')
+        t_shows = self.trakt.merged('shows', 'watched', include_ratings=True)
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -75,33 +68,39 @@ class Show(Base):
             log.info('Updating "%s" [%s]', t_show.title, key)
             
             if key is None or key not in p_shows:
-                log.info('trakt watched item with key: %s, invalid or not in library', key)
+                log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
-            if 'seasons' not in t_show:
-                log.warn('Watched item is missing "seasons" data, ignoring')
+            if not t_show.episodes:
+                log.warn('trakt item has no episodes, ignoring')
                 continue
+
+            self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show, ignore_missing=True)
 
             for p_show in p_shows[key]:
-                self.child('season').trigger(
-                    'watched',
-                    p_seasons=self.plex.episodes(p_show.key),
-                    t_seasons=t_show['seasons']
+                self.child('episode').run(
+                    p_episodes=self.plex.episodes(p_show.key),
+                    t_episodes=t_show.episodes
                 )
 
-    # def run_ratings(self):
-    #     if Prefs['sync_ratings'] is not True:
-    #         log.debug('Ignoring ratings sync, not enabled')
-    #         return
-    #
-    #     ratings = self.get_trakt_ratings('episodes').get('data')
-    #     log.debug('ratings: %s' % ratings)
+    def run_ratings(self, p_shows, t_show):
+        if t_show.rating_advanced is None:
+            return
+
+        rating = t_show.rating_advanced
+
+        for p_show in p_shows:
+            # Ignore already rated shows
+            if p_show.user_rating == rating:
+                continue
+
+            PlexMediaServer.rate(p_show.key, rating)
 
 
 class Movie(Base):
     key = 'movie'
 
-    def run(self, *args, **kwargs):
+    def run(self):
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
@@ -112,15 +111,15 @@ class Movie(Base):
             return False
 
         for key, t_movie in t_movies.items():
-            log.info('Updating "%s"', t_movie.title)
+            log.info('Updating "%s" [%s]', t_movie.title, key)
 
             if key is None or key not in p_movies:
                 log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
-            self.trigger(enabled_funcs, t_movie=t_movie, p_movies=p_movies[key])
+            self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
-    def run_watched(self, t_movie, p_movies):
+    def run_watched(self, p_movies, t_movie):
         if not t_movie.is_watched:
             return
 
@@ -131,7 +130,7 @@ class Movie(Base):
 
             PlexMediaServer.scrobble(p_movie.key)
 
-    def run_ratings(self, t_movie, p_movies):
+    def run_ratings(self, p_movies, t_movie):
         if t_movie.rating_advanced is None:
             return
 
