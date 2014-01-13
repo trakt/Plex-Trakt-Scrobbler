@@ -70,11 +70,12 @@ class PlexMedia(object):
         obj.agent = parsed_guid.agent
         obj.sid = parsed_guid.sid
 
-    def get_repr_keys(self):
+    @staticmethod
+    def get_repr_keys():
         return ['key', 'agent', 'sid']
 
     def __repr__(self):
-        return build_repr(self, self.get_repr_keys())
+        return build_repr(self, self.get_repr_keys() or [])
 
     def __str__(self):
         return self.__repr__()
@@ -98,8 +99,9 @@ class PlexVideo(PlexMedia):
         obj.view_count = try_convert(video.get('viewCount'), int)
         obj.user_rating = try_convert(video.get('userRating'), int)
 
-    def get_repr_keys(self):
-        return super(PlexVideo, self).get_repr_keys() + ['view_count', 'user_rating']
+    @staticmethod
+    def get_repr_keys():
+        return PlexMedia.get_repr_keys() + ['view_count', 'user_rating']
 
 
 class PlexShow(PlexMedia):
@@ -136,8 +138,9 @@ class PlexEpisode(PlexVideo):
         cls.fill(episode, video)
         return episode
 
-    def get_repr_keys(self):
-        super(PlexEpisode, self).get_repr_keys() + ['season_num', 'episode_num']
+    @staticmethod
+    def get_repr_keys():
+        return PlexVideo.get_repr_keys() + ['season_num', 'episode_num']
 
 
 class PlexMovie(PlexVideo):
