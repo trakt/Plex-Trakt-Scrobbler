@@ -158,10 +158,7 @@ class PlexMediaServer(PlexBase):
                 log.warn('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
                 continue
 
-            if season not in result:
-                result[season] = {}
-
-            result[season][episode] = PlexEpisode.create(video, season, episode)
+            result[season, episode] = PlexEpisode.create(video, season, episode)
 
         return result
 
