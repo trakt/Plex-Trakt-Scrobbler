@@ -67,10 +67,12 @@ class Show(Base):
 
         t_shows = self.trakt.library('shows', 'watched')
 
-        for t_show in t_shows:
-            log.info('Updating watched states for "%s"', t_show.get('title'))
+        if t_shows is None:
+            log.warn('Unable to construct merged library from trakt')
+            return False
 
-            key = 'thetvdb', t_show.get('tvdb_id')
+        for key, t_show in t_shows.items():
+            log.info('Updating "%s" [%s]', t_show.title, key)
             
             if key is None or key not in p_shows:
                 log.info('trakt watched item with key: %s, invalid or not in library', key)
@@ -104,6 +106,10 @@ class Movie(Base):
 
         p_movies = self.plex.library('movie')
         t_movies = self.trakt.merged('movies', 'watched', include_ratings=True)
+
+        if t_movies is None:
+            log.warn('Unable to construct merged library from trakt')
+            return False
 
         for key, t_movie in t_movies.items():
             log.info('Updating "%s"', t_movie.title)

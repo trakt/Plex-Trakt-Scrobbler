@@ -93,6 +93,9 @@ class Trakt(object):
 
             # Fetch data from trakt
             library = cls.get_library(media, marked, extended=extended, retry=retry).get('data')
+            if library is None:
+                log.warn('Unable to fetch library from trakt')
+                return None
 
             ratings = None
             episode_ratings = None
@@ -102,6 +105,10 @@ class Trakt(object):
 
                 if media == 'shows':
                     episode_ratings = cls.get_ratings('episodes', retry=retry).get('data')
+
+                if ratings is None or (media == 'shows' and episode_ratings is None):
+                    log.warn('Unable to fetch ratings from trakt')
+                    return None
 
             # Merge data
             result = {}
