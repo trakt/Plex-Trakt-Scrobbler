@@ -81,7 +81,7 @@ class SyncBase(Base):
             if func is None:
                 raise ValueError('Unable to find sub-function with the name "%s"' % name)
 
-            log.debug('Running sub-function in task %s with name "%s"' % (self, name))
+            #log.debug('Running sub-function in task %s with name "%s"' % (self, name))
             results.append(func(*args, **kwargs))
 
         if single:
@@ -104,3 +104,15 @@ class SyncBase(Base):
     @staticmethod
     def is_stopping():
         raise ReferenceError()
+
+    @staticmethod
+    def get_enabled_functions():
+        result = []
+
+        if Prefs['sync_watched']:
+            result.append('watched')
+
+        if Prefs['sync_ratings']:
+            result.append('ratings')
+
+        return result

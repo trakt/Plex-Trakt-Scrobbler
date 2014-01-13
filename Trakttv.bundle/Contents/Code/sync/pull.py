@@ -99,31 +99,44 @@ class Show(Base):
 class Movie(Base):
     key = 'movie'
 
-    def run_watched(self):
-        if Prefs['sync_watched'] is not True:
-            log.debug('Ignoring watched sync, not enabled')
-            return
+    def run(self, *args, **kwargs):
+        enabled_funcs = self.get_enabled_functions()
 
-        p_movies, _ = self.plex.library('movie')
-        log.debug('p_movies: %s', p_movies)
+        p_movies = self.plex.library('movie')
+        t_movies = self.trakt.merged('movies', 'watched', include_ratings=True)
 
-        t_movies = self.trakt.library('movies', 'watched')
-
-        for t_movie in t_movies:
-            log.info('Updating watched states for "%s"', t_movie.get('title'))
-
-            key = 'imdb', t_movie.get('imdb_id')
+        for key, t_movie in t_movies.items():
+            log.info('Updating "%s"', t_movie.title)
 
             if key is None or key not in p_movies:
-                log.info('trakt watched item with key: %s, invalid or not in library', key)
+                log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
-            for p_movie in p_movies[key]:
-                # Ignore already seen episodes
-                if p_movie.seen:
-                    continue
+            self.trigger(enabled_funcs, t_movie=t_movie, p_movies=p_movies[key])
 
-                PlexMediaServer.scrobble(p_movie.key)
+    def run_watched(self, t_movie, p_movies):
+        if not t_movie.is_watched:
+            return
+
+        for p_movie in p_movies:
+            # Ignore already seen movies
+            if p_movie.seen:
+                continue
+
+            PlexMediaServer.scrobble(p_movie.key)
+
+    def run_ratings(self, t_movie, p_movies):
+        if t_movie.rating_advanced is None:
+            return
+
+        rating = t_movie.rating_advanced
+
+        for p_movie in p_movies:
+            # Ignore already rated movies
+            if p_movie.user_rating == rating:
+                continue
+
+            PlexMediaServer.rate(p_movie.key, rating)
 
 
 class Pull(Base):
