@@ -18,7 +18,7 @@ TVSHOW_REGEXP = Regex(
 TVSHOW1_REGEXP = Regex(
     'com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv|mcm)://'
     '(MCM_TV_A_)?'  # For Media Center Master
-    '([-a-z0-9\.]+)'
+    '(?P<tvdb_id>[-a-z0-9\.]+)'
 )
 
 MOVIE_PATTERNS = [

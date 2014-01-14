@@ -165,7 +165,7 @@ def match_tvdb_id(rating_key):
         Log.Warn('Guid matching failed on "%s"' % guid)
         return None
 
-    return match.group(2)
+    return match.group('tvdb_id')
 
 
 @route('/applications/trakttv/manuallytrakt')
