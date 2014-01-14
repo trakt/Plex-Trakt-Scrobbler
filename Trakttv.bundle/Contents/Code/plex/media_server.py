@@ -7,9 +7,19 @@ MOVIE_REGEXP = Regex('com.plexapp.agents.*://(?P<imdb_id>tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://(?P<tmdb_id>[0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://(?P<tmdb_id>[0-9]+)')
 
-TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://(?P<tvdb_id>[-a-z0-9\.]+)/'
-                      '(?P<season>[-a-z0-9\.]+)/(?P<episode>[-a-z0-9\.]+)')
-TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)')
+TVSHOW_REGEXP = Regex(
+    'com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv|mcm)://'
+    '(MCM_TV_A_)?'  # For Media Center Master
+    '(?P<tvdb_id>[-a-z0-9\.]+)/'
+    '(?P<season>[-a-z0-9\.]+)/'
+    '(?P<episode>[-a-z0-9\.]+)'
+)
+
+TVSHOW1_REGEXP = Regex(
+    'com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv|mcm)://'
+    '(MCM_TV_A_)?'  # For Media Center Master
+    '(?P<tvdb_id>[-a-z0-9\.]+)'
+)
 
 MOVIE_PATTERNS = [
     MOVIE_REGEXP,

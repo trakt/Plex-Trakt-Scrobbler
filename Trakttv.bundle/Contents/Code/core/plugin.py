@@ -1,6 +1,6 @@
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 
-PLUGIN_VERSION_BASE = (0, 7, 8)
+PLUGIN_VERSION_BASE = (0, 7, 10)
 PLUGIN_VERSION_BRANCH = 'syncing-2.0'
 
 PLUGIN_VERSION = ''.join([
