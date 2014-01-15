@@ -90,6 +90,7 @@ def finditems(subject, items, keys):
         for key in keys:
             if key in item and str(item[key]) == str(subject[key]):
                 result.append(item)
+                break
 
     return result
 
