@@ -7,6 +7,7 @@ class TraktMedia(object):
 
         self.rating = None
         self.rating_advanced = None
+        self.rating_timestamp = None
 
     def update(self, info, keys):
         for key in keys:
@@ -18,9 +19,12 @@ class TraktMedia(object):
     def fill(self, info):
         self.update(info, ['rating', 'rating_advanced'])
 
+        if 'rating' in info:
+            self.rating_timestamp = info.get('inserted')
+
     @staticmethod
     def get_repr_keys():
-        return ['keys', 'rating', 'rating_advanced']
+        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp']
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
@@ -61,7 +65,7 @@ class TraktShow(TraktMedia):
 
     @staticmethod
     def get_repr_keys():
-        return ['title', 'year', 'tvdb_id', 'episodes']
+        return TraktMedia.get_repr_keys() + ['title', 'year', 'tvdb_id', 'episodes']
 
 
 class TraktEpisode(TraktMedia):
@@ -75,7 +79,7 @@ class TraktEpisode(TraktMedia):
 
     @staticmethod
     def get_repr_keys():
-        return ['season', 'number', 'is_watched']
+        return TraktMedia.get_repr_keys() + ['season', 'number', 'is_watched']
 
 
 class TraktMovie(TraktMedia):
@@ -103,4 +107,4 @@ class TraktMovie(TraktMedia):
 
     @staticmethod
     def get_repr_keys():
-        return ['title', 'year', 'imdb_id', 'is_watched']
+        return TraktMedia.get_repr_keys() + ['title', 'year', 'imdb_id', 'is_watched']

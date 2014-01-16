@@ -7,7 +7,27 @@ log = Logger('sync.pull')
 
 
 class Base(SyncBase):
-    pass
+    def rate(self, p_items, t_media):
+        if t_media.rating_advanced is None:
+            return
+
+        t_rating = t_media.rating_advanced
+
+        for p_item in p_items:
+            # Ignore already rated episodes
+            if p_item.user_rating == t_rating:
+                continue
+
+            if p_item.user_rating is None or self.rate_conflict(p_item, t_media):
+                PlexMediaServer.rate(p_item.key, t_rating)
+
+    def rate_conflict(self, p_item, t_media):
+        log.warn('CONFLICT p_item rating: %s, t_media rating: %s', p_item.user_rating, t_media.rating_advanced)
+        log.warn('t_media rating_timestamp: %s', t_media.rating_timestamp)
+
+        self.
+
+        return False
 
 
 class Episode(Base):
@@ -37,16 +57,7 @@ class Episode(Base):
         PlexMediaServer.scrobble(p_episode.key)
 
     def run_ratings(self, p_episode, t_episode):
-        if t_episode.rating_advanced is None:
-            return
-
-        rating = t_episode.rating_advanced
-
-        # Ignore already rated episodes
-        if p_episode.user_rating == rating:
-            return
-
-        PlexMediaServer.rate(p_episode.key, rating)
+        self.rate([p_episode], t_episode)
 
 
 class Show(Base):
@@ -84,17 +95,7 @@ class Show(Base):
                 )
 
     def run_ratings(self, p_shows, t_show):
-        if t_show.rating_advanced is None:
-            return
-
-        rating = t_show.rating_advanced
-
-        for p_show in p_shows:
-            # Ignore already rated shows
-            if p_show.user_rating == rating:
-                continue
-
-            PlexMediaServer.rate(p_show.key, rating)
+        self.rate(p_shows, t_show)
 
 
 class Movie(Base):
@@ -131,17 +132,7 @@ class Movie(Base):
             PlexMediaServer.scrobble(p_movie.key)
 
     def run_ratings(self, p_movies, t_movie):
-        if t_movie.rating_advanced is None:
-            return
-
-        rating = t_movie.rating_advanced
-
-        for p_movie in p_movies:
-            # Ignore already rated movies
-            if p_movie.user_rating == rating:
-                continue
-
-            PlexMediaServer.rate(p_movie.key, rating)
+        self.rate(p_movies, t_movie)
 
 
 class Pull(Base):
