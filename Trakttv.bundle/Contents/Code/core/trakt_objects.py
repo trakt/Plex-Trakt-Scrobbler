@@ -8,10 +8,22 @@ class TraktMedia(object):
         self.rating = None
         self.rating_advanced = None
 
-    def update(self, info, **kwargs):
-        for key, value in info.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+    def update(self, info, keys):
+        for key in keys:
+            if key not in info:
+                continue
+
+            setattr(self, key, info[key])
+
+    def fill(self, info):
+        self.update(info, ['rating', 'rating_advanced'])
+
+    @staticmethod
+    def get_repr_keys():
+        return ['keys', 'rating', 'rating_advanced']
+
+    def __repr__(self):
+        return build_repr(self, self.get_repr_keys() or [])
 
     def __str__(self):
         return self.__repr__()
@@ -27,12 +39,15 @@ class TraktShow(TraktMedia):
 
         self.episodes = {}
 
-    def update(self, info, is_watched=None):
-        for key, value in info.items():
-            if key == 'seasons':
-                self.update_seasons(value, is_watched)
-            elif hasattr(self, key):
-                setattr(self, key, value)
+    def fill(self, info, is_watched=None):
+        TraktMedia.fill(self, info)
+
+        self.update(info, ['title', 'year', 'tvdb_id'])
+
+        if 'seasons' in info:
+            self.update_seasons(info['seasons'], is_watched)
+
+        return self
 
     def update_seasons(self, seasons, is_watched=None):
         for season, episodes in [(x.get('season'), x.get('episodes')) for x in seasons]:
@@ -42,12 +57,11 @@ class TraktShow(TraktMedia):
     @classmethod
     def create(cls, keys, info, is_watched=None):
         show = cls(keys)
-        show.update(info, is_watched)
+        return cls.fill(show, info, is_watched)
 
-        return show
-
-    def __repr__(self):
-        return build_repr(self, ['tvdb_id', 'keys', 'title', 'year', 'rating', 'rating_advanced', 'episodes'])
+    @staticmethod
+    def get_repr_keys():
+        return ['title', 'year', 'tvdb_id', 'episodes']
 
 
 class TraktEpisode(TraktMedia):
@@ -59,8 +73,9 @@ class TraktEpisode(TraktMedia):
 
         self.is_watched = is_watched
 
-    def __repr__(self):
-        return build_repr(self, ['season', 'number', 'is_watched', 'rating', 'rating_advanced'])
+    @staticmethod
+    def get_repr_keys():
+        return ['season', 'number', 'is_watched']
 
 
 class TraktMovie(TraktMedia):
@@ -73,14 +88,19 @@ class TraktMovie(TraktMedia):
 
         self.is_watched = None
 
+    def fill(self, info):
+        TraktMedia.fill(self, info)
+        self.update(info, ['title', 'year', 'imdb_id'])
+
+        return self
+
     @classmethod
     def create(cls, keys, info, is_watched=None):
         movie = cls(keys)
         movie.is_watched = is_watched
 
-        movie.update(info)
+        return cls.fill(movie, info)
 
-        return movie
-
-    def __repr__(self):
-        return build_repr(self, ['imdb_id', 'keys', 'title', 'year', 'is_watched', 'rating', 'rating_advanced'])
+    @staticmethod
+    def get_repr_keys():
+        return ['title', 'year', 'imdb_id', 'is_watched']

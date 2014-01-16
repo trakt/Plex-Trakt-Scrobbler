@@ -140,7 +140,7 @@ class Trakt(object):
                     if root_key not in result:
                         result[root_key] = Trakt.create_media(media, keys, item)
                     else:
-                        result[root_key].update(item)
+                        result[root_key].fill(item)
 
             # Merge episode_ratings
             if include_ratings and media == 'shows':
@@ -156,7 +156,7 @@ class Trakt(object):
                     if episode_key not in result[root_key].episodes:
                         result[root_key].episodes[episode_key] = TraktEpisode(episode['season'], episode['number'])
 
-                    result[root_key].episodes[episode_key].update(item)
+                    result[root_key].episodes[episode_key].fill(item)
 
             item_count = len(result)
 
