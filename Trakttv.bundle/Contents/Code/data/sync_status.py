@@ -14,21 +14,27 @@ class SyncStatus(DictModel):
         super(SyncStatus, self).__init__(handler_key)
 
         #: :type: datetime
-        self.last_run = None
+        self.previous_timestamp = None
 
         #: :type: int
-        self.last_elapsed = None
+        self.previous_elapsed = None
 
         #: :type: bool
+        self.previous_success = None
+
+        #: :type: datetime
         self.last_success = None
 
     def update(self, task):
-        self.last_success = task.success
-        self.last_run = task.start_time
-        self.last_elapsed = task.end_time - task.start_time
+        self.previous_success = task.success
+        self.previous_timestamp = task.start_time
+        self.previous_elapsed = task.end_time - task.start_time
+
+        if task.success:
+            self.last_success = task.start_time
 
     def __repr__(self):
-        return build_repr(self, ['last_run', 'last_elapsed', 'last_success'])
+        return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_result', 'last_success_timestamp'])
 
     def __str__(self):
         return self.__repr__()

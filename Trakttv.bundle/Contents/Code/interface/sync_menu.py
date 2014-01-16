@@ -80,15 +80,15 @@ def get_task_status(key, section=None):
 
     status = SyncManager.get_status(key, section)
 
-    if status.last_run:
-        result.append('Last run %s' % human(datetime.now() - status.last_run, precision=1))
+    if status.previous_timestamp:
+        result.append('Last run %s' % human(datetime.utcnow() - status.previous_timestamp, precision=1))
 
-    if status.last_elapsed:
-        result.append('taking %s' % human(status.last_elapsed, precision=1, past_tense='%s'))
+    if status.previous_elapsed:
+        result.append('taking %s' % human(status.previous_elapsed, precision=1, past_tense='%s'))
 
-    if status.last_success is True:
+    if status.previous_success is True:
         result.append('was successful')
-    elif status.last_run:
+    elif status.previous_timestamp:
         # Only add 'failed' fragment if there was actually a previous run
         result.append('failed')
 

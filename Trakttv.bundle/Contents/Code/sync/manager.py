@@ -92,7 +92,7 @@ class SyncManager(object):
 
         Log.Debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
 
-        cls.current.start_time = datetime.now()
+        cls.current.start_time = datetime.utcnow()
 
         # Update cache_id to ensure we trigger new requests
         cls.cache_id = str(time.time())
@@ -106,7 +106,7 @@ class SyncManager(object):
                 key, type(e), e, traceback.format_exc()
             ))
 
-        cls.current.end_time = datetime.now()
+        cls.current.end_time = datetime.utcnow()
 
         # Update task status
         status = cls.get_status(key, section)
@@ -139,7 +139,6 @@ class SyncManager(object):
     def get_current(cls):
         current = cls.current
 
-
         if not current:
             return None, None
 
@@ -147,6 +146,10 @@ class SyncManager(object):
 
     @classmethod
     def get_status(cls, key, section=None):
+        """Retrieve the status of a task
+
+        :rtype : SyncStatus
+        """
         if section:
             key = (key, section)
 
@@ -171,7 +174,7 @@ class SyncManager(object):
         progress_diff = progress - (statistics.progress or 0)
 
         if statistics.last_update:
-            diff_seconds = total_seconds(datetime.now() - statistics.last_update)
+            diff_seconds = total_seconds(datetime.utcnow() - statistics.last_update)
 
             # Plot current percent/sec
             statistics.plots.append(diff_seconds / (progress_diff * 100))
@@ -188,7 +191,7 @@ class SyncManager(object):
         ))
 
         statistics.progress = progress
-        statistics.last_update = datetime.now()
+        statistics.last_update = datetime.utcnow()
 
     # Trigger
 

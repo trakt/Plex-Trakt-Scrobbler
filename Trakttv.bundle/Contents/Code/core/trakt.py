@@ -102,7 +102,7 @@ class Trakt(object):
     class User(object):
         @classmethod
         def get_merged(cls, media, marked, include_ratings=False, extended=None, retry=True):
-            start = datetime.now()
+            start = datetime.utcnow()
 
             # Fetch data from trakt
             library = cls.get_library(media, marked, extended=extended, retry=retry).get('data')
@@ -166,7 +166,7 @@ class Trakt(object):
                 for alt_key in item.keys[1:]:
                     result[alt_key] = item
 
-            elapsed = datetime.now() - start
+            elapsed = datetime.utcnow() - start
 
             log.info(
                 'get_merged returned dictionary with %s keys for %s items in %s seconds',
