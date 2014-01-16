@@ -12,7 +12,7 @@ class Base(SyncBase):
 
     def rate(self, p_items, t_media):
         if t_media.rating_advanced is None:
-            return
+            return True
 
         t_rating = t_media.rating_advanced
 
@@ -23,6 +23,8 @@ class Base(SyncBase):
 
             if p_item.user_rating is None or self.rate_conflict(p_item, t_media):
                 PlexMediaServer.rate(p_item.key, t_rating)
+
+        return True
 
     def rate_conflict(self, p_item, t_media):
         status = self.get_status()
@@ -76,9 +78,7 @@ class Episode(Base):
         return True
 
     def run_ratings(self, p_episode, t_episode):
-        self.rate([p_episode], t_episode)
-
-        return True
+        return self.rate([p_episode], t_episode)
 
 
 class Show(Base):
@@ -119,9 +119,7 @@ class Show(Base):
         return True
 
     def run_ratings(self, p_shows, t_show):
-        self.rate(p_shows, t_show)
-
-        return True
+        return self.rate(p_shows, t_show)
 
 
 class Movie(Base):
@@ -162,9 +160,7 @@ class Movie(Base):
         return True
 
     def run_ratings(self, p_movies, t_movie):
-        self.rate(p_movies, t_movie)
-
-        return True
+        return self.rate(p_movies, t_movie)
 
 
 class Pull(Base):
