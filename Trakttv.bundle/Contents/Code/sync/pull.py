@@ -165,4 +165,5 @@ class Movie(Base):
 
 class Pull(Base):
     key = 'pull'
+    title = 'Pull'
     children = [Show, Movie]
