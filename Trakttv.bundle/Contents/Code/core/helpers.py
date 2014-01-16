@@ -73,12 +73,24 @@ def iterget(items, keys):
     return result
 
 
-def finditems(subject, items, key):
+def finditems(subject, items, keys):
+    if type(keys) is not list:
+        keys = [keys]
+
+    # Filter by keys available in subject
+    keys = [k for k in keys if k in subject]
+
+    if not len(keys):
+        Log.Warn('No keys available for matching')
+        return []
+
     result = []
 
     for item in items:
-        if key in item and item[key] == subject[key]:
-            result.append(item)
+        for key in keys:
+            if key in item and str(item[key]) == str(subject[key]):
+                result.append(item)
+                break
 
     return result
 
