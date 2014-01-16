@@ -2,7 +2,9 @@ from core.helpers import build_repr
 
 
 class TraktMedia(object):
-    def __init__(self):
+    def __init__(self, keys=None):
+        self.keys = keys
+
         self.rating = None
         self.rating_advanced = None
 
@@ -16,8 +18,8 @@ class TraktMedia(object):
 
 
 class TraktShow(TraktMedia):
-    def __init__(self):
-        super(TraktShow, self).__init__()
+    def __init__(self, keys):
+        super(TraktShow, self).__init__(keys)
 
         self.title = None
         self.year = None
@@ -38,14 +40,14 @@ class TraktShow(TraktMedia):
                 self.episodes[(season, episode)] = TraktEpisode(season, episode, is_watched)
 
     @classmethod
-    def create(cls, info, is_watched=None):
-        show = cls()
+    def create(cls, keys, info, is_watched=None):
+        show = cls(keys)
         show.update(info, is_watched)
 
         return show
 
     def __repr__(self):
-        return build_repr(self, ['tvdb_id', 'title', 'year', 'rating', 'rating_advanced', 'episodes'])
+        return build_repr(self, ['tvdb_id', 'keys', 'title', 'year', 'rating', 'rating_advanced', 'episodes'])
 
 
 class TraktEpisode(TraktMedia):
@@ -62,8 +64,8 @@ class TraktEpisode(TraktMedia):
 
 
 class TraktMovie(TraktMedia):
-    def __init__(self):
-        super(TraktMovie, self).__init__()
+    def __init__(self, keys):
+        super(TraktMovie, self).__init__(keys)
 
         self.title = None
         self.year = None
@@ -72,8 +74,8 @@ class TraktMovie(TraktMedia):
         self.is_watched = None
 
     @classmethod
-    def create(cls, info, is_watched=None):
-        movie = cls()
+    def create(cls, keys, info, is_watched=None):
+        movie = cls(keys)
         movie.is_watched = is_watched
 
         movie.update(info)
@@ -81,4 +83,4 @@ class TraktMovie(TraktMedia):
         return movie
 
     def __repr__(self):
-        return build_repr(self, ['imdb_id', 'title', 'year', 'is_watched', 'rating', 'rating_advanced'])
+        return build_repr(self, ['imdb_id', 'keys', 'title', 'year', 'is_watched', 'rating', 'rating_advanced'])

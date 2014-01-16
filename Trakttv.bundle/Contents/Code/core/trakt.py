@@ -11,6 +11,19 @@ log = Logger('core.trakt')
 TRAKT_URL = 'http://api.trakt.tv/%s/ba5aa61249c02dc5406232da20f6e768f3c82b28%s'
 
 
+IDENTIFIERS = {
+    'movies': {
+        ('imdb_id', 'imdb'),
+        ('tmdb_id', 'themoviedb')
+    },
+    'shows': [
+        ('tvdb_id', 'thetvdb'),
+        ('imdb_id', 'imdb'),
+        ('tvrage_id', 'tvrage')
+    ]
+}
+
+
 class Trakt(object):
     @classmethod
     def request(cls, action, values=None, params=None, authenticate=False, retry=True, max_retries=3, timeout=None):
@@ -115,38 +128,50 @@ class Trakt(object):
 
             # Fill with watched items in library
             for item in library:
-                key = Trakt.get_media_key(media, item)
+                root_key, keys = Trakt.get_media_keys(media, item)
 
-                result[key] = Trakt.create_media(media, item, is_watched=True)
+                result[root_key] = Trakt.create_media(media, keys, item, is_watched=True)
 
             # Merge ratings
             if include_ratings:
                 for item in ratings:
-                    key = Trakt.get_media_key(media, item)
+                    root_key, keys = Trakt.get_media_keys(media, item)
 
-                    if key not in result:
-                        result[key] = Trakt.create_media(media, item)
+                    if root_key not in result:
+                        result[root_key] = Trakt.create_media(media, keys, item)
                     else:
-                        result[key].update(item)
+                        result[root_key].update(item)
 
             # Merge episode_ratings
             if include_ratings and media == 'shows':
                 for item in episode_ratings:
-                    key = Trakt.get_media_key(media, item['show'])
+                    root_key, keys = Trakt.get_media_keys(media, item['show'])
 
-                    if key not in result:
-                        result[key] = Trakt.create_media(media, item['show'])
+                    if root_key not in result:
+                        result[root_key] = Trakt.create_media(media, keys, item['show'])
 
                     episode = item['episode']
                     episode_key = (episode['season'], episode['number'])
 
-                    if episode_key not in result[key].episodes:
-                        result[key].episodes[episode_key] = TraktEpisode(episode['season'], episode['number'])
+                    if episode_key not in result[root_key].episodes:
+                        result[root_key].episodes[episode_key] = TraktEpisode(episode['season'], episode['number'])
 
-                    result[key].episodes[episode_key].update(item)
+                    result[root_key].episodes[episode_key].update(item)
+
+            item_count = len(result)
+
+            # Generate entries for alternative keys
+            for key, item in result.items():
+                # Skip first key (because it's the root_key)
+                for alt_key in item.keys[1:]:
+                    result[alt_key] = item
 
             elapsed = datetime.now() - start
-            log.info('get_merged returned %s results in %s seconds', len(result), total_seconds(elapsed))
+
+            log.info(
+                'get_merged returned dictionary with %s keys for %s items in %s seconds',
+                len(result), item_count, total_seconds(elapsed)
+            )
 
             return result
 
@@ -192,24 +217,26 @@ class Trakt(object):
             )
 
     @staticmethod
-    def get_media_key(media, item):
+    def get_media_keys(media, item):
         if item is None:
             return None
 
-        if media == 'movies':
-            return 'imdb', str(item.get('imdb_id'))
+        result = []
 
-        if media == 'shows':
-            return 'thetvdb', str(item.get('tvdb_id'))
+        for t_key, p_key in IDENTIFIERS[media]:
+            result.append((p_key, str(item.get(t_key))))
 
-        return None
+        if not len(result):
+            return None, []
+
+        return result[0], result
 
     @classmethod
-    def create_media(cls, media, info, is_watched=False):
+    def create_media(cls, media, keys, info, is_watched=False):
         if media == 'shows':
-            return TraktShow.create(info, is_watched=is_watched)
+            return TraktShow.create(keys, info, is_watched=is_watched)
 
         if media == 'movies':
-            return TraktMovie.create(info, is_watched=is_watched)
+            return TraktMovie.create(keys, info, is_watched=is_watched)
 
         raise ValueError('Unknown media type')

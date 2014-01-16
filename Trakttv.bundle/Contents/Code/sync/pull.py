@@ -65,15 +65,15 @@ class Show(Base):
             return False
 
         for key, t_show in t_shows.items():
-            log.info('Updating "%s" [%s]', t_show.title, key)
-            
             if key is None or key not in p_shows:
-                log.info('trakt item with key: %s, invalid or not in library', key)
+                log.debug('trakt item with key: %s, invalid or not in library', key)
                 continue
 
             if not t_show.episodes:
                 log.warn('trakt item has no episodes, ignoring')
                 continue
+
+            log.info('Updating "%s" [%s]', t_show.title, key)
 
             self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show, ignore_missing=True)
 
@@ -111,11 +111,11 @@ class Movie(Base):
             return False
 
         for key, t_movie in t_movies.items():
-            log.info('Updating "%s" [%s]', t_movie.title, key)
-
             if key is None or key not in p_movies:
-                log.info('trakt item with key: %s, invalid or not in library', key)
+                log.debug('trakt item with key: %s, invalid or not in library', key)
                 continue
+
+            log.info('Updating "%s" [%s]', t_movie.title, key)
 
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
