@@ -46,6 +46,7 @@ class TraktInterface(Base):
 
 class SyncBase(Base):
     key = None
+    task = None
     title = "Unknown"
     children = []
 
@@ -54,9 +55,11 @@ class SyncBase(Base):
     plex = PlexInterface
     trakt = TraktInterface
 
-    def __init__(self):
+    def __init__(self, manager):
+        self.manager = manager
+
         # Activate children and create dictionary map
-        self.children = dict([(x.key, x()) for x in self.children])
+        self.children = dict([(x.key, x(manager)) for x in self.children])
 
     def run(self, *args, **kwargs):
         self.trigger(None, *args, **kwargs)
@@ -120,3 +123,6 @@ class SyncBase(Base):
             result.append('ratings')
 
         return result
+
+    def get_status(self, section):
+        return self.manager.get_status(self.task, section)

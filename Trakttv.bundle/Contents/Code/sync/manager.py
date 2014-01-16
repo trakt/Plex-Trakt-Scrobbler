@@ -11,6 +11,9 @@ import traceback
 import time
 
 
+HANDLERS = [Pull, Push, Synchronize]
+
+
 class SyncManager(object):
     thread = None
     lock = None
@@ -29,12 +32,7 @@ class SyncManager(object):
 
         EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
-        cls.handlers = {
-            'pull': Pull(),
-            'push': Push(),
-            'synchronize': Synchronize()
-        }
-
+        cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
         cls.bind_handlers()
 
     @classmethod
@@ -100,7 +98,7 @@ class SyncManager(object):
         cls.cache_id = str(time.time())
 
         try:
-            cls.current.success = handler.run(**kwargs)
+            cls.current.success = handler.run(section=section, **kwargs)
         except Exception, e:
             cls.current.success = False
 
@@ -140,6 +138,7 @@ class SyncManager(object):
     @classmethod
     def get_current(cls):
         current = cls.current
+
 
         if not current:
             return None, None

@@ -3,6 +3,7 @@ import time
 
 
 class Synchronize(SyncBase):
+    key = 'synchronize'
     title = "Synchronize"
 
     def run(self, **kwargs):

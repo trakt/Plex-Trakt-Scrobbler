@@ -7,6 +7,8 @@ log = Logger('sync.pull')
 
 
 class Base(SyncBase):
+    task = 'pull'
+	
     def rate(self, p_items, t_media):
         if t_media.rating_advanced is None:
             return
@@ -34,7 +36,7 @@ class Episode(Base):
     key = 'episode'
     auto_run = False
 
-    def run(self, p_episodes, t_episodes):
+    def run(self, p_episodes, t_episodes, section=None):
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():
@@ -65,8 +67,11 @@ class Show(Base):
 
     children = [Episode]
 
-    def run(self):
+    def run(self, section=None):
         enabled_funcs = self.get_enabled_functions()
+
+        status = self.get_status(section)
+        log.debug('status: %s', status)
 
         p_shows = self.plex.library('show')
         t_shows = self.trakt.merged('shows', 'watched', include_ratings=True)
@@ -91,7 +96,8 @@ class Show(Base):
             for p_show in p_shows[key]:
                 self.child('episode').run(
                     p_episodes=self.plex.episodes(p_show.key),
-                    t_episodes=t_show.episodes
+                    t_episodes=t_show.episodes,
+                    section=section
                 )
 
     def run_ratings(self, p_shows, t_show):
@@ -101,7 +107,7 @@ class Show(Base):
 class Movie(Base):
     key = 'movie'
 
-    def run(self):
+    def run(self, section=None):
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
@@ -136,4 +142,5 @@ class Movie(Base):
 
 
 class Pull(Base):
+    key = 'pull'
     children = [Show, Movie]
