@@ -23,24 +23,31 @@ def SyncTrakt():
 
 
 def pull_movie(watched, rated, video):
+    key = video.get('ratingKey')
+
     # Pull metadata
-    metadata = PMS.metadata(video.get('ratingKey'))
-    if not metadata or 'imdb_id' not in metadata:
-        Log.Warn('Invalid metadata for movie with key %s (network error or missing IMDB ID)' % video.get('ratingKey'))
+    metadata = PMS.metadata(key)
+
+    if not metadata:
+        Log.Warn('Invalid metadata with key %s, network error' % key)
+        return
+
+    if 'imdb_id' not in metadata and 'tmdb_id' not in metadata:
+        Log.Warn('Invalid metadata with key %s, no IMDB or TMDB id available' % key)
         return
 
     # Sync watched
     if Prefs['sync_watched'] is True:
-        for movie in finditems(metadata, watched, 'imdb_id'):
-            Log.Debug('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+        for movie in finditems(metadata, watched, ['imdb_id', 'tmdb_id']):
+            Log.Debug('Found %s with id %s' % (metadata['title'], key))
 
             if not PMS.scrobble(video):
                 Log.Debug('The movie %s is already marked as seen in the library.' % metadata['title'])
 
     # Sync ratings
     if Prefs['sync_ratings'] is True:
-        for movie in finditems(metadata, rated, 'imdb_id'):
-            Log.Debug('Found %s with id %s' % (metadata['title'], video.get('ratingKey')))
+        for movie in finditems(metadata, rated, ['imdb_id', 'tmdb_id']):
+            Log.Debug('Found %s with id %s' % (metadata['title'], key))
             PMS.rate(video, movie['rating_advanced'])
 
 
