@@ -1,4 +1,5 @@
 from core.eventing import EventManager
+from core.helpers import all
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
@@ -62,8 +63,15 @@ class SyncBase(Base):
         self.children = dict([(x.key, x(manager)) for x in self.children])
 
     def run(self, *args, **kwargs):
-        self.trigger(None, *args, **kwargs)
-        self.trigger_children(*args, **kwargs)
+        # Trigger handlers and return if there was an error
+        if not all(self.trigger(None, *args, **kwargs)):
+            return False
+
+        # Trigger children and return if there was an error
+        if not all(self.trigger_children(*args, **kwargs)):
+            return False
+
+        return True
 
     def child(self, name):
         return self.children.get(name)
@@ -97,12 +105,21 @@ class SyncBase(Base):
         return results
 
     def trigger_children(self, *args, **kwargs):
+        single = kwargs.pop('single', False)
+
+        results = []
+
         for key, child in self.children.items():
             if not child.auto_run:
                 continue
 
             log.debug('Running child task %s' % child)
-            child.run(*args, **kwargs)
+            results.append(child.run(*args, **kwargs))
+
+        if single:
+            return results[0]
+
+        return results
 
     @staticmethod
     def update_progress(current, start=0, end=100):
@@ -124,5 +141,18 @@ class SyncBase(Base):
 
         return result
 
-    def get_status(self, section):
+    def get_status(self):
+        """Retrieve the status of the current syncing task.
+
+        :rtype : SyncStatus
+        """
+        task, handler = self.get_current()
+        if task is None:
+            return None
+
+        section = task.kwargs.get('section')
+
         return self.manager.get_status(self.task, section)
+
+    def get_current(self):
+        return self.manager.get_current()

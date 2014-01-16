@@ -1,3 +1,4 @@
+from datetime import datetime
 from core.logger import Logger
 from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -8,7 +9,7 @@ log = Logger('sync.pull')
 
 class Base(SyncBase):
     task = 'pull'
-	
+
     def rate(self, p_items, t_media):
         if t_media.rating_advanced is None:
             return
@@ -24,10 +25,22 @@ class Base(SyncBase):
                 PlexMediaServer.rate(p_item.key, t_rating)
 
     def rate_conflict(self, p_item, t_media):
-        log.warn('CONFLICT p_item rating: %s, t_media rating: %s', p_item.user_rating, t_media.rating_advanced)
-        log.warn('t_media rating_timestamp: %s', t_media.rating_timestamp)
+        status = self.get_status()
 
-        self.
+        # First run, overwrite with trakt rating
+        if status.last_success is None:
+            return True
+
+        t_timestamp = datetime.utcfromtimestamp(t_media.rating_timestamp)
+
+        # If trakt rating was created after the last sync, update plex rating
+        if t_timestamp > status.last_success:
+            return True
+
+        log.info(
+            'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
+            p_item.key, p_item.user_rating, t_media.rating_advanced
+        )
 
         return False
 
@@ -48,18 +61,24 @@ class Episode(Base):
 
             self.trigger(enabled_funcs, p_episode=p_episodes[key], t_episode=t_episode)
 
+        return True
+
     def run_watched(self, p_episode, t_episode):
         if not t_episode.is_watched:
-            return
+            return True
 
         # Ignore already seen episodes
         if p_episode.seen:
-            return
+            return True
 
         PlexMediaServer.scrobble(p_episode.key)
 
+        return True
+
     def run_ratings(self, p_episode, t_episode):
         self.rate([p_episode], t_episode)
+
+        return True
 
 
 class Show(Base):
@@ -69,9 +88,6 @@ class Show(Base):
 
     def run(self, section=None):
         enabled_funcs = self.get_enabled_functions()
-
-        status = self.get_status(section)
-        log.debug('status: %s', status)
 
         p_shows = self.plex.library('show')
         t_shows = self.trakt.merged('shows', 'watched', include_ratings=True)
@@ -100,8 +116,12 @@ class Show(Base):
                     section=section
                 )
 
+        return True
+
     def run_ratings(self, p_shows, t_show):
         self.rate(p_shows, t_show)
+
+        return True
 
 
 class Movie(Base):
@@ -126,9 +146,11 @@ class Movie(Base):
 
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
+        return True
+
     def run_watched(self, p_movies, t_movie):
         if not t_movie.is_watched:
-            return
+            return True
 
         for p_movie in p_movies:
             # Ignore already seen movies
@@ -137,8 +159,12 @@ class Movie(Base):
 
             PlexMediaServer.scrobble(p_movie.key)
 
+        return True
+
     def run_ratings(self, p_movies, t_movie):
         self.rate(p_movies, t_movie)
+
+        return True
 
 
 class Pull(Base):
