@@ -51,7 +51,7 @@ class Episode(Base):
     key = 'episode'
     auto_run = False
 
-    def run(self, p_episodes, t_episodes, section=None):
+    def run(self, p_episodes, t_episodes):
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():
@@ -83,7 +83,6 @@ class Episode(Base):
 
 class Show(Base):
     key = 'show'
-
     children = [Episode]
 
     def run(self, section=None):
@@ -114,8 +113,7 @@ class Show(Base):
             for p_show in p_shows[key]:
                 self.child('episode').run(
                     p_episodes=self.plex.episodes(p_show.key),
-                    t_episodes=t_show.episodes,
-                    section=section
+                    t_episodes=t_show.episodes
                 )
 
         return True

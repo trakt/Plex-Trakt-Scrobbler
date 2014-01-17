@@ -17,6 +17,9 @@ class Base(SyncBase):
         if service == 'themoviedb':
             data['tmdb_id'] = sid
 
+        if service == 'thetvdb':
+            data['tvdb_id'] = sid
+
         return data
 
     @classmethod
@@ -28,16 +31,74 @@ class Base(SyncBase):
 
         return cls.add_identifier(data, key)
 
+    def rate(self, key, p_items, t_item):
+        # Filter by rated plex items
+        p_items = [x for x in p_items if x.user_rating is not None]
+
+        # Ignore if none of the plex items have a rating attached
+        if not p_items:
+            return True
+
+        # TODO should this be handled differently when there are multiple ratings?
+        p_item = p_items[0]
+
+        # Ignore if rating is already on trakt
+        if t_item and t_item.rating_advanced == p_item.user_rating:
+            return True
+
+        data = self.get_trakt_data(key, p_item)
+
+        data.update({
+            'rating': p_item.user_rating
+        })
+
+        self.store('ratings', data)
+        return True
+
 
 
 class Episode(Base):
     key = 'episode'
     auto_run = False
 
+    def run(self, p_episodes, t_episodes):
+        log.debug('Episode.run')
+
 
 class Show(Base):
     key = 'show'
     children = [Episode]
+
+    def run(self, section=None):
+        enabled_funcs = self.get_enabled_functions()
+
+        p_shows = self.plex.library('show')
+
+        # TODO include_ratings could be false when rating sync is not enabled
+        t_shows = self.trakt.merged('shows', ratings=True, collected=True)
+
+        if t_shows is None:
+            log.warn('Unable to construct merged library from trakt')
+            return False
+
+        for key, p_show in p_shows.items():
+            t_show = t_shows.get(key)
+
+            log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
+
+            # TODO check result
+            self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show, ignore_missing=True)
+
+            for p_show in p_show:
+                self.child('episode').run(
+                    p_episodes=self.plex.episodes(p_show.key),
+                    t_episodes=t_show.episodes
+                )
+
+        log.debug(self.artifacts)
+
+    def run_ratings(self, key, p_shows, t_show):
+        return self.rate(key, p_shows, t_show)
 
 
 class Movie(Base):
@@ -83,27 +144,7 @@ class Movie(Base):
         self.store('watched', self.get_trakt_data(key, p_movie))
 
     def run_ratings(self, key, p_movies, t_movie):
-        # Filter by rated plex movies
-        p_movies = [x for x in p_movies if x.user_rating is not None]
-
-        # Ignore if none of the plex items have a rating attached
-        if not p_movies:
-            return True
-
-        # TODO should this be handled differently when there are multiple ratings?
-        p_movie = p_movies[0]
-
-        # Ignore if rating is already on trakt
-        if t_movie and t_movie.rating_advanced == p_movie.user_rating:
-            return True
-
-        data = self.get_trakt_data(key, p_movie)
-
-        data.update({
-            'rating': p_movie.user_rating
-        })
-
-        self.store('ratings', data)
+        return self.rate(key, p_movies, t_movie)
 
     def run_collected(self, key, p_movies, t_movie):
         # Ignore if trakt movie is already collected
