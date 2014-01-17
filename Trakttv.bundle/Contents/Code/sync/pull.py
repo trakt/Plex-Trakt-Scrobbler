@@ -90,7 +90,9 @@ class Show(Base):
         enabled_funcs = self.get_enabled_functions()
 
         p_shows = self.plex.library('show')
-        t_shows = self.trakt.merged('shows', 'watched', include_ratings=True)
+
+        # TODO include_ratings could be false when rating sync is not enabled
+        t_shows = self.trakt.merged('shows', ratings=True)
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -129,7 +131,9 @@ class Movie(Base):
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
-        t_movies = self.trakt.merged('movies', 'watched', include_ratings=True)
+
+        # TODO include_ratings could be false when rating sync is not enabled
+        t_movies = self.trakt.merged('movies', ratings=True)
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
@@ -142,6 +146,7 @@ class Movie(Base):
 
             log.info('Updating "%s" [%s]', t_movie.title, key)
 
+            # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
         return True
