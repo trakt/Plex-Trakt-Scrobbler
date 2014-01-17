@@ -132,7 +132,7 @@ class Trakt(object):
 
             elapsed = datetime.utcnow() - start
 
-            log.info(
+            log.debug(
                 'get_merged returned dictionary with %s keys for %s items in %s seconds',
                 len(result), item_count, total_seconds(elapsed)
             )

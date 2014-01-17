@@ -55,7 +55,7 @@ class Episode(Base):
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():
-            log.info('Updating S%02dE%02d', *key)
+            log.debug('Processing S%02dE%02d', *key)
 
             if key is None or key not in p_episodes:
                 log.info('trakt item with key: %s, invalid or not in library', key)
@@ -107,7 +107,7 @@ class Show(Base):
                 log.warn('trakt item has no episodes, ignoring')
                 continue
 
-            log.info('Updating "%s" [%s]', t_show.title, key)
+            log.info('Processing "%s" [%s]', t_show.title, key)
 
             self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show, ignore_missing=True)
 
@@ -144,7 +144,7 @@ class Movie(Base):
                 log.debug('trakt item with key: %s, invalid or not in library', key)
                 continue
 
-            log.info('Updating "%s" [%s]', t_movie.title, key)
+            log.debug('Processing "%s" [%s]', t_movie.title, key)
 
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)

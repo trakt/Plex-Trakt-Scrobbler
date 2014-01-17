@@ -53,19 +53,15 @@ class Movie(Base):
 
         # TODO include_ratings could be false when rating sync is not enabled
         t_movies = self.trakt.merged('movies', ratings=True, collected=True)
-        for key, t_movie in t_movies.items():
-            log.debug('[%s] = %s', repr(key), repr(t_movie))
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
         for key, p_movie in p_movies.items():
-            log.debug('[%s] = %s', repr(key), repr(p_movie))
-
             t_movie = t_movies.get(key)
 
-            log.info('Updating "%s" [%s]', p_movie[0].title if p_movie else None, key)
+            log.debug('Processing "%s" [%s]', p_movie[0].title if p_movie else None, key)
 
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
