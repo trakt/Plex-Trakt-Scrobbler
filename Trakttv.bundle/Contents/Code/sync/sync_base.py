@@ -62,7 +62,14 @@ class SyncBase(Base):
         # Activate children and create dictionary map
         self.children = dict([(x.key, x(manager)) for x in self.children])
 
+        self.artifacts = {}
+
+    def reset(self):
+        self.artifacts = {}
+
     def run(self, *args, **kwargs):
+        self.reset()
+
         # Trigger handlers and return if there was an error
         if not all(self.trigger(None, *args, **kwargs)):
             return False
@@ -156,3 +163,13 @@ class SyncBase(Base):
 
     def get_current(self):
         return self.manager.get_current()
+
+    def store(self, key, data, single=False):
+        if single:
+            self.artifacts[key] = data
+            return
+
+        if key not in self.artifacts:
+            self.artifacts[key] = []
+
+        self.artifacts[key].append(data)
