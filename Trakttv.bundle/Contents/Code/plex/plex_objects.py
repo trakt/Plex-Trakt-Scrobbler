@@ -59,6 +59,9 @@ class PlexMedia(object):
     def __init__(self, key):
         self.key = key
 
+        self.title = None
+        self.year = None
+
         self.agent = None
         self.sid = None
 
@@ -66,6 +69,9 @@ class PlexMedia(object):
 
     @staticmethod
     def fill(obj, video, parsed_guid=None):
+        obj.title = video.get('title')
+        obj.year = try_convert(video.get('year'), int)
+
         obj.user_rating = try_convert(video.get('userRating'), int)
 
         if parsed_guid is not None:
@@ -74,7 +80,7 @@ class PlexMedia(object):
 
     @staticmethod
     def get_repr_keys():
-        return ['key', 'agent', 'sid', 'user_rating']
+        return ['key', 'title', 'agent', 'sid', 'user_rating']
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
