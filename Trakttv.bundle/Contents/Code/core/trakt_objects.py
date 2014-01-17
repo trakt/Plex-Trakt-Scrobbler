@@ -9,12 +9,25 @@ class TraktMedia(object):
         self.rating_advanced = None
         self.rating_timestamp = None
 
+        self.is_watched = None
+        self.is_collected = None
+
     def update(self, info, keys):
         for key in keys:
             if key not in info:
                 continue
 
+            if getattr(self, key) is not None:
+                continue
+
             setattr(self, key, info[key])
+
+    def update_states(self, is_watched=None, is_collected=None):
+        if is_watched is not None:
+            self.is_watched = is_watched
+
+        if is_collected is not None:
+            self.is_collected = is_collected
 
     def fill(self, info):
         self.update(info, ['rating', 'rating_advanced'])
@@ -24,7 +37,7 @@ class TraktMedia(object):
 
     @staticmethod
     def get_repr_keys():
-        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp']
+        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp', 'is_watched', 'is_collected']
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
@@ -43,25 +56,31 @@ class TraktShow(TraktMedia):
 
         self.episodes = {}
 
-    def fill(self, info, is_watched=None):
+    def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)
 
         self.update(info, ['title', 'year', 'tvdb_id'])
 
         if 'seasons' in info:
-            self.update_seasons(info['seasons'], is_watched)
+            self.update_seasons(info['seasons'], is_watched, is_collected)
 
         return self
 
-    def update_seasons(self, seasons, is_watched=None):
+    def update_seasons(self, seasons, is_watched=None, is_collected=None):
         for season, episodes in [(x.get('season'), x.get('episodes')) for x in seasons]:
+            # For each episode, create if doesn't exist, otherwise just update is_watched and is_collected
             for episode in episodes:
-                self.episodes[(season, episode)] = TraktEpisode(season, episode, is_watched)
+                key = season, episode
+
+                if key not in self.episodes:
+                    self.episodes[key] = TraktEpisode.create(season, episode, is_watched, is_collected)
+                else:
+                    self.episodes[key].update_states(is_watched, is_collected)
 
     @classmethod
-    def create(cls, keys, info, is_watched=None):
+    def create(cls, keys, info, is_watched=None, is_collected=None):
         show = cls(keys)
-        return cls.fill(show, info, is_watched)
+        return cls.fill(show, info, is_watched, is_collected)
 
     @staticmethod
     def get_repr_keys():
@@ -69,17 +88,22 @@ class TraktShow(TraktMedia):
 
 
 class TraktEpisode(TraktMedia):
-    def __init__(self, season, number, is_watched=None):
+    def __init__(self, season, number):
         super(TraktEpisode, self).__init__()
 
         self.season = season
         self.number = number
 
-        self.is_watched = is_watched
+    @classmethod
+    def create(cls, season, number, is_watched=None, is_collected=None):
+        episode = cls(season, number)
+        episode.update_states(is_watched, is_collected)
+
+        return episode
 
     @staticmethod
     def get_repr_keys():
-        return TraktMedia.get_repr_keys() + ['season', 'number', 'is_watched']
+        return TraktMedia.get_repr_keys() + ['season', 'number']
 
 
 class TraktMovie(TraktMedia):
@@ -90,8 +114,6 @@ class TraktMovie(TraktMedia):
         self.year = None
         self.imdb_id = None
 
-        self.is_watched = None
-
     def fill(self, info):
         TraktMedia.fill(self, info)
         self.update(info, ['title', 'year', 'imdb_id'])
@@ -99,12 +121,12 @@ class TraktMovie(TraktMedia):
         return self
 
     @classmethod
-    def create(cls, keys, info, is_watched=None):
+    def create(cls, keys, info, is_watched=None, is_collected=None):
         movie = cls(keys)
-        movie.is_watched = is_watched
+        movie.update_states(is_watched, is_collected)
 
         return cls.fill(movie, info)
 
     @staticmethod
     def get_repr_keys():
-        return TraktMedia.get_repr_keys() + ['title', 'year', 'imdb_id', 'is_watched']
+        return TraktMedia.get_repr_keys() + ['title', 'year', 'imdb_id']

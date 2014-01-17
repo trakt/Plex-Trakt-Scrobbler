@@ -101,62 +101,26 @@ class Trakt(object):
 
     class User(object):
         @classmethod
-        def get_merged(cls, media, marked, include_ratings=False, extended=None, retry=True):
+        def get_merged(cls, media, watched=True, ratings=False, collected=False, extended=None, retry=True):
             start = datetime.utcnow()
-
-            # Fetch data from trakt
-            library = cls.get_library(media, marked, extended=extended, retry=retry).get('data')
-            if library is None:
-                log.warn('Unable to fetch library from trakt')
-                return None
-
-            ratings = None
-            episode_ratings = None
-
-            if include_ratings:
-                ratings = cls.get_ratings(media, retry=retry).get('data')
-
-                if media == 'shows':
-                    episode_ratings = cls.get_ratings('episodes', retry=retry).get('data')
-
-                if ratings is None or (media == 'shows' and episode_ratings is None):
-                    log.warn('Unable to fetch ratings from trakt')
-                    return None
 
             # Merge data
             result = {}
 
-            # Fill with watched items in library
-            for item in library:
-                root_key, keys = Trakt.get_media_keys(media, item)
-
-                result[root_key] = Trakt.create_media(media, keys, item, is_watched=True)
+            # Merge watched library
+            if watched and not Trakt.merge_watched(result, media, extended, retry):
+                log.warn('Failed to merge watched library')
+                return None
 
             # Merge ratings
-            if include_ratings:
-                for item in ratings:
-                    root_key, keys = Trakt.get_media_keys(media, item)
+            if ratings and not Trakt.merge_ratings(result, media, retry):
+                log.warn('Failed to merge ratings')
+                return None
 
-                    if root_key not in result:
-                        result[root_key] = Trakt.create_media(media, keys, item)
-                    else:
-                        result[root_key].fill(item)
-
-            # Merge episode_ratings
-            if include_ratings and media == 'shows':
-                for item in episode_ratings:
-                    root_key, keys = Trakt.get_media_keys(media, item['show'])
-
-                    if root_key not in result:
-                        result[root_key] = Trakt.create_media(media, keys, item['show'])
-
-                    episode = item['episode']
-                    episode_key = (episode['season'], episode['number'])
-
-                    if episode_key not in result[root_key].episodes:
-                        result[root_key].episodes[episode_key] = TraktEpisode(episode['season'], episode['number'])
-
-                    result[root_key].episodes[episode_key].fill(item)
+            # Merge collected library
+            if collected and not Trakt.merge_collected(result, media, extended, retry):
+                log.warn('Failed to merge collected library')
+                return None
 
             item_count = len(result)
 
@@ -232,11 +196,86 @@ class Trakt(object):
         return result[0], result
 
     @classmethod
-    def create_media(cls, media, keys, info, is_watched=False):
+    def create_media(cls, media, keys, info, is_watched=None, is_collected=None):
         if media == 'shows':
-            return TraktShow.create(keys, info, is_watched=is_watched)
+            return TraktShow.create(keys, info, is_watched, is_collected)
 
         if media == 'movies':
-            return TraktMovie.create(keys, info, is_watched=is_watched)
+            return TraktMovie.create(keys, info, is_watched, is_collected)
 
         raise ValueError('Unknown media type')
+
+    @classmethod
+    def merge_watched(cls, result, media, extended=None, retry=True):
+        watched = cls.User.get_library(media, 'watched', extended=extended, retry=retry).get('data')
+
+        if watched is None:
+            log.warn('Unable to fetch watched library from trakt')
+            return False
+
+        # Fill with watched items in library
+        for item in watched:
+            root_key, keys = Trakt.get_media_keys(media, item)
+
+            result[root_key] = Trakt.create_media(media, keys, item, is_watched=True)
+
+        return True
+
+    @classmethod
+    def merge_ratings(cls, result, media, retry=True):
+        ratings = cls.User.get_ratings(media, retry=retry).get('data')
+        episode_ratings = None
+
+        if media == 'shows':
+            episode_ratings = cls.User.get_ratings('episodes', retry=retry).get('data')
+
+        if ratings is None or (media == 'shows' and episode_ratings is None):
+            log.warn('Unable to fetch ratings from trakt')
+            return False
+
+        # Merge ratings
+        for item in ratings:
+            root_key, keys = Trakt.get_media_keys(media, item)
+
+            if root_key not in result:
+                result[root_key] = Trakt.create_media(media, keys, item)
+            else:
+                result[root_key].fill(item)
+
+        # Merge episode_ratings
+        if media == 'shows':
+            for item in episode_ratings:
+                root_key, keys = Trakt.get_media_keys(media, item['show'])
+
+                if root_key not in result:
+                    result[root_key] = Trakt.create_media(media, keys, item['show'])
+
+                episode = item['episode']
+                episode_key = (episode['season'], episode['number'])
+
+                if episode_key not in result[root_key].episodes:
+                    result[root_key].episodes[episode_key] = TraktEpisode.create(episode['season'], episode['number'])
+
+                result[root_key].episodes[episode_key].fill(item)
+
+        return True
+
+
+    @classmethod
+    def merge_collected(cls, result, media, extended=None, retry=True):
+        collected = Trakt.User.get_library(media, 'collection', extended=extended, retry=retry).get('data')
+
+        if collected is None:
+            log.warn('Unable to fetch collected library from trakt')
+            return False
+
+        # Merge ratings
+        for item in collected:
+            root_key, keys = Trakt.get_media_keys(media, item)
+
+            if root_key not in result:
+                result[root_key] = Trakt.create_media(media, keys, item, is_collected=True)
+            else:
+                result[root_key].update_states(is_collected=True)
+
+        return True
