@@ -108,7 +108,7 @@ class PlexMediaServer(PlexBase):
                     if key not in shows:
                         movies[key] = []
 
-                    movies[key].append(PlexMovie.create(video, parsed_guid))
+                    movies[key].append(PlexMovie.create(video, parsed_guid, key))
 
             if type == 'show':
                 for directory in cls.get_directories(key, cache_id=cache_id):
@@ -119,7 +119,7 @@ class PlexMediaServer(PlexBase):
                     if key not in shows:
                         shows[key] = []
 
-                    shows[key].append(PlexShow.create(directory, parsed_guid))
+                    shows[key].append(PlexShow.create(directory, parsed_guid, key))
 
         if len(types) == 1:
             if types[0] == 'movie':
@@ -132,7 +132,7 @@ class PlexMediaServer(PlexBase):
 
     # TODO move to plex.metadata, cache results
     @classmethod
-    def get_episodes(cls, key, cache_id=None):
+    def get_episodes(cls, key, parent=None, cache_id=None):
         """Fetch the episodes for a show from the Plex library
 
         :param key: Key of show to fetch episodes for
@@ -158,7 +158,7 @@ class PlexMediaServer(PlexBase):
                 log.warn('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
                 continue
 
-            result[season, episode] = PlexEpisode.create(video, season, episode)
+            result[season, episode] = PlexEpisode.create(parent, video, season, episode)
 
         return result
 

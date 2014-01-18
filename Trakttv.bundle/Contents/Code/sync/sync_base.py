@@ -24,8 +24,8 @@ class PlexInterface(Base):
         return PlexMediaServer.get_library(types, keys, cache_id=cls.get_cache_id())
 
     @classmethod
-    def episodes(cls, key):
-        return PlexMediaServer.get_episodes(key, cache_id=cls.get_cache_id())
+    def episodes(cls, key, parent=None):
+        return PlexMediaServer.get_episodes(key, parent, cache_id=cls.get_cache_id())
 
 
 class TraktInterface(Base):

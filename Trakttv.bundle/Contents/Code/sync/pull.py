@@ -22,7 +22,7 @@ class Base(SyncBase):
                 continue
 
             if p_item.user_rating is None or self.rate_conflict(p_item, t_media):
-                PlexMediaServer.rate(p_item.key, t_rating)
+                PlexMediaServer.rate(p_item.rating_key, t_rating)
 
         return True
 
@@ -41,7 +41,7 @@ class Base(SyncBase):
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.key, p_item.user_rating, t_media.rating_advanced
+            p_item.rating_key, p_item.user_rating, t_media.rating_advanced
         )
 
         return False
@@ -61,6 +61,7 @@ class Episode(Base):
                 log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
+            # TODO check result
             self.trigger(enabled_funcs, p_episode=p_episodes[key], t_episode=t_episode)
 
         return True
@@ -73,7 +74,7 @@ class Episode(Base):
         if p_episode.seen:
             return True
 
-        PlexMediaServer.scrobble(p_episode.key)
+        PlexMediaServer.scrobble(p_episode.rating_key)
 
         return True
 
@@ -112,7 +113,7 @@ class Show(Base):
 
             for p_show in p_shows[key]:
                 self.child('episode').run(
-                    p_episodes=self.plex.episodes(p_show.key),
+                    p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
 
@@ -158,7 +159,7 @@ class Movie(Base):
             if p_movie.seen:
                 continue
 
-            PlexMediaServer.scrobble(p_movie.key)
+            PlexMediaServer.scrobble(p_movie.rating_key)
 
         return True
 
