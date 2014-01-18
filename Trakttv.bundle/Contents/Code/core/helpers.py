@@ -314,3 +314,10 @@ def build_repr(obj, keys):
     cls = getattr(obj, '__class__')
 
     return '<%s %s>' % (getattr(cls, '__name__'), key_part)
+
+
+def plural(count):
+    if count == 1:
+        return ''
+
+    return 's'

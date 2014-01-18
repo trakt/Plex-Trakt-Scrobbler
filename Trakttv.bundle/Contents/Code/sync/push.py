@@ -1,5 +1,6 @@
-from core.helpers import all, try_convert, merge
+from core.helpers import all, try_convert, merge, plural
 from core.logger import Logger
+from core.trakt import Trakt
 from plex.plex_objects import PlexEpisode
 from sync.sync_base import SyncBase
 
@@ -126,6 +127,47 @@ class Base(SyncBase):
 
         self.store(key, merge({'episodes': episodes}, show))
 
+    @staticmethod
+    def log_artifact(action, label, count, level='info'):
+        message = '(%s) %s %s item%s' % (
+            action, label, count,
+            plural(count)
+        )
+
+        if level == 'info':
+            return log.info(message)
+        elif level == 'warn':
+            return log.warn(message)
+
+        raise ValueError('Unknown level specified')
+
+    def send_artifact(self, artifact, action, key):
+        items = self.artifacts.get(artifact)
+        if items is None:
+            return
+
+        response = Trakt.request(action, {key: items}, authenticate=True)
+
+        # Log successful items
+        if 'rated' in response:
+            rated = response.get('rated')
+            unrated = response.get('unrated')
+
+            log.info(
+                '(%s) Rated %s item%s and un-rated %s item%s',
+                action,
+                rated, plural(rated),
+                unrated, plural(unrated)
+            )
+        else:
+            self.log_artifact(action, 'Inserted', response.get('inserted'))
+
+        # Log skipped items, if there were any
+        skipped = response.get('skipped', 0)
+
+        if skipped > 0:
+            self.log_artifact(action, 'Skipped', skipped, level='warn')
+
 
 class Episode(Base):
     key = 'episode'
@@ -234,7 +276,12 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
+        # Push changes to trakt
         log.debug(self.artifacts)
+
+        self.send_artifact('watched', 'movie/seen', 'movies')
+        self.send_artifact('ratings', 'rate/movies', 'movies')
+        self.send_artifact('collected', 'movie/library', 'movies')
 
     def run_watched(self, key, p_movies, t_movie):
         return self.watch(p_movies, t_movie)
