@@ -114,9 +114,11 @@ class TraktMovie(TraktMedia):
         self.year = None
         self.imdb_id = None
 
-    def fill(self, info):
+    def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)
+
         self.update(info, ['title', 'year', 'imdb_id'])
+        self.update_states(is_watched, is_collected)
 
         return self
 
