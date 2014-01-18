@@ -39,14 +39,15 @@ class Trakt(object):
             ('/' + '/'.join(params)) if params else ''
         )
 
-        if authenticate:
-            if values is None:
-                values = {}
+        if values is None:
+            values = {}
 
+        if authenticate:
             values['username'] = Prefs['username']
             values['password'] = Hash.SHA1(Prefs['password'])
-            values['plugin_version'] = PLUGIN_VERSION
-            values['media_center_version'] = Dict['server_version']
+
+        values['plugin_version'] = PLUGIN_VERSION
+        values['media_center_version'] = Dict['server_version']
 
         try:
             kwargs = {
@@ -73,24 +74,27 @@ class Trakt(object):
         if response is None:
             return {'success': False, 'message': 'Unknown Failure'}
 
-        result = None
-
         # Return on successful results without status detail
         if type(response.data) is not dict or 'status' not in response.data:
             return {'success': True, 'data': response.data}
 
         status = response.data.get('status')
+        result = response.data
+
+        result.update({'success': status == 'success'})
 
         if status == 'success':
-            result = {'success': True, 'message': response.data.get('message', 'Unknown success')}
-        elif status == 'failure':
-            result = {'success': False, 'message': response.data.get('error'), 'data': response.data}
+            result.setdefault('message', 'Unknown success')
+        else:
+            result.setdefault('message', response.data.get('error'))
+            result.setdefault('data', response.data)
 
         # Log result for debugging
-        message = result.get('message', 'Unknown Result')
-
         if not result.get('success'):
-            log.warn('[trakt] Request failure: (%s) %s' % (result.get('exception'), message))
+            log.warn('Request failure: (%s) %s' % (
+                result.get('exception'),
+                result.get('message', 'Unknown Result')
+            ))
 
         return result
 
