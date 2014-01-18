@@ -1,5 +1,6 @@
-from core.helpers import all
+from core.helpers import all, try_convert, merge
 from core.logger import Logger
+from plex.plex_objects import PlexEpisode
 from sync.sync_base import SyncBase
 
 
@@ -10,9 +11,28 @@ class Base(SyncBase):
     task = 'push'
 
     @staticmethod
-    def add_identifier(data, (service, sid)):
+    def get_root(p_item):
+        if isinstance(p_item, PlexEpisode):
+            return p_item.parent
+
+        return p_item
+
+    @staticmethod
+    def add_identifier(data, p_item):
+        service, sid = p_item.key
+
+        # Parse identifier and append relevant '*_id' attribute to data
         if service == 'imdb':
             data['imdb_id'] = sid
+            return data
+
+        # Convert TMDB and TVDB identifiers to integers
+        if service in ['themoviedb', 'thetvdb']:
+            sid = try_convert(sid, int)
+
+            # If identifier is invalid, ignore it
+            if sid is None:
+                return data
 
         if service == 'themoviedb':
             data['tmdb_id'] = sid
@@ -23,15 +43,47 @@ class Base(SyncBase):
         return data
 
     @classmethod
-    def get_trakt_data(cls, key, item):
-        data = {
-            'title': item.title,
-            'year': item.year
-        }
+    def get_trakt_data(cls, p_item, include_identifier=True):
+        data = {}
 
-        return cls.add_identifier(data, key)
+        # Append episode attributes if this is a PlexEpisode
+        if isinstance(p_item, PlexEpisode):
+            data.update({
+                'season': p_item.season_num,
+                'episode': p_item.episode_num
+            })
 
-    def rate(self, key, p_items, t_item):
+        if include_identifier:
+            p_root = cls.get_root(p_item)
+
+            data.update({
+                'title': p_root.title,
+                'year': p_root.year
+            })
+
+            cls.add_identifier(data, p_root)
+
+        return data
+
+    def watch(self, p_items, t_item, include_identifier=True):
+        if type(p_items) is not list:
+            p_items = [p_items]
+
+        # Ignore if trakt movie is already watched
+        if t_item and t_item.is_watched:
+            return True
+
+        # Ignore if none of the plex items are watched
+        if all([not x.seen for x in p_items]):
+            return True
+
+        # TODO should we instead pick the best result, instead of just the first?
+        self.store('watched', self.get_trakt_data(p_items[0], include_identifier))
+
+    def rate(self, p_items, t_item, artifact='ratings'):
+        if type(p_items) is not list:
+            p_items = [p_items]
+
         # Filter by rated plex items
         p_items = [x for x in p_items if x.user_rating is not None]
 
@@ -46,15 +98,33 @@ class Base(SyncBase):
         if t_item and t_item.rating_advanced == p_item.user_rating:
             return True
 
-        data = self.get_trakt_data(key, p_item)
+        data = self.get_trakt_data(p_item)
 
         data.update({
             'rating': p_item.user_rating
         })
 
-        self.store('ratings', data)
+        self.store(artifact, data)
         return True
 
+    def collect(self, p_items, t_item, include_identifier=True):
+        if type(p_items) is not list:
+            p_items = [p_items]
+
+        # Ignore if trakt movie is already collected
+        if t_item and t_item.is_collected:
+            return True
+
+        self.store('collected', self.get_trakt_data(p_items[0], include_identifier))
+        return True
+
+    def store_episodes(self, show, key, artifact=None):
+        episodes = self.child('episode').artifacts.get(artifact or key)
+
+        if episodes is None:
+            return
+
+        self.store(key, merge({'episodes': episodes}, show))
 
 
 class Episode(Base):
@@ -62,7 +132,36 @@ class Episode(Base):
     auto_run = False
 
     def run(self, p_episodes, t_episodes):
-        log.debug('Episode.run')
+        self.reset()
+
+        enabled_funcs = self.get_enabled_functions()
+
+        for key, p_episode in p_episodes.items():
+            t_episode = t_episodes.get(key)
+
+            log.debug(
+                'Processing "%s" [%s] - %s - t_episode: %s',
+                p_episode.parent.title,
+                p_episode.parent.key,
+                'S%02dE%02d' % key,
+                t_episode
+            )
+
+            # TODO check result
+            self.trigger(enabled_funcs, key=key, p_episode=p_episode, t_episode=t_episode)
+
+        log.debug(self.artifacts)
+
+        return True
+
+    def run_watched(self, key, p_episode, t_episode):
+        return self.watch(p_episode, t_episode, include_identifier=False)
+
+    def run_ratings(self, key, p_episode, t_episode):
+        return self.parent.rate(p_episode, t_episode, 'episode_ratings')
+
+    def run_collected(self, key, p_episode, t_episode):
+        return self.collect(p_episode, t_episode, include_identifier=False)
 
 
 class Show(Base):
@@ -70,6 +169,9 @@ class Show(Base):
     children = [Episode]
 
     def run(self, section=None):
+        # TODO use 'section' parameter
+        self.reset()
+
         enabled_funcs = self.get_enabled_functions()
 
         p_shows = self.plex.library('show')
@@ -91,14 +193,19 @@ class Show(Base):
 
             for p_show in p_show:
                 self.child('episode').run(
-                    p_episodes=self.plex.episodes(p_show.key),
+                    p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
+
+                show = self.get_trakt_data(p_show)
+
+                self.store_episodes(show, 'collected')
+                self.store_episodes(show, 'watched')
 
         log.debug(self.artifacts)
 
     def run_ratings(self, key, p_shows, t_show):
-        return self.rate(key, p_shows, t_show)
+        return self.rate(p_shows, t_show)
 
 
 class Movie(Base):
@@ -130,30 +237,13 @@ class Movie(Base):
         log.debug(self.artifacts)
 
     def run_watched(self, key, p_movies, t_movie):
-        # Ignore if trakt movie is already watched
-        if t_movie and t_movie.is_watched:
-            return True
-
-        # Ignore if none of the plex items are watched
-        if all([not x.seen for x in p_movies]):
-            return True
-
-        # TODO should we instead pick the best result, instead of just the first?
-        p_movie = p_movies[0]
-
-        self.store('watched', self.get_trakt_data(key, p_movie))
+        return self.watch(p_movies, t_movie)
 
     def run_ratings(self, key, p_movies, t_movie):
-        return self.rate(key, p_movies, t_movie)
+        return self.rate(p_movies, t_movie)
 
     def run_collected(self, key, p_movies, t_movie):
-        # Ignore if trakt movie is already collected
-        if t_movie and t_movie.is_collected:
-            return True
-
-        p_movie = p_movies[0]
-
-        self.store('collected', self.get_trakt_data(key, p_movie))
+        return self.collect(p_movies, t_movie)
 
 
 class Push(Base):

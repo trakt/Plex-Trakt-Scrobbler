@@ -130,6 +130,11 @@ def matches(subject, items, func):
     return result
 
 
+def merge(a, b):
+    a.update(b)
+    return a
+
+
 def extend(a, b=None):
     c = a.copy()
 
