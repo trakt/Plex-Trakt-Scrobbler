@@ -23,7 +23,6 @@ from plex.metadata import PlexMetadata
 from pts.activity import Activity
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
-from sync.legacy import SyncTrakt, CollectionSync
 from sync.manager import SyncManager
 from datetime import datetime
 
@@ -81,11 +80,6 @@ class Main(object):
             Dict["new_sync_collection"] = False
 
     def start(self):
-        # Start syncing
-        if Prefs['sync_startup'] and Prefs['username'] is not None:
-            Log('Will autosync in 1 minute')
-            Thread.CreateTimer(60, SyncTrakt)
-
         # Get current server version and save it to dict.
         server_version = PMS.get_server_version()
         if server_version:
@@ -111,7 +105,8 @@ class Main(object):
         log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
 
         # delay sync to wait for metadata
-        Thread.CreateTimer(120, CollectionSync, True, item['itemID'], 'add')
+        # TODO replace with syncing-2.0
+        # Thread.CreateTimer(120, CollectionSync, True, item['itemID'], 'add')
 
     @staticmethod
     def cleanup():

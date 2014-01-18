@@ -19,6 +19,3 @@ sys.modules['sync.synchronize'] = synchronize
 
 import manager
 sys.modules['sync.manager'] = manager
-
-import legacy
-sys.modules['sync.legacy'] = legacy
