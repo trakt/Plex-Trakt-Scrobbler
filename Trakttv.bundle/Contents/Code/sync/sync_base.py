@@ -56,11 +56,12 @@ class SyncBase(Base):
     plex = PlexInterface
     trakt = TraktInterface
 
-    def __init__(self, manager):
+    def __init__(self, manager, parent=None):
         self.manager = manager
+        self.parent = parent
 
         # Activate children and create dictionary map
-        self.children = dict([(x.key, x(manager)) for x in self.children])
+        self.children = dict([(x.key, x(manager, self)) for x in self.children])
 
         self.artifacts = {}
 
