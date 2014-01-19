@@ -168,6 +168,12 @@ class SyncBase(Base):
     def get_current(self):
         return self.manager.get_current()
 
+    def retrieve(self, key, single=False):
+        if single:
+            return self.artifacts.get(key)
+
+        return self.artifacts.get(key, [])
+
     def store(self, key, data, single=False):
         if single:
             self.artifacts[key] = data

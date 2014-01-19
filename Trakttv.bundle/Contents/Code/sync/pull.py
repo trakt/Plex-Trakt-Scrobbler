@@ -117,6 +117,7 @@ class Show(Base):
                     t_episodes=t_show.episodes
                 )
 
+        log.info('Finished pulling shows from trakt')
         return True
 
     def run_ratings(self, p_shows, t_show):
@@ -148,6 +149,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
+        log.info('Finished pulling movies from trakt')
         return True
 
     def run_watched(self, p_movies, t_movie):

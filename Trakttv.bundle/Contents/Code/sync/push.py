@@ -141,12 +141,8 @@ class Base(SyncBase):
 
         raise ValueError('Unknown level specified')
 
-    def send_artifact(self, artifact, action, key):
-        items = self.artifacts.get(artifact)
-        if items is None:
-            return
-
-        response = Trakt.request(action, {key: items}, authenticate=True)
+    def send(self, action, data):
+        response = Trakt.request(action, data, authenticate=True)
 
         # Log successful items
         if 'rated' in response:
@@ -159,6 +155,8 @@ class Base(SyncBase):
                 rated, plural(rated),
                 unrated, plural(unrated)
             )
+        elif 'message' in response:
+            log.info('(%s) %s', action, response['message'])
         else:
             self.log_artifact(action, 'Inserted', response.get('inserted'))
 
@@ -167,6 +165,13 @@ class Base(SyncBase):
 
         if skipped > 0:
             self.log_artifact(action, 'Skipped', skipped, level='warn')
+
+    def send_artifact(self, action, key, artifact):
+        items = self.artifacts.get(artifact)
+        if items is None:
+            return
+
+        return self.send(action, {key: items})
 
 
 class Episode(Base):
@@ -236,7 +241,7 @@ class Show(Base):
             for p_show in p_show:
                 self.child('episode').run(
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
-                    t_episodes=t_show.episodes
+                    t_episodes=t_show.episodes if t_show else {}
                 )
 
                 show = self.get_trakt_data(p_show)
@@ -244,7 +249,18 @@ class Show(Base):
                 self.store_episodes(show, 'collected')
                 self.store_episodes(show, 'watched')
 
-        log.debug(self.artifacts)
+        # Push changes to trakt
+        for show in self.retrieve('collected'):
+            self.send('show/episode/library', show)
+
+        for show in self.retrieve('watched'):
+            self.send('show/episode/seen', show)
+
+        self.send_artifact('rate/shows', 'shows', 'ratings')
+        self.send_artifact('rate/episodes', 'episodes', 'episode_ratings')
+
+        log.info('Finished pushing shows to trakt')
+        return True
 
     def run_ratings(self, key, p_shows, t_show):
         return self.rate(p_shows, t_show)
@@ -277,11 +293,12 @@ class Movie(Base):
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
         # Push changes to trakt
-        log.debug(self.artifacts)
+        self.send_artifact('movie/seen', 'movies', 'watched')
+        self.send_artifact('rate/movies', 'movies', 'ratings')
+        self.send_artifact('movie/library', 'movies', 'collected')
 
-        self.send_artifact('watched', 'movie/seen', 'movies')
-        self.send_artifact('ratings', 'rate/movies', 'movies')
-        self.send_artifact('collected', 'movie/library', 'movies')
+        log.info('Finished pushing movies to trakt')
+        return True
 
     def run_watched(self, key, p_movies, t_movie):
         return self.watch(p_movies, t_movie)
