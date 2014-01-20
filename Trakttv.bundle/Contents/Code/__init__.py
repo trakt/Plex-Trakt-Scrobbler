@@ -9,13 +9,14 @@ import pts
 # ------------------------------------------------
 
 
-from pts.activity import PlexActivity
-from pts.session_manager import SessionManager
-from core.plugin import ART, NAME, ICON
 from core.header import Header
-from plex.media_server import PMS
+from core.helpers import pad_title
+from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
+from plex.media_server import PMS
+from pts.activity import PlexActivity
+from pts.session_manager import SessionManager
 from sync import SyncTrakt, ManuallySync, CollectionSync
 from datetime import datetime
 
@@ -155,15 +156,28 @@ def MainMenu():
 
     oc.add(DirectoryObject(
         key=Callback(ManuallySync),
-        title=L("Sync"),
-        summary=L("Sync the Plex library with Trakt.tv"),
-        thumb=R("icon-sync.png")
+        title=L("Sync")
+    ))
+
+    oc.add(DirectoryObject(
+        key=Callback(AboutMenu),
+        title=L("About")
     ))
 
     oc.add(PrefsObject(
         title="Preferences",
-        summary="Configure how to connect to Trakt.tv",
         thumb=R("icon-preferences.png")
+    ))
+
+    return oc
+
+@route('/applications/trakttv/about')
+def AboutMenu():
+    oc = ObjectContainer(title2="About", no_cache=True)
+
+    oc.add(DirectoryObject(
+        key='',
+        title=pad_title("Version: %s" % PLUGIN_VERSION)
     ))
 
     return oc

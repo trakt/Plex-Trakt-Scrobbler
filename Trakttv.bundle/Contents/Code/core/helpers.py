@@ -242,3 +242,9 @@ def str_pad(s, length, align='left', pad_char=' '):
             return (pad_char * (length - len(s))) + s
     else:
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
+
+
+# TODO ensure longer titles aren't trimmed
+def pad_title(value):
+    """Pad a title to 30 characters to force the 'details' view."""
+    return str_pad(value, 30, pad_char=' ')
