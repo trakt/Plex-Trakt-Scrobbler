@@ -74,9 +74,6 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
         else:
             req.add_header('Content-Type', data_type)
 
-    # Write request debug entry to log
-    internal_log_request(url, response_type, data, data_type, retry, timeout, method, cache_id)
-
     # (Python 2.5 urlopen doesn't support timeouts)
     if timeout and not PY25:
         kwargs['timeout'] = timeout
@@ -94,19 +91,13 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     )
 
 
-def internal_log_request(url, response_type, data, data_type, retry, timeout, method, cache_id):
+def internal_log_request(req, response_type, cache_id):
+    method = req.get_method()
+    data = req.data
+
     debug_values = [
         method if method != 'GET' else None,
-
-        "len(data): %s, data_type: '%s'" % (
-            len(data) if data else None,
-            data_type
-        ) if data else '',
-
-        'retry' if retry else None,
-
-        ('timeout: %s' % timeout) if timeout else None,
-
+        ("len(data): %s" % (len(data))) if data else '',
         ('cache_id: %s' % cache_id) if cache_id else None
     ]
 
@@ -114,7 +105,7 @@ def internal_log_request(url, response_type, data, data_type, retry, timeout, me
     debug_values = [x for x in debug_values if x]
 
     log.debug("Requesting '%s' (%s) %s" % (
-        url,
+        req.get_full_url(),
         response_type,
 
         ('[%s]' % ', '.join(debug_values)) if len(debug_values) else ''
@@ -176,6 +167,7 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
 
     try:
         if data is None:
+            internal_log_request(req, response_type, cache_id)
             data = urllib2.urlopen(req, **kwargs).read()
 
             if cache_id is not None:
