@@ -26,7 +26,7 @@ IDENTIFIERS = {
 
 class Trakt(object):
     @classmethod
-    def request(cls, action, values=None, params=None, authenticate=False, retry=True, max_retries=3, timeout=None):
+    def request(cls, action, values=None, params=None, authenticate=False, retry=True, max_retries=3, cache_id=None, timeout=None):
         if params is None:
             params = []
         elif isinstance(params, basestring):
@@ -53,6 +53,7 @@ class Trakt(object):
             kwargs = {
                 'retry': retry,
                 'max_retries': max_retries,
+                'cache_id': cache_id,
                 'timeout': timeout,
 
                 'raise_exceptions': True
@@ -105,24 +106,24 @@ class Trakt(object):
 
     class User(object):
         @classmethod
-        def get_merged(cls, media, watched=True, ratings=False, collected=False, extended=None, retry=True):
+        def get_merged(cls, media, watched=True, ratings=False, collected=False, extended=None, retry=True, cache_id=None):
             start = datetime.utcnow()
 
             # Merge data
             result = {}
 
             # Merge watched library
-            if watched and not Trakt.merge_watched(result, media, extended, retry):
+            if watched and not Trakt.merge_watched(result, media, extended, retry, cache_id):
                 log.warn('Failed to merge watched library')
                 return None
 
             # Merge ratings
-            if ratings and not Trakt.merge_ratings(result, media, retry):
+            if ratings and not Trakt.merge_ratings(result, media, retry, cache_id):
                 log.warn('Failed to merge ratings')
                 return None
 
             # Merge collected library
-            if collected and not Trakt.merge_collected(result, media, extended, retry):
+            if collected and not Trakt.merge_collected(result, media, extended, retry, cache_id):
                 log.warn('Failed to merge collected library')
                 return None
 
@@ -144,21 +145,23 @@ class Trakt(object):
             return result
 
         @staticmethod
-        def get_library(media, marked, extended=None, retry=True):
+        def get_library(media, marked, extended=None, retry=True, cache_id=None):
             return Trakt.request(
                 'user/library/%s/%s.json' % (media, marked),
                 params=[Prefs['username'], extended],
 
-                retry=retry
+                retry=retry,
+                cache_id=cache_id
             )
 
         @staticmethod
-        def get_ratings(media, retry=True):
+        def get_ratings(media, retry=True, cache_id=None):
             return Trakt.request(
                 'user/ratings/%s.json' % media,
                 params=Prefs['username'],
 
-                retry=retry
+                retry=retry,
+                cache_id=cache_id
             )
 
     class Media(object):
@@ -210,8 +213,11 @@ class Trakt(object):
         raise ValueError('Unknown media type')
 
     @classmethod
-    def merge_watched(cls, result, media, extended=None, retry=True):
-        watched = cls.User.get_library(media, 'watched', extended=extended, retry=retry).get('data')
+    def merge_watched(cls, result, media, extended=None, retry=True, cache_id=None):
+        watched = cls.User.get_library(
+            media, 'watched', extended=extended,
+            retry=retry, cache_id=cache_id
+        ).get('data')
 
         if watched is None:
             log.warn('Unable to fetch watched library from trakt')
@@ -226,12 +232,12 @@ class Trakt(object):
         return True
 
     @classmethod
-    def merge_ratings(cls, result, media, retry=True):
-        ratings = cls.User.get_ratings(media, retry=retry).get('data')
+    def merge_ratings(cls, result, media, retry=True, cache_id=None):
+        ratings = cls.User.get_ratings(media, retry=retry, cache_id=cache_id).get('data')
         episode_ratings = None
 
         if media == 'shows':
-            episode_ratings = cls.User.get_ratings('episodes', retry=retry).get('data')
+            episode_ratings = cls.User.get_ratings('episodes', retry=retry, cache_id=cache_id).get('data')
 
         if ratings is None or (media == 'shows' and episode_ratings is None):
             log.warn('Unable to fetch ratings from trakt')
@@ -266,8 +272,11 @@ class Trakt(object):
 
 
     @classmethod
-    def merge_collected(cls, result, media, extended=None, retry=True):
-        collected = Trakt.User.get_library(media, 'collection', extended=extended, retry=retry).get('data')
+    def merge_collected(cls, result, media, extended=None, retry=True, cache_id=None):
+        collected = Trakt.User.get_library(
+            media, 'collection', extended=extended,
+            retry=retry, cache_id=cache_id
+        ).get('data')
 
         if collected is None:
             log.warn('Unable to fetch collected library from trakt')

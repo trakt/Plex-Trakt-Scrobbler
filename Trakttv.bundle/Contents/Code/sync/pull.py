@@ -109,7 +109,7 @@ class Show(Base):
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
-            log.info('Processing "%s" [%s]', t_show.title, key)
+            log.debug('Processing "%s" [%s]', t_show.title, key)
 
             self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show)
 

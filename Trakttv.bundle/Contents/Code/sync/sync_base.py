@@ -29,20 +29,9 @@ class PlexInterface(Base):
 
 
 class TraktInterface(Base):
-    # TODO per-sync cached results
     @classmethod
     def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
-        return Trakt.User.get_merged(media, watched, ratings, collected, extended)
-
-    # TODO per-sync cached results
-    @classmethod
-    def library(cls, media, marked, extended='min'):
-        return Trakt.User.get_library(media, marked, extended).get('data')
-
-    # TODO per-sync cached results
-    @classmethod
-    def ratings(cls, media):
-        return Trakt.User.get_ratings(media)
+        return Trakt.User.get_merged(media, watched, ratings, collected, extended, cache_id=cls.get_cache_id())
 
 
 class SyncBase(Base):
