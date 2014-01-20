@@ -105,9 +105,9 @@ class SyncManager(object):
 
             if not cls.run_work():
                 if cls.current.stopping:
-                    Log.Info('Syncing task stopped as requested')
+                    log.info('Syncing task stopped as requested')
                 else:
-                    Log.Warn('Error occurred while running work')
+                    log.warn('Error occurred while running work')
 
             cls.release()
 
@@ -121,10 +121,10 @@ class SyncManager(object):
         # Find handler
         handler = cls.handlers.get(key)
         if not handler:
-            Log.Warn('Unknown handler "%s"' % key)
+            log.warn('Unknown handler "%s"' % key)
             return False
 
-        Log.Debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
+        log.debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
 
         cls.current.start_time = datetime.utcnow()
 
@@ -136,7 +136,7 @@ class SyncManager(object):
         except Exception, e:
             cls.current.success = False
 
-            Log.Warn('Exception raised in handler for "%s" (%s) %s: %s' % (
+            log.warn('Exception raised in handler for "%s" (%s) %s: %s' % (
                 key, type(e), e, traceback.format_exc()
             ))
 
@@ -156,11 +156,11 @@ class SyncManager(object):
     @classmethod
     def acquire(cls):
         cls.lock.acquire()
-        Log.Debug('Acquired work: %s' % cls.current)
+        log.debug('Acquired work: %s' % cls.current)
 
     @classmethod
     def release(cls):
-        Log.Debug("Work finished")
+        log.debug("Work finished")
         cls.reset()
 
         cls.lock.release()
@@ -189,7 +189,7 @@ class SyncManager(object):
             # Calculate estimated time remaining
             statistics.seconds_remaining = ((1 - progress) * 100) * statistics.per_perc
 
-        Log.Debug('[Sync][Progress] Progress: %02d%%, Estimated time remaining: ~%s seconds' % (
+        log.debug('[Sync][Progress] Progress: %02d%%, Estimated time remaining: ~%s seconds' % (
             progress * 100,
             int(round(statistics.seconds_remaining, 0)) if statistics.seconds_remaining else '?'
         ))
