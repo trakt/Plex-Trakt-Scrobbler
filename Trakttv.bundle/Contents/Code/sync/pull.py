@@ -10,6 +10,22 @@ log = Logger('sync.pull')
 class Base(SyncBase):
     task = 'pull'
 
+    def watch(self, p_items, t_item):
+        if type(p_items) is not list:
+            p_items = [p_items]
+
+        if not t_item.is_watched:
+            return True
+
+        for p_item in p_items:
+            # Ignore already seen movies
+            if p_item.seen:
+                continue
+
+            PlexMediaServer.scrobble(p_item.rating_key)
+
+        return True
+
     def rate(self, p_items, t_item):
         if type(p_items) is not list:
             p_items = [p_items]
@@ -67,16 +83,7 @@ class Episode(Base):
         return True
 
     def run_watched(self, p_episode, t_episode):
-        if not t_episode.is_watched:
-            return True
-
-        # Ignore already seen episodes
-        if p_episode.seen:
-            return True
-
-        PlexMediaServer.scrobble(p_episode.rating_key)
-
-        return True
+        return self.watch(p_episode, t_episode)
 
     def run_ratings(self, p_episode, t_episode):
         return self.rate(p_episode, t_episode)
@@ -147,17 +154,7 @@ class Movie(Base):
         return True
 
     def run_watched(self, p_movies, t_movie):
-        if not t_movie.is_watched:
-            return True
-
-        for p_movie in p_movies:
-            # Ignore already seen movies
-            if p_movie.seen:
-                continue
-
-            PlexMediaServer.scrobble(p_movie.rating_key)
-
-        return True
+        return self.watch(p_movies, t_movie)
 
     def run_ratings(self, p_movies, t_movie):
         return self.rate(p_movies, t_movie)
