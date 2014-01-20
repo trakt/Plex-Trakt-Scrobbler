@@ -32,7 +32,7 @@ def AboutMenu():
     oc = ObjectContainer(title2="About")
 
     oc.add(DirectoryObject(
-        key='',
+        key=Callback(AboutMenu),
         title=pad_title("Version: %s" % PLUGIN_VERSION)
     ))
 
