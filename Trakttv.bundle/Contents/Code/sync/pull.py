@@ -1,7 +1,7 @@
-from datetime import datetime
 from core.logger import Logger
 from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
+from datetime import datetime
 
 
 log = Logger('sync.pull')

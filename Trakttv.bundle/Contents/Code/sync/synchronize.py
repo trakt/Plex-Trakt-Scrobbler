@@ -1,6 +1,5 @@
 from core.logger import Logger
 from sync.sync_base import SyncBase
-import time
 
 
 log = Logger('sync.synchronize')

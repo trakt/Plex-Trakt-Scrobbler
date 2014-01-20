@@ -1,5 +1,6 @@
-from core.helpers import itersections, timestamp, pad_title
+from core.helpers import timestamp, pad_title
 from plex.media_server import PMS
+from plex.media_server_new import PlexMediaServer
 from sync.manager import SyncManager
 from datetime import datetime
 from ago import human
@@ -48,7 +49,7 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    for _, key, title in itersections(PMS.get_sections()):
+    for _, key, title in PlexMediaServer.get_sections():
         oc.add(DirectoryObject(
             key=Callback(Push, sections=[key]),
             title=pad_title('Push "' + title + '" to trakt'),

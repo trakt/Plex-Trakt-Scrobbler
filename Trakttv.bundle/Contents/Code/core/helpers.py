@@ -6,42 +6,6 @@ import sys
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
 
 
-def SyncDownString():
-
-    if Prefs['sync_watched'] and Prefs['sync_ratings']:
-        return "seen and rated"
-    elif Prefs['sync_watched']:
-        return "seen "
-    elif Prefs['sync_ratings']:
-        return "rated "
-    else:
-        return ""
-
-
-def SyncUpString():
-    action_strings = []
-    if Prefs['sync_collection']:
-        action_strings.append("library")
-    if Prefs['sync_watched']:
-        action_strings.append("seen items")
-    if Prefs['sync_ratings']:
-        action_strings.append("ratings")
-
-    temp_string = ", ".join(action_strings)
-    li = temp_string.rsplit(", ", 1)
-    return " and ".join(li)
-
-
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-    except TypeError:
-        return False
-
-
 def try_convert(value, value_type):
     try:
         return value_type(value)
@@ -61,88 +25,9 @@ def add_attribute(target, source, key, value_type=str, func=None, target_key=Non
         target[target_key] = func(value) if func else value
 
 
-def iterget(items, keys):
-    result = []
-
-    for item in items:
-        values = [item]
-
-        for key, value in [(key, item.get(key, None)) for key in keys]:
-            values.append(value)
-
-        result.append(values)
-
-    return result
-
-
-def parse_section(section):
-    return (
-        section.get('type', None),
-        section.get('key', None),
-        section.get('title', None)
-    )
-
-
-def itersections(sections, types=('show', 'movie')):
-    """Iterate over valid PMS sections of type 'show' or 'movie'"""
-    result = []
-
-    for section in [parse_section(s) for s in sections]:
-        # Ensure fields exist
-        if all(v is not None for v in section):
-            section_type, key, title = section
-            # Ensure section is of type 'show' or 'movie'
-            if section_type in types:
-                result.append((section_type, key, title))
-
-    return result
-
-
-def finditems(subject, items, keys):
-    if type(keys) is not list:
-        keys = [keys]
-
-    # Filter by keys available in subject
-    keys = [k for k in keys if k in subject]
-
-    if not len(keys):
-        Log.Warn('No keys available for matching')
-        return []
-
-    result = []
-
-    for item in items:
-        for key in keys:
-            if key in item and str(item[key]) == str(subject[key]):
-                result.append(item)
-                break
-
-    return result
-
-
-def matches(subject, items, func):
-    result = []
-
-    for item in items:
-        if func(item) == subject:
-            result.append(item)
-
-    return result
-
-
 def merge(a, b):
     a.update(b)
     return a
-
-
-def extend(a, b=None):
-    c = a.copy()
-
-    if b is None:
-        return c
-
-    c.update(b)
-    return c
 
 
 def all(items):
