@@ -66,18 +66,24 @@ class Main(object):
         EventManager.subscribe('notifications.timeline.created', self.timeline_created)
 
     @staticmethod
-    def update_config():
-        if Prefs['start_scrobble'] and Prefs['username'] is not None:
-            Log('Autostart scrobbling')
-            Dict["scrobble"] = True
-        else:
-            Dict["scrobble"] = False
+    def update_config(valid=None):
+        preferences = Dict['preferences'] or {}
 
-        if Prefs['new_sync_collection'] and Prefs['username'] is not None:
-            Log('Automatically sync new Items to Collection')
-            Dict["new_sync_collection"] = True
-        else:
-            Dict["new_sync_collection"] = False
+        # If no validation provided, use last stored result or assume true
+        if valid is None:
+            valid = preferences.get('valid', True)
+
+        preferences['valid'] = valid
+
+        preferences['scrobble'] = Prefs['start_scrobble'] and valid
+        preferences['sync_run_library'] = Prefs['sync_run_library'] and valid
+
+        # Ensure preferences dictionary is stored
+        Dict['preferences'] = preferences
+        Dict.Save()
+
+        log.info('Preferences updated %s', preferences)
+        EventManager.fire('preferences.updated', preferences)
 
     def start(self):
         # Get current server version and save it to dict.
@@ -155,25 +161,27 @@ def Start():
 
 def ValidatePrefs():
     if Prefs['username'] is None:
+        Main.update_config(False)
         return MessageContainer("Error", "No login information entered.")
 
     if not Prefs['sync_watched'] and not Prefs['sync_ratings'] and not Prefs['sync_collection']:
+        Main.update_config(False)
         return MessageContainer("Error", "At least one sync type need to be enabled.")
-
-    if not Prefs['start_scrobble']:
-        Dict["scrobble"] = False
 
     status = Trakt.Account.test()
 
-    if status['success']:
-        Main.update_config()
+    if not status['success']:
+        log.warn('Username or password invalid')
+        Main.update_config(False)
 
-        return MessageContainer(
-            "Success",
-            "Trakt responded with: %s " % status['message']
-        )
-    else:
         return MessageContainer(
             "Error",
             "Trakt responded with: %s " % status['message']
         )
+
+    Main.update_config(True)
+
+    return MessageContainer(
+        "Success",
+        "Trakt responded with: %s " % status['message']
+    )

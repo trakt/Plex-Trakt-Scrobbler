@@ -1,4 +1,5 @@
 from core.eventing import EventManager
+from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS
@@ -79,6 +80,10 @@ class LoggingScrobbler(ScrobblerMethod):
         return session
 
     def update(self, info):
+        # Ignore if scrobbling is disabled
+        if not get_pref('scrobble'):
+            return
+
         session = self.get_session(info)
         if not session:
             log.info('Invalid session, ignoring')

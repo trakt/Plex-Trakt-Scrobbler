@@ -1,4 +1,5 @@
 from core.eventing import EventManager
+from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS
@@ -120,7 +121,8 @@ class WebSocketScrobbler(ScrobblerMethod):
         return session
 
     def update(self, session_key, state, view_offset):
-        if not Dict["scrobble"]:
+        # Ignore if scrobbling is disabled
+        if not get_pref('scrobble'):
             return
 
         session = self.get_session(session_key, state, view_offset)

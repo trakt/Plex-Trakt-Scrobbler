@@ -321,3 +321,10 @@ def plural(count):
         return ''
 
     return 's'
+
+
+def get_pref(key):
+    if Dict['preferences'] and key in Dict['preferences']:
+        return Dict['preferences'][key]
+
+    return Prefs[key]

@@ -127,9 +127,6 @@ class Logging(ActivityMethod):
         log.debug('Ready')
 
         while True:
-            if not Dict["scrobble"]:
-                break
-
             # Grab the next line of the log
             line = self.try_read_line(timeout=60)
 
