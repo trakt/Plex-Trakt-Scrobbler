@@ -8,7 +8,6 @@ import time
 log = Logger('pts.activity_websocket')
 
 
-
 TIMELINE_STATES = {
     0: 'created',
     2: 'matching',
@@ -18,6 +17,9 @@ TIMELINE_STATES = {
     6: 'analyzing',
     9: 'deleted'
 }
+
+REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>[\w\s]+)" section')
+REGEX_STATUS_SCAN_COMPLETE = Regex('Library scan complete')
 
 
 class WebSocket(ActivityMethod):
@@ -117,5 +119,25 @@ class WebSocket(ActivityMethod):
             return
 
         EventManager.fire('notifications.timeline.%s' % state_key, item)
+
+    @staticmethod
+    def process_status(item):
+        if item.get('notificationName') != 'LIBRARY_UPDATE':
+            return
+
+        title = item.get('title')
+
+        # Check for scan complete message
+        if REGEX_STATUS_SCAN_COMPLETE.match(title):
+            EventManager.fire('notifications.status.scan_complete')
+            return
+
+        # Check for scanning message
+        match = REGEX_STATUS_SCANNING.match(title)
+        if match:
+            section = match.group('section')
+
+            if section:
+                EventManager.fire('notifications.status.scanning', section)
 
 Activity.register(WebSocket, weight=None)

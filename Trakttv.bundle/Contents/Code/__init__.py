@@ -63,8 +63,6 @@ class Main(object):
                 log.debug("Initializing module %s", module)
                 module.initialize()
 
-        EventManager.subscribe('notifications.timeline.created', self.timeline_created)
-
     @staticmethod
     def update_config(valid=None):
         preferences = Dict['preferences'] or {}
@@ -102,17 +100,6 @@ class Main(object):
             if hasattr(module, 'start'):
                 log.debug("Starting module %s", module)
                 module.start()
-
-    @staticmethod
-    def timeline_created(item):
-        if not Dict['new_sync_collection']:
-            return
-
-        log.info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
-
-        # delay sync to wait for metadata
-        # TODO replace with syncing-2.0
-        # Thread.CreateTimer(120, CollectionSync, True, item['itemID'], 'add')
 
     @staticmethod
     def cleanup():

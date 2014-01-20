@@ -1,15 +1,18 @@
-from datetime import datetime
 from core.eventing import EventManager
-from core.helpers import total_seconds, sum
+from core.helpers import total_seconds, sum, get_pref
+from core.logger import Logger
 from data.sync_status import SyncStatus
 from sync.task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
+from datetime import datetime
 import threading
 import traceback
 import time
 
+
+log = Logger('sync.manager')
 
 HANDLERS = [Pull, Push, Synchronize]
 
@@ -30,6 +33,7 @@ class SyncManager(object):
         cls.thread = threading.Thread(target=cls.run, name="SyncManager")
         cls.lock = threading.Lock()
 
+        EventManager.subscribe('notifications.status.scan_complete', cls.scan_complete)
         EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
@@ -192,6 +196,13 @@ class SyncManager(object):
 
         statistics.progress = progress
         statistics.last_update = datetime.utcnow()
+
+    @classmethod
+    def scan_complete(cls):
+        if not get_pref('sync_run_library'):
+            return
+
+        cls.trigger_synchronize()
 
     # Trigger
 
