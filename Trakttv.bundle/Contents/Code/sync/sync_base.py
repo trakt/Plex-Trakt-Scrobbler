@@ -86,7 +86,6 @@ class SyncBase(Base):
 
     def trigger(self, funcs=None, *args, **kwargs):
         single = kwargs.pop('single', False)
-        ignore_missing = kwargs.pop('ignore_missing', False)
 
         results = []
 
@@ -98,14 +97,8 @@ class SyncBase(Base):
         for name in funcs:
             func = getattr(self, 'run_' + name, None)
 
-            if func is None:
-                if ignore_missing:
-                    continue
-
-                raise ValueError('Unable to find sub-function with the name "%s"' % name)
-
-            #log.debug('Running sub-function in task %s with name "%s"' % (self, name))
-            results.append(func(*args, **kwargs))
+            if func is not None:
+                results.append(func(*args, **kwargs))
 
         if single:
             return results[0]

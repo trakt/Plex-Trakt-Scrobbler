@@ -1,5 +1,9 @@
+from core.logger import Logger
 from sync.sync_base import SyncBase
 import time
+
+
+log = Logger('sync.synchronize')
 
 
 class Synchronize(SyncBase):
@@ -7,16 +11,21 @@ class Synchronize(SyncBase):
     title = "Synchronize"
 
     def run(self, **kwargs):
-        Log.Debug('Synchronize.run kwargs: %s' % kwargs)
+        log.debug('Synchronize.run kwargs: %s' % kwargs)
 
-        self.update_progress(0)
+        push = self.manager.handlers.get('push')
+        pull = self.manager.handlers.get('pull')
 
-        for x in range(1, 11):
-            if self.is_stopping():
-                return False
+        if not push or not pull:
+            log.warn("Sync handlers haven't initialized properly, unable to synchronize")
+            return False
 
-            time.sleep(1)
+        if not pull.run():
+            log.warn("Pull handler failed")
+            return False
 
-            self.update_progress(x * 10)
+        if not push.run():
+            log.warn('Push handler failed')
+            return False
 
         return True

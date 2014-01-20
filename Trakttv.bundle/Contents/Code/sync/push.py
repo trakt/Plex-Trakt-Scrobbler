@@ -186,18 +186,8 @@ class Episode(Base):
         for key, p_episode in p_episodes.items():
             t_episode = t_episodes.get(key)
 
-            log.debug(
-                'Processing "%s" [%s] - %s - t_episode: %s',
-                p_episode.parent.title,
-                p_episode.parent.key,
-                'S%02dE%02d' % key,
-                t_episode
-            )
-
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_episode=p_episode, t_episode=t_episode)
-
-        log.debug(self.artifacts)
 
         return True
 
@@ -236,7 +226,7 @@ class Show(Base):
             log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
 
             # TODO check result
-            self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show, ignore_missing=True)
+            self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show)
 
             for p_show in p_show:
                 self.child('episode').run(

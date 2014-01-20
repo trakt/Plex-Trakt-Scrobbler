@@ -44,6 +44,32 @@ class SyncManager(object):
         return cls.cache_id
 
     @classmethod
+    def get_current(cls):
+        current = cls.current
+
+        if not current:
+            return None, None
+
+        return current, cls.handlers.get(current.key)
+
+    @classmethod
+    def get_status(cls, key, section=None):
+        """Retrieve the status of a task
+
+        :rtype : SyncStatus
+        """
+        if section:
+            key = (key, section)
+
+        status = SyncStatus.load(key)
+
+        if not status:
+            status = SyncStatus(key)
+            status.save()
+
+        return status
+
+    @classmethod
     def bind_handlers(cls):
         def is_stopping():
             return cls.current.stopping
@@ -54,6 +80,10 @@ class SyncManager(object):
         for key, handler in cls.handlers.items():
             handler.is_stopping = is_stopping
             handler.update_progress = update_progress
+
+    @classmethod
+    def reset(cls):
+        cls.current = None
 
     @classmethod
     def start(cls):
@@ -134,36 +164,6 @@ class SyncManager(object):
         cls.reset()
 
         cls.lock.release()
-
-    @classmethod
-    def reset(cls):
-        cls.current = None
-
-    @classmethod
-    def get_current(cls):
-        current = cls.current
-
-        if not current:
-            return None, None
-
-        return current, cls.handlers.get(current.key)
-
-    @classmethod
-    def get_status(cls, key, section=None):
-        """Retrieve the status of a task
-
-        :rtype : SyncStatus
-        """
-        if section:
-            key = (key, section)
-
-        status = SyncStatus.load(key)
-
-        if not status:
-            status = SyncStatus(key)
-            status.save()
-
-        return status
 
     @classmethod
     def update_progress(cls, current, start=0, end=100):

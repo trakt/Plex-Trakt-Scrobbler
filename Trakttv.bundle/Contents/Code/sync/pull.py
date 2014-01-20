@@ -10,30 +10,33 @@ log = Logger('sync.pull')
 class Base(SyncBase):
     task = 'pull'
 
-    def rate(self, p_items, t_media):
-        if t_media.rating_advanced is None:
+    def rate(self, p_items, t_item):
+        if type(p_items) is not list:
+            p_items = [p_items]
+
+        if t_item.rating_advanced is None:
             return True
 
-        t_rating = t_media.rating_advanced
+        t_rating = t_item.rating_advanced
 
         for p_item in p_items:
             # Ignore already rated episodes
             if p_item.user_rating == t_rating:
                 continue
 
-            if p_item.user_rating is None or self.rate_conflict(p_item, t_media):
+            if p_item.user_rating is None or self.rate_conflict(p_item, t_item):
                 PlexMediaServer.rate(p_item.rating_key, t_rating)
 
         return True
 
-    def rate_conflict(self, p_item, t_media):
+    def rate_conflict(self, p_item, t_item):
         status = self.get_status()
 
         # First run, overwrite with trakt rating
         if status.last_success is None:
             return True
 
-        t_timestamp = datetime.utcfromtimestamp(t_media.rating_timestamp)
+        t_timestamp = datetime.utcfromtimestamp(t_item.rating_timestamp)
 
         # If trakt rating was created after the last sync, update plex rating
         if t_timestamp > status.last_success:
@@ -41,7 +44,7 @@ class Base(SyncBase):
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.rating_key, p_item.user_rating, t_media.rating_advanced
+            p_item.rating_key, p_item.user_rating, t_item.rating_advanced
         )
 
         return False
@@ -55,10 +58,7 @@ class Episode(Base):
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():
-            log.debug('Processing S%02dE%02d', *key)
-
             if key is None or key not in p_episodes:
-                log.info('trakt item with key: %s, invalid or not in library', key)
                 continue
 
             # TODO check result
@@ -79,7 +79,7 @@ class Episode(Base):
         return True
 
     def run_ratings(self, p_episode, t_episode):
-        return self.rate([p_episode], t_episode)
+        return self.rate(p_episode, t_episode)
 
 
 class Show(Base):
@@ -99,17 +99,12 @@ class Show(Base):
             return False
 
         for key, t_show in t_shows.items():
-            if key is None or key not in p_shows:
-                log.debug('trakt item with key: %s, invalid or not in library', key)
-                continue
-
-            if not t_show.episodes:
-                log.warn('trakt item has no episodes, ignoring')
+            if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
             log.info('Processing "%s" [%s]', t_show.title, key)
 
-            self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show, ignore_missing=True)
+            self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show)
 
             for p_show in p_shows[key]:
                 self.child('episode').run(
@@ -141,7 +136,6 @@ class Movie(Base):
 
         for key, t_movie in t_movies.items():
             if key is None or key not in p_movies:
-                log.debug('trakt item with key: %s, invalid or not in library', key)
                 continue
 
             log.debug('Processing "%s" [%s]', t_movie.title, key)
