@@ -51,6 +51,10 @@ class UpdateChecker(object):
         self.update_detail = None
 
     def run(self, first_run=False):
+        if Dict['developer']:
+            Log.Info('Developer mode enabled, update checker disabled')
+            return
+
         response = self.request(first_run)
         if response is None:
             # Schedule a re-check in 30 seconds on errors

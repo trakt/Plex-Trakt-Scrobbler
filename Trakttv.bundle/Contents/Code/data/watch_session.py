@@ -1,9 +1,9 @@
+from core.model import DictModel
 from data.client import Client
-from data.dict_object import DictObject
 from data.user import User
 
 
-class WatchSession(DictObject):
+class WatchSession(DictModel):
     root_key = 'nowPlaying'
 
     def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None, client=None):

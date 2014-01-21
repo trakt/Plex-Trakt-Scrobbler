@@ -1,5 +1,19 @@
 [
     {
+        "id": "username",
+        "type": "text",
+        "label": "Username",
+        "default": ""
+    },
+    {
+        "id": "password",
+        "type": "text",
+        "label": "Password",
+        "default": "",
+        "option": "hidden",
+        "secure": "true"
+    },
+    {
         "id": "start_scrobble",
         "type": "bool",
         "label": "Scrobble",
@@ -24,29 +38,17 @@
         "default": "false"
     },
     {
-        "id": "sync_startup",
+        "id": "sync_run_library",
         "type": "bool",
-        "label": "Sync - Update plex on startup",
+        "label": "Sync - Run after library updates",
         "default": "false"
     },
     {
-        "id": "new_sync_collection",
-        "type": "bool",
-        "label": "Sync - Update trakt collection instantly (PlexPass)",
-        "default": "false"
-    },
-    {
-        "id": "username",
-        "type": "text",
-        "label": "Username",
-        "default": ""
-    },
-    {
-        "id": "password",
-        "type": "text",
-        "label": "Password",
-        "default": "",
-        "option": "hidden"
+        "id": "sync_run_interval",
+        "type": "enum",
+        "label": "Sync - Run every",
+        "values": ["Disabled", "30 minutes", "Hour", "3 Hours", "6 Hours", "12 Hours", "Day", "Week"],
+        "default": "Disabled"
     },
     {
         "id": "scrobble_names",
