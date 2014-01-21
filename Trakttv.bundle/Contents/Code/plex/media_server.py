@@ -7,9 +7,19 @@ MOVIE_REGEXP = Regex('com.plexapp.agents.*://(?P<imdb_id>tt[-a-z0-9\.]+)')
 MOVIEDB_REGEXP = Regex('com.plexapp.agents.themoviedb://(?P<tmdb_id>[0-9]+)')
 STANDALONE_REGEXP = Regex('com.plexapp.agents.standalone://(?P<tmdb_id>[0-9]+)')
 
-TVSHOW_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://(?P<tvdb_id>[-a-z0-9\.]+)/'
-                      '(?P<season>[-a-z0-9\.]+)/(?P<episode>[-a-z0-9\.]+)')
-TVSHOW1_REGEXP = Regex('com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv)://([-a-z0-9\.]+)')
+TVSHOW_REGEXP = Regex(
+    'com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv|mcm)://'
+    '(MCM_TV_A_)?'  # For Media Center Master
+    '(?P<tvdb_id>[-a-z0-9\.]+)/'
+    '(?P<season>[-a-z0-9\.]+)/'
+    '(?P<episode>[-a-z0-9\.]+)'
+)
+
+TVSHOW1_REGEXP = Regex(
+    'com.plexapp.agents.(thetvdb|abstvdb|xbmcnfotv|mcm)://'
+    '(MCM_TV_A_)?'  # For Media Center Master
+    '(?P<tvdb_id>[-a-z0-9\.]+)'
+)
 
 MOVIE_PATTERNS = [
     MOVIE_REGEXP,
@@ -130,12 +140,10 @@ class PMS(object):
 
     @classmethod
     def set_logging_state(cls, state):
-        # TODO PUT METHOD
         result = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
         if result is None:
             return False
 
-        Log.Debug('Response: %s' % result)
         return True
 
     @classmethod
@@ -211,15 +219,15 @@ class PMS(object):
     def get_section_directories(cls, section_name):
         section = cls.get_section(section_name)
         if section is None:
-            return None
+            return []
 
         return section.xpath('//Directory')
 
     @classmethod
     def get_section_videos(cls, section_name):
-        section = cls.get_metadata(section_name)
+        section = cls.get_section(section_name)
         if section is None:
-            return None
+            return []
 
         return section.xpath('//Video')
 
@@ -229,16 +237,22 @@ class PMS(object):
             Log.Debug('video has already been marked as seen')
             return False
 
-        result = cls.request(':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
-            video.get('ratingKey')
-        ))
+        result = cls.request(
+            ':/scrobble?identifier=com.plexapp.plugins.library&key=%s' % (
+                video.get('ratingKey')
+            ),
+            response_type='text'
+        )
 
         return result is not None
 
     @classmethod
     def rate(cls, video, rating):
-        result = cls.request(':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
-            video.get('ratingKey'), rating
-        ))
+        result = cls.request(
+            ':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (
+                video.get('ratingKey'), rating
+            ),
+            response_type='text'
+        )
 
         return result is not None

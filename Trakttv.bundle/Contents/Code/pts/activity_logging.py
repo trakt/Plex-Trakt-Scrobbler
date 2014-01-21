@@ -1,14 +1,17 @@
+from core.eventing import EventManager
+from core.helpers import str_format
+from core.logger import Logger
 from plex.media_server import PMS
-from pts.activity import ActivityMethod, PlexActivity
-from pts.scrobbler_logging import LoggingScrobbler
+from pts.activity import ActivityMethod, Activity
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
 import time
+import os
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
-REQUEST_HEADER_PATTERN = LOG_PATTERN.format(message=r"Request: {method} {path}.*?")
+REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: {method} {path}.*?")
 
-PLAYING_HEADER_REGEX = Regex(REQUEST_HEADER_PATTERN.format(method="GET", path="/:/(?P<type>timeline|progress)"))
+PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
 
 IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
@@ -16,11 +19,13 @@ IGNORE_PATTERNS = [
     r'We found auth token (.*?), enabling token-based authentication.'
 ]
 
-IGNORE_REGEX = Regex(LOG_PATTERN.format(message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
+IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
 
-PARAM_REGEX = Regex(LOG_PATTERN.format(message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
-RANGE_REGEX = Regex(LOG_PATTERN.format(message=r'Request range: \d+ to \d+'))
-CLIENT_REGEX = Regex(LOG_PATTERN.format(message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
+PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
+RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
+CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
+
+log = Logger('pts.activity_logging')
 
 
 class Logging(ActivityMethod):
@@ -31,18 +36,13 @@ class Logging(ActivityMethod):
     log_path = None
     log_file = None
 
-    def __init__(self, now_playing):
-        super(Logging, self).__init__(now_playing)
-
-        self.scrobbler = LoggingScrobbler()
-
     @classmethod
     def get_path(cls):
         if not cls.log_path:
-            cls.log_path = Core.storage.join_path(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
-            cls.log_path = Core.storage.abs_path(cls.log_path)
+            cls.log_path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+            cls.log_path = os.path.abspath(cls.log_path)
 
-            Log.Info('log_path = "%s"' % cls.log_path)
+            log.debug('log_path = "%s"' % cls.log_path)
 
         return cls.log_path
 
@@ -50,11 +50,11 @@ class Logging(ActivityMethod):
     def test(cls):
         # Try enable logging
         if not PMS.set_logging_state(True):
-            Log.Warn('Unable to enable logging')
+            log.warn('Unable to enable logging')
 
         # Test if logging is enabled
         if not PMS.get_logging_state():
-            Log.Warn('Debug logging not enabled, unable to use logging activity method.')
+            log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
         if cls.try_read_line(True):
@@ -68,7 +68,7 @@ class Logging(ActivityMethod):
             cls.log_file = ASIO.open(cls.get_path(), opener=False)
             cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
             cls.log_path = cls.log_file.get_path()
-            Log.Info('Opened file path: "%s"' % cls.log_path)
+            log.info('Opened file path: "%s"' % cls.log_path)
 
         return cls.log_file.read_line(timeout=timeout, timeout_type='return')
 
@@ -87,7 +87,7 @@ class Logging(ActivityMethod):
                 break
 
             if cls.log_file.get_path() != cls.log_path:
-                Log.Info("Log file moved (probably rotated), closing")
+                log.debug("Log file moved (probably rotated), closing")
                 cls.close()
 
             # If we are below max_interval, keep increasing the interval
@@ -100,13 +100,13 @@ class Logging(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                Log.Info('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
+                log.debug('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
                 time.sleep(retry_interval)
 
         if line and try_count > 1:
-            Log.Info('Successfully read the log file after retrying')
+            log.debug('Successfully read the log file after retrying')
         elif not line:
-            Log.Warn('Finished retrying, still no success')
+            log.warn('Finished retrying, still no success')
 
         return line
 
@@ -121,20 +121,19 @@ class Logging(ActivityMethod):
     def run(self):
         line = self.try_read_line(timeout=60)
         if not line:
-            Log.Warn('Unable to read log file')
+            log.warn('Unable to read log file')
             return
 
-        while 1:
-            if not Dict["scrobble"]:
-                break
+        log.debug('Ready')
 
+        while True:
             # Grab the next line of the log
             line = self.try_read_line(timeout=60)
 
             if line:
                 self.process(line)
             else:
-                Log.Warn('Unable to read log file')
+                log.warn('Unable to read log file')
 
     def process(self, line):
         header_match = PLAYING_HEADER_REGEX.match(line)
@@ -149,7 +148,7 @@ class Logging(ActivityMethod):
         elif activity_type == 'progress':
             match = self.progress()
         else:
-            Log.Warn('Unknown activity type "%s"', activity_type)
+            log.warn('Unknown activity type "%s"', activity_type)
             return
 
         # Ensure we successfully matched a result
@@ -164,7 +163,7 @@ class Logging(ActivityMethod):
             if key in match and match[key] is not None:
                 info[key] = match[key]
             else:
-                Log.Warn('Invalid activity match, missing key %s (%s)', (key, match))
+                log.warn('Invalid activity match, missing key %s (%s)', (key, match))
                 return
 
         # - Add in any extra info parameters
@@ -175,7 +174,7 @@ class Logging(ActivityMethod):
                 info[key] = None
 
         # Update the scrobbler with the current state
-        self.scrobbler.update(info)
+        EventManager.fire('scrobbler.logging.update', info)
 
     def timeline(self):
         return self.read_parameters(self.client_match, self.range_match)
@@ -200,7 +199,7 @@ class Logging(ActivityMethod):
         while True:
             line = self.try_read_line(timeout=5)
             if not line:
-                Log.Warn('Unable to read log file')
+                log.warn('Unable to read log file')
                 return None
 
             # Run through each match function to find a result
@@ -246,4 +245,4 @@ class Logging(ActivityMethod):
         return match.groupdict()
 
 
-PlexActivity.register(Logging)
+Activity.register(Logging, weight=1)

@@ -1,12 +1,12 @@
 import sys
 
-# Will inject modules into sys.modules manually for money...
-
-import dict_object
-sys.modules['data.dict_object'] = dict_object
+# submodules for Plex plugins "hack"
 
 import client
 sys.modules['data.client'] = client
+
+import sync_status
+sys.modules['data.sync_status'] = sync_status
 
 import user
 sys.modules['data.user'] = user

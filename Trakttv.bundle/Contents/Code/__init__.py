@@ -6,24 +6,46 @@ import core
 import data
 import plex
 import pts
+import sync
+import interface
 # ------------------------------------------------
 
 
-from pts.activity import PlexActivity
-from pts.session_manager import SessionManager
-from core.plugin import ART, NAME, ICON
+from core.eventing import EventManager
 from core.header import Header
-from plex.media_server import PMS
+from core.logger import Logger
+from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
-from sync import SyncTrakt, ManuallySync, CollectionSync
+from interface.main_menu import MainMenu
+from plex.media_server import PMS
+from plex.metadata import PlexMetadata
+from pts.activity import Activity
+from pts.scrobbler import Scrobbler
+from pts.session_manager import SessionManager
+from sync.manager import SyncManager
 from datetime import datetime
 
 
-class Main:
+log = Logger('Code')
+
+
+class Main(object):
+    modules = [
+        # pts
+        Activity,
+        Scrobbler,
+
+        # sync
+        SyncManager,
+
+        # plex
+        PlexMetadata
+    ]
+
     def __init__(self):
-        # Check for updates first (required for use in header)
         self.update_checker = UpdateChecker()
+        self.session_manager = SessionManager()
 
         Header.show(self)
 
@@ -35,48 +57,49 @@ class Main:
 
         Main.update_config()
 
-        self.session_manager = SessionManager()
-
-        PlexActivity.on_update_collection.subscribe(self.update_collection)
+        # Initialize modules
+        for module in self.modules:
+            if hasattr(module, 'initialize'):
+                log.debug("Initializing module %s", module)
+                module.initialize()
 
     @staticmethod
-    def update_config():
-        if Prefs['start_scrobble'] and Prefs['username'] is not None:
-            Log('Autostart scrobbling')
-            Dict["scrobble"] = True
-        else:
-            Dict["scrobble"] = False
+    def update_config(valid=None):
+        preferences = Dict['preferences'] or {}
 
-        if Prefs['new_sync_collection'] and Prefs['username'] is not None:
-            Log('Automatically sync new Items to Collection')
-            Dict["new_sync_collection"] = True
-        else:
-            Dict["new_sync_collection"] = False
+        # If no validation provided, use last stored result or assume true
+        if valid is None:
+            valid = preferences.get('valid', True)
+
+        preferences['valid'] = valid
+
+        preferences['scrobble'] = Prefs['start_scrobble'] and valid
+        preferences['sync_run_library'] = Prefs['sync_run_library'] and valid
+
+        # Ensure preferences dictionary is stored
+        Dict['preferences'] = preferences
+        Dict.Save()
+
+        log.info('Preferences updated %s', preferences)
+        EventManager.fire('preferences.updated', preferences)
 
     def start(self):
-        # Start syncing
-        if Prefs['sync_startup'] and Prefs['username'] is not None:
-            Log('Will autosync in 1 minute')
-            Thread.CreateTimer(60, SyncTrakt)
-
         # Get current server version and save it to dict.
         server_version = PMS.get_server_version()
         if server_version:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version
 
-        # Start the plex activity monitor
-        if PlexActivity.test():
-            Thread.Create(PlexActivity.run)
-
+        # Check for updates
         self.update_checker.run_once(async=True)
 
         self.session_manager.start()
 
-    @staticmethod
-    def update_collection(item_id, action):
-        # delay sync to wait for metadata
-        Thread.CreateTimer(120, CollectionSync, True, item_id, 'add')
+        # Start modules
+        for module in self.modules:
+            if hasattr(module, 'start'):
+                log.debug("Starting module %s", module)
+                module.start()
 
     @staticmethod
     def cleanup():
@@ -125,45 +148,27 @@ def Start():
 
 def ValidatePrefs():
     if Prefs['username'] is None:
+        Main.update_config(False)
         return MessageContainer("Error", "No login information entered.")
 
     if not Prefs['sync_watched'] and not Prefs['sync_ratings'] and not Prefs['sync_collection']:
+        Main.update_config(False)
         return MessageContainer("Error", "At least one sync type need to be enabled.")
-
-    if not Prefs['start_scrobble']:
-        Dict["scrobble"] = False
 
     status = Trakt.Account.test()
 
-    if status['success']:
-        Main.update_config()
+    if not status['success']:
+        log.warn('Username or password invalid')
+        Main.update_config(False)
 
-        return MessageContainer(
-            "Success",
-            "Trakt responded with: %s " % status['message']
-        )
-    else:
         return MessageContainer(
             "Error",
             "Trakt responded with: %s " % status['message']
         )
 
+    Main.update_config(True)
 
-@handler('/applications/trakttv', NAME, thumb=ICON, art=ART)
-def MainMenu():
-    oc = ObjectContainer()
-
-    oc.add(DirectoryObject(
-        key=Callback(ManuallySync),
-        title=L("Sync"),
-        summary=L("Sync the Plex library with Trakt.tv"),
-        thumb=R("icon-sync.png")
-    ))
-
-    oc.add(PrefsObject(
-        title="Preferences",
-        summary="Configure how to connect to Trakt.tv",
-        thumb=R("icon-preferences.png")
-    ))
-
-    return oc
+    return MessageContainer(
+        "Success",
+        "Trakt responded with: %s " % status['message']
+    )

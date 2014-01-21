@@ -2,7 +2,7 @@ from data.watch_session import WatchSession
 from threading import Thread
 import traceback
 import time
-from pts.scrobbler import Scrobbler
+from pts.scrobbler import ScrobblerMethod
 
 
 class SessionManager(Thread):
@@ -47,7 +47,7 @@ class SessionManager(Thread):
         if not media_type:
             return False
 
-        if Scrobbler.handle_action(session, media_type, action, session.cur_state):
+        if ScrobblerMethod.handle_action(session, media_type, action, session.cur_state):
             return False
 
         Dict.Save()

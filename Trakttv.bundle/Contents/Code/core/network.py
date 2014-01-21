@@ -1,15 +1,20 @@
+from core.cache import Cache
+from core.helpers import json_decode, json_encode, PY25
+from core.logger import Logger
 from lxml import etree
 import urllib2
 import socket
-import json
 import time
-
 
 HTTP_RETRY_CODES = [408, 500, (502, 504), 522, 524, (598, 599)]
 
+log = Logger('core.network')
+
+cache = Cache('network')
+
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
-            timeout=None, max_retries=3, retry_sleep=5, method=None, **kwargs):
+            timeout=None, max_retries=3, retry_sleep=5, method=None, cache_id=None, **kwargs):
     """Send an HTTP Request
 
     :param url: Request url
@@ -39,6 +44,9 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     :param method: HTTP method to use for this request, None = default method determined by urllib2
     :type method: str or None
 
+    :param cache_id: Cached response can be returned if it matches this identifier
+    :type cache_id: str
+
     :rtype: Response
     """
     req = urllib2.Request(url)
@@ -50,10 +58,10 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
     # Add request body
     if data:
         # Convert request data
-        if data_type == 'json' and type(data) is not str:
-            data = json.dumps(data)
+        if data_type == 'json' and not isinstance(data, basestring):
+            data = json_encode(data)
 
-        if type(data) is not str:
+        if not isinstance(data, basestring):
             raise ValueError("Request data is not in a valid format, type(data) = %s, data_type = \"%s\"" % (
                 type(data), data_type)
             )
@@ -66,10 +74,8 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
         else:
             req.add_header('Content-Type', data_type)
 
-    # Write request debug entry to log
-    internal_log_request(url, response_type, data, data_type, retry, timeout, method)
-
-    if timeout:
+    # (Python 2.5 urlopen doesn't support timeouts)
+    if timeout and not PY25:
         kwargs['timeout'] = timeout
 
     return internal_retry(
@@ -80,29 +86,26 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
         retry_sleep=retry_sleep,
 
         response_type=response_type,
+        cache_id=cache_id,
         **kwargs
     )
 
 
-def internal_log_request(url, response_type, data, data_type, retry, timeout, method):
+def internal_log_request(req, response_type, cache_id):
+    method = req.get_method()
+    data = req.data
+
     debug_values = [
         method if method != 'GET' else None,
-
-        "len(data): %s, data_type: '%s'" % (
-            len(data) if data else None,
-            data_type
-        ) if data else '',
-
-        'retry' if retry else None,
-
-        ('timeout: %s' % timeout) if timeout else None
+        ("len(data): %s" % (len(data))) if data else '',
+        ('cache_id: %s' % cache_id) if cache_id else None
     ]
 
     # Filter empty values
     debug_values = [x for x in debug_values if x]
 
-    Log.Debug("Requesting '%s' (%s) %s" % (
-        url,
+    log.debug("Requesting '%s' (%s) %s" % (
+        req.get_full_url(),
         response_type,
 
         ('[%s]' % ', '.join(debug_values)) if len(debug_values) else ''
@@ -125,27 +128,27 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
         if retry_num > 0:
             sleep_time = retry_sleep * retry_num
 
-            Log.Debug('Waiting %ss before retrying request' % sleep_time)
+            log.debug('Waiting %ss before retrying request' % sleep_time)
             time.sleep(sleep_time)
 
-            Log.Debug('Retrying request, try #%s' % retry_num)
+            log.debug('Retrying request, try #%s' % retry_num)
 
         try:
             response = internal_request(req, **kwargs)
         except NetworkError, e:
             last_exception = e
 
-            Log.Debug('Request returned a network error: (%s) %s' % (e.code, e))
+            log.debug('Request returned a network error: (%s) %s' % (e.code, e))
 
             # If this is possibly a client error, stop retrying and just return
             if not should_retry(e.code):
-                Log.Debug('Request error code %s is possibly client related, not retrying the request', e.code)
+                log.debug('Request error code %s is possibly client related, not retrying the request', e.code)
                 return None
 
         except RequestError, e:
             last_exception = e
 
-            Log.Debug('Request returned exception: %s' % e)
+            log.debug('Request returned exception: %s' % e)
             response = None
 
         retry_num += 1
@@ -156,10 +159,21 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
     return response
 
 
-def internal_request(req, response_type='text', raise_exceptions=False, default=None, **kwargs):
+def internal_request(req, response_type='text', raise_exceptions=False, default=None, cache_id=None, **kwargs):
+    data = None
+
+    if cache_id is not None:
+        data = cache.get((req.get_full_url(), cache_id))
+
     try:
-        resp = urllib2.urlopen(req, **kwargs)
-        return Response.from_urllib(response_type, resp)
+        if data is None:
+            internal_log_request(req, response_type, cache_id)
+            data = urllib2.urlopen(req, **kwargs).read()
+
+            if cache_id is not None:
+                cache.update((req.get_full_url(), cache_id), data)
+
+        return Response.from_data(response_type, data)
     except RequestError, e:
         ex = e
     except Exception, e:
@@ -168,7 +182,7 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
     if raise_exceptions:
         raise ex
     else:
-        Log.Warn('Network request raised exception: %s' % ex)
+        log.warn('Network request raised exception: %s' % ex)
 
     return default
 
@@ -192,16 +206,13 @@ def should_retry(error_code):
 
 
 class Response(object):
-    def __init__(self, data, response):
+    def __init__(self, data):
         self.data = data
 
-        self.inner_response = response
-
     @classmethod
-    def from_urllib(cls, response_type, response):
+    def from_data(cls, response_type, data):
         return Response(
-            cls.parse_data(response_type, response.read()),
-            response
+            cls.parse_data(response_type, data)
         )
 
     @classmethod
@@ -218,7 +229,7 @@ class Response(object):
     @classmethod
     def parse_json(cls, data):
         try:
-            return json.loads(data)
+            return json_decode(data)
         except Exception, e:
             raise ParseError.from_exception(e)
 

@@ -1,41 +1,5 @@
 [
     {
-        "id": "start_scrobble",
-        "type": "bool",
-        "label": "Scrobble",
-        "default": "false"
-    },
-    {
-        "id": "new_sync_collection",
-        "type": "bool",
-        "label": "Sync new items to Collection (Plex Pass required)",
-        "default": "false"
-    },
-    {
-        "id": "sync_startup",
-        "type": "bool",
-        "label": "Sync items from Trakt to Plex on startup",
-        "default": "false"
-    },
-    {
-        "id": "sync_watched",
-        "type": "bool",
-        "label": "Sync seen (on manual sync)",
-        "default": "true"
-    },
-    {
-        "id": "sync_ratings",
-        "type": "bool",
-        "label": "Sync ratings (on manual sync)",
-        "default": "true"
-    },
-    {
-        "id": "sync_collection",
-        "type": "bool",
-        "label": "Sync collection (on manual sync)",
-        "default": "false"
-    },
-    {
         "id": "username",
         "type": "text",
         "label": "Username",
@@ -46,18 +10,62 @@
         "type": "text",
         "label": "Password",
         "default": "",
-        "option": "hidden"
+        "option": "hidden",
+        "secure": "true"
+    },
+    {
+        "id": "start_scrobble",
+        "type": "bool",
+        "label": "Scrobble",
+        "default": "false"
+    },
+    {
+        "id": "sync_watched",
+        "type": "bool",
+        "label": "Sync - Watched",
+        "default": "true"
+    },
+    {
+        "id": "sync_ratings",
+        "type": "bool",
+        "label": "Sync - Ratings",
+        "default": "true"
+    },
+    {
+        "id": "sync_collection",
+        "type": "bool",
+        "label": "Sync - Collection",
+        "default": "false"
+    },
+    {
+        "id": "sync_run_library",
+        "type": "bool",
+        "label": "Sync - Run after library updates",
+        "default": "false"
+    },
+    {
+        "id": "sync_run_interval",
+        "type": "enum",
+        "label": "Sync - Run every",
+        "values": ["Disabled", "30 minutes", "Hour", "3 Hours", "6 Hours", "12 Hours", "Day", "Week"],
+        "default": "Disabled"
     },
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Only scrobble this MyPlex user (Plex Pass required)",
+        "label": "Scrobble - MyPlex users (PlexPass)",
         "default": ""
     },
     {
         "id": "scrobble_clients",
         "type": "text",
-        "label": "Only scrobble these client names (comma separated)",
+        "label": "Scrobble - Client names (comma separated)",
         "default": ""
+    },
+    {
+        "id": "force_legacy",
+        "type": "bool",
+        "label": "Force legacy activity method (restart required)",
+        "default": "false"
     }
 ]
