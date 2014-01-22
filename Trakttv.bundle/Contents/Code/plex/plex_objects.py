@@ -24,8 +24,10 @@ class PlexParsedGuid(object):
 
     @classmethod
     def from_guid(cls, guid):
-        uri = urlparse(guid)
+        if not guid:
+            return None
 
+        uri = urlparse(guid)
         agent = uri.scheme
 
         result = PlexParsedGuid(agent, uri.netloc, uri.query)

@@ -287,10 +287,7 @@ class Trakt(object):
             root_key, keys = Trakt.get_media_keys(media, item)
 
             if root_key not in result:
-                if media == 'shows':
-                    result[root_key] = Trakt.create_media(media, keys, item)
-                else:
-                    result[root_key] = Trakt.create_media(media, keys, item, is_collected=True)
+                result[root_key] = Trakt.create_media(media, keys, item, is_collected=True)
             else:
                 result[root_key].fill(item, is_collected=True)
 
