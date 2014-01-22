@@ -7,6 +7,13 @@ from plex.plex_objects import PlexShow, PlexEpisode, PlexMovie
 log = Logger('plex.media_server_new')
 
 
+# Mappings for agents to their compatible service
+METADATA_AGENT_MAP = {
+    'xbmcnfo': 'imdb',
+    'xbmcnfotv': 'thetvdb'
+}
+
+
 class PlexMediaServer(PlexBase):
     @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):
@@ -76,6 +83,27 @@ class PlexMediaServer(PlexBase):
         return section.xpath('//Video')
 
     @classmethod
+    def get_agent_mapping(cls, agent):
+        # Strip leading key
+        agent = agent[agent.rfind('.') + 1:]
+
+        # Return if there is no mapping present
+        if agent not in METADATA_AGENT_MAP:
+            return agent, None
+
+        # Return mapped agent and sid_pattern (if present)
+        mapping = METADATA_AGENT_MAP.get(agent)
+
+        if type(mapping) is not tuple:
+            mapping = (mapping, None)
+
+        if len(mapping) == 1:
+            return mapping[0], None
+
+        return mapping
+
+
+    @classmethod
     def get_library_key(cls, key):
         parsed_guid = PlexMetadata.get_parsed_guid(key=key)
 
@@ -84,8 +112,12 @@ class PlexMediaServer(PlexBase):
             log.warn('Missing service identifier for movie with ratingKey "%s"', key)
             return None, None
 
-        agent = parsed_guid.agent
-        return parsed_guid, (agent[agent.rfind('.') + 1:], parsed_guid.sid)
+        agent, sid_pattern = cls.get_agent_mapping(parsed_guid.agent)
+
+        if sid_pattern:
+            raise NotImplementedError()
+
+        return parsed_guid, (agent, parsed_guid.sid)
 
     @classmethod
     def get_library(cls, types=None, keys=None, cache_id=None):
