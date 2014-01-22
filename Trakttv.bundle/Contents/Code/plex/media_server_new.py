@@ -108,8 +108,8 @@ class PlexMediaServer(PlexBase):
         parsed_guid = PlexMetadata.get_parsed_guid(key=key)
 
         # Ensure service id is valid
-        if not parsed_guid.sid:
-            log.warn('Missing service identifier for movie with ratingKey "%s"', key)
+        if not parsed_guid or not parsed_guid.sid:
+            log.warn('Missing GUID or service identifier for item with ratingKey "%s"', key)
             return None, None
 
         agent, sid_pattern = cls.get_agent_mapping(parsed_guid.agent)
