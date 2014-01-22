@@ -67,8 +67,7 @@ class Main:
             Dict['server_version'] = server_version
 
         # Start the plex activity monitor
-        if PlexActivity.test():
-            Thread.Create(PlexActivity.run)
+        Thread.Create(PlexActivity.run)
 
         self.update_checker.run_once(async=True)
 

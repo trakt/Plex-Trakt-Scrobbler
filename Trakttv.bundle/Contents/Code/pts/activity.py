@@ -66,7 +66,7 @@ class PlexActivity(object):
 
     @classmethod
     def run(cls):
-        if not cls.current_method:
+        if not cls.test() or not cls.current_method:
             return
 
         cls.current_method.run()
