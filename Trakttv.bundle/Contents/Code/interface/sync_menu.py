@@ -49,7 +49,7 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    for _, key, title in PlexMediaServer.get_sections():
+    for _, key, title in PlexMediaServer.get_sections(['show', 'movie']):
         oc.add(DirectoryObject(
             key=Callback(Push, sections=[key]),
             title=pad_title('Push "' + title + '" to trakt'),
