@@ -1,3 +1,4 @@
+from core.helpers import join_attributes
 from core.logger import Logger
 import traceback
 
@@ -78,7 +79,7 @@ class EventManager(object):
     @classmethod
     def fire(cls, key, *args, **kwargs):
         if key not in SILENT_FIRE:
-            log.debug("fire '%s' [args: %s, kwargs: %s]", key, args, kwargs)
+            log.debug("fire '%s'%s", key, (' [%s]' % join_attributes(args=args, kwargs=kwargs)))
 
         cls.ensure_exists(key)
         return cls.events[key].fire(*args, **kwargs)

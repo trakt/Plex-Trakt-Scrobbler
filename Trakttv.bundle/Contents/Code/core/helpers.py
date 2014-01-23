@@ -214,3 +214,12 @@ def get_pref(key):
         return Dict['preferences'][key]
 
     return Prefs[key]
+
+
+def join_attributes(**kwargs):
+    fragments = [
+        (('%s: %s' % (key, value)) if value else None)
+        for (key, value) in kwargs.items()
+    ]
+
+    return ', '.join([x for x in fragments if x])
