@@ -18,7 +18,7 @@ TIMELINE_STATES = {
     9: 'deleted'
 }
 
-REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>[\w\s]+)" section')
+REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>.*?)" section')
 REGEX_STATUS_SCAN_COMPLETE = Regex('Library scan complete')
 
 
