@@ -47,7 +47,7 @@
         "id": "sync_run_interval",
         "type": "enum",
         "label": "Sync - Run every",
-        "values": ["Disabled", "30 minutes", "Hour", "3 Hours", "6 Hours", "12 Hours", "Day", "Week"],
+        "values": ["Disabled", "15 Minutes", "30 Minutes", "Hour", "3 Hours", "6 Hours", "12 Hours", "Day", "Week"],
         "default": "Disabled"
     },
     {
