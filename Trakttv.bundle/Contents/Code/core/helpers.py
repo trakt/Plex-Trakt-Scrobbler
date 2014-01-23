@@ -136,13 +136,15 @@ def str_format(s, *args, **kwargs):
     return s
 
 
-def str_pad(s, length, align='left', pad_char=' '):
+def str_pad(s, length, align='left', pad_char=' ', trim=False):
     if not s:
         return s
 
     s = str(s)
 
     if len(s) == length:
+        return s
+    elif len(s) > length and not trim:
         return s
 
     if align == 'left':
@@ -159,7 +161,6 @@ def str_pad(s, length, align='left', pad_char=' '):
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
 
 
-# TODO ensure longer titles aren't trimmed
 def pad_title(value):
     """Pad a title to 30 characters to force the 'details' view."""
     return str_pad(value, 30, pad_char=' ')
