@@ -1,4 +1,4 @@
-from core.helpers import apply_async
+from core.helpers import spawn
 from core.logger import Logger
 import threading
 
@@ -81,10 +81,9 @@ class Manager(object):
         return False
 
     @classmethod
-    def start(cls, async=True):
-        if async:
-            log.debug('Switching to asynchronous start', tag=cls.tag)
-            apply_async(cls.start, async=False)
+    def start(cls, blocking=False):
+        if not blocking:
+            spawn(cls.start, blocking=True)
             return
 
         if not cls.test() or not cls.enabled:
@@ -99,4 +98,4 @@ class Manager(object):
         )
 
         for method in cls.enabled:
-            method.start()
+            spawn(method.start)

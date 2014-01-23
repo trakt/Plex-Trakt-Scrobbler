@@ -1,3 +1,4 @@
+import inspect
 import threading
 import time
 import sys
@@ -183,12 +184,36 @@ def timestamp():
     return int(time.time())
 
 
-def apply_async(func, *args, **kwargs):
-    def runnable():
-        func(*args, **kwargs)
+# <bound method type.start of <class 'Scrobbler'>>
+RE_BOUND_METHOD = Regex(r"<bound method (type\.)?(?P<name>.*?) of <(class '(?P<class>.*?)')?")
 
-    thread = threading.Thread(target=runnable)
+
+def get_func_name(obj):
+    if inspect.ismethod(obj):
+        match = RE_BOUND_METHOD.match(repr(obj))
+
+        if match:
+            cls = match.group('class')
+            if not cls:
+                return match.group('name')
+
+            return '%s.%s' % (
+                match.group('class'),
+                match.group('name')
+            )
+
+    return None
+
+
+def spawn(func, *args, **kwargs):
+    thread_name = get_func_name(func)
+
+    thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
+
     thread.start()
+
+    Log.Debug("Spawned thread with name '%s'" % thread_name)
+    return thread
 
 
 def build_repr(obj, keys):
