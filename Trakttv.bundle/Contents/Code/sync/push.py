@@ -206,12 +206,14 @@ class Show(Base):
     children = [Episode]
 
     def run(self, section=None):
-        # TODO use 'section' parameter
         self.reset()
 
         enabled_funcs = self.get_enabled_functions()
 
-        p_shows = self.plex.library('show')
+        p_shows = self.plex.library('show', section)
+        if not p_shows:
+            # No items found, no need to continue
+            return True
 
         # Fetch library, and only get ratings and collection if enabled
         t_shows = self.trakt.merged(
@@ -264,12 +266,14 @@ class Movie(Base):
     key = 'movie'
 
     def run(self, section=None):
-        # TODO use 'section' parameter
         self.reset()
 
         enabled_funcs = self.get_enabled_functions()
 
-        p_movies = self.plex.library('movie')
+        p_movies = self.plex.library('movie', section)
+        if not p_movies:
+            # No items found, no need to continue
+            return True
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies = self.trakt.merged(

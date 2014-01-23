@@ -157,7 +157,7 @@ class SyncManager(object):
         # Get work details
         key = cls.current.key
         kwargs = cls.current.kwargs or {}
-        section = kwargs.get('section')
+        section = kwargs.pop('section', None)
 
         # Find handler
         handler = cls.handlers.get(key)
@@ -253,8 +253,8 @@ class SyncManager(object):
         return True
 
     @classmethod
-    def trigger_push(cls):
-        return cls.trigger('push')
+    def trigger_push(cls, section=None):
+        return cls.trigger('push', section=section)
 
     @classmethod
     def trigger_pull(cls):
