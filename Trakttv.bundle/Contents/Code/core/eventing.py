@@ -1,6 +1,11 @@
 from core.logger import Logger
 import traceback
 
+# Keys of events that shouldn't be logged
+SILENT_FIRE = [
+    'sync.get_cache_id'
+]
+
 log = Logger('core.eventing')
 
 
@@ -72,5 +77,8 @@ class EventManager(object):
 
     @classmethod
     def fire(cls, key, *args, **kwargs):
+        if key not in SILENT_FIRE:
+            log.debug("fire '%s' [args: %s, kwargs: %s]", key, args, kwargs)
+
         cls.ensure_exists(key)
         return cls.events[key].fire(*args, **kwargs)
