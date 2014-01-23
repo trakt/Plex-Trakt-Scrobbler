@@ -79,7 +79,8 @@ class EventManager(object):
     @classmethod
     def fire(cls, key, *args, **kwargs):
         if key not in SILENT_FIRE:
-            log.debug("fire '%s'%s", key, (' [%s]' % join_attributes(args=args, kwargs=kwargs)))
+            attributes = join_attributes(args=args, kwargs=kwargs)
+            log.debug("fire '%s'%s", key, (' [%s]' % attributes) if attributes else '')
 
         cls.ensure_exists(key)
         return cls.events[key].fire(*args, **kwargs)
