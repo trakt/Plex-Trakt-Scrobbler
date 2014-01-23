@@ -213,8 +213,12 @@ class Show(Base):
 
         p_shows = self.plex.library('show')
 
-        # TODO include_ratings could be false when rating sync is not enabled
-        t_shows = self.trakt.merged('shows', ratings=True, collected=True)
+        # Fetch library, and only get ratings and collection if enabled
+        t_shows = self.trakt.merged(
+            'shows',
+            ratings='ratings' in enabled_funcs,
+            collected='collected' in enabled_funcs
+        )
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -267,8 +271,12 @@ class Movie(Base):
 
         p_movies = self.plex.library('movie')
 
-        # TODO include_ratings could be false when rating sync is not enabled
-        t_movies = self.trakt.merged('movies', ratings=True, collected=True)
+        # Fetch library, and only get ratings and collection if enabled
+        t_movies = self.trakt.merged(
+            'movies',
+            ratings='ratings' in enabled_funcs,
+            collected='collected' in enabled_funcs
+        )
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
