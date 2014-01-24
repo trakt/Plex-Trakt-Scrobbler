@@ -16,6 +16,10 @@ METADATA_AGENT_MAP = {
 
 class PlexMediaServer(PlexBase):
     @classmethod
+    def get_server_info(cls, quiet=False):
+        return cls.request(quiet=quiet)
+
+    @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):
         """Get the current sections available on the server, optionally filtering by type and/or key
 

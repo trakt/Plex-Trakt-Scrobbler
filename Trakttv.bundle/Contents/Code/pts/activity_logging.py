@@ -2,6 +2,7 @@ from core.eventing import EventManager
 from core.helpers import str_format
 from core.logger import Logger
 from plex.media_server import PMS
+from plex.media_server_new import PlexMediaServer
 from pts.activity import ActivityMethod, Activity
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
@@ -100,10 +101,14 @@ class LoggingActivity(ActivityMethod):
 
             # Sleep if we should still retry
             if try_count <= max_tries:
-                log.debug('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
-                time.sleep(retry_interval)
+                if try_count > 1:
+                    log.debug('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
+                    time.sleep(retry_interval)
 
-        if line and try_count > 1:
+                # Ping server to see if server is still active
+                PlexMediaServer.get_server_info(quiet=True)
+
+        if line and try_count > 2:
             log.debug('Successfully read the log file after retrying')
         elif not line:
             log.warn('Finished retrying, still no success')
