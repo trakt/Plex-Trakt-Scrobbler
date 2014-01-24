@@ -169,7 +169,7 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
         if data is None:
             if not quiet:
                 internal_log_request(req, response_type, cache_id)
-            
+
             data = urllib2.urlopen(req, **kwargs).read()
 
             if cache_id is not None:
