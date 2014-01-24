@@ -22,13 +22,13 @@ REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>.*?)" section')
 REGEX_STATUS_SCAN_COMPLETE = Regex('Library scan complete')
 
 
-class WebSocket(ActivityMethod):
-    name = 'WebSocket'
+class WebSocketActivity(ActivityMethod):
+    name = 'WebSocketActivity'
 
     opcode_data = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
     def __init__(self):
-        super(WebSocket, self).__init__()
+        super(WebSocketActivity, self).__init__()
 
         self.ws = None
         self.reconnects = 0
@@ -152,4 +152,4 @@ class WebSocket(ActivityMethod):
         log.debug('No matches found for %s', item)
         return False
 
-Activity.register(WebSocket, weight=None)
+Activity.register(WebSocketActivity, weight=None)

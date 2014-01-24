@@ -28,8 +28,8 @@ CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdent
 log = Logger('pts.activity_logging')
 
 
-class Logging(ActivityMethod):
-    name = 'Logging'
+class LoggingActivity(ActivityMethod):
+    name = 'LoggingActivity'
     required_info = ['ratingKey', 'state', 'time']
     extra_info = ['duration', 'machineIdentifier']
 
@@ -245,4 +245,4 @@ class Logging(ActivityMethod):
         return match.groupdict()
 
 
-Activity.register(Logging, weight=1)
+Activity.register(LoggingActivity, weight=1)

@@ -227,8 +227,11 @@ def build_repr(obj, keys):
     return '<%s %s>' % (getattr(cls, '__name__'), key_part)
 
 
-def plural(count):
-    if count == 1:
+def plural(value):
+    if type(value) is list:
+        value = len(value)
+
+    if value == 1:
         return ''
 
     return 's'
