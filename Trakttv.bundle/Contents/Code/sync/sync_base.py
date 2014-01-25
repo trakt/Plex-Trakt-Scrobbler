@@ -1,5 +1,7 @@
+from threading import BoundedSemaphore
+import traceback
 from core.eventing import EventManager
-from core.helpers import all
+from core.helpers import all, spawn
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
@@ -41,6 +43,7 @@ class SyncBase(Base):
     children = []
 
     auto_run = True
+    threaded = False
 
     plex = PlexInterface
     trakt = TraktInterface
@@ -76,40 +79,67 @@ class SyncBase(Base):
     def trigger(self, funcs=None, *args, **kwargs):
         single = kwargs.pop('single', False)
 
-        results = []
-
         if funcs is None:
             funcs = [x[4:] for x in dir(self) if x.startswith('run_')]
         elif type(funcs) is not list:
             funcs = [funcs]
 
-        for name in funcs:
-            func = getattr(self, 'run_' + name, None)
+        # Get references to functions
+        funcs = [(name, getattr(self, 'run_' + name)) for name in funcs if hasattr(self, 'run_' + name)]
 
-            if func is not None:
-                results.append(func(*args, **kwargs))
-
-        if single:
-            return results[0]
-
-        return results
+        return self.trigger_run(funcs, single, *args, **kwargs)
 
     def trigger_children(self, *args, **kwargs):
         single = kwargs.pop('single', False)
 
-        results = []
+        children = [(child.key, child.run) for (_, child) in self.children.items() if child.auto_run]
 
-        for key, child in self.children.items():
-            if not child.auto_run:
-                continue
+        return self.trigger_run(children, single, *args, **kwargs)
 
-            log.debug('Running child task %s' % child)
-            results.append(child.run(*args, **kwargs))
+    def trigger_run(self, funcs, single, *args, **kwargs):
+        if not funcs:
+            return []
 
-        if single:
-            return results[0]
+        if self.threaded:
+            # Create lock and spawn functions
+            lock = BoundedSemaphore(len(funcs))
+            results = []
 
-        return results
+            for name, func in funcs:
+                spawn(
+                    self.trigger_spawn,
+                    lock, results, func,
+
+                    thread_name='sync.%s.%s' % (self.key, name),
+                    *args, **kwargs
+                )
+
+            # Wait until everything is complete
+            for x in range(len(funcs)):
+                lock.acquire()
+
+            return results
+
+        # Run each task and collect results
+        results = [func(*args, **kwargs) for (_, func) in funcs]
+
+        if not single:
+            return results
+
+        return results[0]
+
+    @staticmethod
+    def trigger_spawn(lock, results, func, *args, **kwargs):
+        lock.acquire()
+
+        try:
+            results.append(func(*args, **kwargs))
+        except Exception, e:
+            log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
+                func, type(e), e, traceback.format_exc()
+            ))
+
+        lock.release()
 
     @staticmethod
     def update_progress(current, start=0, end=100):

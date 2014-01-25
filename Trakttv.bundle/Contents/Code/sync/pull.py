@@ -164,3 +164,4 @@ class Pull(Base):
     key = 'pull'
     title = 'Pull'
     children = [Show, Movie]
+    threaded = True

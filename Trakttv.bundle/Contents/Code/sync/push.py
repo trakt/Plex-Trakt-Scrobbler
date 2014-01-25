@@ -316,3 +316,4 @@ class Push(Base):
     key = 'push'
     title = 'Push'
     children = [Show, Movie]
+    threaded = True

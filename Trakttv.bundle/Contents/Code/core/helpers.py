@@ -206,7 +206,7 @@ def get_func_name(obj):
 
 
 def spawn(func, *args, **kwargs):
-    thread_name = get_func_name(func)
+    thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 
     thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
 
