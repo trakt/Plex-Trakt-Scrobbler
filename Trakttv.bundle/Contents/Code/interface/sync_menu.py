@@ -51,7 +51,7 @@ def SyncMenu(refresh=None):
 
     for _, key, title in PlexMediaServer.get_sections(['show', 'movie']):
         oc.add(DirectoryObject(
-            key=Callback(Push, sections=[key]),
+            key=Callback(Push, section=key),
             title=pad_title('Push "' + title + '" to trakt'),
             summary=get_task_status('push', key),
             thumb=R("icon-sync_up.png")
@@ -60,7 +60,7 @@ def SyncMenu(refresh=None):
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
-            key=Callback(Push, sections=",".join(all_keys)),
+            key=Callback(Push),
             title=pad_title('Push all to trakt'),
             summary=get_task_status('push'),
             thumb=R("icon-sync_up.png")
@@ -109,8 +109,8 @@ def Synchronize():
 
 
 @route('/applications/trakttv/sync/push')
-def Push(sections):
-    if not SyncManager.trigger_push():
+def Push(section=None):
+    if not SyncManager.trigger_push(section):
         return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
 
     return MessageContainer('Syncing started', 'Push has been triggered and will continue in the background')

@@ -16,6 +16,10 @@ METADATA_AGENT_MAP = {
 
 class PlexMediaServer(PlexBase):
     @classmethod
+    def get_server_info(cls, quiet=False):
+        return cls.request(quiet=quiet)
+
+    @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):
         """Get the current sections available on the server, optionally filtering by type and/or key
 
@@ -109,7 +113,7 @@ class PlexMediaServer(PlexBase):
 
         # Ensure service id is valid
         if not parsed_guid or not parsed_guid.sid:
-            log.warn('Missing GUID or service identifier for item with ratingKey "%s"', key)
+            log.warn('Missing GUID or service identifier for item with ratingKey "%s" (parsed_guid: %s)', key, parsed_guid)
             return None, None
 
         agent, sid_pattern = cls.get_agent_mapping(parsed_guid.agent)

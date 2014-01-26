@@ -1,4 +1,4 @@
-from core.helpers import apply_async
+from core.helpers import spawn, plural
 from core.logger import Logger
 import threading
 
@@ -60,43 +60,34 @@ class Manager(object):
         cls.available.append(item)
 
     @classmethod
-    def test(cls):
+    def start(cls, blocking=False):
+        if not blocking:
+            spawn(cls.start, blocking=True)
+            return
+
         # Test methods until an available method is found
         for weight, method in cls.available:
             if weight is None:
-                cls.enabled.append(method())
+                cls.start_method(method)
             elif method.test():
-                cls.enabled.append(method())
+                cls.start_method(method)
 
                 if not Prefs['force_legacy']:
                     break
             else:
-                log.info('%s method not available' % method.name, tag=cls.tag)
-
-        if cls.enabled:
-            log.info('Enabled methods: %s' % ', '.join([x.name for x in cls.enabled]), tag=cls.tag)
-            return True
-
-        log.error('No methods available, unable to start', tag=cls.tag)
-        return False
-
-    @classmethod
-    def start(cls, async=True):
-        if async:
-            log.debug('Switching to asynchronous start', tag=cls.tag)
-            apply_async(cls.start, async=False)
-            return
-
-        if not cls.test() or not cls.enabled:
-            return
+                log.info("method '%s' not available" % method.name, tag=cls.tag)
 
         log.info(
-            'Starting %d enabled method%s',
-            len(cls.enabled),
-            's' if len(cls.enabled) > 1 else '',
+            'Finished starting %s method%s: %s',
+            len(cls.enabled), plural(cls.enabled),
+            ', '.join([("'%s'" % m.name) for m in cls.enabled]),
 
             tag=cls.tag
         )
 
-        for method in cls.enabled:
-            method.start()
+    @classmethod
+    def start_method(cls, method):
+        obj = method()
+        cls.enabled.append(obj)
+
+        spawn(obj.start)

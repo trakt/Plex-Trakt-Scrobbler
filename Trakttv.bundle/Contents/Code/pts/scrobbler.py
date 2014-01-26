@@ -13,8 +13,8 @@ class ScrobblerMethod(Method):
     @staticmethod
     def get_status_label(progress, state):
         return '[%s%s]' % (
-            str_pad(state[:2].upper() if state else '?', 2),
-            str_pad(progress if progress is not None else '?', 3, 'right')
+            str_pad(state[:2].upper() if state else '?', 2, trim=True),
+            str_pad(progress if progress is not None else '?', 3, 'right', trim=True)
         )
 
     def get_action(self, session, state):

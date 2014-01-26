@@ -18,17 +18,17 @@ TIMELINE_STATES = {
     9: 'deleted'
 }
 
-REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>[\w\s]+)" section')
+REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>.*?)" section')
 REGEX_STATUS_SCAN_COMPLETE = Regex('Library scan complete')
 
 
-class WebSocket(ActivityMethod):
-    name = 'WebSocket'
+class WebSocketActivity(ActivityMethod):
+    name = 'WebSocketActivity'
 
     opcode_data = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
     def __init__(self):
-        super(WebSocket, self).__init__()
+        super(WebSocketActivity, self).__init__()
 
         self.ws = None
         self.reconnects = 0
@@ -81,27 +81,27 @@ class WebSocket(ActivityMethod):
 
     def process(self, opcode, data):
         if opcode not in self.opcode_data:
-            return
+            return False
 
         try:
             info = JSON.ObjectFromString(data)
         except Exception, e:
             log.warn('Error decoding message from websocket: %s' % e)
             log.debug(data)
-            return
+            return False
 
         type = info.get('type')
-
-        if not hasattr(self, 'process_%s' % type):
-            log.debug('Unknown notification with type "%s"', type)
-            log.debug('info: %s', info)
-            return
-
-        process_func = getattr(self, 'process_%s' % type)
+        process_func = getattr(self, 'process_%s' % type, None)
 
         # Process each notification item
-        for item in info['_children']:
-            process_func(item)
+        if process_func:
+            results = [process_func(item) for item in info['_children']]
+
+            if len(results) and results[0]:
+                return True
+
+        log.warn('Unable to process notification: %s', info)
+        return False
 
     @staticmethod
     def process_playing(item):
@@ -110,27 +110,35 @@ class WebSocket(ActivityMethod):
         view_offset = try_convert(item['viewOffset'], int)
 
         EventManager.fire('notifications.playing', session_key, state, view_offset)
+        return True
 
     @staticmethod
     def process_timeline(item):
         state_key = TIMELINE_STATES.get(item['state'])
         if state_key is None:
             log.warn('Unknown timeline state "%s"', item['state'])
-            return
+            return False
 
         EventManager.fire('notifications.timeline.%s' % state_key, item)
+        return True
+
+    @staticmethod
+    def process_progress(item):
+        # Not using this yet, this suppresses the 'Unable to process...' messages for now though
+        return True
 
     @staticmethod
     def process_status(item):
         if item.get('notificationName') != 'LIBRARY_UPDATE':
-            return
+            log.debug('Unknown notification name "%s"', item.get('notificationName'))
+            return False
 
         title = item.get('title')
 
         # Check for scan complete message
         if REGEX_STATUS_SCAN_COMPLETE.match(title):
             EventManager.fire('notifications.status.scan_complete')
-            return
+            return True
 
         # Check for scanning message
         match = REGEX_STATUS_SCANNING.match(title)
@@ -139,5 +147,9 @@ class WebSocket(ActivityMethod):
 
             if section:
                 EventManager.fire('notifications.status.scanning', section)
+                return True
 
-Activity.register(WebSocket, weight=None)
+        log.debug('No matches found for %s', item)
+        return False
+
+Activity.register(WebSocketActivity, weight=None)

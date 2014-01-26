@@ -159,7 +159,7 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
     return response
 
 
-def internal_request(req, response_type='text', raise_exceptions=False, default=None, cache_id=None, **kwargs):
+def internal_request(req, response_type='text', raise_exceptions=False, default=None, cache_id=None, quiet=False, **kwargs):
     data = None
 
     if cache_id is not None:
@@ -167,7 +167,9 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
 
     try:
         if data is None:
-            internal_log_request(req, response_type, cache_id)
+            if not quiet:
+                internal_log_request(req, response_type, cache_id)
+
             data = urllib2.urlopen(req, **kwargs).read()
 
             if cache_id is not None:

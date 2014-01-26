@@ -1,5 +1,11 @@
+from core.helpers import join_attributes
 from core.logger import Logger
 import traceback
+
+# Keys of events that shouldn't be logged
+SILENT_FIRE = [
+    'sync.get_cache_id'
+]
 
 log = Logger('core.eventing')
 
@@ -72,5 +78,9 @@ class EventManager(object):
 
     @classmethod
     def fire(cls, key, *args, **kwargs):
+        if key not in SILENT_FIRE:
+            attributes = join_attributes(args=args, kwargs=kwargs)
+            log.debug("fire '%s'%s", key, (' [%s]' % attributes) if attributes else '')
+
         cls.ensure_exists(key)
         return cls.events[key].fire(*args, **kwargs)

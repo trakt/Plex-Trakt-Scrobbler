@@ -1,3 +1,4 @@
+import inspect
 import threading
 import time
 import sys
@@ -136,13 +137,15 @@ def str_format(s, *args, **kwargs):
     return s
 
 
-def str_pad(s, length, align='left', pad_char=' '):
+def str_pad(s, length, align='left', pad_char=' ', trim=False):
     if not s:
         return s
 
     s = str(s)
 
     if len(s) == length:
+        return s
+    elif len(s) > length and not trim:
         return s
 
     if align == 'left':
@@ -159,7 +162,6 @@ def str_pad(s, length, align='left', pad_char=' '):
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
 
 
-# TODO ensure longer titles aren't trimmed
 def pad_title(value):
     """Pad a title to 30 characters to force the 'details' view."""
     return str_pad(value, 30, pad_char=' ')
@@ -182,12 +184,36 @@ def timestamp():
     return int(time.time())
 
 
-def apply_async(func, *args, **kwargs):
-    def runnable():
-        func(*args, **kwargs)
+# <bound method type.start of <class 'Scrobbler'>>
+RE_BOUND_METHOD = Regex(r"<bound method (type\.)?(?P<name>.*?) of <(class '(?P<class>.*?)')?")
 
-    thread = threading.Thread(target=runnable)
+
+def get_func_name(obj):
+    if inspect.ismethod(obj):
+        match = RE_BOUND_METHOD.match(repr(obj))
+
+        if match:
+            cls = match.group('class')
+            if not cls:
+                return match.group('name')
+
+            return '%s.%s' % (
+                match.group('class'),
+                match.group('name')
+            )
+
+    return None
+
+
+def spawn(func, *args, **kwargs):
+    thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
+
+    thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
+
     thread.start()
+
+    Log.Debug("Spawned thread with name '%s'" % thread_name)
+    return thread
 
 
 def build_repr(obj, keys):
@@ -201,8 +227,11 @@ def build_repr(obj, keys):
     return '<%s %s>' % (getattr(cls, '__name__'), key_part)
 
 
-def plural(count):
-    if count == 1:
+def plural(value):
+    if type(value) is list:
+        value = len(value)
+
+    if value == 1:
         return ''
 
     return 's'
@@ -213,3 +242,12 @@ def get_pref(key):
         return Dict['preferences'][key]
 
     return Prefs[key]
+
+
+def join_attributes(**kwargs):
+    fragments = [
+        (('%s: %s' % (key, value)) if value else None)
+        for (key, value) in kwargs.items()
+    ]
+
+    return ', '.join([x for x in fragments if x])

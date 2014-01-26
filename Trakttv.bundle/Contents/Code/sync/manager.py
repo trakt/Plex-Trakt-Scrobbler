@@ -16,6 +16,19 @@ log = Logger('sync.manager')
 
 HANDLERS = [Pull, Push, Synchronize]
 
+# Maps interval option labels to their minute values (argh..)
+INTERVAL_MAP = {
+    'Disabled':   None,
+    '15 Minutes': 15,
+    '30 Minutes': 30,
+    'Hour':       60,
+    '3 Hours':    180,
+    '6 Hours':    360,
+    '12 Hours':   720,
+    'Day':        1440,
+    'Week':       10080,
+}
+
 
 class SyncManager(object):
     thread = None
@@ -95,9 +108,37 @@ class SyncManager(object):
         cls.running = False
 
     @classmethod
+    def acquire(cls):
+        cls.lock.acquire()
+        log.debug('Acquired work: %s' % cls.current)
+
+    @classmethod
+    def release(cls):
+        log.debug("Work finished")
+        cls.reset()
+
+        cls.lock.release()
+
+    @classmethod
+    def check_schedule(cls):
+        interval = INTERVAL_MAP.get(Prefs['sync_run_interval'])
+        if not interval:
+            return False
+
+        status = cls.get_status('synchronize')
+        if not status.previous_timestamp:
+            return False
+
+        since_run = total_seconds(datetime.utcnow() - status.previous_timestamp) / 60
+        if since_run < interval:
+            return False
+
+        return cls.trigger_synchronize()
+
+    @classmethod
     def run(cls):
         while cls.running:
-            if not cls.current:
+            if not cls.current and not cls.check_schedule():
                 time.sleep(3)
                 continue
 
@@ -116,7 +157,7 @@ class SyncManager(object):
         # Get work details
         key = cls.current.key
         kwargs = cls.current.kwargs or {}
-        section = kwargs.get('section')
+        section = kwargs.pop('section', None)
 
         # Find handler
         handler = cls.handlers.get(key)
@@ -154,18 +195,6 @@ class SyncManager(object):
         return cls.current.success
 
     @classmethod
-    def acquire(cls):
-        cls.lock.acquire()
-        log.debug('Acquired work: %s' % cls.current)
-
-    @classmethod
-    def release(cls):
-        log.debug("Work finished")
-        cls.reset()
-
-        cls.lock.release()
-
-    @classmethod
     def update_progress(cls, current, start=0, end=100):
         statistics = cls.current.statistics
 
@@ -200,6 +229,7 @@ class SyncManager(object):
     @classmethod
     def scan_complete(cls):
         if not get_pref('sync_run_library'):
+            log.info('"Run after library updates" not enabled, ignoring')
             return
 
         cls.trigger_synchronize()
@@ -223,8 +253,8 @@ class SyncManager(object):
         return True
 
     @classmethod
-    def trigger_push(cls):
-        return cls.trigger('push')
+    def trigger_push(cls, section=None):
+        return cls.trigger('push', section=section)
 
     @classmethod
     def trigger_pull(cls):
