@@ -4,6 +4,7 @@ from urlparse import urlparse
 
 SHOW_AGENTS = [
     'com.plexapp.agents.thetvdb',
+    'com.plexapp.agents.thetvdbdvdorder',
     'com.plexapp.agents.abstvdb',
     'com.plexapp.agents.xbmcnfotv',
 ]
