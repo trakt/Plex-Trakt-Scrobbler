@@ -14,6 +14,7 @@ import interface
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
+from core.helpers import total_seconds
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
@@ -117,7 +118,7 @@ class Main(object):
                 delete = True
             elif type(session['last_updated']) is not datetime:
                 delete = True
-            elif (datetime.now() - session['last_updated']).total_seconds() / 60 / 60 > 24:
+            elif total_seconds(datetime.now() - session['last_updated']) / 60 / 60 > 24:
                 # Destroy sessions last updated over 24 hours ago
                 Log.Debug('Session %s was last updated over 24 hours ago, queued for deletion', key)
                 delete = True
