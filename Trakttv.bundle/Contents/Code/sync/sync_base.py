@@ -1,10 +1,11 @@
 from threading import BoundedSemaphore
 import traceback
 from core.eventing import EventManager
-from core.helpers import all, spawn
+from core.helpers import all, spawn, try_convert
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
+from plex.plex_objects import PlexEpisode
 
 
 log = Logger('sync.sync_base')
@@ -28,6 +29,61 @@ class PlexInterface(Base):
     @classmethod
     def episodes(cls, key, parent=None):
         return PlexMediaServer.get_episodes(key, parent, cache_id=cls.get_cache_id())
+
+    @staticmethod
+    def get_root(p_item):
+        if isinstance(p_item, PlexEpisode):
+            return p_item.parent
+
+        return p_item
+
+    @staticmethod
+    def add_identifier(data, p_item):
+        service, sid = p_item.key
+
+        # Parse identifier and append relevant '*_id' attribute to data
+        if service == 'imdb':
+            data['imdb_id'] = sid
+            return data
+
+        # Convert TMDB and TVDB identifiers to integers
+        if service in ['themoviedb', 'thetvdb']:
+            sid = try_convert(sid, int)
+
+            # If identifier is invalid, ignore it
+            if sid is None:
+                return data
+
+        if service == 'themoviedb':
+            data['tmdb_id'] = sid
+
+        if service == 'thetvdb':
+            data['tvdb_id'] = sid
+
+        return data
+
+    @classmethod
+    def to_trakt(cls, p_item, include_identifier=True):
+        data = {}
+
+        # Append episode attributes if this is a PlexEpisode
+        if isinstance(p_item, PlexEpisode):
+            data.update({
+                'season': p_item.season_num,
+                'episode': p_item.episode_num
+            })
+
+        if include_identifier:
+            p_root = cls.get_root(p_item)
+
+            data.update({
+                'title': p_root.title,
+                'year': p_root.year
+            })
+
+            cls.add_identifier(data, p_root)
+
+        return data
 
 
 class TraktInterface(Base):

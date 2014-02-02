@@ -1,7 +1,6 @@
-from core.helpers import all, try_convert, merge, plural
+from core.helpers import all, merge, plural
 from core.logger import Logger
 from core.trakt import Trakt
-from plex.plex_objects import PlexEpisode
 from sync.sync_base import SyncBase
 
 
@@ -10,61 +9,6 @@ log = Logger('sync.push')
 
 class Base(SyncBase):
     task = 'push'
-
-    @staticmethod
-    def get_root(p_item):
-        if isinstance(p_item, PlexEpisode):
-            return p_item.parent
-
-        return p_item
-
-    @staticmethod
-    def add_identifier(data, p_item):
-        service, sid = p_item.key
-
-        # Parse identifier and append relevant '*_id' attribute to data
-        if service == 'imdb':
-            data['imdb_id'] = sid
-            return data
-
-        # Convert TMDB and TVDB identifiers to integers
-        if service in ['themoviedb', 'thetvdb']:
-            sid = try_convert(sid, int)
-
-            # If identifier is invalid, ignore it
-            if sid is None:
-                return data
-
-        if service == 'themoviedb':
-            data['tmdb_id'] = sid
-
-        if service == 'thetvdb':
-            data['tvdb_id'] = sid
-
-        return data
-
-    @classmethod
-    def get_trakt_data(cls, p_item, include_identifier=True):
-        data = {}
-
-        # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, PlexEpisode):
-            data.update({
-                'season': p_item.season_num,
-                'episode': p_item.episode_num
-            })
-
-        if include_identifier:
-            p_root = cls.get_root(p_item)
-
-            data.update({
-                'title': p_root.title,
-                'year': p_root.year
-            })
-
-            cls.add_identifier(data, p_root)
-
-        return data
 
     def watch(self, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
@@ -79,7 +23,7 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', self.get_trakt_data(p_items[0], include_identifier))
+        self.store('watched', self.plex.to_trakt(p_items[0], include_identifier))
 
     def rate(self, p_items, t_item, artifact='ratings'):
         if type(p_items) is not list:
@@ -99,7 +43,7 @@ class Base(SyncBase):
         if t_item and t_item.rating_advanced == p_item.user_rating:
             return True
 
-        data = self.get_trakt_data(p_item)
+        data = self.plex.to_trakt(p_item)
 
         data.update({
             'rating': p_item.user_rating
@@ -116,7 +60,7 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', self.get_trakt_data(p_items[0], include_identifier))
+        self.store('collected', self.plex.to_trakt(p_items[0], include_identifier))
         return True
 
     def store_episodes(self, show, key, artifact=None):
@@ -240,7 +184,7 @@ class Show(Base):
                     t_episodes=t_show.episodes if t_show else {}
                 )
 
-                show = self.get_trakt_data(p_show)
+                show = self.plex.to_trakt(p_show)
 
                 self.store_episodes(show, 'collected')
                 self.store_episodes(show, 'watched')
