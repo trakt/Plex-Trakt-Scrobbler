@@ -1,6 +1,9 @@
 from core.helpers import build_repr
 
 
+PRIMARY_KEY = 'imdb'
+
+
 class TraktMedia(object):
     def __init__(self, keys=None):
         self.keys = keys
@@ -11,6 +14,18 @@ class TraktMedia(object):
 
         self.is_watched = None
         self.is_collected = None
+        self.is_local = None
+
+    @property
+    def pk(self):
+        if not self.keys:
+            return None
+
+        for key, value in self.keys:
+            if key == PRIMARY_KEY:
+                return value
+
+        return None
 
     def update(self, info, keys):
         for key in keys:

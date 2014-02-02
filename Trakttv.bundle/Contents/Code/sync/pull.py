@@ -135,7 +135,7 @@ class Movie(Base):
         p_movies = self.plex.library('movie')
 
         # Fetch library, and only get ratings and collection if enabled
-        t_movies = self.trakt.merged('movies', ratings='ratings' in enabled_funcs)
+        t_movies = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
@@ -146,9 +146,18 @@ class Movie(Base):
                 continue
 
             log.debug('Processing "%s" [%s]', t_movie.title, key)
+            t_movie.is_local = True
 
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
+
+        # Find collected movies that are missing from Plex
+        t_collection_missing = dict([
+            (t_movie.pk, t_movie)
+            for t_movie in t_movies.itervalues()
+            if t_movie.is_collected and not t_movie.is_local
+        ])
+        log.debug('t_collection_missing: %s', t_collection_missing)
 
         log.info('Finished pulling movies from trakt')
         return True
