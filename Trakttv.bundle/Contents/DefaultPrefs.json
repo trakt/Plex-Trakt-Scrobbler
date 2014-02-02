@@ -38,6 +38,12 @@
         "default": "false"
     },
     {
+        "id": "sync_clean_collection",
+        "type": "bool",
+        "label": "Sync - Clean collection",
+        "default": "false"
+    },
+    {
         "id": "sync_run_library",
         "type": "bool",
         "label": "Sync - Run after library updates",
