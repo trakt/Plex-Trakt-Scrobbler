@@ -58,4 +58,4 @@ class PlexMetadata(PlexBase):
     def timeline_finished(cls, item):
         log.debug('timeline_finished(%s)', item)
 
-        cls.cache.invalidate(str(item['itemID']), refresh=True)
+        cls.cache.invalidate(str(item['itemID']), refresh=True, create=True)

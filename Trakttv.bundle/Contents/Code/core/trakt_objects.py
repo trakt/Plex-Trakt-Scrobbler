@@ -52,7 +52,7 @@ class TraktMedia(object):
 
     @staticmethod
     def get_repr_keys():
-        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp', 'is_watched', 'is_collected']
+        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp', 'is_watched', 'is_collected', 'is_local']
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
@@ -108,6 +108,10 @@ class TraktEpisode(TraktMedia):
 
         self.season = season
         self.number = number
+
+    @property
+    def pk(self):
+        return self.season, self.number
 
     @classmethod
     def create(cls, season, number, is_watched=None, is_collected=None):
