@@ -140,16 +140,20 @@ class Show(Base):
                 )
 
         # Find collected episodes that are missing from Plex
+        # TODO only run if collection cleaning is enabled
         t_collection_missing = self.get_missing(t_shows, is_collected=False)
 
+        # Discover missing episodes when the entire show is missing
         for key, t_show in t_collection_missing.items():
-            log.debug('Processing Missing "%s" [%s]', t_show.title, key)
+            log.debug('Unable to find "%s" [%s] in library', t_show.title, key)
 
             # Discover missing episodes
             self.child('episode').run(
                 p_episodes={},
                 t_episodes=t_show.episodes
             )
+
+        # TODO construct list of missing episodes, 'un-library' them on trakt
 
         log.info('Finished pulling shows from trakt')
         return True
@@ -184,8 +188,16 @@ class Movie(Base):
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
         # Find collected movies that are missing from Plex
+        # TODO only run if collection cleaning is enabled
         t_collection_missing = self.get_missing(t_movies)
-        log.debug('Movies Missing: %s', t_collection_missing)
+
+        for key, t_movie in t_collection_missing.items():
+            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
+            self.store('missing', t_movie.to_info())
+
+        log.debug('missing: %s', self.artifacts.get('missing'))
+
+        # TODO 'un-library' missing movies on trakt
 
         log.info('Finished pulling movies from trakt')
         return True

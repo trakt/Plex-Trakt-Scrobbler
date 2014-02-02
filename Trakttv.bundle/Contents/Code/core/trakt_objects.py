@@ -133,6 +133,13 @@ class TraktMovie(TraktMedia):
         self.year = None
         self.imdb_id = None
 
+    def to_info(self):
+        return {
+            'title': self.title,
+            'year': self.year,
+            'imdb_id': self.imdb_id
+        }
+
     def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)
 
