@@ -1,4 +1,4 @@
-from core.helpers import all, merge, plural
+from core.helpers import all, plural
 from core.logger import Logger
 from core.trakt import Trakt
 from sync.sync_base import SyncBase
@@ -62,14 +62,6 @@ class Base(SyncBase):
 
         self.store('collected', self.plex.to_trakt(p_items[0], include_identifier))
         return True
-
-    def store_episodes(self, show, key, artifact=None):
-        episodes = self.child('episode').artifacts.get(artifact or key)
-
-        if episodes is None:
-            return
-
-        self.store(key, merge({'episodes': episodes}, show))
 
     @staticmethod
     def log_artifact(action, label, count, level='info'):
@@ -186,8 +178,8 @@ class Show(Base):
 
                 show = self.plex.to_trakt(p_show)
 
-                self.store_episodes(show, 'collected')
-                self.store_episodes(show, 'watched')
+                self.store_episodes('collected', show)
+                self.store_episodes('watched', show)
 
         # Push changes to trakt
         for show in self.retrieve('collected'):

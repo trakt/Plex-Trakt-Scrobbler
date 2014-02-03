@@ -1,7 +1,7 @@
 from threading import BoundedSemaphore
 import traceback
 from core.eventing import EventManager
-from core.helpers import all, spawn, try_convert
+from core.helpers import all, merge, spawn, try_convert
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.media_server_new import PlexMediaServer
@@ -251,3 +251,12 @@ class SyncBase(Base):
             self.artifacts[key] = []
 
         self.artifacts[key].append(data)
+
+    def store_episodes(self, key, show, episodes=None, artifact=None):
+        if episodes is None:
+            episodes = self.child('episode').artifacts.get(artifact or key)
+
+        if episodes is None:
+            raise ValueError('No episodes or artifact provided')
+
+        self.store(key, merge({'episodes': episodes}, show))
