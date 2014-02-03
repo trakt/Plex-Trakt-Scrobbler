@@ -152,18 +152,18 @@ class Show(Base):
             return True
 
         # Fetch library, and only get ratings and collection if enabled
-        t_shows = self.trakt.merged(
+        t_shows, t_shows_table = self.trakt.merged(
             'shows',
             ratings='ratings' in enabled_funcs,
             collected='collected' in enabled_funcs
         )
 
-        if t_shows is None:
+        if t_shows_table is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
         for key, p_show in p_shows.items():
-            t_show = t_shows.get(key)
+            t_show = t_shows_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
 
@@ -212,18 +212,18 @@ class Movie(Base):
             return True
 
         # Fetch library, and only get ratings and collection if enabled
-        t_movies = self.trakt.merged(
+        t_movies, t_movies_table = self.trakt.merged(
             'movies',
             ratings='ratings' in enabled_funcs,
             collected='collected' in enabled_funcs
         )
 
-        if t_movies is None:
+        if t_movies_table is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
         for key, p_movie in p_movies.items():
-            t_movie = t_movies.get(key)
+            t_movie = t_movies_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_movie[0].title if p_movie else None, key)
 

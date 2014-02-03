@@ -115,13 +115,13 @@ class Show(Base):
         p_shows = self.plex.library('show')
 
         # Fetch library, and only get ratings and collection if enabled
-        t_shows = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
+        t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_show in t_shows.items():
+        for key, t_show in t_shows_table.items():
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
@@ -171,13 +171,13 @@ class Movie(Base):
         p_movies = self.plex.library('movie')
 
         # Fetch library, and only get ratings and collection if enabled
-        t_movies = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
+        t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_movie in t_movies.items():
+        for key, t_movie in t_movies_table.items():
             if key is None or key not in p_movies:
                 continue
 
