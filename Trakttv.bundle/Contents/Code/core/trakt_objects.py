@@ -71,6 +71,13 @@ class TraktShow(TraktMedia):
 
         self.episodes = {}
 
+    def to_info(self):
+        return {
+            'tvdb_id': self.tvdb_id,
+            'title': self.title,
+            'year': self.year
+        }
+
     def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)
 
@@ -112,6 +119,12 @@ class TraktEpisode(TraktMedia):
     @property
     def pk(self):
         return self.season, self.number
+
+    def to_info(self):
+        return {
+            'season': self.season,
+            'episode': self.number
+        }
 
     @classmethod
     def create(cls, season, number, is_watched=None, is_collected=None):
