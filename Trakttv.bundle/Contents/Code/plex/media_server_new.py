@@ -3,6 +3,9 @@ from core.logger import Logger
 from plex.metadata import PlexMetadata
 from plex.plex_base import PlexBase
 from plex.plex_objects import PlexShow, PlexEpisode, PlexMovie
+from caper import Caper
+import types
+import os
 
 log = Logger('plex.media_server_new')
 
@@ -15,6 +18,19 @@ METADATA_AGENT_MAP = {
 
 
 class PlexMediaServer(PlexBase):
+    parser = None
+
+    @classmethod
+    def get_parser(cls):
+        """
+        :rtype: Caper
+        """
+        if cls.parser is None:
+            log.info('Initializing caper parsing library')
+            cls.parser = Caper()
+
+        return cls.parser
+
     @classmethod
     def get_server_info(cls, quiet=False):
         return cls.request(quiet=quiet)
@@ -124,6 +140,30 @@ class PlexMediaServer(PlexBase):
         return parsed_guid, (agent, parsed_guid.sid)
 
     @classmethod
+    def map_library_item(cls, table, data):
+        # Get the key for the item
+        parsed_guid, key = cls.get_library_key(data.get('ratingKey'))
+        if parsed_guid is None:
+            return False
+
+        if key not in table:
+            table[key] = []
+
+        # Create object for the data
+        data_type = data.get('type')
+        if data_type == 'movie':
+            item = PlexMovie.create(data, parsed_guid, key)
+        elif data_type == 'show':
+            item = PlexShow.create(data, parsed_guid, key)
+        else:
+            log.info('Unknown item "%s" with type "%s"', data.get('ratingKey'), data_type)
+            return False
+
+        # Map item into table
+        table[key].append(item)
+        return True
+
+    @classmethod
     def get_library(cls, types=None, keys=None, cache_id=None):
         if types and isinstance(types, basestring):
             types = [types]
@@ -137,25 +177,11 @@ class PlexMediaServer(PlexBase):
         for type, key in sections:
             if type == 'movie':
                 for video in cls.get_videos(key, cache_id=cache_id):
-                    parsed_guid, key = cls.get_library_key(video.get('ratingKey'))
-                    if parsed_guid is None:
-                        continue
-
-                    if key not in shows:
-                        movies[key] = []
-
-                    movies[key].append(PlexMovie.create(video, parsed_guid, key))
+                    cls.map_library_item(movies, video)
 
             if type == 'show':
                 for directory in cls.get_directories(key, cache_id=cache_id):
-                    parsed_guid, key = cls.get_library_key(directory.get('ratingKey'))
-                    if parsed_guid is None:
-                        continue
-
-                    if key not in shows:
-                        shows[key] = []
-
-                    shows[key].append(PlexShow.create(directory, parsed_guid, key))
+                    cls.map_library_item(shows, directory)
 
         if len(types) == 1:
             if types[0] == 'movie':
@@ -165,6 +191,86 @@ class PlexMediaServer(PlexBase):
                 return shows
 
         return movies, shows
+
+    @staticmethod
+    def merge_dicts(dicts):
+        result = {}
+
+        for d in dicts:
+            for key, value in d.items():
+                if key in result:
+                    # Multiple items, append or switch to list
+                    if isinstance(result[key], list):
+                        result[key].append(value)
+                    else:
+                        result[key] = [result[key], value]
+                else:
+                    result[key] = value
+
+        return result
+
+    @classmethod
+    def merge_info(cls, info):
+        result = {}
+
+        for key, value in info.items():
+            if not isinstance(value, list):
+                continue
+
+            if isinstance(value[0], dict):
+                result[key] = cls.merge_dicts(value)
+            else:
+                result[key] = value
+
+        return result
+
+    @classmethod
+    def get_chain_identifier(cls, info):
+        info = cls.merge_info(info)
+        identifier = info.get('identifier')
+
+        for key, value in identifier.items():
+            if key in ['season', 'episode', 'episode_from', 'episode_to']:
+                identifier[key] = try_convert(value, int)
+
+        return identifier
+
+    @classmethod
+    def get_episode_identifier(cls, video, identifier):
+        season = try_convert(video.get('parentIndex'), int)
+        episode = try_convert(video.get('index'), int)
+
+        # Ensure season and episode numbers are valid
+        if season is None or episode is None:
+            log.debug('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
+            return None, []
+
+        if identifier:
+            # Ensure extended season matches plex
+            if identifier.get('season') != season:
+                log.debug('Extended mismatch (season: extended %s !=  plex %s), using plex', identifier.get('season'), season)
+                return season, [episode]
+
+            # Ensure extended episode matches plex
+            if 'episode' in identifier:
+                if identifier.get('episode') != episode:
+                    log.debug('Extended mismatch (episode: extended %s != plex %s), using plex', identifier['episode'], episode)
+
+                return season, [episode]
+
+            if 'episode_from' in identifier and 'episode_to' in identifier:
+                episodes = range(identifier.get('episode_from'), identifier.get('episode_to') + 1)
+
+                # Ensure plex episode is inside extended episode range
+                if episode not in episodes:
+                    log.debug('Extended mismatch (episode: extended %s does not contain plex %s), using plex', episodes, episode)
+                    return season, [episode]
+
+                return season, episodes
+
+        return season, [episode]
+
+
 
     # TODO move to plex.metadata, cache results
     @classmethod
@@ -186,15 +292,24 @@ class PlexMediaServer(PlexBase):
         container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
 
         for video in container:
-            season = try_convert(video.get('parentIndex'), int)
-            episode = try_convert(video.get('index'), int)
-
-            # Ensure season and episode numbers are valid
-            if season is None or episode is None:
-                log.warn('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
+            # Parse filename for extra info
+            parts = video.find('Media').findall('Part')
+            if not parts:
+                log.warn('Item "%s" has no parts', video.get('ratingKey'))
                 continue
 
-            result[season, episode] = PlexEpisode.create(parent, video, season, episode)
+            # Get just the name of the first part (without full path and extension)
+            file_name = os.path.splitext(os.path.basename(parts[0].get('file')))[0]
+
+            # TODO what is the performance of this like?
+            # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
+            extended = cls.get_parser().parse(file_name)
+
+            identifier = cls.get_chain_identifier(extended.chains[0].info) if extended.chains else None
+            season, episodes = cls.get_episode_identifier(video, identifier)
+
+            for episode in episodes:
+                result[season, episode] = PlexEpisode.create(parent, video, season, episode)
 
         return result
 
