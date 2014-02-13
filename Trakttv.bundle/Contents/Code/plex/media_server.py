@@ -207,7 +207,7 @@ class PMS(object):
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        return cls.request('library/metadata/%s/allLeaves' % key)
+        return cls.request('library/metadata/%s/allLeaves' % key, timeout=10)
 
     @classmethod
     def get_sections(cls):
@@ -215,7 +215,7 @@ class PMS(object):
 
     @classmethod
     def get_section(cls, name):
-        return cls.request('library/sections/%s/all' % name)
+        return cls.request('library/sections/%s/all' % name, timeout=10)
 
     @classmethod
     def get_section_directories(cls, section_name):
