@@ -68,7 +68,7 @@ class PlexMediaServer(PlexBase):
 
     @classmethod
     def get_section(cls, key, cache_id=None):
-        return cls.request('library/sections/%s/all' % key, cache_id=cache_id)
+        return cls.request('library/sections/%s/all' % key, timeout=10, cache_id=cache_id)
 
     @classmethod
     def get_directories(cls, key, cache_id=None):
@@ -183,7 +183,7 @@ class PlexMediaServer(PlexBase):
 
         result = {}
 
-        container = cls.request('library/metadata/%s/allLeaves' % key, cache_id=cache_id)
+        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
 
         for video in container:
             season = try_convert(video.get('parentIndex'), int)
