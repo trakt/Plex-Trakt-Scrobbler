@@ -17,6 +17,9 @@ METADATA_AGENT_MAP = {
 }
 
 
+IDENTIFIER_MISMATCH = 'Identifier parsing mismatch on "%s" (%s), using plex identifier'
+
+
 class PlexMediaServer(PlexBase):
     parser = None
 
@@ -236,7 +239,23 @@ class PlexMediaServer(PlexBase):
         return identifier
 
     @classmethod
-    def get_episode_identifier(cls, video, identifier):
+    def get_episode_identifier(cls, video):
+        # Parse filename for extra info
+        parts = video.find('Media').findall('Part')
+        if not parts:
+            log.warn('Item "%s" has no parts', video.get('ratingKey'))
+            return None, []
+
+        # Get just the name of the first part (without full path and extension)
+        file_name = os.path.splitext(os.path.basename(parts[0].get('file')))[0]
+
+        # TODO what is the performance of this like?
+        # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
+        extended = cls.get_parser().parse(file_name)
+
+        identifier = cls.get_chain_identifier(extended.chains[0].info) if extended.chains else None
+
+        # Get plex identifier
         season = try_convert(video.get('parentIndex'), int)
         episode = try_convert(video.get('index'), int)
 
@@ -248,13 +267,13 @@ class PlexMediaServer(PlexBase):
         if identifier:
             # Ensure extended season matches plex
             if identifier.get('season') != season:
-                log.debug('Extended mismatch (season: extended %s !=  plex %s), using plex', identifier.get('season'), season)
+                log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s !=  plex %s' % (identifier.get('season'), season))
                 return season, [episode]
 
             # Ensure extended episode matches plex
             if 'episode' in identifier:
                 if identifier.get('episode') != episode:
-                    log.debug('Extended mismatch (episode: extended %s != plex %s), using plex', identifier['episode'], episode)
+                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s != plex %s' % (identifier['episode'], episode))
 
                 return season, [episode]
 
@@ -263,7 +282,7 @@ class PlexMediaServer(PlexBase):
 
                 # Ensure plex episode is inside extended episode range
                 if episode not in episodes:
-                    log.debug('Extended mismatch (episode: extended %s does not contain plex %s), using plex', episodes, episode)
+                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s does not contain plex %s' %(episodes, episode))
                     return season, [episode]
 
                 return season, episodes
@@ -292,21 +311,7 @@ class PlexMediaServer(PlexBase):
         container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
 
         for video in container:
-            # Parse filename for extra info
-            parts = video.find('Media').findall('Part')
-            if not parts:
-                log.warn('Item "%s" has no parts', video.get('ratingKey'))
-                continue
-
-            # Get just the name of the first part (without full path and extension)
-            file_name = os.path.splitext(os.path.basename(parts[0].get('file')))[0]
-
-            # TODO what is the performance of this like?
-            # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
-            extended = cls.get_parser().parse(file_name)
-
-            identifier = cls.get_chain_identifier(extended.chains[0].info) if extended.chains else None
-            season, episodes = cls.get_episode_identifier(video, identifier)
+            season, episodes = cls.get_episode_identifier(video)
 
             for episode in episodes:
                 result[season, episode] = PlexEpisode.create(parent, video, season, episode)
