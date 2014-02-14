@@ -233,8 +233,14 @@ class PlexMediaServer(PlexBase):
         identifier = info.get('identifier')
 
         for key, value in identifier.items():
-            if key in ['season', 'episode', 'episode_from', 'episode_to']:
+            if key not in ['season', 'episode', 'episode_from', 'episode_to']:
+                continue
+
+            if isinstance(value, types.StringTypes):
                 identifier[key] = try_convert(value, int)
+            elif isinstance(value, list):
+                # For repeat style identifiers (S01E10E11, etc..)
+                identifier[key] = [try_convert(x, int) for x in value]
 
         return identifier
 
@@ -270,12 +276,17 @@ class PlexMediaServer(PlexBase):
                 log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s !=  plex %s' % (identifier.get('season'), season))
                 return season, [episode]
 
-            # Ensure extended episode matches plex
+            # Ensure extended single episode matches plex
             if 'episode' in identifier:
-                if identifier.get('episode') != episode:
-                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s != plex %s' % (identifier['episode'], episode))
+                episodes = identifier['episode']
 
-                return season, [episode]
+                if not isinstance(episodes, list):
+                    episodes = [episodes]
+
+                if episode not in episodes:
+                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s does not contain plex %s' % (episodes, episode))
+
+                return season, episodes
 
             if 'episode_from' in identifier and 'episode_to' in identifier:
                 episodes = range(identifier.get('episode_from'), identifier.get('episode_to') + 1)
@@ -286,6 +297,7 @@ class PlexMediaServer(PlexBase):
                     return season, [episode]
 
                 return season, episodes
+
 
         return season, [episode]
 

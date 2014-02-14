@@ -260,6 +260,6 @@ class SyncBase(Base):
             episodes = self.child('episode').artifacts.get(artifact or key)
 
         if episodes is None:
-            raise ValueError('No episodes or artifact provided')
+            return
 
         self.store(key, merge({'episodes': episodes}, show))
