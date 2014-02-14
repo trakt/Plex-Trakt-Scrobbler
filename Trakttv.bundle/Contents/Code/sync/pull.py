@@ -155,9 +155,6 @@ class Show(Base):
                 episodes=[x.to_info() for x in t_episodes_missing.itervalues()]
             )
 
-        log.debug('missing shows: %s', self.retrieve('missing.shows'))
-        log.debug('missing episodes: %s', self.retrieve('missing.episodes'))
-
         log.info('Finished pulling shows from trakt')
         return True
 
@@ -197,8 +194,6 @@ class Movie(Base):
         for key, t_movie in t_collection_missing.items():
             log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
             self.store('missing.movies', t_movie.to_info())
-
-        log.debug('missing movies: %s', self.retrieve('missing.movies'))
 
         # TODO 'un-library' missing movies on trakt
 

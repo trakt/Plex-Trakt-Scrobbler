@@ -116,6 +116,9 @@ class SyncBase(Base):
     def reset(self):
         self.artifacts = {}
 
+        for child in self.children.itervalues():
+            child.reset()
+
     def run(self, *args, **kwargs):
         self.reset()
 
