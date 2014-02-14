@@ -1,11 +1,12 @@
-from threading import BoundedSemaphore
-import traceback
 from core.eventing import EventManager
 from core.helpers import all, merge, spawn, try_convert
 from core.logger import Logger
 from core.trakt import Trakt
+from plex.plex_library import PlexLibrary
 from plex.media_server_new import PlexMediaServer
 from plex.plex_objects import PlexEpisode
+from threading import BoundedSemaphore
+import traceback
 
 
 log = Logger('sync.sync_base')
@@ -24,11 +25,11 @@ class PlexInterface(Base):
 
     @classmethod
     def library(cls, types=None, keys=None):
-        return PlexMediaServer.get_library(types, keys, cache_id=cls.get_cache_id())
+        return PlexLibrary.fetch(types, keys, cache_id=cls.get_cache_id())
 
     @classmethod
     def episodes(cls, key, parent=None):
-        return PlexMediaServer.get_episodes(key, parent, cache_id=cls.get_cache_id())
+        return PlexLibrary.fetch_episodes(key, parent, cache_id=cls.get_cache_id())
 
     @staticmethod
     def get_root(p_item):
