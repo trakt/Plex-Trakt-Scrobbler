@@ -2,13 +2,9 @@ from core.helpers import try_convert
 from core.logger import Logger
 from plex.plex_base import PlexBase
 from caper import Caper
-import types
 import os
 
 log = Logger('plex.plex_matcher')
-
-
-IDENTIFIER_MISMATCH = 'Identifier parsing mismatch on "%s" (%s), using plex identifier'
 
 
 class PlexMatcher(PlexBase):
@@ -55,16 +51,13 @@ class PlexMatcher(PlexBase):
         return result
 
     @classmethod
-    def match_episode_identifier(cls, p_season, p_episode, c_identifier, file_name=None):
+    def match_episode_identifier(cls, p_season, p_episode, c_identifier):
         # Season number retrieval/validation (only except exact matches to p_season)
         if 'season' not in c_identifier:
-            log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier does not contain a season')
             return
 
         c_season = try_convert(c_identifier['season'], int)
-
         if c_season != p_season:
-            log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier with season %s does not match plex season %s' % (c_season, p_season))
             return
 
         # Episode number retrieval/validation
@@ -85,16 +78,14 @@ class PlexMatcher(PlexBase):
             c_to = try_convert(c_identifier['episode_to'], int)
 
             if c_from is None or c_to is None:
-                log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier episode from or to value is not valid')
                 return
 
             episodes = range(c_from, c_to + 1)
 
-            # Ensure plex episode is inside extended episode range
+            # Ensure plex episode is inside identifier episode range
             if p_episode in episodes:
                 c_episodes = episodes
             else:
-                log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier with episodes %s does not contain plex episode %s' % (episodes, p_episode))
                 return
 
         return c_episodes
@@ -131,7 +122,7 @@ class PlexMatcher(PlexBase):
             if 'season' not in c_identifier:
                 continue
 
-            episodes = cls.match_episode_identifier(p_season, p_episode, c_identifier, file_name)
+            episodes = cls.match_episode_identifier(p_season, p_episode, c_identifier)
             if episodes is None:
                 continue
 
