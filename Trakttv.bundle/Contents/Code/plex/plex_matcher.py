@@ -75,6 +75,35 @@ class PlexMatcher(PlexBase):
         return identifier
 
     @classmethod
+    def remove_distant(cls, l, base=None, start=0, stop=None, step=1, max_distance=1):
+        s = sorted(l)
+        result = []
+
+        if base is not None:
+            bx = s.index(base)
+
+            left = s[:bx + 1]
+            result.extend(cls.remove_distant(left, start=len(left) - 2, stop=-1, step=-1, max_distance=max_distance))
+
+            result.append(base)
+
+            right = s[bx:]
+            result.extend(cls.remove_distant(right, start=1, step=1, max_distance=max_distance))
+
+            return result
+
+        if stop is None:
+            stop = len(s)
+
+        for x in xrange(start, stop, step):
+            if abs(s[x] -  s[x - step]) <= max_distance:
+                result.append(s[x])
+            else:
+                break
+
+        return result
+
+    @classmethod
     def get_episode_identifier(cls, video):
         # Parse filename for extra info
         parts = video.find('Media').findall('Part')
@@ -108,8 +137,11 @@ class PlexMatcher(PlexBase):
                 if not isinstance(seasons, (list, set)):
                     seasons = [seasons]
 
-                if season not in seasons:
-                    log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s does not contain plex %s' % (seasons, episode))
+                # Reject anything that doesn't match the plex season
+                seasons = cls.remove_distant(seasons, season, max_distance=0)
+
+                if season not in seasons or len(seasons) > 1:
+                    log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s does not match plex %s' % (seasons, season))
             else:
                 log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended does not exist')
                 return season, [episode]
@@ -120,6 +152,9 @@ class PlexMatcher(PlexBase):
 
                 if not isinstance(episodes, (list, set)):
                     episodes = [episodes]
+
+                # Remove any episode identifiers that are more than 1 away
+                episodes = cls.remove_distant(episodes, episode)
 
                 if episode not in episodes:
                     log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s does not contain plex %s' % (episodes, episode))
