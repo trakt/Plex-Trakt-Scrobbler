@@ -25,55 +25,6 @@ class PlexMatcher(PlexBase):
 
         return cls.current
 
-    @staticmethod
-    def merge_dicts(dicts):
-        result = {}
-
-        for d in dicts:
-            for key, value in d.items():
-                if key in result:
-                    # Multiple items, append or switch to list
-                    if isinstance(result[key], list):
-                        result[key].append(value)
-                    else:
-                        result[key] = [result[key], value]
-                else:
-                    result[key] = value
-
-        return result
-
-    @classmethod
-    def merge_info(cls, info):
-        result = {}
-
-        for key, value in info.items():
-            if not isinstance(value, list):
-                continue
-
-            if isinstance(value[0], dict):
-                result[key] = cls.merge_dicts(value)
-            else:
-                result[key] = value
-
-        return result
-
-    @classmethod
-    def get_chain_identifier(cls, info):
-        info = cls.merge_info(info)
-        identifier = info.get('identifier')
-
-        for key, value in identifier.items():
-            if key not in ['season', 'episode', 'episode_from', 'episode_to']:
-                continue
-
-            if isinstance(value, types.StringTypes):
-                identifier[key] = try_convert(value, int)
-            elif isinstance(value, list):
-                # For repeat style identifiers (S01E10E11, etc..)
-                identifier[key] = set([try_convert(x, int) for x in value])
-
-        return identifier
-
     @classmethod
     def remove_distant(cls, l, base=None, start=0, stop=None, step=1, max_distance=1):
         s = sorted(l)
@@ -104,6 +55,52 @@ class PlexMatcher(PlexBase):
         return result
 
     @classmethod
+    def match_episode_identifier(cls, p_season, p_episode, c_identifier, file_name=None):
+        # Season number retrieval/validation (only except exact matches to p_season)
+        if 'season' not in c_identifier:
+            log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier does not contain a season')
+            return
+
+        c_season = try_convert(c_identifier['season'], int)
+
+        if c_season != p_season:
+            log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier with season %s does not match plex season %s' % (c_season, p_season))
+            return
+
+        # Episode number retrieval/validation
+        c_episodes = None
+
+        # Single or repeat-style episodes
+        if 'episode' in c_identifier:
+            episodes = c_identifier['episode']
+
+            if not isinstance(episodes, (list, set)):
+                episodes = [episodes]
+
+            c_episodes = [try_convert(x, int) for x in episodes]
+
+        # Extend-style episodes
+        if 'episode_from' in c_identifier and 'episode_to' in c_identifier:
+            c_from = try_convert(c_identifier['episode_from'], int)
+            c_to = try_convert(c_identifier['episode_to'], int)
+
+            if c_from is None or c_to is None:
+                log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier episode from or to value is not valid')
+                return
+
+            episodes = range(c_from, c_to + 1)
+
+            # Ensure plex episode is inside extended episode range
+            if p_episode in episodes:
+                c_episodes = episodes
+            else:
+                log.debug(IDENTIFIER_MISMATCH, file_name, 'identifier with episodes %s does not contain plex episode %s' % (episodes, p_episode))
+                return
+
+        return c_episodes
+
+
+    @classmethod
     def get_episode_identifier(cls, video):
         # Parse filename for extra info
         parts = video.find('Media').findall('Part')
@@ -118,57 +115,34 @@ class PlexMatcher(PlexBase):
         # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
         extended = cls.get_parser().parse(file_name)
 
-        identifier = cls.get_chain_identifier(extended.chains[0].info) if extended.chains else None
-
         # Get plex identifier
-        season = try_convert(video.get('parentIndex'), int)
-        episode = try_convert(video.get('index'), int)
+        p_season = try_convert(video.get('parentIndex'), int)
+        p_episode = try_convert(video.get('index'), int)
 
-        # Ensure season and episode numbers are valid
-        if season is None or episode is None:
+        # Ensure plex data is valid
+        if p_season is None or p_episode is None:
             log.debug('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
             return None, []
 
-        if identifier:
-            # Ensure extended season matches plex
-            if 'season' in identifier:
-                seasons = identifier['season']
+        # Find new episodes from identifiers
+        c_episodes = [p_episode]
 
-                if not isinstance(seasons, (list, set)):
-                    seasons = [seasons]
+        for c_identifier in extended.chains[0].info['identifier']:
+            if 'season' not in c_identifier:
+                continue
 
-                # Reject anything that doesn't match the plex season
-                seasons = cls.remove_distant(seasons, season, max_distance=0)
+            episodes = cls.match_episode_identifier(p_season, p_episode, c_identifier, file_name)
+            if episodes is None:
+                continue
 
-                if season not in seasons or len(seasons) > 1:
-                    log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s does not match plex %s' % (seasons, season))
-            else:
-                log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended does not exist')
-                return season, [episode]
+            # Insert any new episodes found from identifier
+            for episode in episodes:
+                if episode in c_episodes:
+                    continue
 
-            # Ensure extended single episode matches plex
-            if 'episode' in identifier:
-                episodes = identifier['episode']
+                c_episodes.append(episode)
 
-                if not isinstance(episodes, (list, set)):
-                    episodes = [episodes]
+        # Remove any episode identifiers that are more than 1 away
+        c_episodes = cls.remove_distant(c_episodes, p_episode)
 
-                # Remove any episode identifiers that are more than 1 away
-                episodes = cls.remove_distant(episodes, episode)
-
-                if episode not in episodes:
-                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s does not contain plex %s' % (episodes, episode))
-
-                return season, episodes
-
-            if 'episode_from' in identifier and 'episode_to' in identifier:
-                episodes = range(identifier.get('episode_from'), identifier.get('episode_to') + 1)
-
-                # Ensure plex episode is inside extended episode range
-                if episode not in episodes:
-                    log.debug(IDENTIFIER_MISMATCH, file_name, 'episode: extended %s does not contain plex %s' %(episodes, episode))
-                    return season, [episode]
-
-                return season, episodes
-
-        return season, [episode]
+        return p_season, c_episodes
