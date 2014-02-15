@@ -70,7 +70,7 @@ class PlexMatcher(PlexBase):
                 identifier[key] = try_convert(value, int)
             elif isinstance(value, list):
                 # For repeat style identifiers (S01E10E11, etc..)
-                identifier[key] = [try_convert(x, int) for x in value]
+                identifier[key] = set([try_convert(x, int) for x in value])
 
         return identifier
 
@@ -102,15 +102,23 @@ class PlexMatcher(PlexBase):
 
         if identifier:
             # Ensure extended season matches plex
-            if identifier.get('season') != season:
-                log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s !=  plex %s' % (identifier.get('season'), season))
+            if 'season' in identifier:
+                seasons = identifier['season']
+
+                if not isinstance(seasons, (list, set)):
+                    seasons = [seasons]
+
+                if season not in seasons:
+                    log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended %s does not contain plex %s' % (seasons, episode))
+            else:
+                log.debug(IDENTIFIER_MISMATCH, file_name, 'season: extended does not exist')
                 return season, [episode]
 
             # Ensure extended single episode matches plex
             if 'episode' in identifier:
                 episodes = identifier['episode']
 
-                if not isinstance(episodes, list):
+                if not isinstance(episodes, (list, set)):
                     episodes = [episodes]
 
                 if episode not in episodes:
