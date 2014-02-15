@@ -124,9 +124,12 @@ class PlexLibrary(PlexBase):
         container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
 
         for video in container:
-            season, episodes = PlexMatcher.get_episode_identifier(video)
+            season, episodes = PlexMatcher.get_identifier(video)
 
             for episode in episodes:
                 result[season, episode] = PlexEpisode.create(parent, video, season, episode)
+
+        # Ensure PlexMatcher cache is stored to disk
+        PlexMatcher.save()
 
         return result

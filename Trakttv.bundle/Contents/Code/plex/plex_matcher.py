@@ -1,4 +1,4 @@
-from core.helpers import try_convert
+from core.helpers import try_convert, json_encode, json_decode
 from core.logger import Logger
 from plex.plex_base import PlexBase
 from caper import Caper
@@ -9,6 +9,10 @@ log = Logger('plex.plex_matcher')
 
 class PlexMatcher(PlexBase):
     current = None
+
+    cache_pending = 0
+    cache_key = 'matcher_cache'
+    cache = None
 
     @classmethod
     def get_parser(cls):
@@ -43,7 +47,7 @@ class PlexMatcher(PlexBase):
             stop = len(s)
 
         for x in xrange(start, stop, step):
-            if abs(s[x] -  s[x - step]) <= max_distance:
+            if abs(s[x] - s[x - step]) <= max_distance:
                 result.append(s[x])
             else:
                 break
@@ -51,7 +55,7 @@ class PlexMatcher(PlexBase):
         return result
 
     @classmethod
-    def match_episode_identifier(cls, p_season, p_episode, c_identifier):
+    def match_identifier(cls, p_season, p_episode, c_identifier):
         # Season number retrieval/validation (only except exact matches to p_season)
         if 'season' not in c_identifier:
             return
@@ -90,9 +94,80 @@ class PlexMatcher(PlexBase):
 
         return c_episodes
 
+    @classmethod
+    def create_cache(cls):
+        cls.cache = {
+            'version': Caper.version,
+            'entries': {}
+        }
+
+        log.info('Created PlexMatcher cache (version: %s)', cls.cache['version'])
 
     @classmethod
-    def get_episode_identifier(cls, video):
+    def load(cls):
+        # Already loaded?
+        if cls.cache is not None:
+            return
+
+        if Data.Exists(cls.cache_key):
+            cls.cache = json_decode(Data.Load(cls.cache_key))
+
+            if cls.cache['version'] != Caper.version:
+                Data.Remove(cls.cache_key)
+                cls.cache = None
+                log.info('Caper version changed, reset matcher cache')
+
+            log.info('Loaded PlexMatcher cache (version: %s)', cls.cache['version'])
+
+        # Create cache if one doesn't exist or is invalid
+        if cls.cache is None:
+            cls.create_cache()
+
+    @classmethod
+    def save(cls, force=False):
+        if cls.cache_pending < 1 and not force:
+            return
+
+        Data.Save(cls.cache_key, json_encode(cls.cache))
+        log.info('Saved PlexMatcher cache (pending: %s, version: %s)', cls.cache_pending, cls.cache['version'])
+
+        cls.cache_pending = 0
+
+    @classmethod
+    def lookup(cls, file_hash):
+        cls.load()
+        return cls.cache['entries'].get(file_hash)
+
+    @classmethod
+    def store(cls, file_hash, identifier):
+        cls.cache['entries'][file_hash] = identifier
+        cls.cache_pending = cls.cache_pending + 1
+
+    @classmethod
+    def parse(cls, file_name, use_cache=True):
+        identifier = None
+
+        file_hash = Hash.MD5(file_name)
+
+        # Try lookup identifier in cache
+        if use_cache:
+            identifier = cls.lookup(file_hash)
+
+        # Parse new file_name
+        if identifier is None:
+            # Parse file_name with Caper
+            result = cls.get_parser().parse(file_name)
+
+            # Get best identifier match from result
+            identifier = result.chains[0].info['identifier']
+
+            # Update cache
+            cls.store(file_hash, identifier)
+
+        return identifier
+
+    @classmethod
+    def get_identifier(cls, video):
         # Parse filename for extra info
         parts = video.find('Media').findall('Part')
         if not parts:
@@ -104,7 +179,7 @@ class PlexMatcher(PlexBase):
 
         # TODO what is the performance of this like?
         # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
-        extended = cls.get_parser().parse(file_name)
+        c_identifiers = cls.parse(file_name)
 
         # Get plex identifier
         p_season = try_convert(video.get('parentIndex'), int)
@@ -118,11 +193,11 @@ class PlexMatcher(PlexBase):
         # Find new episodes from identifiers
         c_episodes = [p_episode]
 
-        for c_identifier in extended.chains[0].info['identifier']:
+        for c_identifier in c_identifiers:
             if 'season' not in c_identifier:
                 continue
 
-            episodes = cls.match_episode_identifier(p_season, p_episode, c_identifier)
+            episodes = cls.match_identifier(p_season, p_episode, c_identifier)
             if episodes is None:
                 continue
 
