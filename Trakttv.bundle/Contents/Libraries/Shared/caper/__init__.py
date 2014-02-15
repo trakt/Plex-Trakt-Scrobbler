@@ -45,6 +45,8 @@ CL_END = 1
 
 
 class Caper(object):
+    version = __version__
+
     def __init__(self, debug=False):
         self.debug = debug
 
@@ -186,7 +188,7 @@ class Caper(object):
             Logr.debug("closure [%s]", closure.value)
 
             for fragment in closure.fragments:
-                Logr.debug("\tfragment (%s)[%s](%s)", fragment.left_sep, fragment.value, fragment.right_sep)
+                Logr.debug("\tfragment [%s]", fragment.value)
 
         if parser not in self.parsers:
             raise ValueError("Unknown parser")
