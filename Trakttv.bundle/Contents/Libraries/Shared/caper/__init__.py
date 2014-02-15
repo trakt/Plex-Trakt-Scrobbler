@@ -188,7 +188,7 @@ class Caper(object):
             Logr.debug("closure [%s]", closure.value)
 
             for fragment in closure.fragments:
-                Logr.debug("\tfragment [%s]", fragment.value)
+                Logr.debug("\tfragment (%s)[%s](%s)", fragment.left_sep, fragment.value, fragment.right_sep)
 
         if parser not in self.parsers:
             raise ValueError("Unknown parser")
