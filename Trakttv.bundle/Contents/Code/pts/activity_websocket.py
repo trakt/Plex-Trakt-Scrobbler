@@ -38,7 +38,7 @@ class WebSocket(ActivityMethod):
         return True
 
     def connect(self):
-        self.ws = websocket.create_connection('ws://localhost:32400/:/websockets/notifications')
+        self.ws = websocket.create_connection('ws://127.0.0.1:32400/:/websockets/notifications')
 
     def run(self):
         self.connect()
