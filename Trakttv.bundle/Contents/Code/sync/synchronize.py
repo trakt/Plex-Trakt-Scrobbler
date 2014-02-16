@@ -23,16 +23,15 @@ class Synchronize(SyncBase):
             log.warn("Pull handler failed")
             return False
 
-        missing_movies = pull.child('movie').retrieve('missing.movies')
-        log.debug('missing_movies: %s', missing_movies)
+        # Store missing media discovery artifacts
+        self.store('missing.movies', pull.child('movie').retrieve('missing.movies'), single=True)
 
-        missing_shows = pull.child('show').retrieve('missing.shows')
-        missing_episodes = pull.child('show').retrieve('missing.episodes')
+        self.store('missing.shows', pull.child('show').retrieve('missing.shows'), single=True)
+        self.store('missing.episodes', pull.child('show').retrieve('missing.episodes'), single=True)
 
-        log.debug('missing_shows: %s', missing_shows)
-        log.debug('missing_episodes: %s', missing_episodes)
+        log.debug(self.artifacts)
 
-        if not push.run():
+        if not push.run(artifacts=self.artifacts):
             log.warn('Push handler failed')
             return False
 

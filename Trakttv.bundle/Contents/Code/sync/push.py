@@ -104,7 +104,7 @@ class Base(SyncBase):
 
     def send_artifact(self, action, key, artifact):
         items = self.artifacts.get(artifact)
-        if items is None:
+        if not items:
             return
 
         return self.send(action, {key: items})
@@ -114,8 +114,8 @@ class Episode(Base):
     key = 'episode'
     auto_run = False
 
-    def run(self, p_episodes, t_episodes):
-        self.reset()
+    def run(self, p_episodes, t_episodes, artifacts=None):
+        self.reset(artifacts)
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -141,8 +141,8 @@ class Show(Base):
     key = 'show'
     children = [Episode]
 
-    def run(self, section=None):
-        self.reset()
+    def run(self, section=None, artifacts=None):
+        self.reset(artifacts)
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -173,7 +173,8 @@ class Show(Base):
             for p_show in p_show:
                 self.child('episode').run(
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
-                    t_episodes=t_show.episodes if t_show else {}
+                    t_episodes=t_show.episodes if t_show else {},
+                    artifacts=artifacts
                 )
 
                 show = self.plex.to_trakt(p_show)
@@ -181,7 +182,10 @@ class Show(Base):
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
 
+        #
         # Push changes to trakt
+        #
+
         for show in self.retrieve('collected'):
             self.send('show/episode/library', show)
 
@@ -190,6 +194,12 @@ class Show(Base):
 
         self.send_artifact('rate/shows', 'shows', 'ratings')
         self.send_artifact('rate/episodes', 'episodes', 'episode_ratings')
+
+        for show in self.retrieve('missing.shows'):
+            self.send('show/unlibrary', show)
+
+        for show in self.retrieve('missing.episodes'):
+            self.send('show/episode/unlibrary', show)
 
         log.info('Finished pushing shows to trakt')
         return True
@@ -201,8 +211,8 @@ class Show(Base):
 class Movie(Base):
     key = 'movie'
 
-    def run(self, section=None):
-        self.reset()
+    def run(self, section=None, artifacts=None):
+        self.reset(artifacts)
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -230,10 +240,13 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
+        #
         # Push changes to trakt
+        #
         self.send_artifact('movie/seen', 'movies', 'watched')
         self.send_artifact('rate/movies', 'movies', 'ratings')
         self.send_artifact('movie/library', 'movies', 'collected')
+        self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
 
         log.info('Finished pushing movies to trakt')
         return True

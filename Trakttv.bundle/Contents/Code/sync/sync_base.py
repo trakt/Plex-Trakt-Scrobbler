@@ -114,14 +114,14 @@ class SyncBase(Base):
 
         self.artifacts = {}
 
-    def reset(self):
-        self.artifacts = {}
+    def reset(self, artifacts=None):
+        self.artifacts = artifacts.copy() if artifacts else {}
 
         for child in self.children.itervalues():
-            child.reset()
+            child.reset(artifacts)
 
     def run(self, *args, **kwargs):
-        self.reset()
+        self.reset(kwargs.get('artifacts'))
 
         # Trigger handlers and return if there was an error
         if not all(self.trigger(None, *args, **kwargs)):
