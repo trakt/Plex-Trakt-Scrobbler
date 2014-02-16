@@ -1,4 +1,4 @@
-from core.helpers import plural
+from core.helpers import plural, all
 from core.logger import Logger
 from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -152,6 +152,10 @@ class Show(Base):
         # Discover entire shows missing
         num_shows = 0
         for key, t_show in t_collection_missing.items():
+            # Ignore show if there are no collected episodes on trakt
+            if all([not e.is_collected for (_, e) in t_show.episodes.items()]):
+                continue
+
             self.store('missing.shows', t_show.to_info())
             num_shows = num_shows + 1
 
