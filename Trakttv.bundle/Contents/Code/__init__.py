@@ -31,6 +31,12 @@ from datetime import datetime
 log = Logger('Code')
 
 
+MATCHER_MAP = {
+    'Plex': 'plex',
+    'Plex Extended': 'plex_extended'
+}
+
+
 class Main(object):
     modules = [
         # pts
@@ -76,6 +82,8 @@ class Main(object):
 
         preferences['scrobble'] = Prefs['start_scrobble'] and valid
         preferences['sync_run_library'] = Prefs['sync_run_library'] and valid
+
+        preferences['matcher'] = MATCHER_MAP[Prefs['matcher']]
 
         # Ensure preferences dictionary is stored
         Dict['preferences'] = preferences

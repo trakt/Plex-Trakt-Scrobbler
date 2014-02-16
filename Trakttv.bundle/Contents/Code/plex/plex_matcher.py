@@ -167,20 +167,43 @@ class PlexMatcher(PlexBase):
         return identifier
 
     @classmethod
-    def get_identifier(cls, video):
+    def get_extended(cls, video, p_season, p_episode):
+        # Ensure extended matcher is enabled
+        if Dict['preferences']['matcher'] != 'plex_extended':
+            return []
+
         # Parse filename for extra info
         parts = video.find('Media').findall('Part')
         if not parts:
             log.warn('Item "%s" has no parts', video.get('ratingKey'))
-            return None, []
+            return []
 
         # Get just the name of the first part (without full path and extension)
         file_name = os.path.splitext(os.path.basename(parts[0].get('file')))[0]
 
-        # TODO what is the performance of this like?
-        # TODO maybe add the ability to disable this in settings ("Identification" option, "Basic" or "Accurate")
+        # Parse file_name with caper (or get cached result)
         c_identifiers = cls.parse(file_name)
 
+        result = []
+        for c_identifier in c_identifiers:
+            if 'season' not in c_identifier:
+                continue
+
+            episodes = cls.match_identifier(p_season, p_episode, c_identifier)
+            if episodes is None:
+                continue
+
+            # Insert any new episodes found from identifier
+            for episode in episodes:
+                if episode == p_episode:
+                    continue
+
+                result.append(episode)
+
+        return result
+
+    @classmethod
+    def get_identifier(cls, video):
         # Get plex identifier
         p_season = try_convert(video.get('parentIndex'), int)
         p_episode = try_convert(video.get('index'), int)
@@ -193,20 +216,8 @@ class PlexMatcher(PlexBase):
         # Find new episodes from identifiers
         c_episodes = [p_episode]
 
-        for c_identifier in c_identifiers:
-            if 'season' not in c_identifier:
-                continue
-
-            episodes = cls.match_identifier(p_season, p_episode, c_identifier)
-            if episodes is None:
-                continue
-
-            # Insert any new episodes found from identifier
-            for episode in episodes:
-                if episode in c_episodes:
-                    continue
-
-                c_episodes.append(episode)
+        # Add extended episodes
+        c_episodes.extend(cls.get_extended(video, p_season, p_episode))
 
         # Remove any episode identifiers that are more than 1 away
         c_episodes = cls.remove_distant(c_episodes, p_episode)

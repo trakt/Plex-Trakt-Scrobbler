@@ -57,6 +57,13 @@
         "default": "Disabled"
     },
     {
+        "id": "matcher",
+        "type": "enum",
+        "label": "Matcher",
+        "values": ["Plex", "Plex Extended"],
+        "default": "Plex Extended"
+    },
+    {
         "id": "scrobble_names",
         "type": "text",
         "label": "Scrobble - MyPlex users (PlexPass)",
