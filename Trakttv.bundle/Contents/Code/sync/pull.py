@@ -1,3 +1,4 @@
+from core.helpers import plural
 from core.logger import Logger
 from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -132,15 +133,30 @@ class Show(Base):
                     t_episodes=t_show.episodes
                 )
 
+        # Trigger plex missing show/episode discovery
+        self.discover_missing(t_shows)
+
+        log.info('Finished pulling shows from trakt')
+        return True
+
+    def discover_missing(self, t_shows):
+        # Ensure collection cleaning is enabled
+        if not Prefs['sync_clean_collection']:
+            return
+
+        log.info('Searching for shows/episodes that are missing from plex')
+
         # Find collected shows that are missing from Plex
-        # TODO only run if collection cleaning is enabled
         t_collection_missing = self.get_missing(t_shows, is_collected=False)
 
         # Discover entire shows missing
+        num_shows = 0
         for key, t_show in t_collection_missing.items():
             self.store('missing.shows', t_show.to_info())
+            num_shows = num_shows + 1
 
-        # TODO construct list of missing episodes, 'un-library' them on trakt
+        # Discover episodes missing
+        num_episodes = 0
         for key, t_show in t_shows.items():
             if t_show.pk in t_collection_missing:
                 continue
@@ -155,8 +171,13 @@ class Show(Base):
                 episodes=[x.to_info() for x in t_episodes_missing.itervalues()]
             )
 
-        log.info('Finished pulling shows from trakt')
-        return True
+            num_episodes = num_episodes + len(t_episodes_missing)
+
+        log.info(
+            'Found %s show%s and %s episode%s missing from plex',
+            num_shows, plural(num_shows),
+            num_episodes, plural(num_episodes)
+        )
 
     def run_ratings(self, p_shows, t_show):
         return self.rate(p_shows, t_show)
@@ -187,18 +208,29 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
-        # Find collected movies that are missing from Plex
-        # TODO only run if collection cleaning is enabled
-        t_collection_missing = self.get_missing(t_movies)
-
-        for key, t_movie in t_collection_missing.items():
-            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
-            self.store('missing.movies', t_movie.to_info())
-
-        # TODO 'un-library' missing movies on trakt
+        # Trigger plex missing movie discovery
+        self.discover_missing(t_movies)
 
         log.info('Finished pulling movies from trakt')
         return True
+
+    def discover_missing(self, t_movies):
+        # Ensure collection cleaning is enabled
+        if not Prefs['sync_clean_collection']:
+            return
+
+        log.info('Searching for movies that are missing from plex')
+
+        # Find collected movies that are missing from Plex
+        t_collection_missing = self.get_missing(t_movies)
+
+        num_movies = 0
+        for key, t_movie in t_collection_missing.items():
+            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
+            self.store('missing.movies', t_movie.to_info())
+            num_movies = num_movies + 1
+
+        log.info('Found %s movie%s missing from plex', num_movies, plural(num_movies))
 
     def run_watched(self, p_movies, t_movie):
         return self.watch(p_movies, t_movie)
