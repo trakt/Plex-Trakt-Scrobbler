@@ -10,8 +10,13 @@ log = Logger('plex.plex_library')
 
 # Mappings for agents to their compatible service
 METADATA_AGENT_MAP = {
+    # Movie
     'xbmcnfo': 'imdb',
-    'xbmcnfotv': 'thetvdb'
+
+    # TV
+    'abstvdb': 'thetvdb',
+    'thetvdbdvdorder': 'thetvdb',
+    'xbmcnfotv': 'thetvdb',
 }
 
 
