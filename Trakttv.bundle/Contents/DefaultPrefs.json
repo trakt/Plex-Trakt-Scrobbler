@@ -38,6 +38,12 @@
         "default": "false"
     },
     {
+        "id": "sync_clean_collection",
+        "type": "bool",
+        "label": "Sync - Clean collection",
+        "default": "false"
+    },
+    {
         "id": "sync_run_library",
         "type": "bool",
         "label": "Sync - Run after library updates",
@@ -51,15 +57,22 @@
         "default": "Disabled"
     },
     {
+        "id": "matcher",
+        "type": "enum",
+        "label": "Matcher",
+        "values": ["Plex", "Plex Extended"],
+        "default": "Plex Extended"
+    },
+    {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Scrobble - MyPlex users (PlexPass)",
+        "label": "Filter - myPlex users (optional, PlexPass)",
         "default": ""
     },
     {
         "id": "scrobble_clients",
         "type": "text",
-        "label": "Scrobble - Client names (comma separated)",
+        "label": "Filter - Clients (optional, comma separated)",
         "default": ""
     },
     {

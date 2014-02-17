@@ -1,6 +1,9 @@
 from core.helpers import build_repr
 
 
+PRIMARY_KEY = 'imdb'
+
+
 class TraktMedia(object):
     def __init__(self, keys=None):
         self.keys = keys
@@ -11,6 +14,18 @@ class TraktMedia(object):
 
         self.is_watched = None
         self.is_collected = None
+        self.is_local = None
+
+    @property
+    def pk(self):
+        if not self.keys:
+            return None
+
+        for key, value in self.keys:
+            if key == PRIMARY_KEY:
+                return value
+
+        return None
 
     def update(self, info, keys):
         for key in keys:
@@ -37,7 +52,7 @@ class TraktMedia(object):
 
     @staticmethod
     def get_repr_keys():
-        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp', 'is_watched', 'is_collected']
+        return ['keys', 'rating', 'rating_advanced', 'rating_timestamp', 'is_watched', 'is_collected', 'is_local']
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
@@ -55,6 +70,13 @@ class TraktShow(TraktMedia):
         self.tvdb_id = None
 
         self.episodes = {}
+
+    def to_info(self):
+        return {
+            'tvdb_id': self.tvdb_id,
+            'title': self.title,
+            'year': self.year
+        }
 
     def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)
@@ -94,6 +116,16 @@ class TraktEpisode(TraktMedia):
         self.season = season
         self.number = number
 
+    @property
+    def pk(self):
+        return self.season, self.number
+
+    def to_info(self):
+        return {
+            'season': self.season,
+            'episode': self.number
+        }
+
     @classmethod
     def create(cls, season, number, is_watched=None, is_collected=None):
         episode = cls(season, number)
@@ -113,6 +145,13 @@ class TraktMovie(TraktMedia):
         self.title = None
         self.year = None
         self.imdb_id = None
+
+    def to_info(self):
+        return {
+            'title': self.title,
+            'year': self.year,
+            'imdb_id': self.imdb_id
+        }
 
     def fill(self, info, is_watched=None, is_collected=None):
         TraktMedia.fill(self, info)

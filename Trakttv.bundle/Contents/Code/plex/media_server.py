@@ -27,11 +27,9 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
-PMS_URL = 'http://localhost:32400%s'  # TODO remove this, replace with PMS.base_url
-
 
 class PMS(object):
-    base_url = 'http://localhost:32400'
+    base_url = 'http://127.0.0.1:32400'
 
     @classmethod
     def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3, **kwargs):
@@ -205,7 +203,7 @@ class PMS(object):
 
     @classmethod
     def get_metadata_leaves(cls, key):
-        return cls.request('library/metadata/%s/allLeaves' % key)
+        return cls.request('library/metadata/%s/allLeaves' % key, timeout=10)
 
     @classmethod
     def get_sections(cls):
@@ -213,7 +211,7 @@ class PMS(object):
 
     @classmethod
     def get_section(cls, name):
-        return cls.request('library/sections/%s/all' % name)
+        return cls.request('library/sections/%s/all' % name, timeout=10)
 
     @classmethod
     def get_section_directories(cls, section_name):

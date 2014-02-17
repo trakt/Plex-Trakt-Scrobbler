@@ -1,3 +1,4 @@
+from core.helpers import plural, all
 from core.logger import Logger
 from plex.media_server_new import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -9,6 +10,13 @@ log = Logger('sync.pull')
 
 class Base(SyncBase):
     task = 'pull'
+
+    @staticmethod
+    def get_missing(t_items, is_collected=True):
+        return dict([
+            (t_item.pk, t_item) for t_item in t_items.itervalues()
+            if (not is_collected or t_item.is_collected) and not t_item.is_local
+        ])
 
     def watch(self, p_items, t_item):
         if type(p_items) is not list:
@@ -77,6 +85,8 @@ class Episode(Base):
             if key is None or key not in p_episodes:
                 continue
 
+            t_episode.is_local = True
+
             # TODO check result
             self.trigger(enabled_funcs, p_episode=p_episodes[key], t_episode=t_episode)
 
@@ -99,28 +109,79 @@ class Show(Base):
         p_shows = self.plex.library('show')
 
         # Fetch library, and only get ratings and collection if enabled
-        t_shows = self.trakt.merged('shows', ratings='ratings' in enabled_funcs)
+        t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_show in t_shows.items():
+        for key, t_show in t_shows_table.items():
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
             log.debug('Processing "%s" [%s]', t_show.title, key)
 
+            t_show.is_local = True
+
+            # Trigger show functions
             self.trigger(enabled_funcs, p_shows=p_shows[key], t_show=t_show)
 
+            # Run through each matched show and run episode functions
             for p_show in p_shows[key]:
                 self.child('episode').run(
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
 
+        # Trigger plex missing show/episode discovery
+        self.discover_missing(t_shows)
+
         log.info('Finished pulling shows from trakt')
         return True
+
+    def discover_missing(self, t_shows):
+        # Ensure collection cleaning is enabled
+        if not Prefs['sync_clean_collection']:
+            return
+
+        log.info('Searching for shows/episodes that are missing from plex')
+
+        # Find collected shows that are missing from Plex
+        t_collection_missing = self.get_missing(t_shows, is_collected=False)
+
+        # Discover entire shows missing
+        num_shows = 0
+        for key, t_show in t_collection_missing.items():
+            # Ignore show if there are no collected episodes on trakt
+            if all([not e.is_collected for (_, e) in t_show.episodes.items()]):
+                continue
+
+            self.store('missing.shows', t_show.to_info())
+            num_shows = num_shows + 1
+
+        # Discover episodes missing
+        num_episodes = 0
+        for key, t_show in t_shows.items():
+            if t_show.pk in t_collection_missing:
+                continue
+
+            t_episodes_missing = self.get_missing(t_show.episodes)
+
+            if not t_episodes_missing:
+                continue
+
+            self.store_episodes(
+                'missing.episodes', t_show.to_info(),
+                episodes=[x.to_info() for x in t_episodes_missing.itervalues()]
+            )
+
+            num_episodes = num_episodes + len(t_episodes_missing)
+
+        log.info(
+            'Found %s show%s and %s episode%s missing from plex',
+            num_shows, plural(num_shows),
+            num_episodes, plural(num_episodes)
+        )
 
     def run_ratings(self, p_shows, t_show):
         return self.rate(p_shows, t_show)
@@ -135,23 +196,45 @@ class Movie(Base):
         p_movies = self.plex.library('movie')
 
         # Fetch library, and only get ratings and collection if enabled
-        t_movies = self.trakt.merged('movies', ratings='ratings' in enabled_funcs)
+        t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_movie in t_movies.items():
+        for key, t_movie in t_movies_table.items():
             if key is None or key not in p_movies:
                 continue
 
             log.debug('Processing "%s" [%s]', t_movie.title, key)
+            t_movie.is_local = True
 
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
+        # Trigger plex missing movie discovery
+        self.discover_missing(t_movies)
+
         log.info('Finished pulling movies from trakt')
         return True
+
+    def discover_missing(self, t_movies):
+        # Ensure collection cleaning is enabled
+        if not Prefs['sync_clean_collection']:
+            return
+
+        log.info('Searching for movies that are missing from plex')
+
+        # Find collected movies that are missing from Plex
+        t_collection_missing = self.get_missing(t_movies)
+
+        num_movies = 0
+        for key, t_movie in t_collection_missing.items():
+            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
+            self.store('missing.movies', t_movie.to_info())
+            num_movies = num_movies + 1
+
+        log.info('Found %s movie%s missing from plex', num_movies, plural(num_movies))
 
     def run_watched(self, p_movies, t_movie):
         return self.watch(p_movies, t_movie)

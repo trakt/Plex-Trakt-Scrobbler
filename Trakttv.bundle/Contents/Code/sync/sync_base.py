@@ -1,10 +1,12 @@
-from threading import BoundedSemaphore
-import traceback
 from core.eventing import EventManager
-from core.helpers import all, spawn
+from core.helpers import all, merge, spawn, try_convert
 from core.logger import Logger
 from core.trakt import Trakt
+from plex.plex_library import PlexLibrary
 from plex.media_server_new import PlexMediaServer
+from plex.plex_objects import PlexEpisode
+from threading import BoundedSemaphore
+import traceback
 
 
 log = Logger('sync.sync_base')
@@ -23,11 +25,66 @@ class PlexInterface(Base):
 
     @classmethod
     def library(cls, types=None, keys=None):
-        return PlexMediaServer.get_library(types, keys, cache_id=cls.get_cache_id())
+        return PlexLibrary.fetch(types, keys, cache_id=cls.get_cache_id())
 
     @classmethod
     def episodes(cls, key, parent=None):
-        return PlexMediaServer.get_episodes(key, parent, cache_id=cls.get_cache_id())
+        return PlexLibrary.fetch_episodes(key, parent, cache_id=cls.get_cache_id())
+
+    @staticmethod
+    def get_root(p_item):
+        if isinstance(p_item, PlexEpisode):
+            return p_item.parent
+
+        return p_item
+
+    @staticmethod
+    def add_identifier(data, p_item):
+        service, sid = p_item.key
+
+        # Parse identifier and append relevant '*_id' attribute to data
+        if service == 'imdb':
+            data['imdb_id'] = sid
+            return data
+
+        # Convert TMDB and TVDB identifiers to integers
+        if service in ['themoviedb', 'thetvdb']:
+            sid = try_convert(sid, int)
+
+            # If identifier is invalid, ignore it
+            if sid is None:
+                return data
+
+        if service == 'themoviedb':
+            data['tmdb_id'] = sid
+
+        if service == 'thetvdb':
+            data['tvdb_id'] = sid
+
+        return data
+
+    @classmethod
+    def to_trakt(cls, p_item, include_identifier=True):
+        data = {}
+
+        # Append episode attributes if this is a PlexEpisode
+        if isinstance(p_item, PlexEpisode):
+            data.update({
+                'season': p_item.season_num,
+                'episode': p_item.episode_num
+            })
+
+        if include_identifier:
+            p_root = cls.get_root(p_item)
+
+            data.update({
+                'title': p_root.title,
+                'year': p_root.year
+            })
+
+            cls.add_identifier(data, p_root)
+
+        return data
 
 
 class TraktInterface(Base):
@@ -57,11 +114,14 @@ class SyncBase(Base):
 
         self.artifacts = {}
 
-    def reset(self):
-        self.artifacts = {}
+    def reset(self, artifacts=None):
+        self.artifacts = artifacts.copy() if artifacts else {}
+
+        for child in self.children.itervalues():
+            child.reset(artifacts)
 
     def run(self, *args, **kwargs):
-        self.reset()
+        self.reset(kwargs.get('artifacts'))
 
         # Trigger handlers and return if there was an error
         if not all(self.trigger(None, *args, **kwargs)):
@@ -195,3 +255,12 @@ class SyncBase(Base):
             self.artifacts[key] = []
 
         self.artifacts[key].append(data)
+
+    def store_episodes(self, key, show, episodes=None, artifact=None):
+        if episodes is None:
+            episodes = self.child('episode').artifacts.get(artifact or key)
+
+        if episodes is None:
+            return
+
+        self.store(key, merge({'episodes': episodes}, show))

@@ -110,7 +110,7 @@ class Trakt(object):
             start = datetime.utcnow()
 
             # Merge data
-            result = {}
+            items = {}
 
             params = {
                 'authenticate': True,
@@ -119,36 +119,37 @@ class Trakt(object):
             }
 
             # Merge watched library
-            if watched and not Trakt.merge_watched(result, media, extended, **params):
+            if watched and not Trakt.merge_watched(items, media, extended, **params):
                 log.warn('Failed to merge watched library')
                 return None
 
             # Merge ratings
-            if ratings and not Trakt.merge_ratings(result, media, **params):
+            if ratings and not Trakt.merge_ratings(items, media, **params):
                 log.warn('Failed to merge ratings')
                 return None
 
             # Merge collected library
-            if collected and not Trakt.merge_collected(result, media, extended, **params):
+            if collected and not Trakt.merge_collected(items, media, extended, **params):
                 log.warn('Failed to merge collected library')
                 return None
 
-            item_count = len(result)
+            # Generate entries table with alternative keys
+            table = items.copy()
 
-            # Generate entries for alternative keys
-            for key, item in result.items():
+            for key, item in table.items():
                 # Skip first key (because it's the root_key)
                 for alt_key in item.keys[1:]:
-                    result[alt_key] = item
+                    table[alt_key] = item
 
+            # Calculate elapsed time
             elapsed = datetime.utcnow() - start
 
             log.debug(
                 'get_merged returned dictionary with %s keys for %s items in %s seconds',
-                len(result), item_count, total_seconds(elapsed)
+                len(table), len(items), total_seconds(elapsed)
             )
 
-            return result
+            return items, table
 
         @staticmethod
         def get_library(media, marked, extended=None, authenticate=False, retry=True, cache_id=None):
