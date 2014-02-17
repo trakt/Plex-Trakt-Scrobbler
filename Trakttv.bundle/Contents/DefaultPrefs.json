@@ -51,13 +51,13 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Scrobble - MyPlex users (PlexPass)",
+        "label": "Filter - myPlex users (optional, PlexPass)",
         "default": ""
     },
     {
         "id": "scrobble_clients",
         "type": "text",
-        "label": "Scrobble - Client names (comma separated)",
+        "label": "Filter - Clients (optional, comma separated)",
         "default": ""
     },
     {
