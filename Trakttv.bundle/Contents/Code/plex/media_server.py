@@ -27,11 +27,9 @@ MOVIE_PATTERNS = [
     STANDALONE_REGEXP
 ]
 
-PMS_URL = 'http://localhost:32400%s'  # TODO remove this, replace with PMS.base_url
-
 
 class PMS(object):
-    base_url = 'http://localhost:32400'
+    base_url = 'http://127.0.0.1:32400'
 
     @classmethod
     def request(cls, path='/', response_type='xml', raise_exceptions=False, retry=True, timeout=3, **kwargs):
