@@ -22,7 +22,7 @@ IGNORE_PATTERNS = [
 
 IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
 
-PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>\w+) =\> (?P<value>.*?)'))
+PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>.*?) =\> (?P<value>.*?)'))
 RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
 CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
