@@ -10,17 +10,19 @@ class Synchronize(SyncBase):
     title = "Synchronize"
 
     def run(self, **kwargs):
-        log.debug('Synchronize.run kwargs: %s' % kwargs)
+        self.reset()
 
         push = self.manager.handlers.get('push')
         pull = self.manager.handlers.get('pull')
 
         if not push or not pull:
             log.warn("Sync handlers haven't initialized properly, unable to synchronize")
+            self.update_status(False)
             return False
 
         if not pull.run():
             log.warn("Pull handler failed")
+            self.update_status(False)
             return False
 
         # Store missing media discovery artifacts
@@ -33,6 +35,8 @@ class Synchronize(SyncBase):
 
         if not push.run(artifacts=self.artifacts):
             log.warn('Push handler failed')
+            self.update_status(False)
             return False
 
+        self.update_status(True)
         return True

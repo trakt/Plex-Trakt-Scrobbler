@@ -266,3 +266,13 @@ class Push(Base):
     title = 'Push'
     children = [Show, Movie]
     threaded = True
+
+    def run(self, *args, **kwargs):
+        success = super(Push, self).run(*args, **kwargs)
+
+        if kwargs.get('section') is None:
+            # Update the status for each section
+            for (_, k, _) in self.plex.sections():
+                self.update_status(True, start_time=self.start_time, section=k)
+
+        return success

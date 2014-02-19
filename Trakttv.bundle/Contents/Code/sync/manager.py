@@ -167,32 +167,21 @@ class SyncManager(object):
 
         log.debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
 
-        cls.current.start_time = datetime.utcnow()
-
         # Update cache_id to ensure we trigger new requests
         cls.cache_id = str(time.time())
+        success = False
 
         try:
-            cls.current.success = handler.run(section=section, **kwargs)
+            success = handler.run(section=section, **kwargs)
         except Exception, e:
-            cls.current.success = False
+            handler.update_status(False)
 
             log.warn('Exception raised in handler for "%s" (%s) %s: %s' % (
                 key, type(e), e, traceback.format_exc()
             ))
 
-        cls.current.end_time = datetime.utcnow()
-
-        # Update task status
-        status = cls.get_status(key, section)
-        status.update(cls.current)
-        status.save()
-
-        # Save to disk
-        Dict.Save()
-
         # Return task success result
-        return cls.current.success
+        return success
 
     @classmethod
     def update_progress(cls, current, start=0, end=100):
