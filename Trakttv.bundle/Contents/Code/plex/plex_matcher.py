@@ -158,8 +158,10 @@ class PlexMatcher(PlexBase):
             # Parse file_name with Caper
             result = cls.get_parser().parse(file_name)
 
+            chain = result.chains[0] if result.chains else None
+
             # Get best identifier match from result
-            identifier = result.chains[0].info['identifier']
+            identifier = chain.info.get('identifier', []) if chain else []
 
             # Update cache
             cls.store(file_hash, identifier)
