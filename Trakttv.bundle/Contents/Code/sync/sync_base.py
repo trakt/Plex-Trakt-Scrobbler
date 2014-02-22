@@ -5,6 +5,7 @@ from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
 from plex.media_server_new import PlexMediaServer
 from plex.plex_objects import PlexEpisode
+from datetime import datetime
 from threading import BoundedSemaphore
 import traceback
 
@@ -114,7 +115,11 @@ class SyncBase(Base):
 
         self.artifacts = {}
 
+        self.start_time = None
+
     def reset(self, artifacts=None):
+        self.start_time = datetime.utcnow()
+
         self.artifacts = artifacts.copy() if artifacts else {}
 
         for child in self.children.itervalues():
@@ -125,12 +130,15 @@ class SyncBase(Base):
 
         # Trigger handlers and return if there was an error
         if not all(self.trigger(None, *args, **kwargs)):
+            self.update_status(False)
             return False
 
         # Trigger children and return if there was an error
         if not all(self.trigger_children(*args, **kwargs)):
+            self.update_status(False)
             return False
 
+        self.update_status(True)
         return True
 
     def child(self, name):
@@ -224,18 +232,36 @@ class SyncBase(Base):
 
         return result
 
-    def get_status(self):
+    def update_status(self, success, end_time=None, start_time=None, section=None):
+        if end_time is None:
+            end_time = datetime.utcnow()
+
+        # Update task status
+        status = self.get_status(section)
+        status.update(success, start_time or self.start_time, end_time)
+
+        log.info(
+            'Task "%s" finished - success: %s, start: %s, elapsed: %s',
+            status.key,
+            status.previous_success,
+            status.previous_timestamp,
+            status.previous_elapsed
+        )
+
+    def get_status(self, section=None):
         """Retrieve the status of the current syncing task.
 
         :rtype : SyncStatus
         """
-        task, handler = self.get_current()
-        if task is None:
-            return None
+        if section is None:
+            # Determine section from current state
+            task, _ = self.get_current()
+            if task is None:
+                return None
 
-        section = task.kwargs.get('section')
+            section = task.kwargs.get('section')
 
-        return self.manager.get_status(self.task, section)
+        return self.manager.get_status(self.task or self.key, section)
 
     def get_current(self):
         return self.manager.get_current()

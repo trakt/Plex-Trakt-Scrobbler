@@ -82,10 +82,18 @@ def get_task_status(key, section=None):
     status = SyncManager.get_status(key, section)
 
     if status.previous_timestamp:
-        result.append('Last run %s' % human(datetime.utcnow() - status.previous_timestamp, precision=1))
+        since = datetime.utcnow() - status.previous_timestamp
+
+        if since.seconds < 1:
+            result.append('Last run just a moment ago')
+        else:
+            result.append('Last run %s' % human(since, precision=1))
 
     if status.previous_elapsed:
-        result.append('taking %s' % human(status.previous_elapsed, precision=1, past_tense='%s'))
+        if status.previous_elapsed.seconds < 1:
+            result.append('taking less than a second')
+        else:
+            result.append('taking %s' % human(status.previous_elapsed, precision=1, past_tense='%s'))
 
     if status.previous_success is True:
         result.append('was successful')

@@ -25,13 +25,18 @@ class SyncStatus(DictModel):
         #: :type: datetime
         self.last_success = None
 
-    def update(self, task):
-        self.previous_success = task.success
-        self.previous_timestamp = task.start_time
-        self.previous_elapsed = task.end_time - task.start_time
+    def update(self, success, start_time, end_time):
+        self.previous_success = success
+        self.previous_timestamp = start_time
+        self.previous_elapsed = end_time - start_time
 
-        if task.success:
-            self.last_success = task.start_time
+        if success:
+            self.last_success = start_time
+
+        self.save()
+
+        # Save to disk
+        Dict.Save()
 
     def __repr__(self):
         return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_result', 'last_success_timestamp'])
