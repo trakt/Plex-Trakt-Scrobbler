@@ -3,6 +3,7 @@ from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS
+from plex.media_server_new import PlexMediaServer
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 
@@ -23,7 +24,7 @@ class WebSocketScrobbler(ScrobblerMethod):
             log.info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
-        server_info = PMS.get_server_info()
+        server_info = PlexMediaServer.get_info()
         if server_info is None:
             log.info('Error while retrieving server info for testing')
             return False

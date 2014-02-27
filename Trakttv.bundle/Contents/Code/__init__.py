@@ -20,6 +20,7 @@ from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plex.media_server import PMS
+from plex.media_server_new import PlexMediaServer
 from plex.metadata import PlexMetadata
 from pts.activity import Activity
 from pts.scrobbler import Scrobbler
@@ -94,7 +95,7 @@ class Main(object):
 
     def start(self):
         # Get current server version and save it to dict.
-        server_version = PMS.get_server_version()
+        server_version = PlexMediaServer.get_version()
         if server_version:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version

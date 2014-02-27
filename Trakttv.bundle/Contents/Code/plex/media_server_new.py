@@ -7,8 +7,16 @@ log = Logger('plex.media_server_new')
 
 class PlexMediaServer(PlexBase):
     @classmethod
-    def get_server_info(cls, quiet=False):
+    def get_info(cls, quiet=False):
         return cls.request(quiet=quiet)
+
+    @classmethod
+    def get_version(cls, default=None, quiet=False):
+        server_info = cls.get_info(quiet)
+        if server_info is None:
+            return default
+
+        return server_info.attrib.get('version') or default
 
     @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):

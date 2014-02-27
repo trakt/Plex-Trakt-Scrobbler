@@ -106,7 +106,7 @@ class LoggingActivity(ActivityMethod):
                     time.sleep(retry_interval)
 
                 # Ping server to see if server is still active
-                PlexMediaServer.get_server_info(quiet=True)
+                PlexMediaServer.get_info(quiet=True)
 
         if line and try_count > 2:
             log.debug('Successfully read the log file after retrying')

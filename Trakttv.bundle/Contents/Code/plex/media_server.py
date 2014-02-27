@@ -137,18 +137,6 @@ class PMS(object):
         return None
 
     @classmethod
-    def get_server_info(cls):
-        return cls.request()
-
-    @classmethod
-    def get_server_version(cls, default=None):
-        server_info = cls.get_server_info()
-        if server_info is None:
-            return default
-
-        return server_info.attrib.get('version') or default
-
-    @classmethod
     def get_sessions(cls):
         return cls.request('status/sessions')
 
