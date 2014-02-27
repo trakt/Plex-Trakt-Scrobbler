@@ -3,6 +3,7 @@ from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS
+from plex.plex_preferences import PlexPreferences
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 
@@ -20,11 +21,11 @@ class LoggingScrobbler(ScrobblerMethod):
     @classmethod
     def test(cls):
         # Try enable logging
-        if not PMS.set_logging_state(True):
+        if not PlexPreferences.log_debug(True):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not PMS.get_logging_state():
+        if not PlexPreferences.log_debug():
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 

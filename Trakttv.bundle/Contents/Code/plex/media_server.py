@@ -137,29 +137,6 @@ class PMS(object):
         return None
 
     @classmethod
-    def set_logging_state(cls, state):
-        result = cls.request(':/prefs?logDebug=%s' % int(state), 'text', method='PUT')
-        if result is None:
-            return False
-
-        return True
-
-    @classmethod
-    def get_logging_state(cls):
-        result = cls.request(':/prefs')
-        if result is None:
-            return False
-
-        for setting in result.xpath('//Setting'):
-
-            if setting.get('id') == 'logDebug' and setting.get('value'):
-                value = setting.get('value').lower()
-                return True if value == 'true' else False
-
-        Log.Warn('Unable to determine logging state, assuming disabled')
-        return False
-
-    @classmethod
     def get_server_info(cls):
         return cls.request()
 

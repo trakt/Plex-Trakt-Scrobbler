@@ -14,6 +14,9 @@ sys.modules['plex.plex_matcher'] = plex_matcher
 import metadata
 sys.modules['plex.metadata'] = metadata
 
+import plex_preferences
+sys.modules['plex.plex_preferences'] = plex_preferences
+
 import media_server
 sys.modules['plex.media_server'] = media_server
 
