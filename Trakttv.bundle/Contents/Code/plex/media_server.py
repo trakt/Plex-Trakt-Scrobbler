@@ -116,27 +116,6 @@ class PMS(object):
             ))
 
     @classmethod
-    def client(cls, client_id):
-        if not client_id:
-            Log.Warn('Invalid client_id provided')
-            return None
-
-        result = cls.request('clients')
-        if not result:
-            return None
-
-        found_clients = []
-
-        for section in result.xpath('//Server'):
-            found_clients.append(section.get('machineIdentifier'))
-
-            if section.get('machineIdentifier') == client_id:
-                return section
-
-        Log.Info("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
-        return None
-
-    @classmethod
     def get_sessions(cls):
         return cls.request('status/sessions')
 

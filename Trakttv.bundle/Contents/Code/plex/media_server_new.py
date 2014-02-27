@@ -6,6 +6,10 @@ log = Logger('plex.media_server_new')
 
 
 class PlexMediaServer(PlexBase):
+    #
+    # Server
+    #
+
     @classmethod
     def get_info(cls, quiet=False):
         return cls.request(quiet=quiet)
@@ -17,6 +21,31 @@ class PlexMediaServer(PlexBase):
             return default
 
         return server_info.attrib.get('version') or default
+
+    @classmethod
+    def get_client(cls, client_id):
+        if not client_id:
+            log.warn('Invalid client_id provided')
+            return None
+
+        result = cls.request('clients')
+        if not result:
+            return None
+
+        found_clients = []
+
+        for section in result.xpath('//Server'):
+            found_clients.append(section.get('machineIdentifier'))
+
+            if section.get('machineIdentifier') == client_id:
+                return section
+
+        log.info("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
+        return None
+
+    #
+    # Collection
+    #
 
     @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):

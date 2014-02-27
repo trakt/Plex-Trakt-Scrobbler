@@ -57,7 +57,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         session = WatchSession.from_section(
             video_section, state,
             PMS.metadata(video_section.get('ratingKey')),
-            PMS.client(player_section.get('machineIdentifier'))
+            PlexMediaServer.get_client(player_section.get('machineIdentifier'))
         )
         session.save()
 

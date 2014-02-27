@@ -3,6 +3,7 @@ from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from plex.media_server import PMS
+from plex.media_server_new import PlexMediaServer
 from plex.plex_preferences import PlexPreferences
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
@@ -34,7 +35,7 @@ class LoggingScrobbler(ScrobblerMethod):
     def create_session(self, info):
         client = None
         if info.get('machineIdentifier'):
-            client = PMS.client(info['machineIdentifier'])
+            client = PlexMediaServer.get_client(info['machineIdentifier'])
         else:
             log.info('No machineIdentifier available, client filtering not available')
 
