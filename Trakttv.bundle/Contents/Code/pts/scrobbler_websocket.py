@@ -20,7 +20,7 @@ class WebSocketScrobbler(ScrobblerMethod):
 
     @classmethod
     def test(cls):
-        if PMS.get_sessions() is None:
+        if PlexMediaServer.get_sessions() is None:
             log.info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
@@ -46,7 +46,7 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         log.debug('Creating a WatchSession for the current media')
 
-        video_section = PMS.get_video_session(session_key)
+        video_section = PlexMediaServer.get_session(session_key)
         if not video_section:
             return None
 
@@ -66,7 +66,7 @@ class WebSocketScrobbler(ScrobblerMethod):
     def update_session(self, session, view_offset):
         log.debug('Trying to update the current WatchSession (session key: %s)' % session.key)
 
-        video_section = PMS.get_video_session(session.key)
+        video_section = PlexMediaServer.get_session(session.key)
         if not video_section:
             log.warn('Session was not found on media server')
             return False

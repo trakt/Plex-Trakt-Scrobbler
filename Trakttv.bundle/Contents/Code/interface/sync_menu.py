@@ -1,5 +1,4 @@
 from core.helpers import timestamp, pad_title
-from plex.media_server import PMS
 from plex.media_server_new import PlexMediaServer
 from sync.manager import SyncManager
 from datetime import datetime

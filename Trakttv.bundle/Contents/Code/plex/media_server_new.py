@@ -43,6 +43,24 @@ class PlexMediaServer(PlexBase):
         log.info("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
         return None
 
+    @classmethod
+    def get_sessions(cls):
+        return cls.request('status/sessions')
+
+    @classmethod
+    def get_session(cls, session_key):
+        sessions = cls.get_sessions()
+        if sessions is None:
+            log.warn('Sessions request failed')
+            return None
+
+        for section in sessions.xpath('//MediaContainer/Video'):
+            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                return section
+
+        log.warn('Session "%s" not found', session_key)
+        return None
+
     #
     # Collection
     #

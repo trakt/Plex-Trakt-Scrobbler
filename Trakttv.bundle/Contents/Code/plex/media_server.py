@@ -114,21 +114,3 @@ class PMS(object):
             Log('The content type %s is not supported, the item %s will not be scrobbled.' % (
                 section.get('type'), section.get('title')
             ))
-
-    @classmethod
-    def get_sessions(cls):
-        return cls.request('status/sessions')
-
-    @classmethod
-    def get_video_session(cls, session_key):
-        sessions = cls.get_sessions()
-        if sessions is None:
-            Log.Warn('Status request failed, unable to connect to server')
-            return None
-
-        for section in sessions.xpath('//MediaContainer/Video'):
-            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
-                return section
-
-        Log.Warn('Session not found')
-        return None
