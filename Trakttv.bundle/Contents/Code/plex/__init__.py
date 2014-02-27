@@ -17,9 +17,6 @@ sys.modules['plex.metadata'] = metadata
 import plex_preferences
 sys.modules['plex.plex_preferences'] = plex_preferences
 
-import media_server
-sys.modules['plex.media_server'] = media_server
-
 import media_server_new
 sys.modules['plex.media_server_new'] = media_server_new
 

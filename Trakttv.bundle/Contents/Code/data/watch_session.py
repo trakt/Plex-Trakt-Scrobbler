@@ -40,21 +40,20 @@ class WatchSession(DictModel):
 
         if not self.metadata or not self.metadata.get('type'):
             return None
+
         media_type = self.metadata.get('type')
 
         if media_type == 'episode':
-            if self.metadata.get('tvdb_id'):
-                return 'show'
+            return 'show'
 
-        if media_type == 'movie':
-            if self.metadata.get('imdb_id') or self.metadata.get('tmdb_id'):
-                return 'movie'
-
-        return None
+        return media_type
 
     def get_title(self):
         if not self.metadata:
             return None
+
+        if 'grandparent_title' in self.metadata:
+            return self.metadata['grandparent_title']
 
         return self.metadata.get('title')
 

@@ -1,8 +1,9 @@
 from core.cache import Cache
 from core.eventing import EventManager
+from core.helpers import try_convert
 from core.logger import Logger
 from plex.plex_base import PlexBase
-from plex.plex_objects import PlexParsedGuid
+from plex.plex_objects import PlexParsedGuid, PlexShow, PlexEpisode, PlexMovie
 import re
 
 log = Logger('plex.metadata')
@@ -54,19 +55,48 @@ class PlexMetadata(PlexBase):
         return cls.request('library/metadata/%s' % key)
 
     @classmethod
-    def get(cls, key):
+    def get_cache(cls, key):
         return cls.cache.get(key, refresh=True)
 
     @classmethod
     def get_guid(cls, key):
-        metadata = cls.get(key)
+        metadata = cls.get_cache(key)
         if metadata is None:
             return None
 
         return metadata[0].get('guid')
 
     @classmethod
-    def get_parsed_guid(cls, guid=None, key=None):
+    def get(cls, key):
+        data = cls.get_cache(key)
+        if data is None:
+            return None
+
+        data = data[0]
+
+        parsed_guid, item_key = cls.get_key(guid=data.get('guid'))
+
+        # Create object for the data
+        data_type = data.get('type')
+
+        if data_type == 'movie':
+            return PlexMovie.create(data, parsed_guid, item_key)
+
+        if data_type == 'show':
+            return PlexShow.create(data, parsed_guid, item_key)
+
+        if data_type == 'episode':
+            return PlexEpisode.create(data, parsed_guid=parsed_guid, key=item_key)
+
+        log.warn('Failed to parse item "%s" with type "%s"', key, data_type)
+        return None
+
+    #
+    # GUID/key parsing
+    #
+
+    @classmethod
+    def get_parsed_guid(cls, key=None, guid=None):
         if not guid:
             if not key:
                 raise ValueError("Either guid or key is required")
@@ -88,8 +118,8 @@ class PlexMetadata(PlexBase):
         return METADATA_AGENT_MAP.get(agent)
 
     @classmethod
-    def get_key(cls, key):
-        parsed_guid = cls.get_parsed_guid(key=key)
+    def get_key(cls, key=None, guid=None):
+        parsed_guid = cls.get_parsed_guid(key, guid)
 
         # Ensure service id is valid
         if not parsed_guid or not parsed_guid.sid:
@@ -97,6 +127,8 @@ class PlexMetadata(PlexBase):
             return None, None
 
         agent, sid_pattern = cls.get_mapping(parsed_guid.agent)
+
+        parsed_guid.agent = agent
 
         # Match sid with regex
         if sid_pattern:
@@ -109,7 +141,36 @@ class PlexMetadata(PlexBase):
             # Update with new sid
             parsed_guid.sid = ''.join(match.groups())
 
-        return parsed_guid, (agent, parsed_guid.sid)
+        return parsed_guid, (parsed_guid.agent, parsed_guid.sid)
+
+    @staticmethod
+    def add_identifier(data, p_item):
+        service, sid = p_item['key'] if type(p_item) is dict else p_item.key
+
+        # Parse identifier and append relevant '*_id' attribute to data
+        if service == 'imdb':
+            data['imdb_id'] = sid
+            return data
+
+        # Convert TMDB and TVDB identifiers to integers
+        if service in ['themoviedb', 'thetvdb']:
+            sid = try_convert(sid, int)
+
+            # If identifier is invalid, ignore it
+            if sid is None:
+                return data
+
+        if service == 'themoviedb':
+            data['tmdb_id'] = sid
+
+        if service == 'thetvdb':
+            data['tvdb_id'] = sid
+
+        return data
+
+    #
+    # Timeline Events
+    #
 
     @classmethod
     def timeline_created(cls, item):

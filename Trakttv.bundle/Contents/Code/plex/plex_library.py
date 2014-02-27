@@ -84,7 +84,7 @@ class PlexLibrary(PlexBase):
             season, episodes = PlexMatcher.get_identifier(video)
 
             for episode in episodes:
-                result[season, episode] = PlexEpisode.create(parent, video, season, episode)
+                result[season, episode] = PlexEpisode.create(video, season, episode, parent=parent)
 
         # Ensure PlexMatcher cache is stored to disk
         PlexMatcher.save()

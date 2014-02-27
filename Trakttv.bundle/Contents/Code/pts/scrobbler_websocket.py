@@ -2,8 +2,8 @@ from core.eventing import EventManager
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
-from plex.media_server import PMS
 from plex.media_server_new import PlexMediaServer
+from plex.metadata import PlexMetadata
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 
@@ -56,7 +56,7 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         session = WatchSession.from_section(
             video_section, state,
-            PMS.metadata(video_section.get('ratingKey')),
+            PlexMetadata.get(video_section.get('ratingKey')).to_dict(),
             PlexMediaServer.get_client(player_section.get('machineIdentifier'))
         )
         session.save()

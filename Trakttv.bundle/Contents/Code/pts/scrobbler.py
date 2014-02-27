@@ -2,6 +2,7 @@ from core.helpers import str_pad
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from core.trakt import Trakt
+from plex.metadata import PlexMetadata
 
 log = Logger('pts.scrobbler')
 
@@ -84,16 +85,12 @@ class ScrobblerMethod(Method):
 
         if session_type == 'show':
             values.update({
-                'tvdb_id': session.metadata['tvdb_id'],
-                'season': session.metadata['season'],
-                'episode': session.metadata['episode']
+                'season': session.metadata['season_num'],
+                'episode': session.metadata['episode_num']
             })
 
-        if session_type == 'movie':
-            if session.metadata.get('imdb_id'):
-                values['imdb_id'] = session.metadata['imdb_id']
-            elif session.metadata.get('tmdb_id'):
-                values['tmdb_id'] = session.metadata['tmdb_id']
+        # Add TVDB/TMDB identifier
+        values = PlexMetadata.add_identifier(values, session.metadata)
 
         values.update({
             'duration': session.metadata['duration'],

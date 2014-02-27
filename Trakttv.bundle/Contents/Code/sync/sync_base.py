@@ -4,6 +4,7 @@ from core.logger import Logger
 from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
 from plex.media_server_new import PlexMediaServer
+from plex.metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
 from datetime import datetime
 from threading import BoundedSemaphore
@@ -41,28 +42,7 @@ class PlexInterface(Base):
 
     @staticmethod
     def add_identifier(data, p_item):
-        service, sid = p_item.key
-
-        # Parse identifier and append relevant '*_id' attribute to data
-        if service == 'imdb':
-            data['imdb_id'] = sid
-            return data
-
-        # Convert TMDB and TVDB identifiers to integers
-        if service in ['themoviedb', 'thetvdb']:
-            sid = try_convert(sid, int)
-
-            # If identifier is invalid, ignore it
-            if sid is None:
-                return data
-
-        if service == 'themoviedb':
-            data['tmdb_id'] = sid
-
-        if service == 'thetvdb':
-            data['tvdb_id'] = sid
-
-        return data
+        return PlexMetadata.add_identifier(data, p_item)
 
     @classmethod
     def to_trakt(cls, p_item, include_identifier=True):
