@@ -14,6 +14,7 @@ METADATA_AGENT_MAP = {
 
     # Movie
     'xbmcnfo':          'imdb',
+    'standalone':       'themoviedb',
 
     # TV
     'abstvdb':          'thetvdb',
