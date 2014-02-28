@@ -3,6 +3,7 @@ from core.eventing import EventManager
 from core.helpers import try_convert
 from core.logger import Logger
 from plex.plex_base import PlexBase
+from plex.plex_matcher import PlexMatcher
 from plex.plex_objects import PlexParsedGuid, PlexShow, PlexEpisode, PlexMovie
 import re
 
@@ -86,7 +87,9 @@ class PlexMetadata(PlexBase):
             return PlexShow.create(data, parsed_guid, item_key)
 
         if data_type == 'episode':
-            return PlexEpisode.create(data, parsed_guid=parsed_guid, key=item_key)
+            season, episodes = PlexMatcher.get_identifier(data)
+
+            return PlexEpisode.create(data, season, episodes, parsed_guid=parsed_guid, key=item_key)
 
         log.warn('Failed to parse item "%s" with type "%s"', key, data_type)
         return None

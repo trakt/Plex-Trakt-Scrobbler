@@ -27,9 +27,12 @@ class WatchSession(DictModel):
         self.update_required = False
 
         self.progress = None
-        self.cur_state = state
-        self.paused_since = None
 
+        self.cur_state = state
+
+        self.cur_episode = None
+
+        self.paused_since = None
         self.last_view_offset = 0
         self.last_updated = Datetime.FromTimestamp(0)
 
@@ -56,6 +59,12 @@ class WatchSession(DictModel):
             return self.metadata['grandparent_title']
 
         return self.metadata.get('title')
+
+    def reset(self):
+        self.scrobbled = False
+        self.watching = False
+
+        self.last_updated = Datetime.FromTimestamp(0)
 
     @classmethod
     def object_from_json(cls, key, value):

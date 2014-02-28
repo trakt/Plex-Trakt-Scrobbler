@@ -157,32 +157,24 @@ class PlexEpisode(PlexVideo):
 
         self.grandparent_title = None
 
-        self.season_num = None
-        self.episode_num = None
+        self.season = None
+        self.episodes = None
 
     @classmethod
-    def create(cls, video, season_num=None, episode_num=None, parsed_guid=None, key=None, parent=None):
-        episode = cls(parent, video.get('ratingKey'), key)
+    def create(cls, video, season, episodes, parsed_guid=None, key=None, parent=None):
+        obj = cls(parent, video.get('ratingKey'), key)
 
-        episode.grandparent_title = video.get('grandparentTitle')
+        obj.grandparent_title = video.get('grandparentTitle')
 
-        if parsed_guid:
-            # Pull from parsed_guid
-            episode.season_num = parsed_guid.season
-            episode.episode_num = parsed_guid.episode
-        elif season_num is not None and episode_num is not None:
-            # Pull from parameters
-            episode.season_num = season_num
-            episode.episode_num = episode_num
-        else:
-            raise ValueError("Either parsed_guid or both season_num and episode_num is required")
+        obj.season = season
+        obj.episodes = episodes
 
-        cls.fill(episode, video, parsed_guid)
-        return episode
+        cls.fill(obj, video, parsed_guid)
+        return obj
 
     @staticmethod
     def get_repr_keys():
-        return PlexVideo.get_repr_keys() + ['parent', 'grandparent_title', 'season_num', 'episode_num']
+        return PlexVideo.get_repr_keys() + ['parent', 'grandparent_title', 'season', 'episodes']
 
 
 class PlexMovie(PlexVideo):

@@ -51,8 +51,8 @@ class PlexInterface(Base):
         # Append episode attributes if this is a PlexEpisode
         if isinstance(p_item, PlexEpisode):
             data.update({
-                'season': p_item.season_num,
-                'episode': p_item.episode_num
+                'season': p_item.season,
+                'episode': p_item.episodes
             })
 
         if include_identifier:
