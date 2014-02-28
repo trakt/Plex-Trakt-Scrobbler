@@ -2,8 +2,8 @@ from core.logger import Logger
 from plex.plex_base import PlexBase
 from plex.plex_objects import PlexShow, PlexEpisode, PlexMovie
 from plex.plex_matcher import PlexMatcher
-from plex.metadata import PlexMetadata
-from plex.media_server_new import PlexMediaServer
+from plex.plex_metadata import PlexMetadata
+from plex.plex_media_server import PlexMediaServer
 
 log = Logger('plex.plex_library')
 

@@ -2,7 +2,7 @@ from core.helpers import all
 from core.logger import Logger
 from plex.plex_base import PlexBase
 
-log = Logger('plex.media_server_new')
+log = Logger('plex.plex_media_server')
 
 
 class PlexMediaServer(PlexBase):

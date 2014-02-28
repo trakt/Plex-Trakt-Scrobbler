@@ -2,7 +2,7 @@ from core.helpers import str_pad
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from core.trakt import Trakt
-from plex.metadata import PlexMetadata
+from plex.plex_metadata import PlexMetadata
 
 log = Logger('pts.scrobbler')
 

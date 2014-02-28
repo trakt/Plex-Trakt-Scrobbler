@@ -1,6 +1,6 @@
 from core.helpers import plural, all
 from core.logger import Logger
-from plex.media_server_new import PlexMediaServer
+from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
 from datetime import datetime
 

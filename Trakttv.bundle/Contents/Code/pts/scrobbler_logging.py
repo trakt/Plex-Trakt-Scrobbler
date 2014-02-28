@@ -2,8 +2,8 @@ from core.eventing import EventManager
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
-from plex.media_server_new import PlexMediaServer
-from plex.metadata import PlexMetadata
+from plex.plex_media_server import PlexMediaServer
+from plex.plex_metadata import PlexMetadata
 from plex.plex_preferences import PlexPreferences
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 

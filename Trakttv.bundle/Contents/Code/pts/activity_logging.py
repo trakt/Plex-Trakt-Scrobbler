@@ -1,7 +1,7 @@
 from core.eventing import EventManager
 from core.helpers import str_format
 from core.logger import Logger
-from plex.media_server_new import PlexMediaServer
+from plex.plex_media_server import PlexMediaServer
 from plex.plex_preferences import PlexPreferences
 from pts.activity import ActivityMethod, Activity
 from asio_base import SEEK_ORIGIN_CURRENT

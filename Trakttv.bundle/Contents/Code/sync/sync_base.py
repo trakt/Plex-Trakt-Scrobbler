@@ -3,8 +3,8 @@ from core.helpers import all, merge, spawn, try_convert
 from core.logger import Logger
 from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
-from plex.media_server_new import PlexMediaServer
-from plex.metadata import PlexMetadata
+from plex.plex_media_server import PlexMediaServer
+from plex.plex_metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
 from datetime import datetime
 from threading import BoundedSemaphore

@@ -6,7 +6,7 @@ from plex.plex_base import PlexBase
 from plex.plex_objects import PlexParsedGuid, PlexShow, PlexEpisode, PlexMovie
 import re
 
-log = Logger('plex.metadata')
+log = Logger('plex.plex_metadata')
 
 # Mappings for agents to their compatible service
 METADATA_AGENT_MAP = {
