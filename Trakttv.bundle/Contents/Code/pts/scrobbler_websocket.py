@@ -12,6 +12,7 @@ log = Logger('pts.scrobbler_websocket')
 
 class WebSocketScrobbler(ScrobblerMethod):
     name = 'WebSocketScrobbler'
+    legacy = False
 
     def __init__(self):
         super(WebSocketScrobbler, self).__init__()

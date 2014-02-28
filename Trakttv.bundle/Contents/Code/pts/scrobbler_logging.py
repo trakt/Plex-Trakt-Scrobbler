@@ -13,6 +13,7 @@ log = Logger('pts.scrobbler_logging')
 
 class LoggingScrobbler(ScrobblerMethod):
     name = 'LoggingScrobbler'
+    legacy = True
 
     def __init__(self):
         super(LoggingScrobbler, self).__init__()
