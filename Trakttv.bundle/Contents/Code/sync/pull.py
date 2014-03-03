@@ -104,6 +104,8 @@ class Show(Base):
     children = [Episode]
 
     def run(self, section=None):
+        self.check_stopping()
+
         enabled_funcs = self.get_enabled_functions()
 
         p_shows = self.plex.library('show')
@@ -116,6 +118,8 @@ class Show(Base):
             return False
 
         for key, t_show in t_shows_table.items():
+            self.check_stopping()
+
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
@@ -132,6 +136,8 @@ class Show(Base):
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
+
+        self.check_stopping()
 
         # Trigger plex missing show/episode discovery
         self.discover_missing(t_shows)
@@ -191,6 +197,8 @@ class Movie(Base):
     key = 'movie'
 
     def run(self, section=None):
+        self.check_stopping()
+
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
@@ -203,6 +211,8 @@ class Movie(Base):
             return False
 
         for key, t_movie in t_movies_table.items():
+            self.check_stopping()
+
             if key is None or key not in p_movies:
                 continue
 
@@ -211,6 +221,8 @@ class Movie(Base):
 
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
+
+        self.check_stopping()
 
         # Trigger plex missing movie discovery
         self.discover_missing(t_movies)

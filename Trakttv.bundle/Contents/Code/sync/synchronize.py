@@ -20,6 +20,8 @@ class Synchronize(SyncBase):
             self.update_status(False)
             return False
 
+        self.check_stopping()
+
         if not pull.run():
             log.warn("Pull handler failed")
             self.update_status(False)
@@ -31,7 +33,7 @@ class Synchronize(SyncBase):
         self.store('missing.shows', pull.child('show').retrieve('missing.shows'), single=True)
         self.store('missing.episodes', pull.child('show').retrieve('missing.episodes'), single=True)
 
-        log.debug(self.artifacts)
+        self.check_stopping()
 
         if not push.run(artifacts=self.artifacts):
             log.warn('Push handler failed')

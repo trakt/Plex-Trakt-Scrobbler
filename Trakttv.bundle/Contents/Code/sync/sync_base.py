@@ -14,6 +14,10 @@ import traceback
 log = Logger('sync.sync_base')
 
 
+class CancelException(Exception):
+    pass
+
+
 class Base(object):
     @classmethod
     def get_cache_id(cls):
@@ -124,6 +128,37 @@ class SyncBase(Base):
     def child(self, name):
         return self.children.get(name)
 
+    def get_current(self):
+        return self.manager.get_current()
+
+    def is_stopping(self):
+        task, _ = self.get_current()
+
+        return task and task.stopping
+
+    def check_stopping(self):
+        if self.is_stopping():
+            raise CancelException()
+
+    @staticmethod
+    def get_enabled_functions():
+        result = []
+
+        if Prefs['sync_watched']:
+            result.append('watched')
+
+        if Prefs['sync_ratings']:
+            result.append('ratings')
+
+        if Prefs['sync_collection']:
+            result.append('collected')
+
+        return result
+
+    #
+    # Trigger
+    #
+
     def trigger(self, funcs=None, *args, **kwargs):
         single = kwargs.pop('single', False)
 
@@ -182,6 +217,8 @@ class SyncBase(Base):
 
         try:
             results.append(func(*args, **kwargs))
+        except CancelException, e:
+            log.info('Triggered function was cancelled')
         except Exception, e:
             log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
                 func, type(e), e, traceback.format_exc()
@@ -189,28 +226,13 @@ class SyncBase(Base):
 
         lock.release()
 
+    #
+    # Status / Progress
+    #
+
     @staticmethod
     def update_progress(current, start=0, end=100):
         raise ReferenceError()
-
-    @staticmethod
-    def is_stopping():
-        raise ReferenceError()
-
-    @staticmethod
-    def get_enabled_functions():
-        result = []
-
-        if Prefs['sync_watched']:
-            result.append('watched')
-
-        if Prefs['sync_ratings']:
-            result.append('ratings')
-
-        if Prefs['sync_collection']:
-            result.append('collected')
-
-        return result
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:
@@ -243,8 +265,9 @@ class SyncBase(Base):
 
         return self.manager.get_status(self.task or self.key, section)
 
-    def get_current(self):
-        return self.manager.get_current()
+    #
+    # Artifacts
+    #
 
     def retrieve(self, key, single=False):
         if single:

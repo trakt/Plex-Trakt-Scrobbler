@@ -2,6 +2,7 @@ from core.eventing import EventManager
 from core.helpers import total_seconds, sum, get_pref
 from core.logger import Logger
 from data.sync_status import SyncStatus
+from sync.sync_base import CancelException
 from sync.task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
@@ -84,14 +85,10 @@ class SyncManager(object):
 
     @classmethod
     def bind_handlers(cls):
-        def is_stopping():
-            return cls.current.stopping
-
         def update_progress(*args, **kwargs):
             cls.update_progress(*args, **kwargs)
 
         for key, handler in cls.handlers.items():
-            handler.is_stopping = is_stopping
             handler.update_progress = update_progress
 
     @classmethod
@@ -173,6 +170,9 @@ class SyncManager(object):
 
         try:
             success = handler.run(section=section, **kwargs)
+        except CancelException, e:
+            handler.update_status(False)
+            log.info('Task "%s" was cancelled', key)
         except Exception, e:
             handler.update_status(False)
 

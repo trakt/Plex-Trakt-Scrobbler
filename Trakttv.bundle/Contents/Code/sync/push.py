@@ -143,6 +143,7 @@ class Show(Base):
 
     def run(self, section=None, artifacts=None):
         self.reset(artifacts)
+        self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -163,6 +164,8 @@ class Show(Base):
             return False
 
         for key, p_show in p_shows.items():
+            self.check_stopping()
+
             t_show = t_shows_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
@@ -185,6 +188,7 @@ class Show(Base):
         #
         # Push changes to trakt
         #
+        self.check_stopping()
 
         for show in self.retrieve('collected'):
             self.send('show/episode/library', show)
@@ -213,6 +217,7 @@ class Movie(Base):
 
     def run(self, section=None, artifacts=None):
         self.reset(artifacts)
+        self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -233,6 +238,8 @@ class Movie(Base):
             return False
 
         for key, p_movie in p_movies.items():
+            self.check_stopping()
+
             t_movie = t_movies_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_movie[0].title if p_movie else None, key)
@@ -243,6 +250,8 @@ class Movie(Base):
         #
         # Push changes to trakt
         #
+        self.check_stopping()
+
         self.send_artifact('movie/seen', 'movies', 'watched')
         self.send_artifact('rate/movies', 'movies', 'ratings')
         self.send_artifact('movie/library', 'movies', 'collected')
