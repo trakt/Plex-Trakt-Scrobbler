@@ -8,7 +8,7 @@ import time
 import os
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
-REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[.*?\])? {method} {path}.*?")
+REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[.*?\]\s)?{method} {path}.*?")
 
 PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
 
