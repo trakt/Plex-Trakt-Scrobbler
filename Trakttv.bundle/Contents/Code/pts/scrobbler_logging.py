@@ -113,6 +113,8 @@ class LoggingScrobbler(ScrobblerMethod):
         # Calculate progress
         if not self.update_progress(session, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
+            session.update_required = True
+            session.save()
             return
 
         action = self.get_action(session, info['state'])

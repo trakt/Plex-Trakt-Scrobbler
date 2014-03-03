@@ -85,6 +85,9 @@ class ScrobblerMethod(Method):
             return None
 
         if session_type == 'show':
+            if 'episodes' not in session.metadata:
+                return None
+
             values.update({
                 'season': session.metadata['season'],
                 'episode': session.metadata['episodes'][session.cur_episode],
@@ -165,6 +168,9 @@ class ScrobblerMethod(Method):
         total_progress = float(view_offset) / duration
 
         if media == 'show':
+            if 'episodes' not in session.metadata:
+                return False
+
             cur_episode = int(math.floor(len(session.metadata['episodes']) * total_progress))
 
             # If episode has changed, reset the state to start new session
