@@ -41,3 +41,6 @@ sys.modules['core.update_checker'] = update_checker
 
 import migrator
 sys.modules['core.migrator'] = migrator
+
+import task
+sys.modules['core.task'] = task

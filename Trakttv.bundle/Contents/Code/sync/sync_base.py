@@ -1,21 +1,16 @@
 from core.eventing import EventManager
-from core.helpers import all, merge, spawn, try_convert
+from core.helpers import all, merge
 from core.logger import Logger
+from core.task import Task, CancelException
 from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
 from plex.plex_media_server import PlexMediaServer
 from plex.plex_metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
 from datetime import datetime
-from threading import BoundedSemaphore
-import traceback
 
 
 log = Logger('sync.sync_base')
-
-
-class CancelException(Exception):
-    pass
 
 
 class Base(object):
@@ -184,22 +179,22 @@ class SyncBase(Base):
             return []
 
         if self.threaded:
-            # Create lock and spawn functions
-            lock = BoundedSemaphore(len(funcs))
-            results = []
+            tasks = []
 
             for name, func in funcs:
-                spawn(
-                    self.trigger_spawn,
-                    lock, results, func,
+                task = Task(func, *args, **kwargs)
+                tasks.append(task)
 
-                    thread_name='sync.%s.%s' % (self.key, name),
-                    *args, **kwargs
-                )
+                task.spawn('sync.%s.%s' % (self.key, name))
 
             # Wait until everything is complete
-            for x in range(len(funcs)):
-                lock.acquire()
+            results = []
+
+            for x in range(len(tasks)):
+                log.debug('Waiting on task #%s', x + 1)
+                task.wait()
+                log.debug('Task #%s finished', x + 1)
+                results.append(task.result)
 
             return results
 
@@ -210,21 +205,6 @@ class SyncBase(Base):
             return results
 
         return results[0]
-
-    @staticmethod
-    def trigger_spawn(lock, results, func, *args, **kwargs):
-        lock.acquire()
-
-        try:
-            results.append(func(*args, **kwargs))
-        except CancelException, e:
-            log.info('Triggered function was cancelled')
-        except Exception, e:
-            log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
-                func, type(e), e, traceback.format_exc()
-            ))
-
-        lock.release()
 
     #
     # Status / Progress

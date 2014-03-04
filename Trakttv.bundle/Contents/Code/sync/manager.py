@@ -3,7 +3,7 @@ from core.helpers import total_seconds, sum, get_pref
 from core.logger import Logger
 from data.sync_status import SyncStatus
 from sync.sync_base import CancelException
-from sync.task import SyncTask
+from sync.sync_task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
