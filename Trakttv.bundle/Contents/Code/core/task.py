@@ -31,11 +31,7 @@ class Task(object):
             return False
 
         if not self.complete:
-            log.debug('(%s) Trying to acquire lock', self.target)
-
             self.lock.acquire()
-
-            log.debug('(%s) Acquired lock', self.target)
 
         if self.exception:
             raise self.exception
@@ -48,14 +44,13 @@ class Task(object):
 
         self.lock.acquire()
         self.started = True
-        log.debug('Started task for target %s', self.target)
 
         try:
             self.result = self.target(*self.args, **self.kwargs)
         except CancelException, e:
             self.exception = e
 
-            log.info('Task cancelled')
+            log.debug('Task cancelled')
         except Exception, e:
             self.exception = e
 
@@ -63,6 +58,5 @@ class Task(object):
                 self.target, type(e), e, traceback.format_exc()
             ))
 
-        log.debug('Finished task for target %s', self.target)
         self.complete = True
         self.lock.release()

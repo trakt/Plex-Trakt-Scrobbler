@@ -191,9 +191,7 @@ class SyncBase(Base):
             results = []
 
             for x in range(len(tasks)):
-                log.debug('Waiting on task #%s', x + 1)
                 task.wait()
-                log.debug('Task #%s finished', x + 1)
                 results.append(task.result)
 
             return results
