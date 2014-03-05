@@ -92,9 +92,15 @@ class SyncBase(Base):
         # Activate children and create dictionary map
         self.children = dict([(x.key, x(manager, self)) for x in self.children])
 
+        self.start_time = None
         self.artifacts = {}
 
-        self.start_time = None
+    @classmethod
+    def get_key(cls):
+        if cls.task and cls.key and cls.task != cls.key:
+            return '%s.%s' % (cls.task, cls.key)
+
+        return cls.key or cls.task
 
     def reset(self, artifacts=None):
         self.start_time = datetime.utcnow()
@@ -208,9 +214,14 @@ class SyncBase(Base):
     # Status / Progress
     #
 
-    @staticmethod
-    def update_progress(current, start=0, end=100):
-        raise ReferenceError()
+    def start(self, end, start=0):
+        EventManager.fire('sync.%s.started' % self.get_key(), start=start, end=end)
+
+    def progress(self, value):
+        EventManager.fire('sync.%s.progress' % self.get_key(), value=value)
+
+    def finish(self):
+        EventManager.fire('sync.%s.finished' % self.get_key())
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:

@@ -41,6 +41,7 @@ class SyncManager(object):
     current = None
 
     handlers = None
+    statistics = None
 
     @classmethod
     def initialize(cls):
@@ -51,7 +52,7 @@ class SyncManager(object):
         EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
-        cls.bind_handlers()
+        cls.statistics = SyncStatistics()
 
     @classmethod
     def get_cache_id(cls):
@@ -82,14 +83,6 @@ class SyncManager(object):
             status.save()
 
         return status
-
-    @classmethod
-    def bind_handlers(cls):
-        def update_progress(*args, **kwargs):
-            cls.update_progress(*args, **kwargs)
-
-        for key, handler in cls.handlers.items():
-            handler.update_progress = update_progress
 
     @classmethod
     def reset(cls):
@@ -262,3 +255,40 @@ class SyncManager(object):
 
         cls.current.stopping = True
         return True
+
+
+class SyncStatistics(object):
+    def __init__(self):
+        for h in HANDLERS:
+            self.bind(h)
+
+    def bind(self, task):
+        key = task.get_key()
+
+        EventManager.subscribe(
+            'sync.%s.started' % key,
+            lambda start, end: self.started(key, start, end)
+        )
+
+        EventManager.subscribe(
+            'sync.%s.progress' % key,
+            lambda value: self.progress(key, value)
+        )
+
+        EventManager.subscribe(
+            'sync.%s.finished' % key,
+            lambda: self.finished(key)
+        )
+
+        # Bind child progress events
+        for child in task.children:
+            self.bind(child)
+
+    def started(self, key, start, end):
+        log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
+
+    def progress(self, key, value):
+        log.debug('SyncStatistics.update(%s, %s)', repr(key), value)
+
+    def finished(self, key):
+        log.debug('SyncStatistics.finish(%s)', repr(key))

@@ -117,7 +117,9 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_show in t_shows_table.items():
+        self.start(len(t_shows_table))
+
+        for x, (key, t_show) in enumerate(t_shows_table.items()):
             self.check_stopping()
 
             if key is None or key not in p_shows or not t_show.episodes:
@@ -137,6 +139,9 @@ class Show(Base):
                     t_episodes=t_show.episodes
                 )
 
+            self.progress(x + 1)
+
+        self.finish()
         self.check_stopping()
 
         # Trigger plex missing show/episode discovery
@@ -210,8 +215,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_movie in t_movies_table.items():
+        self.start(len(t_movies_table))
+
+        for x, (key, t_movie) in enumerate(t_movies_table.items()):
             self.check_stopping()
+            self.progress(x + 1)
 
             if key is None or key not in p_movies:
                 continue
@@ -222,6 +230,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
+        self.finish()
         self.check_stopping()
 
         # Trigger plex missing movie discovery
