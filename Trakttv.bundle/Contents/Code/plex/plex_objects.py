@@ -127,7 +127,7 @@ class PlexVideo(PlexMedia):
         PlexMedia.fill(obj, video, parsed_guid)
 
         obj.view_count = try_convert(video.get('viewCount'), int)
-        obj.duration = try_convert(video.get('duration'), int) / float(1000 * 60)  # Convert to minutes
+        obj.duration = try_convert(video.get('duration'), int, 0) / float(1000 * 60)  # Convert to minutes
 
     @staticmethod
     def get_repr_keys():
