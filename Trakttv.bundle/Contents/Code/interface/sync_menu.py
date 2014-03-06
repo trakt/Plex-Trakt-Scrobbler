@@ -25,7 +25,7 @@ def SyncMenu(refresh=None):
 
         time_rem = task.statistics.seconds_remaining
         if time_rem:
-            time_rem = int(round(time_rem, 0))
+            time_rem = int(round(time_rem, 2))
 
         oc.add(DirectoryObject(
             key=Callback(SyncMenu, refresh=timestamp()),

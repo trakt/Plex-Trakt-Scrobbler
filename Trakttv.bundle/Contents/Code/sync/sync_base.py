@@ -215,13 +215,21 @@ class SyncBase(Base):
     #
 
     def start(self, end, start=0):
-        EventManager.fire('sync.%s.started' % self.get_key(), start=start, end=end)
+        EventManager.fire(
+            'sync.%s.started' % self.get_key(),
+            start=start, end=end
+        )
 
     def progress(self, value):
-        EventManager.fire('sync.%s.progress' % self.get_key(), value=value)
+        EventManager.fire(
+            'sync.%s.progress' % self.get_key(),
+            value=value
+        )
 
     def finish(self):
-        EventManager.fire('sync.%s.finished' % self.get_key())
+        EventManager.fire(
+            'sync.%s.finished' % self.get_key()
+        )
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:

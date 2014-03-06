@@ -3,6 +3,7 @@ from core.helpers import total_seconds, sum, get_pref
 from core.logger import Logger
 from data.sync_status import SyncStatus
 from sync.sync_base import CancelException
+from sync.sync_statistics import SyncStatistics
 from sync.sync_task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
@@ -52,7 +53,7 @@ class SyncManager(object):
         EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
-        cls.statistics = SyncStatistics()
+        cls.statistics = SyncStatistics(HANDLERS, cls)
 
     @classmethod
     def get_cache_id(cls):
@@ -177,38 +178,6 @@ class SyncManager(object):
         return success
 
     @classmethod
-    def update_progress(cls, current, start=0, end=100):
-        statistics = cls.current.statistics
-
-        # Remove offset
-        current = current - start
-        end = end - start
-
-        # Calculate progress and difference since last update
-        progress = float(current) / end
-        progress_diff = progress - (statistics.progress or 0)
-
-        if statistics.last_update:
-            diff_seconds = total_seconds(datetime.utcnow() - statistics.last_update)
-
-            # Plot current percent/sec
-            statistics.plots.append(diff_seconds / (progress_diff * 100))
-
-            # Calculate average percent/sec
-            statistics.per_perc = sum(statistics.plots) / len(statistics.plots)
-
-            # Calculate estimated time remaining
-            statistics.seconds_remaining = ((1 - progress) * 100) * statistics.per_perc
-
-        log.debug('[Sync][Progress] Progress: %02d%%, Estimated time remaining: ~%s seconds' % (
-            progress * 100,
-            int(round(statistics.seconds_remaining, 0)) if statistics.seconds_remaining else '?'
-        ))
-
-        statistics.progress = progress
-        statistics.last_update = datetime.utcnow()
-
-    @classmethod
     def scan_complete(cls):
         if not get_pref('sync_run_library'):
             log.info('"Run after library updates" not enabled, ignoring')
@@ -255,40 +224,3 @@ class SyncManager(object):
 
         cls.current.stopping = True
         return True
-
-
-class SyncStatistics(object):
-    def __init__(self):
-        for h in HANDLERS:
-            self.bind(h)
-
-    def bind(self, task):
-        key = task.get_key()
-
-        EventManager.subscribe(
-            'sync.%s.started' % key,
-            lambda start, end: self.started(key, start, end)
-        )
-
-        EventManager.subscribe(
-            'sync.%s.progress' % key,
-            lambda value: self.progress(key, value)
-        )
-
-        EventManager.subscribe(
-            'sync.%s.finished' % key,
-            lambda: self.finished(key)
-        )
-
-        # Bind child progress events
-        for child in task.children:
-            self.bind(child)
-
-    def started(self, key, start, end):
-        log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
-
-    def progress(self, key, value):
-        log.debug('SyncStatistics.update(%s, %s)', repr(key), value)
-
-    def finished(self, key):
-        log.debug('SyncStatistics.finish(%s)', repr(key))

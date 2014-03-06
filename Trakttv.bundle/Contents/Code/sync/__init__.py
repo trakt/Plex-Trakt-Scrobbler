@@ -17,5 +17,8 @@ sys.modules['sync.pull'] = pull
 import synchronize
 sys.modules['sync.synchronize'] = synchronize
 
+import sync_statistics
+sys.modules['sync.sync_statistics'] = sync_statistics
+
 import manager
 sys.modules['sync.manager'] = manager
