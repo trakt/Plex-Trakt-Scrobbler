@@ -43,7 +43,8 @@ class SyncStatistics(object):
             self.bind(child)
 
     def reset(self):
-        self.manager.current.statistics = SyncTaskStatistics()
+        if self.manager.current:
+            self.manager.current.statistics = SyncTaskStatistics()
 
         self.key = None
 
@@ -66,13 +67,18 @@ class SyncStatistics(object):
     def progress(self, key, value):
         log.debug('SyncStatistics.update(%s, %s)', repr(key), value)
 
+        if not self.manager.current:
+            return
+
         if key != self.key:
             log.warn('Invalid state (key: "%s" != "%s")', key, self.key)
             return
 
-        value += self.offset
-
         stat = self.manager.current.statistics
+        if not stat:
+            return
+
+        value += self.offset
 
         progress = float(value) / self.end
 
@@ -103,7 +109,7 @@ class SyncStatistics(object):
         # Calculate estimated time remaining
         stat.seconds_remaining = ((1 - cur_progress) * 100) * stat.per_perc
 
-        log.debug('plots: %s, per_perc: %s', stat.plots, stat.per_perc)
+        #log.debug('plots: %s, per_perc: %s', stat.plots, stat.per_perc)
 
 
 
