@@ -176,7 +176,11 @@ class SyncBase(Base):
     def trigger_children(self, *args, **kwargs):
         single = kwargs.pop('single', False)
 
-        children = [(child.key, child.run) for (_, child) in self.children.items() if child.auto_run]
+        children = [
+            (child.key, child.run) for (_, child) in self.children.items()
+            if child.auto_run
+        ]
+
 
         return self.trigger_run(children, single, *args, **kwargs)
 
@@ -196,7 +200,7 @@ class SyncBase(Base):
             # Wait until everything is complete
             results = []
 
-            for x in range(len(tasks)):
+            for task in tasks:
                 task.wait()
                 results.append(task.result)
 
