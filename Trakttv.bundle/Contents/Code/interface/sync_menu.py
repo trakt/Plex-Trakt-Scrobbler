@@ -29,10 +29,14 @@ def SyncMenu(refresh=None):
 
         oc.add(DirectoryObject(
             key=Callback(SyncMenu, refresh=timestamp()),
-            title=pad_title(('%s - Status' % handler.title) + ((' (%s)' % progress) if progress else '')),
-            summary='Progress: %s, estimated time remaining: %s (click to refresh)' % (
-                progress or '?',
-                '~%s seconds' % (time_rem or '?')
+            title=pad_title(
+                ('%s - Status' % handler.title) + (
+                    (' (%s)' % progress) if progress else ''
+                )
+            ),
+            summary='%s, %s remaining (click to refresh)' % (
+                task.statistics.message or 'Unknown task',
+                '~%s seconds' % (time_rem or '0')
             )
         ))
 
@@ -92,7 +96,11 @@ def get_task_status(key, section=None):
         if status.previous_elapsed.seconds < 1:
             result.append('taking less than a second')
         else:
-            result.append('taking %s' % human(status.previous_elapsed, precision=1, past_tense='%s'))
+            result.append('taking %s' % human(
+                status.previous_elapsed,
+                precision=1,
+                past_tense='%s'
+            ))
 
     if status.previous_success is True:
         result.append('was successful')
@@ -109,31 +117,55 @@ def get_task_status(key, section=None):
 @route('/applications/trakttv/sync/synchronize')
 def Synchronize():
     if not SyncManager.trigger_synchronize():
-        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
+        return MessageContainer(
+            'Unable to sync',
+            'Syncing task already running, unable to start'
+        )
 
-    return MessageContainer('Syncing started', 'Synchronize has started and will continue in the background')
+    return MessageContainer(
+        'Syncing started',
+        'Synchronize has started and will continue in the background'
+    )
 
 
 
 @route('/applications/trakttv/sync/push')
 def Push(section=None):
     if not SyncManager.trigger_push(section):
-        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
+        return MessageContainer(
+            'Unable to sync',
+            'Syncing task already running, unable to start'
+        )
 
-    return MessageContainer('Syncing started', 'Push has been triggered and will continue in the background')
+    return MessageContainer(
+        'Syncing started',
+        'Push has been triggered and will continue in the background'
+    )
 
 
 @route('/applications/trakttv/sync/pull')
 def Pull():
     if not SyncManager.trigger_pull():
-        return MessageContainer('Unable to sync', 'Syncing task already running, unable to start')
+        return MessageContainer(
+            'Unable to sync',
+            'Syncing task already running, unable to start'
+        )
 
-    return MessageContainer('Syncing started', 'Pull has been triggered and will continue in the background')
+    return MessageContainer(
+        'Syncing started',
+        'Pull has been triggered and will continue in the background'
+    )
 
 
 @route('/applications/trakttv/sync/cancel')
 def Cancel():
     if not SyncManager.cancel():
-        return MessageContainer('Unable to cancel', 'There is no syncing task running')
+        return MessageContainer(
+            'Unable to cancel',
+            'There is no syncing task running'
+        )
 
-    return MessageContainer('Syncing cancelled', 'Syncing task has been notified to cancel')
+    return MessageContainer(
+        'Syncing cancelled',
+        'Syncing task has been notified to cancel'
+    )

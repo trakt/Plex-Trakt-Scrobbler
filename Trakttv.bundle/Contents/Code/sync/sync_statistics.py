@@ -1,10 +1,19 @@
 from core.helpers import total_seconds, sum
 from core.eventing import EventManager
 from core.logger import Logger
-from datetime import datetime
 from sync.sync_task import SyncTaskStatistics
+from datetime import datetime
 
 log = Logger('sync.sync_statistics')
+
+
+MESSAGES = {
+    'pull.show': 'Pulling shows from trakt',
+    'push.show': 'Pushing shows to trakt',
+
+    'pull.movie': 'Pulling movies from trakt',
+    'push.movie': 'Pushing shows to trakt'
+}
 
 
 class SyncStatistics(object):
@@ -16,6 +25,8 @@ class SyncStatistics(object):
         self.offset = None
         self.start = None
         self.end = None
+
+        self.active = []
 
         for h in handlers:
             self.bind(h)
@@ -49,9 +60,23 @@ class SyncStatistics(object):
         self.key = None
 
         self.offset = None
-
         self.start = None
         self.end = None
+
+    def update(self):
+        if not self.manager.current:
+            return
+
+        st = self.manager.current.statistics
+        if not st:
+            return
+
+        if self.active:
+            st.message = MESSAGES.get(self.active[-1])
+        else:
+            st.message = None
+
+        log.debug("st.message: %s", repr(st.message))
 
     def started(self, key, start, end):
         log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
@@ -60,9 +85,11 @@ class SyncStatistics(object):
         self.key = key
 
         self.offset = 0 - start
-
         self.start = start + self.offset
         self.end = end + self.offset
+
+        self.active.append(key)
+        self.update()
 
     def progress(self, key, value):
         log.debug('SyncStatistics.update(%s, %s)', repr(key), value)
@@ -116,3 +143,6 @@ class SyncStatistics(object):
     def finished(self, key):
         log.debug('SyncStatistics.finish(%s)', repr(key))
         self.reset()
+
+        self.active.remove(key)
+        self.update()
