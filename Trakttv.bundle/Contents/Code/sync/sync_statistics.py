@@ -20,12 +20,6 @@ class SyncStatistics(object):
     def __init__(self, handlers, manager):
         self.manager = manager
 
-        self.key = None
-
-        self.offset = None
-        self.start = None
-        self.end = None
-
         self.active = []
 
         for h in handlers:
@@ -54,42 +48,27 @@ class SyncStatistics(object):
             self.bind(child)
 
     def reset(self):
-        if self.manager.current:
-            self.manager.current.statistics = SyncTaskStatistics()
+        if not self.manager.current:
+            return
 
-        self.key = None
-
-        self.offset = None
-        self.start = None
-        self.end = None
+        self.manager.current.statistics = SyncTaskStatistics()
 
     def update(self):
-        if not self.manager.current:
+        if not self.manager.current or not self.active:
             return
 
         st = self.manager.current.statistics
         if not st:
             return
 
-        if not self.active:
-            self.key = None
-            st.message = None
-            return
-
-        self.key = self.active[-1]
         st.message = MESSAGES.get(self.key)
-
         log.debug("st.message: %s", repr(st.message))
 
     def started(self, key, start, end):
         log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
         self.reset()
 
-        self.offset = 0 - start
-        self.start = start + self.offset
-        self.end = end + self.offset
-
-        self.active.append(key)
+        self.active.append((key, start, end))
         self.update()
 
     def progress(self, key, value):
@@ -104,7 +83,7 @@ class SyncStatistics(object):
 
         stat = self.manager.current.statistics
 
-        if not stat or not self.offset:
+        if not stat or self.offset is None:
             return
 
         value += self.offset
@@ -137,13 +116,57 @@ class SyncStatistics(object):
         # Calculate estimated time remaining
         stat.seconds_remaining = ((1 - cur_progress) * 100) * stat.per_perc
 
-        #log.debug('plots: %s, per_perc: %s', stat.plots, stat.per_perc)
-
-
-
     def finished(self, key):
         log.debug('SyncStatistics.finish(%s)', repr(key))
         self.reset()
 
-        self.active.remove(key)
+        # Search for key in 'active' list and remove it
+        for x, (k, _, _) in enumerate(self.active):
+            if k != key:
+                continue
+
+            self.active.pop(x)
+            return
+
+        # Update task status (message)
         self.update()
+
+    #
+    # Active task properties
+    #
+
+    @property
+    def key(self):
+        if not self.active:
+            return None
+
+        key, _, _ = self.active[-1]
+
+        return key
+
+    @property
+    def offset(self):
+        if not self.active:
+            return None
+
+        _, start, _ = self.active[-1]
+
+        return 0 - start
+
+    @property
+    def start(self):
+        if not self.active:
+            return None
+
+        _, start, _ = self.active[-1]
+
+        return start + self.offset
+
+    @property
+    def end(self):
+        if not self.active:
+            return None
+
+        _, _, end = self.active[-1]
+
+        return end + self.offset
