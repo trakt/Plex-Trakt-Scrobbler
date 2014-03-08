@@ -71,18 +71,19 @@ class SyncStatistics(object):
         if not st:
             return
 
-        if self.active:
-            st.message = MESSAGES.get(self.active[-1])
-        else:
+        if not self.active:
+            self.key = None
             st.message = None
+            return
+
+        self.key = self.active[-1]
+        st.message = MESSAGES.get(self.key)
 
         log.debug("st.message: %s", repr(st.message))
 
     def started(self, key, start, end):
         log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
         self.reset()
-
-        self.key = key
 
         self.offset = 0 - start
         self.start = start + self.offset
@@ -102,11 +103,11 @@ class SyncStatistics(object):
             return
 
         stat = self.manager.current.statistics
-        if not stat:
+
+        if not stat or not self.offset:
             return
 
         value += self.offset
-
         progress = float(value) / self.end
 
         self.calculate_timing(stat, progress)

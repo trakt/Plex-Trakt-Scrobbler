@@ -121,6 +121,7 @@ class Show(Base):
 
         for x, (key, t_show) in enumerate(t_shows_table.items()):
             self.check_stopping()
+            self.progress(x + 1)
 
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
@@ -138,8 +139,6 @@ class Show(Base):
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
-
-            self.progress(x + 1)
 
         self.finish()
         self.check_stopping()
