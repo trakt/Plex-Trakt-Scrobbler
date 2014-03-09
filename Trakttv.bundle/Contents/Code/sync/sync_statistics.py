@@ -1,6 +1,7 @@
 from core.helpers import total_seconds, sum
 from core.eventing import EventManager
 from core.logger import Logger
+from core.numeric import ema
 from sync.sync_task import SyncTaskStatistics
 from datetime import datetime
 
@@ -107,11 +108,15 @@ class SyncStatistics(object):
         progress_delta = cur_progress - (stat.progress or 0)
         delta_seconds = total_seconds(datetime.utcnow() - stat.last_update)
 
-        # Plot current percent/sec
-        stat.plots.append(delta_seconds / (progress_delta * 100))
+        # Calculate current speed (in [percent progress]/sec)
+        cur_speed = delta_seconds / (progress_delta * 100)
 
-        # Calculate average percent/sec
-        stat.per_perc = sum(stat.plots) / len(stat.plots)
+        if stat.per_perc is None:
+            # Start initially at first speed value
+            stat.per_perc = cur_speed
+        else:
+            # Calculate EMA speed
+            stat.per_perc = ema(cur_speed, stat.per_perc)
 
         # Calculate estimated time remaining
         stat.seconds_remaining = ((1 - cur_progress) * 100) * stat.per_perc

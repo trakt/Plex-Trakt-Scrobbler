@@ -18,6 +18,9 @@ sys.modules['core.model'] = model
 import helpers
 sys.modules['core.helpers'] = helpers
 
+import numeric
+sys.modules['core.numeric'] = numeric
+
 import eventing
 sys.modules['core.eventing'] = eventing
 
