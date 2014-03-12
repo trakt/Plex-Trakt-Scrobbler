@@ -1,4 +1,4 @@
-from core.helpers import all, plural
+from core.helpers import all, plural, json_encode
 from core.logger import Logger
 from core.trakt import Trakt
 from sync.sync_base import SyncBase
@@ -209,6 +209,8 @@ class Show(Base):
         for show in self.retrieve('missing.episodes'):
             self.send('show/episode/unlibrary', show)
 
+        Data.Save('last_artifacts.show.json', json_encode(self.artifacts))
+
         log.info('Finished pushing shows to trakt')
         return True
 
@@ -264,6 +266,8 @@ class Movie(Base):
         self.send_artifact('rate/movies', 'movies', 'ratings')
         self.send_artifact('movie/library', 'movies', 'collected')
         self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
+
+        Data.Save('last_artifacts.movie.json', json_encode(self.artifacts))
 
         log.info('Finished pushing movies to trakt')
         return True

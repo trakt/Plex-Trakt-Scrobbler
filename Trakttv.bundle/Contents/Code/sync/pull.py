@@ -1,4 +1,4 @@
-from core.helpers import plural, all
+from core.helpers import plural, all, json_encode
 from core.logger import Logger
 from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -109,9 +109,11 @@ class Show(Base):
         enabled_funcs = self.get_enabled_functions()
 
         p_shows = self.plex.library('show')
+        Data.Save('last_library.show.plex.json', repr(p_shows))
 
         # Fetch library, and only get ratings and collection if enabled
         t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
+        Data.Save('last_library.show.trakt.json', repr(t_shows_table))
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -206,9 +208,11 @@ class Movie(Base):
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
+        Data.Save('last_library.movie.plex.json', repr(p_movies))
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
+        Data.Save('last_library.movie.trakt.json', repr(t_movies_table))
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
