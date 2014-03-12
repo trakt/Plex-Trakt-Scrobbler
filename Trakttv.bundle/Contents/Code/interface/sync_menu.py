@@ -75,7 +75,7 @@ def create_active_item(oc):
     # Create items
     oc.add(DirectoryObject(
         key=Callback(SyncMenu, refresh=timestamp()),
-        title=title,
+        title=pad_title(title),
         summary=summary + ' (click to refresh)'
     ))
 
