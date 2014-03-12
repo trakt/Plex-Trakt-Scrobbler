@@ -131,7 +131,7 @@ class SyncStatistics(object):
                 continue
 
             self.active.pop(x)
-            return
+            break
 
         # Update task status (message)
         self.update()

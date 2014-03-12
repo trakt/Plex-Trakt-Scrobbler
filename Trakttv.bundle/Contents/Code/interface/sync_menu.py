@@ -15,35 +15,7 @@ def SyncMenu(refresh=None):
     oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
     all_keys = []
 
-    # Display details of current sync process
-    task, handler = SyncManager.get_current()
-
-    if task:
-        progress = task.statistics.progress
-        if progress:
-            progress = ('%d%%' % (progress * 100))
-
-        time_rem = task.statistics.seconds_remaining
-        if time_rem:
-            time_rem = int(round(time_rem, 2))
-
-        oc.add(DirectoryObject(
-            key=Callback(SyncMenu, refresh=timestamp()),
-            title=pad_title(
-                ('%s - Status' % handler.title) + (
-                    (' (%s)' % progress) if progress else ''
-                )
-            ),
-            summary='%s, %s remaining (click to refresh)' % (
-                task.statistics.message or 'Unknown task',
-                '~%s seconds' % (time_rem or '0')
-            )
-        ))
-
-        oc.add(DirectoryObject(
-            key=Callback(Cancel),
-            title=pad_title('%s - Cancel' % handler.title)
-        ))
+    create_active_item(oc)
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize),
@@ -77,6 +49,53 @@ def SyncMenu(refresh=None):
     ))
 
     return oc
+
+
+def create_active_item(oc):
+    task, handler = SyncManager.get_current()
+    if not task:
+        return
+
+    # Format values
+    remaining = format_remaining(task.statistics.seconds_remaining)
+    progress = format_percentage(task.statistics.progress)
+
+    # Title
+    title = '%s - Status' % handler.title
+
+    if progress:
+        title += ' (%s)' % progress
+
+    # Summary
+    summary = task.statistics.message or 'Working'
+
+    if remaining:
+        summary += ', ~%s seconds remaining' % remaining
+
+    # Create items
+    oc.add(DirectoryObject(
+        key=Callback(SyncMenu, refresh=timestamp()),
+        title=title,
+        summary=summary + ' (click to refresh)'
+    ))
+
+    oc.add(DirectoryObject(
+        key=Callback(Cancel),
+        title=pad_title('%s - Cancel' % handler.title)
+    ))
+
+
+def format_percentage(value):
+    if not value:
+        return None
+
+    return '%d%%' % (value * 100)
+
+def format_remaining(value):
+    if not value:
+        return None
+
+    return int(round(value, 0))
 
 
 def get_task_status(key, section=None):
