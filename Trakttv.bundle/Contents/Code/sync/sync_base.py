@@ -44,14 +44,16 @@ class PlexInterface(Base):
         return PlexMetadata.add_identifier(data, p_item)
 
     @classmethod
-    def to_trakt(cls, p_item, include_identifier=True):
+    def to_trakt(cls, key, p_item, include_identifier=True):
         data = {}
 
         # Append episode attributes if this is a PlexEpisode
         if isinstance(p_item, PlexEpisode):
+            k_season, k_episode = key
+
             data.update({
-                'season': p_item.season,
-                'episode': p_item.episodes
+                'season': k_season,
+                'episode': k_episode
             })
 
         if include_identifier:

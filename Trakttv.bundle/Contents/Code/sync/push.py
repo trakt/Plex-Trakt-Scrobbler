@@ -10,7 +10,7 @@ log = Logger('sync.push')
 class Base(SyncBase):
     task = 'push'
 
-    def watch(self, p_items, t_item, include_identifier=True):
+    def watch(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -23,9 +23,9 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', self.plex.to_trakt(p_items[0], include_identifier))
+        self.store('watched', self.plex.to_trakt(key, p_items[0], include_identifier))
 
-    def rate(self, p_items, t_item, artifact='ratings'):
+    def rate(self, key, p_items, t_item, artifact='ratings'):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -43,7 +43,7 @@ class Base(SyncBase):
         if t_item and t_item.rating_advanced == p_item.user_rating:
             return True
 
-        data = self.plex.to_trakt(p_item)
+        data = self.plex.to_trakt(key, p_item)
 
         data.update({
             'rating': p_item.user_rating
@@ -52,7 +52,7 @@ class Base(SyncBase):
         self.store(artifact, data)
         return True
 
-    def collect(self, p_items, t_item, include_identifier=True):
+    def collect(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -60,7 +60,7 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', self.plex.to_trakt(p_items[0], include_identifier))
+        self.store('collected', self.plex.to_trakt(key, p_items[0], include_identifier))
         return True
 
     @staticmethod
@@ -128,13 +128,13 @@ class Episode(Base):
         return True
 
     def run_watched(self, key, p_episode, t_episode):
-        return self.watch(p_episode, t_episode, include_identifier=False)
+        return self.watch(key, p_episode, t_episode, include_identifier=False)
 
     def run_ratings(self, key, p_episode, t_episode):
-        return self.parent.rate(p_episode, t_episode, 'episode_ratings')
+        return self.parent.rate(key, p_episode, t_episode, 'episode_ratings')
 
     def run_collected(self, key, p_episode, t_episode):
-        return self.collect(p_episode, t_episode, include_identifier=False)
+        return self.collect(key, p_episode, t_episode, include_identifier=False)
 
 
 class Show(Base):
@@ -183,7 +183,7 @@ class Show(Base):
                     artifacts=artifacts
                 )
 
-                show = self.plex.to_trakt(p_show)
+                show = self.plex.to_trakt(key, p_show)
 
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
@@ -215,7 +215,7 @@ class Show(Base):
         return True
 
     def run_ratings(self, key, p_shows, t_show):
-        return self.rate(p_shows, t_show)
+        return self.rate(key, p_shows, t_show)
 
 
 class Movie(Base):
@@ -273,13 +273,13 @@ class Movie(Base):
         return True
 
     def run_watched(self, key, p_movies, t_movie):
-        return self.watch(p_movies, t_movie)
+        return self.watch(key, p_movies, t_movie)
 
     def run_ratings(self, key, p_movies, t_movie):
-        return self.rate(p_movies, t_movie)
+        return self.rate(key, p_movies, t_movie)
 
     def run_collected(self, key, p_movies, t_movie):
-        return self.collect(p_movies, t_movie)
+        return self.collect(key, p_movies, t_movie)
 
 
 class Push(Base):
