@@ -163,8 +163,11 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, p_show in p_shows.items():
+        self.start(len(p_shows))
+
+        for x, (key, p_show) in enumerate(p_shows.items()):
             self.check_stopping()
+            self.progress(x + 1)
 
             t_show = t_shows_table.get(key)
 
@@ -185,11 +188,12 @@ class Show(Base):
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
 
+        self.finish()
+        self.check_stopping()
+
         #
         # Push changes to trakt
         #
-        self.check_stopping()
-
         for show in self.retrieve('collected'):
             self.send('show/episode/library', show)
 
@@ -237,8 +241,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, p_movie in p_movies.items():
+        self.start(len(p_movies))
+
+        for x, (key, p_movie) in enumerate(p_movies.items()):
             self.check_stopping()
+            self.progress(x + 1)
 
             t_movie = t_movies_table.get(key)
 
@@ -247,11 +254,12 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
+        self.finish()
+        self.check_stopping()
+
         #
         # Push changes to trakt
         #
-        self.check_stopping()
-
         self.send_artifact('movie/seen', 'movies', 'watched')
         self.send_artifact('rate/movies', 'movies', 'ratings')
         self.send_artifact('movie/library', 'movies', 'collected')
