@@ -63,23 +63,18 @@ class SyncStatistics(object):
             return
 
         st.message = MESSAGES.get(self.key)
-        log.debug("st.message: %s", repr(st.message))
 
     def started(self, key, start, end):
-        log.debug('SyncStatistics.start(%s, %s, %s)', repr(key), start, end)
         self.reset()
 
         self.active.append((key, start, end))
         self.update()
 
     def progress(self, key, value):
-        log.debug('SyncStatistics.update(%s, %s)', repr(key), value)
-
         if not self.manager.current:
             return
 
         if key != self.key:
-            log.warn('Invalid state (key: "%s" != "%s")', key, self.key)
             return
 
         stat = self.manager.current.statistics
@@ -122,7 +117,6 @@ class SyncStatistics(object):
         stat.seconds_remaining = ((1 - cur_progress) * 100) * stat.per_perc
 
     def finished(self, key):
-        log.debug('SyncStatistics.finish(%s)', repr(key))
         self.reset()
 
         # Search for key in 'active' list and remove it
