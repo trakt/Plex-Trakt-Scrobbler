@@ -18,6 +18,9 @@ sys.modules['core.model'] = model
 import helpers
 sys.modules['core.helpers'] = helpers
 
+import numeric
+sys.modules['core.numeric'] = numeric
+
 import eventing
 sys.modules['core.eventing'] = eventing
 
@@ -41,3 +44,6 @@ sys.modules['core.update_checker'] = update_checker
 
 import migrator
 sys.modules['core.migrator'] = migrator
+
+import task
+sys.modules['core.task'] = task

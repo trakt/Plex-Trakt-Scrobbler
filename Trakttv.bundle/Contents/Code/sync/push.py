@@ -1,4 +1,4 @@
-from core.helpers import all, plural
+from core.helpers import all, plural, json_encode
 from core.logger import Logger
 from core.trakt import Trakt
 from sync.sync_base import SyncBase
@@ -10,7 +10,7 @@ log = Logger('sync.push')
 class Base(SyncBase):
     task = 'push'
 
-    def watch(self, p_items, t_item, include_identifier=True):
+    def watch(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -23,9 +23,9 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', self.plex.to_trakt(p_items[0], include_identifier))
+        self.store('watched', self.plex.to_trakt(key, p_items[0], include_identifier))
 
-    def rate(self, p_items, t_item, artifact='ratings'):
+    def rate(self, key, p_items, t_item, artifact='ratings'):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -43,7 +43,7 @@ class Base(SyncBase):
         if t_item and t_item.rating_advanced == p_item.user_rating:
             return True
 
-        data = self.plex.to_trakt(p_item)
+        data = self.plex.to_trakt(key, p_item)
 
         data.update({
             'rating': p_item.user_rating
@@ -52,7 +52,7 @@ class Base(SyncBase):
         self.store(artifact, data)
         return True
 
-    def collect(self, p_items, t_item, include_identifier=True):
+    def collect(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -60,7 +60,7 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', self.plex.to_trakt(p_items[0], include_identifier))
+        self.store('collected', self.plex.to_trakt(key, p_items[0], include_identifier))
         return True
 
     @staticmethod
@@ -128,13 +128,13 @@ class Episode(Base):
         return True
 
     def run_watched(self, key, p_episode, t_episode):
-        return self.watch(p_episode, t_episode, include_identifier=False)
+        return self.watch(key, p_episode, t_episode, include_identifier=False)
 
     def run_ratings(self, key, p_episode, t_episode):
-        return self.parent.rate(p_episode, t_episode, 'episode_ratings')
+        return self.parent.rate(key, p_episode, t_episode, 'episode_ratings')
 
     def run_collected(self, key, p_episode, t_episode):
-        return self.collect(p_episode, t_episode, include_identifier=False)
+        return self.collect(key, p_episode, t_episode, include_identifier=False)
 
 
 class Show(Base):
@@ -143,6 +143,7 @@ class Show(Base):
 
     def run(self, section=None, artifacts=None):
         self.reset(artifacts)
+        self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -162,7 +163,12 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, p_show in p_shows.items():
+        self.start(len(p_shows))
+
+        for x, (key, p_show) in enumerate(p_shows.items()):
+            self.check_stopping()
+            self.progress(x + 1)
+
             t_show = t_shows_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
@@ -177,15 +183,17 @@ class Show(Base):
                     artifacts=artifacts
                 )
 
-                show = self.plex.to_trakt(p_show)
+                show = self.plex.to_trakt(key, p_show)
 
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
 
+        self.finish()
+        self.check_stopping()
+
         #
         # Push changes to trakt
         #
-
         for show in self.retrieve('collected'):
             self.send('show/episode/library', show)
 
@@ -201,11 +209,13 @@ class Show(Base):
         for show in self.retrieve('missing.episodes'):
             self.send('show/episode/unlibrary', show)
 
+        Data.Save('last_artifacts.show.json', json_encode(self.artifacts))
+
         log.info('Finished pushing shows to trakt')
         return True
 
     def run_ratings(self, key, p_shows, t_show):
-        return self.rate(p_shows, t_show)
+        return self.rate(key, p_shows, t_show)
 
 
 class Movie(Base):
@@ -213,6 +223,7 @@ class Movie(Base):
 
     def run(self, section=None, artifacts=None):
         self.reset(artifacts)
+        self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
 
@@ -232,13 +243,21 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, p_movie in p_movies.items():
+        self.start(len(p_movies))
+
+        for x, (key, p_movie) in enumerate(p_movies.items()):
+            self.check_stopping()
+            self.progress(x + 1)
+
             t_movie = t_movies_table.get(key)
 
             log.debug('Processing "%s" [%s]', p_movie[0].title if p_movie else None, key)
 
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
+
+        self.finish()
+        self.check_stopping()
 
         #
         # Push changes to trakt
@@ -248,17 +267,19 @@ class Movie(Base):
         self.send_artifact('movie/library', 'movies', 'collected')
         self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
 
+        Data.Save('last_artifacts.movie.json', json_encode(self.artifacts))
+
         log.info('Finished pushing movies to trakt')
         return True
 
     def run_watched(self, key, p_movies, t_movie):
-        return self.watch(p_movies, t_movie)
+        return self.watch(key, p_movies, t_movie)
 
     def run_ratings(self, key, p_movies, t_movie):
-        return self.rate(p_movies, t_movie)
+        return self.rate(key, p_movies, t_movie)
 
     def run_collected(self, key, p_movies, t_movie):
-        return self.collect(p_movies, t_movie)
+        return self.collect(key, p_movies, t_movie)
 
 
 class Push(Base):

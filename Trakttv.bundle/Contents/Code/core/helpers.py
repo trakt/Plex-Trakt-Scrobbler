@@ -7,13 +7,13 @@ import sys
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
 
 
-def try_convert(value, value_type):
+def try_convert(value, value_type, default=None):
     try:
         return value_type(value)
     except ValueError:
-        return None
+        return default
     except TypeError:
-        return None
+        return default
 
 
 def add_attribute(target, source, key, value_type=str, func=None, target_key=None):

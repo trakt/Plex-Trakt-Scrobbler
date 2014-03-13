@@ -2,7 +2,9 @@ from core.eventing import EventManager
 from core.helpers import total_seconds, sum, get_pref
 from core.logger import Logger
 from data.sync_status import SyncStatus
-from sync.task import SyncTask
+from sync.sync_base import CancelException
+from sync.sync_statistics import SyncStatistics
+from sync.sync_task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
@@ -40,6 +42,7 @@ class SyncManager(object):
     current = None
 
     handlers = None
+    statistics = None
 
     @classmethod
     def initialize(cls):
@@ -50,7 +53,7 @@ class SyncManager(object):
         EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
-        cls.bind_handlers()
+        cls.statistics = SyncStatistics(HANDLERS, cls)
 
     @classmethod
     def get_cache_id(cls):
@@ -81,18 +84,6 @@ class SyncManager(object):
             status.save()
 
         return status
-
-    @classmethod
-    def bind_handlers(cls):
-        def is_stopping():
-            return cls.current.stopping
-
-        def update_progress(*args, **kwargs):
-            cls.update_progress(*args, **kwargs)
-
-        for key, handler in cls.handlers.items():
-            handler.is_stopping = is_stopping
-            handler.update_progress = update_progress
 
     @classmethod
     def reset(cls):
@@ -173,6 +164,9 @@ class SyncManager(object):
 
         try:
             success = handler.run(section=section, **kwargs)
+        except CancelException, e:
+            handler.update_status(False)
+            log.info('Task "%s" was cancelled', key)
         except Exception, e:
             handler.update_status(False)
 
@@ -182,38 +176,6 @@ class SyncManager(object):
 
         # Return task success result
         return success
-
-    @classmethod
-    def update_progress(cls, current, start=0, end=100):
-        statistics = cls.current.statistics
-
-        # Remove offset
-        current = current - start
-        end = end - start
-
-        # Calculate progress and difference since last update
-        progress = float(current) / end
-        progress_diff = progress - (statistics.progress or 0)
-
-        if statistics.last_update:
-            diff_seconds = total_seconds(datetime.utcnow() - statistics.last_update)
-
-            # Plot current percent/sec
-            statistics.plots.append(diff_seconds / (progress_diff * 100))
-
-            # Calculate average percent/sec
-            statistics.per_perc = sum(statistics.plots) / len(statistics.plots)
-
-            # Calculate estimated time remaining
-            statistics.seconds_remaining = ((1 - progress) * 100) * statistics.per_perc
-
-        log.debug('[Sync][Progress] Progress: %02d%%, Estimated time remaining: ~%s seconds' % (
-            progress * 100,
-            int(round(statistics.seconds_remaining, 0)) if statistics.seconds_remaining else '?'
-        ))
-
-        statistics.progress = progress
-        statistics.last_update = datetime.utcnow()
 
     @classmethod
     def scan_complete(cls):

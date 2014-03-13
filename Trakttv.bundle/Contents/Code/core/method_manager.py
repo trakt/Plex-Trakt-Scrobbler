@@ -7,6 +7,7 @@ log = Logger('core.method_manager')
 
 class Method(object):
     name = None
+    legacy = None
 
     def __init__(self, threaded=True):
         if threaded:
@@ -64,6 +65,13 @@ class Manager(object):
         if not blocking:
             spawn(cls.start, blocking=True)
             return
+
+        if Prefs['force_legacy']:
+            # Only use legacy methods
+            cls.available = [
+                (k, v) for (k, v) in cls.available
+                if v.legacy or v.legacy is None
+            ]
 
         # Test methods until an available method is found
         for weight, method in cls.available:

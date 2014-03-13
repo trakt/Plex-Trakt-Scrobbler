@@ -2,13 +2,68 @@ from core.helpers import all
 from core.logger import Logger
 from plex.plex_base import PlexBase
 
-log = Logger('plex.media_server_new')
+log = Logger('plex.plex_media_server')
 
 
 class PlexMediaServer(PlexBase):
+    #
+    # Server
+    #
+
     @classmethod
-    def get_server_info(cls, quiet=False):
+    def get_info(cls, quiet=False):
         return cls.request(quiet=quiet)
+
+    @classmethod
+    def get_version(cls, default=None, quiet=False):
+        server_info = cls.get_info(quiet)
+        if server_info is None:
+            return default
+
+        return server_info.attrib.get('version') or default
+
+    @classmethod
+    def get_client(cls, client_id):
+        if not client_id:
+            log.warn('Invalid client_id provided')
+            return None
+
+        result = cls.request('clients')
+        if not result:
+            return None
+
+        found_clients = []
+
+        for section in result.xpath('//Server'):
+            found_clients.append(section.get('machineIdentifier'))
+
+            if section.get('machineIdentifier') == client_id:
+                return section
+
+        log.info("Unable to find client '%s', available clients: %s" % (client_id, found_clients))
+        return None
+
+    @classmethod
+    def get_sessions(cls):
+        return cls.request('status/sessions')
+
+    @classmethod
+    def get_session(cls, session_key):
+        sessions = cls.get_sessions()
+        if sessions is None:
+            log.warn('Sessions request failed')
+            return None
+
+        for section in sessions.xpath('//MediaContainer/Video'):
+            if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
+                return section
+
+        log.warn('Session "%s" not found', session_key)
+        return None
+
+    #
+    # Collection
+    #
 
     @classmethod
     def get_sections(cls, types=None, keys=None, cache_id=None):

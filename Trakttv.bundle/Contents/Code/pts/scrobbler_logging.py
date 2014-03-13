@@ -2,7 +2,9 @@ from core.eventing import EventManager
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
-from plex.media_server import PMS
+from plex.plex_media_server import PlexMediaServer
+from plex.plex_metadata import PlexMetadata
+from plex.plex_preferences import PlexPreferences
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 
@@ -11,6 +13,7 @@ log = Logger('pts.scrobbler_logging')
 
 class LoggingScrobbler(ScrobblerMethod):
     name = 'LoggingScrobbler'
+    legacy = True
 
     def __init__(self):
         super(LoggingScrobbler, self).__init__()
@@ -20,11 +23,11 @@ class LoggingScrobbler(ScrobblerMethod):
     @classmethod
     def test(cls):
         # Try enable logging
-        if not PMS.set_logging_state(True):
+        if not PlexPreferences.log_debug(True):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not PMS.get_logging_state():
+        if not PlexPreferences.log_debug():
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
@@ -33,13 +36,13 @@ class LoggingScrobbler(ScrobblerMethod):
     def create_session(self, info):
         client = None
         if info.get('machineIdentifier'):
-            client = PMS.client(info['machineIdentifier'])
+            client = PlexMediaServer.get_client(info['machineIdentifier'])
         else:
             log.info('No machineIdentifier available, client filtering not available')
 
         return WatchSession.from_info(
             info,
-            PMS.metadata(info['ratingKey']),
+            PlexMetadata.get(info['ratingKey']).to_dict(),
             client
         )
 
@@ -110,6 +113,8 @@ class LoggingScrobbler(ScrobblerMethod):
         # Calculate progress
         if not self.update_progress(session, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
+            session.update_required = True
+            session.save()
             return
 
         action = self.get_action(session, info['state'])

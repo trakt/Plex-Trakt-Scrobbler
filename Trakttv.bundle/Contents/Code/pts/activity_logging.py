@@ -1,8 +1,8 @@
 from core.eventing import EventManager
 from core.helpers import str_format
 from core.logger import Logger
-from plex.media_server import PMS
-from plex.media_server_new import PlexMediaServer
+from plex.plex_media_server import PlexMediaServer
+from plex.plex_preferences import PlexPreferences
 from pts.activity import ActivityMethod, Activity
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
@@ -50,11 +50,11 @@ class LoggingActivity(ActivityMethod):
     @classmethod
     def test(cls):
         # Try enable logging
-        if not PMS.set_logging_state(True):
+        if not PlexPreferences.log_debug(True):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not PMS.get_logging_state():
+        if not PlexPreferences.log_debug():
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
@@ -106,7 +106,7 @@ class LoggingActivity(ActivityMethod):
                     time.sleep(retry_interval)
 
                 # Ping server to see if server is still active
-                PlexMediaServer.get_server_info(quiet=True)
+                PlexMediaServer.get_info(quiet=True)
 
         if line and try_count > 2:
             log.debug('Successfully read the log file after retrying')

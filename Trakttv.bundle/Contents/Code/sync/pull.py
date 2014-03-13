@@ -1,6 +1,6 @@
-from core.helpers import plural, all
+from core.helpers import plural, all, json_encode
 from core.logger import Logger
-from plex.media_server_new import PlexMediaServer
+from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
 from datetime import datetime
 
@@ -104,18 +104,27 @@ class Show(Base):
     children = [Episode]
 
     def run(self, section=None):
+        self.check_stopping()
+
         enabled_funcs = self.get_enabled_functions()
 
         p_shows = self.plex.library('show')
+        Data.Save('last_library.show.plex.json', repr(p_shows))
 
         # Fetch library, and only get ratings and collection if enabled
         t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
+        Data.Save('last_library.show.trakt.json', repr(t_shows_table))
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_show in t_shows_table.items():
+        self.start(len(t_shows_table))
+
+        for x, (key, t_show) in enumerate(t_shows_table.items()):
+            self.check_stopping()
+            self.progress(x + 1)
+
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
 
@@ -132,6 +141,9 @@ class Show(Base):
                     p_episodes=self.plex.episodes(p_show.rating_key, p_show),
                     t_episodes=t_show.episodes
                 )
+
+        self.finish()
+        self.check_stopping()
 
         # Trigger plex missing show/episode discovery
         self.discover_missing(t_shows)
@@ -191,18 +203,27 @@ class Movie(Base):
     key = 'movie'
 
     def run(self, section=None):
+        self.check_stopping()
+
         enabled_funcs = self.get_enabled_functions()
 
         p_movies = self.plex.library('movie')
+        Data.Save('last_library.movie.plex.json', repr(p_movies))
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
+        Data.Save('last_library.movie.trakt.json', repr(t_movies_table))
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        for key, t_movie in t_movies_table.items():
+        self.start(len(t_movies_table))
+
+        for x, (key, t_movie) in enumerate(t_movies_table.items()):
+            self.check_stopping()
+            self.progress(x + 1)
+
             if key is None or key not in p_movies:
                 continue
 
@@ -211,6 +232,9 @@ class Movie(Base):
 
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
+
+        self.finish()
+        self.check_stopping()
 
         # Trigger plex missing movie discovery
         self.discover_missing(t_movies)

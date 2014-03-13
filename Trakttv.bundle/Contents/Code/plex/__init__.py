@@ -11,14 +11,14 @@ sys.modules['plex.plex_base'] = plex_base
 import plex_matcher
 sys.modules['plex.plex_matcher'] = plex_matcher
 
-import metadata
-sys.modules['plex.metadata'] = metadata
+import plex_metadata
+sys.modules['plex.plex_metadata'] = plex_metadata
 
-import media_server
-sys.modules['plex.media_server'] = media_server
+import plex_preferences
+sys.modules['plex.plex_preferences'] = plex_preferences
 
-import media_server_new
-sys.modules['plex.media_server_new'] = media_server_new
+import plex_media_server
+sys.modules['plex.plex_media_server'] = plex_media_server
 
 import plex_library
 sys.modules['plex.plex_library'] = plex_library

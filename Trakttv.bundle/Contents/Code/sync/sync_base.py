@@ -1,13 +1,13 @@
 from core.eventing import EventManager
-from core.helpers import all, merge, spawn, try_convert
+from core.helpers import all, merge
 from core.logger import Logger
+from core.task import Task, CancelException
 from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
-from plex.media_server_new import PlexMediaServer
+from plex.plex_media_server import PlexMediaServer
+from plex.plex_metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
 from datetime import datetime
-from threading import BoundedSemaphore
-import traceback
 
 
 log = Logger('sync.sync_base')
@@ -41,38 +41,19 @@ class PlexInterface(Base):
 
     @staticmethod
     def add_identifier(data, p_item):
-        service, sid = p_item.key
-
-        # Parse identifier and append relevant '*_id' attribute to data
-        if service == 'imdb':
-            data['imdb_id'] = sid
-            return data
-
-        # Convert TMDB and TVDB identifiers to integers
-        if service in ['themoviedb', 'thetvdb']:
-            sid = try_convert(sid, int)
-
-            # If identifier is invalid, ignore it
-            if sid is None:
-                return data
-
-        if service == 'themoviedb':
-            data['tmdb_id'] = sid
-
-        if service == 'thetvdb':
-            data['tvdb_id'] = sid
-
-        return data
+        return PlexMetadata.add_identifier(data, p_item)
 
     @classmethod
-    def to_trakt(cls, p_item, include_identifier=True):
+    def to_trakt(cls, key, p_item, include_identifier=True):
         data = {}
 
         # Append episode attributes if this is a PlexEpisode
         if isinstance(p_item, PlexEpisode):
+            k_season, k_episode = key
+
             data.update({
-                'season': p_item.season_num,
-                'episode': p_item.episode_num
+                'season': k_season,
+                'episode': k_episode
             })
 
         if include_identifier:
@@ -113,9 +94,15 @@ class SyncBase(Base):
         # Activate children and create dictionary map
         self.children = dict([(x.key, x(manager, self)) for x in self.children])
 
+        self.start_time = None
         self.artifacts = {}
 
-        self.start_time = None
+    @classmethod
+    def get_key(cls):
+        if cls.task and cls.key and cls.task != cls.key:
+            return '%s.%s' % (cls.task, cls.key)
+
+        return cls.key or cls.task
 
     def reset(self, artifacts=None):
         self.start_time = datetime.utcnow()
@@ -144,6 +131,37 @@ class SyncBase(Base):
     def child(self, name):
         return self.children.get(name)
 
+    def get_current(self):
+        return self.manager.get_current()
+
+    def is_stopping(self):
+        task, _ = self.get_current()
+
+        return task and task.stopping
+
+    def check_stopping(self):
+        if self.is_stopping():
+            raise CancelException()
+
+    @staticmethod
+    def get_enabled_functions():
+        result = []
+
+        if Prefs['sync_watched']:
+            result.append('watched')
+
+        if Prefs['sync_ratings']:
+            result.append('ratings')
+
+        if Prefs['sync_collection']:
+            result.append('collected')
+
+        return result
+
+    #
+    # Trigger
+    #
+
     def trigger(self, funcs=None, *args, **kwargs):
         single = kwargs.pop('single', False)
 
@@ -160,7 +178,11 @@ class SyncBase(Base):
     def trigger_children(self, *args, **kwargs):
         single = kwargs.pop('single', False)
 
-        children = [(child.key, child.run) for (_, child) in self.children.items() if child.auto_run]
+        children = [
+            (child.key, child.run) for (_, child) in self.children.items()
+            if child.auto_run
+        ]
+
 
         return self.trigger_run(children, single, *args, **kwargs)
 
@@ -169,22 +191,20 @@ class SyncBase(Base):
             return []
 
         if self.threaded:
-            # Create lock and spawn functions
-            lock = BoundedSemaphore(len(funcs))
-            results = []
+            tasks = []
 
             for name, func in funcs:
-                spawn(
-                    self.trigger_spawn,
-                    lock, results, func,
+                task = Task(func, *args, **kwargs)
+                tasks.append(task)
 
-                    thread_name='sync.%s.%s' % (self.key, name),
-                    *args, **kwargs
-                )
+                task.spawn('sync.%s.%s' % (self.key, name))
 
             # Wait until everything is complete
-            for x in range(len(funcs)):
-                lock.acquire()
+            results = []
+
+            for task in tasks:
+                task.wait()
+                results.append(task.result)
 
             return results
 
@@ -196,41 +216,26 @@ class SyncBase(Base):
 
         return results[0]
 
-    @staticmethod
-    def trigger_spawn(lock, results, func, *args, **kwargs):
-        lock.acquire()
+    #
+    # Status / Progress
+    #
 
-        try:
-            results.append(func(*args, **kwargs))
-        except Exception, e:
-            log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
-                func, type(e), e, traceback.format_exc()
-            ))
+    def start(self, end, start=0):
+        EventManager.fire(
+            'sync.%s.started' % self.get_key(),
+            start=start, end=end
+        )
 
-        lock.release()
+    def progress(self, value):
+        EventManager.fire(
+            'sync.%s.progress' % self.get_key(),
+            value=value
+        )
 
-    @staticmethod
-    def update_progress(current, start=0, end=100):
-        raise ReferenceError()
-
-    @staticmethod
-    def is_stopping():
-        raise ReferenceError()
-
-    @staticmethod
-    def get_enabled_functions():
-        result = []
-
-        if Prefs['sync_watched']:
-            result.append('watched')
-
-        if Prefs['sync_ratings']:
-            result.append('ratings')
-
-        if Prefs['sync_collection']:
-            result.append('collected')
-
-        return result
+    def finish(self):
+        EventManager.fire(
+            'sync.%s.finished' % self.get_key()
+        )
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:
@@ -263,8 +268,9 @@ class SyncBase(Base):
 
         return self.manager.get_status(self.task or self.key, section)
 
-    def get_current(self):
-        return self.manager.get_current()
+    #
+    # Artifacts
+    #
 
     def retrieve(self, key, single=False):
         if single:

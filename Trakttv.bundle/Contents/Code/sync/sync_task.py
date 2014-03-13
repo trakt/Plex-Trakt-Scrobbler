@@ -14,6 +14,8 @@ class SyncTask(object):
 
 class SyncTaskStatistics(object):
     def __init__(self):
+        self.message = None
+
         self.progress = None
         self.seconds_remaining = None
 

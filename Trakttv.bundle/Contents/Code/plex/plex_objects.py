@@ -7,6 +7,7 @@ SHOW_AGENTS = [
     'com.plexapp.agents.thetvdbdvdorder',
     'com.plexapp.agents.abstvdb',
     'com.plexapp.agents.xbmcnfotv',
+    'com.plexapp.agents.mcm'
 ]
 
 log = Logger('plex.plex_objects')
@@ -38,14 +39,14 @@ class PlexParsedGuid(object):
             return result
 
         # Parse path component for agent-specific data
-        path_fragments = uri.path.split('/')
+        path_fragments = uri.path.strip('/').split('/')
 
         if agent in SHOW_AGENTS:
             if len(path_fragments) >= 1:
-                result.season = path_fragments[0]
+                result.season = try_convert(path_fragments[0], int)
 
             if len(path_fragments) >= 2:
-                result.episode = path_fragments[1]
+                result.episode = try_convert(path_fragments[1], int)
         else:
             log.warn('Unable to completely parse guid "%s"', guid)
 
@@ -63,6 +64,8 @@ class PlexMedia(object):
         self.rating_key = rating_key
         self.key = key
 
+        self.type = None
+
         self.title = None
         self.year = None
 
@@ -73,6 +76,8 @@ class PlexMedia(object):
 
     @staticmethod
     def fill(obj, video, parsed_guid=None):
+        obj.type = video.get('type')
+
         obj.title = video.get('title')
         obj.year = try_convert(video.get('year'), int)
 
@@ -84,7 +89,20 @@ class PlexMedia(object):
 
     @staticmethod
     def get_repr_keys():
-        return ['rating_key', 'key', 'title', 'agent', 'sid', 'user_rating']
+        return ['rating_key', 'key', 'type', 'title', 'year', 'agent', 'sid', 'user_rating']
+
+    def to_dict(self):
+        items = []
+
+        for key in self.get_repr_keys():
+            value = getattr(self, key)
+
+            if isinstance(value, PlexMedia):
+                value = value.to_dict()
+
+            items.append((key, value))
+
+        return dict(items)
 
     def __repr__(self):
         return build_repr(self, self.get_repr_keys() or [])
@@ -98,6 +116,7 @@ class PlexVideo(PlexMedia):
         super(PlexVideo, self).__init__(rating_key, key)
 
         self.view_count = 0
+        self.duration = None
 
     @property
     def seen(self):
@@ -108,10 +127,11 @@ class PlexVideo(PlexMedia):
         PlexMedia.fill(obj, video, parsed_guid)
 
         obj.view_count = try_convert(video.get('viewCount'), int)
+        obj.duration = try_convert(video.get('duration'), int, 0) / float(1000 * 60)  # Convert to minutes
 
     @staticmethod
     def get_repr_keys():
-        return PlexMedia.get_repr_keys() + ['view_count']
+        return PlexMedia.get_repr_keys() + ['view_count', 'duration']
 
 
 class PlexShow(PlexMedia):
@@ -130,29 +150,31 @@ class PlexShow(PlexMedia):
 
 
 class PlexEpisode(PlexVideo):
-    def __init__(self, parent, rating_key):
-        super(PlexEpisode, self).__init__(rating_key)
+    def __init__(self, parent, rating_key, key):
+        super(PlexEpisode, self).__init__(rating_key, key)
 
         self.parent = parent
 
-        self.season_num = None
-        self.episode_num = None
+        self.grandparent_title = None
+
+        self.season = None
+        self.episodes = None
 
     @classmethod
-    def create(cls, parent, video, season_num, episode_num):
-        if season_num is None or episode_num is None:
-            raise ValueError('season_num and episode_num required for PlexEpisode')
+    def create(cls, video, season, episodes, parsed_guid=None, key=None, parent=None):
+        obj = cls(parent, video.get('ratingKey'), key)
 
-        episode = cls(parent, video.get('ratingKey'))
-        episode.season_num = season_num
-        episode.episode_num = episode_num
+        obj.grandparent_title = video.get('grandparentTitle')
 
-        cls.fill(episode, video)
-        return episode
+        obj.season = season
+        obj.episodes = episodes
+
+        cls.fill(obj, video, parsed_guid)
+        return obj
 
     @staticmethod
     def get_repr_keys():
-        return PlexVideo.get_repr_keys() + ['parent', 'season_num', 'episode_num']
+        return PlexVideo.get_repr_keys() + ['parent', 'grandparent_title', 'season', 'episodes']
 
 
 class PlexMovie(PlexVideo):
