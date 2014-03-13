@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title
+from core.helpers import timestamp, pad_title, plural
 from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
 from datetime import datetime
@@ -70,7 +70,7 @@ def create_active_item(oc):
     summary = task.statistics.message or 'Working'
 
     if remaining:
-        summary += ', ~%s seconds remaining' % remaining
+        summary += ', ~%s second%s remaining' % (remaining, plural(remaining))
 
     # Create items
     oc.add(DirectoryObject(
