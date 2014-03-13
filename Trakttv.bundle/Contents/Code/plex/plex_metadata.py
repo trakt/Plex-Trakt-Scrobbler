@@ -75,7 +75,7 @@ class PlexMetadata(PlexBase):
 
         data = data[0]
 
-        parsed_guid, item_key = cls.get_key(guid=data.get('guid'))
+        parsed_guid, item_key = cls.get_key(guid=data.get('guid'), required=False)
 
         # Create object for the data
         data_type = data.get('type')
@@ -99,12 +99,14 @@ class PlexMetadata(PlexBase):
     #
 
     @classmethod
-    def get_parsed_guid(cls, key=None, guid=None):
+    def get_parsed_guid(cls, key=None, guid=None, required=True):
         if not guid:
-            if not key:
+            if key:
+                guid = cls.get_guid(key)
+            elif required:
                 raise ValueError("Either guid or key is required")
-
-            guid = cls.get_guid(key)
+            else:
+                return None
 
         return PlexParsedGuid.from_guid(guid)
 
@@ -121,8 +123,8 @@ class PlexMetadata(PlexBase):
         return METADATA_AGENT_MAP.get(agent)
 
     @classmethod
-    def get_key(cls, key=None, guid=None):
-        parsed_guid = cls.get_parsed_guid(key, guid)
+    def get_key(cls, key=None, guid=None, required=True):
+        parsed_guid = cls.get_parsed_guid(key, guid, required)
 
         # Ensure service id is valid
         if not parsed_guid or not parsed_guid.sid:
