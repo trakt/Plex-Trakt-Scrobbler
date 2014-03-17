@@ -143,6 +143,8 @@ class PlexMediaServer(PlexBase):
 
     @classmethod
     def rate(cls, key, value):
+        value = int(round(value, 0))
+
         result = cls.request(
             ':/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%s' % (key, value),
             response_type='text'
