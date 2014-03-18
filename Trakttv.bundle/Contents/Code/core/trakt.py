@@ -43,6 +43,9 @@ class Trakt(object):
             values = {}
 
         if authenticate:
+            if not Prefs['username'] or not Prefs['password']:
+                return {'success': False, 'message': 'Missing username or password'}
+
             values['username'] = Prefs['username']
             values['password'] = Hash.SHA1(Prefs['password'])
 
