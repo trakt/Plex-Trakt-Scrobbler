@@ -81,7 +81,10 @@ class PlexMedia(object):
         obj.title = video.get('title')
         obj.year = try_convert(video.get('year'), int)
 
-        obj.user_rating = int(round(try_convert(video.get('userRating'), float), 0))
+        obj.user_rating = try_convert(video.get('userRating'), float)
+
+        if obj.user_rating:
+            obj.user_rating = int(round(obj.user_rating, 0))
 
         if parsed_guid is not None:
             obj.agent = parsed_guid.agent
