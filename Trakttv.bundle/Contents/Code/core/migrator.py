@@ -1,3 +1,4 @@
+from core.helpers import all
 from core.logger import Logger
 from core.plugin import PLUGIN_VERSION_BASE
 import shutil
@@ -25,27 +26,59 @@ class Migration(object):
     def code_path(self):
         return Core.code_path
 
+    @staticmethod
+    def delete_file(path, conditions=None):
+        if not all([c(path) for c in conditions]):
+            return False
 
-class SyncMigration(Migration):
+        os.remove(path)
+
+    @staticmethod
+    def delete_directory(path, conditions=None):
+        if not all([c(path) for c in conditions]):
+            return False
+
+        shutil.rmtree(path)
+
+
+class Clean(Migration):
+    tasks_upgrade = [
+        (
+            'delete_file', [
+                'data/dict_object.py',
+                'plex/media_server.py',
+                'sync.py'
+            ], os.path.isfile
+        )
+    ]
+
     def run(self):
         if PLUGIN_VERSION_BASE >= (0, 8):
             self.upgrade()
-        else:
-            self.downgrade()
 
     def upgrade(self):
-        sync_path = os.path.join(self.code_path, 'sync.py')
+        self.execute(self.tasks_upgrade, 'upgrade')
 
-        if os.path.exists(sync_path) and os.path.isfile(sync_path):
-            log.debug('Removing "sync.py" file')
-            os.remove(sync_path)
+    def execute(self, tasks, name):
+        for action, paths, conditions in tasks:
+            if type(paths) is not list:
+                paths = [paths]
 
-    def downgrade(self):
-        sync_path = os.path.join(self.code_path, 'sync')
+            if type(conditions) is not list:
+                conditions = [conditions]
 
-        if os.path.exists(sync_path) and os.path.isdir(sync_path):
-            log.debug('Removing "sync" folder')
-            shutil.rmtree(sync_path)
+            if not hasattr(self, action):
+                log.warn('Unknown migration action "%s"', action)
+                continue
 
-Migrator.register(SyncMigration)
+            m = getattr(self, action)
+
+            for path in paths:
+                log.debug('(%s) %s: "%s"', name, action, path)
+
+                if m(os.path.join(self.code_path, path), conditions):
+                    log.debug('(%s) %s: "%s" - finished', name, action, path)
+
+
+Migrator.register(Clean)
 Migrator.run()
