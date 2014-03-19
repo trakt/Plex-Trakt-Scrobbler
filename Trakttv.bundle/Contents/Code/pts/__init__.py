@@ -1,6 +1,6 @@
 import sys
 
-# Modules? what are they?
+# submodules for Plex plugins "hack"
 
 import scrobbler
 sys.modules['pts.scrobbler'] = scrobbler

@@ -1,47 +1,47 @@
+from core.eventing import EventManager
 from core.helpers import try_convert
-from plex.media_server import PMS
-from pts.activity import ActivityMethod, PlexActivity
-from pts.scrobbler_websocket import WebSocketScrobbler
+from core.logger import Logger
+from pts.activity import ActivityMethod, Activity
 import websocket
 import time
 
+log = Logger('pts.activity_websocket')
 
-class WebSocket(ActivityMethod):
-    name = 'WebSocket'
+
+TIMELINE_STATES = {
+    0: 'created',
+    2: 'matching',
+    3: 'downloading',
+    4: 'loading',
+    5: 'finished',
+    6: 'analyzing',
+    9: 'deleted'
+}
+
+REGEX_STATUS_SCANNING = Regex('Scanning the "(?P<section>.*?)" section')
+REGEX_STATUS_SCAN_COMPLETE = Regex('Library scan complete')
+
+
+class WebSocketActivity(ActivityMethod):
+    name = 'WebSocketActivity'
 
     opcode_data = (websocket.ABNF.OPCODE_TEXT, websocket.ABNF.OPCODE_BINARY)
 
-    def __init__(self, now_playing):
-        super(WebSocket, self).__init__(now_playing)
+    def __init__(self):
+        super(WebSocketActivity, self).__init__()
 
         self.ws = None
         self.reconnects = 0
 
-        self.scrobbler = WebSocketScrobbler()
-
-    @classmethod
-    def test(cls):
-        if PMS.get_sessions() is None:
-            Log.Info("Error while retrieving sessions, assuming WebSocket method isn't available")
-            return False
-
-        server_info = PMS.get_server_info()
-        if server_info is None:
-            Log.Info('Error while retrieving server info for testing')
-            return False
-
-        multi_user = bool(server_info.get('multiuser', 0))
-        if not multi_user:
-            Log.Info("Server info indicates multi-user support isn't available, WebSocket method not available")
-            return False
-
-        return True
-
     def connect(self):
         self.ws = websocket.create_connection('ws://127.0.0.1:32400/:/websockets/notifications')
+        
+        log.info('Connected to notifications websocket')
 
     def run(self):
         self.connect()
+
+        log.debug('Ready')
 
         while True:
             try:
@@ -58,10 +58,10 @@ class WebSocket(ActivityMethod):
                     if self.reconnects > 1:
                         time.sleep(2 * (self.reconnects - 1))
 
-                    Log.Info('WebSocket connection has closed, reconnecting...')
+                    log.info('WebSocket connection has closed, reconnecting...')
                     self.connect()
                 else:
-                    Log.Error('WebSocket connection unavailable, activity monitoring not available')
+                    log.error('WebSocket connection unavailable, activity monitoring not available')
                     break
 
     def receive(self):
@@ -81,31 +81,75 @@ class WebSocket(ActivityMethod):
 
     def process(self, opcode, data):
         if opcode not in self.opcode_data:
-            return
+            return False
 
         try:
             info = JSON.ObjectFromString(data)
         except Exception, e:
-            Log.Warn('Error decoding message from websocket: %s' % e)
-            Log.Debug(data)
-            return
+            log.warn('Error decoding message from websocket: %s' % e)
+            log.debug(data)
+            return False
 
-        item = info['_children'][0]
+        type = info.get('type')
+        process_func = getattr(self, 'process_%s' % type, None)
 
-        if info['type'] == "playing" and Dict["scrobble"]:
-            session_key = str(item['sessionKey'])
-            state = str(item['state'])
-            view_offset = try_convert(item['viewOffset'], int)
+        # Process each notification item
+        if process_func:
+            results = [process_func(item) for item in info['_children']]
 
-            self.scrobbler.update(session_key, state, view_offset)
+            if len(results) and results[0]:
+                return True
 
-        if info['type'] == "timeline" and Dict['new_sync_collection']:
-            if item['type'] not in [1, 4]:
-                return
+        log.warn('Unable to process notification: %s', info)
+        return False
 
-            if item['state'] == 0:
-                Log.Info("New File added to Libray: " + item['title'] + ' - ' + str(item['itemID']))
+    @staticmethod
+    def process_playing(item):
+        session_key = str(item['sessionKey'])
+        state = str(item['state'])
+        view_offset = try_convert(item['viewOffset'], int)
 
-                self.update_collection(item['itemID'], 'add')
+        EventManager.fire('notifications.playing', session_key, state, view_offset)
+        return True
 
-PlexActivity.register(WebSocket, weight=10)
+    @staticmethod
+    def process_timeline(item):
+        state_key = TIMELINE_STATES.get(item['state'])
+        if state_key is None:
+            log.warn('Unknown timeline state "%s"', item['state'])
+            return False
+
+        EventManager.fire('notifications.timeline.%s' % state_key, item)
+        return True
+
+    @staticmethod
+    def process_progress(item):
+        # Not using this yet, this suppresses the 'Unable to process...' messages for now though
+        return True
+
+    @staticmethod
+    def process_status(item):
+        if item.get('notificationName') != 'LIBRARY_UPDATE':
+            log.debug('Unknown notification name "%s"', item.get('notificationName'))
+            return False
+
+        title = item.get('title')
+
+        # Check for scan complete message
+        if REGEX_STATUS_SCAN_COMPLETE.match(title):
+            EventManager.fire('notifications.status.scan_complete')
+            return True
+
+        # Check for scanning message
+        match = REGEX_STATUS_SCANNING.match(title)
+        if match:
+            section = match.group('section')
+
+            if section:
+                EventManager.fire('notifications.status.scanning', section)
+                return True
+
+        log.debug('No matches found for %s', item)
+        return False
+
+Activity.register(WebSocketActivity, weight=None)

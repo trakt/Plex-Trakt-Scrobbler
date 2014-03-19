@@ -1,13 +1,22 @@
 from core.helpers import str_pad
+from core.logger import Logger
+from core.method_manager import Method, Manager
 from core.trakt import Trakt
+from plex.plex_metadata import PlexMetadata
+import math
+
+log = Logger('pts.scrobbler')
 
 
-class Scrobbler(object):
+class ScrobblerMethod(Method):
+    def __init__(self):
+        super(ScrobblerMethod, self).__init__(threaded=False)
+
     @staticmethod
     def get_status_label(progress, state):
         return '[%s%s]' % (
-            str_pad(state[:2].upper() if state else '?', 2),
-            str_pad(progress if progress is not None else '?', 3, 'right')
+            str_pad(state[:2].upper() if state else '?', 2, trim=True),
+            str_pad(progress if progress is not None else '?', 3, 'right', trim=True)
         )
 
     def get_action(self, session, state):
@@ -25,14 +34,14 @@ class Scrobbler(object):
             session.cur_state = state
 
             if state == 'stopped' and session.watching:
-                Log.Debug('%s %s stopped, watching status cancelled' % (
+                log.info('%s %s stopped, watching status cancelled' % (
                     status_label, session.get_title()
                 ))
                 session.watching = False
                 return 'cancelwatching'
 
             if state == 'paused' and not session.paused_since:
-                Log.Debug("%s %s just paused, waiting 15s before cancelling the watching status" % (
+                log.info("%s %s just paused, waiting 15s before cancelling the watching status" % (
                     status_label, session.get_title()
                 ))
 
@@ -40,25 +49,25 @@ class Scrobbler(object):
                 return None
 
             if state == 'playing' and not session.watching:
-                Log.Debug('%s Sending watch status for %s' % (status_label, session.get_title()))
+                log.info('%s Sending watch status for %s' % (status_label, session.get_title()))
                 session.watching = True
                 return 'watching'
 
         elif state == 'playing':
             # scrobble item
             if not session.scrobbled and session.progress >= 80:
-                Log.Debug('%s Scrobbling %s' % (status_label, session.get_title()))
+                log.info('%s Scrobbling %s' % (status_label, session.get_title()))
                 return 'scrobble'
 
             # update every 10 min if media hasn't finished
             elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-                Log.Debug('%s Updating watch status for %s' % (status_label, session.get_title()))
+                log.info('%s Updating watch status for %s' % (status_label, session.get_title()))
                 session.watching = True
                 return 'watching'
 
             # cancel watching status on items at 100% progress
             elif session.progress >= 100 and session.watching:
-                Log.Debug('%s Media finished, cancelling watching status for %s' % (
+                log.info('%s Media finished, cancelling watching status for %s' % (
                     status_label,
                     session.get_title()
                 ))
@@ -76,20 +85,23 @@ class Scrobbler(object):
             return None
 
         if session_type == 'show':
-            values.update({
-                'tvdb_id': session.metadata['tvdb_id'],
-                'season': session.metadata['season'],
-                'episode': session.metadata['episode']
-            })
+            if 'episodes' not in session.metadata:
+                return None
 
-        if session_type == 'movie':
-            if session.metadata.get('imdb_id'):
-                values['imdb_id'] = session.metadata['imdb_id']
-            elif session.metadata.get('tmdb_id'):
-                values['tmdb_id'] = session.metadata['tmdb_id']
+            values.update({
+                'season': session.metadata['season'],
+                'episode': session.metadata['episodes'][session.cur_episode],
+
+                # Scale duration to number of episodes
+                'duration': session.metadata['duration'] / len(session.metadata['episodes'])
+            })
+        else:
+            values['duration'] = session.metadata['duration']
+
+        # Add TVDB/TMDB identifier
+        values = PlexMetadata.add_identifier(values, session.metadata)
 
         values.update({
-            'duration': session.metadata['duration'],
             'progress': session.progress,
             'title': session.get_title()
         })
@@ -107,13 +119,13 @@ class Scrobbler(object):
 
         # If stopped, delete the session
         if state == 'stopped':
-            Log.Debug(session.get_title() + ' stopped, deleting the session')
+            log.debug(session.get_title() + ' stopped, deleting the session')
             session.delete()
             return True
 
         # If paused, queue a session update when playing begins again
         if state == 'paused' and not session.update_required:
-            Log.Debug(session.get_title() + ' paused, session update queued to run when resumed')
+            log.debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
             return True
 
@@ -124,12 +136,12 @@ class Scrobbler(object):
         # Setup Data to send to Trakt
         parameters = cls.get_request_parameters(session)
         if not parameters:
-            Log.Info('Invalid parameters, unable to continue')
+            log.info('Invalid parameters, unable to continue')
             return False
 
         response = Trakt.Media.action(media_type, action, **parameters)
         if not response['success']:
-            Log.Warn('Unable to send scrobbler action')
+            log.warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()
 
@@ -150,10 +162,28 @@ class Scrobbler(object):
         if session.metadata.get('duration', 0) <= 0:
             return False
 
-        duration_millis = session.metadata['duration'] * 60 * 1000
-        perc_float = float(view_offset) / duration_millis
+        media = session.get_type()
+        duration = session.metadata['duration'] * 60 * 1000
 
-        session.progress = int(round(perc_float * 100, 0))
+        total_progress = float(view_offset) / duration
+
+        if media == 'show':
+            if 'episodes' not in session.metadata:
+                return False
+
+            cur_episode = int(math.floor(len(session.metadata['episodes']) * total_progress))
+
+            # If episode has changed, reset the state to start new session
+            if cur_episode != session.cur_episode and session.cur_episode is not None:
+                log.info('Session has changed episodes, state has been reset')
+                session.reset()
+
+            session.cur_episode = cur_episode
+
+            # Scale progress based on number of episodes
+            total_progress = (len(session.metadata['episodes']) * total_progress) - session.cur_episode
+
+        session.progress = int(round(total_progress * 100, 0))
 
         return True
 
@@ -172,3 +202,10 @@ class Scrobbler(object):
         clients = [x.strip().lower() for x in Prefs['scrobble_clients'].split(',')]
 
         return session.client and session.client.name.lower() in clients
+
+
+class Scrobbler(Manager):
+    tag = 'pts.scrobbler'
+
+    available = []
+    enabled = []

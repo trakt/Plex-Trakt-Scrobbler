@@ -1,4 +1,4 @@
-class DictObject(object):
+class DictModel(object):
     root_key = None
 
     def __init__(self, key):
@@ -26,6 +26,9 @@ class DictObject(object):
     def load(cls, key):
         if not cls.root_key:
             raise ValueError()
+
+        if cls.root_key not in Dict:
+            Dict[cls.root_key] = {}
 
         if key not in Dict[cls.root_key]:
             return None
@@ -71,7 +74,7 @@ class DictObject(object):
         ]
 
         for key, value in items:
-            if isinstance(value, DictObject):
+            if isinstance(value, DictModel):
                 value = value.to_json()
 
             data[key] = value

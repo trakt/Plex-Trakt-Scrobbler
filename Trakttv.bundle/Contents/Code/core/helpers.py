@@ -1,52 +1,19 @@
+import inspect
+import threading
+import time
 import sys
 
 
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
 
 
-def SyncDownString():
-
-    if Prefs['sync_watched'] and Prefs['sync_ratings']:
-        return "seen and rated"
-    elif Prefs['sync_watched']:
-        return "seen "
-    elif Prefs['sync_ratings']:
-        return "rated "
-    else:
-        return ""
-
-
-def SyncUpString():
-    action_strings = []
-    if Prefs['sync_collection']:
-        action_strings.append("library")
-    if Prefs['sync_watched']:
-        action_strings.append("seen items")
-    if Prefs['sync_ratings']:
-        action_strings.append("ratings")
-
-    temp_string = ", ".join(action_strings)
-    li = temp_string.rsplit(", ", 1)
-    return " and ".join(li)
-
-
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-    except TypeError:
-        return False
-
-
-def try_convert(value, value_type):
+def try_convert(value, value_type, default=None):
     try:
         return value_type(value)
     except ValueError:
-        return None
+        return default
     except TypeError:
-        return None
+        return default
 
 
 def add_attribute(target, source, key, value_type=str, func=None, target_key=None):
@@ -59,60 +26,9 @@ def add_attribute(target, source, key, value_type=str, func=None, target_key=Non
         target[target_key] = func(value) if func else value
 
 
-def iterget(items, keys):
-    result = []
-
-    for item in items:
-        values = [item]
-
-        for key, value in [(key, item.get(key, None)) for key in keys]:
-            values.append(value)
-
-        result.append(values)
-
-    return result
-
-
-def finditems(subject, items, keys):
-    if type(keys) is not list:
-        keys = [keys]
-
-    # Filter by keys available in subject
-    keys = [k for k in keys if k in subject]
-
-    if not len(keys):
-        Log.Warn('No keys available for matching')
-        return []
-
-    result = []
-
-    for item in items:
-        for key in keys:
-            if key in item and str(item[key]) == str(subject[key]):
-                result.append(item)
-                break
-
-    return result
-
-
-def matches(subject, items, func):
-    result = []
-
-    for item in items:
-        if func(item) == subject:
-            result.append(item)
-
-    return result
-
-
-def extend(a, b=None):
-    c = a.copy()
-
-    if b is None:
-        return c
-
-    c.update(b)
-    return c
+def merge(a, b):
+    a.update(b)
+    return a
 
 
 def all(items):
@@ -221,13 +137,15 @@ def str_format(s, *args, **kwargs):
     return s
 
 
-def str_pad(s, length, align='left', pad_char=' '):
+def str_pad(s, length, align='left', pad_char=' ', trim=False):
     if not s:
         return s
 
     s = str(s)
 
     if len(s) == length:
+        return s
+    elif len(s) > length and not trim:
         return s
 
     if align == 'left':
@@ -244,7 +162,6 @@ def str_pad(s, length, align='left', pad_char=' '):
         raise ValueError("Unknown align type, expected either 'left' or 'right'")
 
 
-# TODO ensure longer titles aren't trimmed
 def pad_title(value):
     """Pad a title to 30 characters to force the 'details' view."""
     return str_pad(value, 30, pad_char=' ')
@@ -252,3 +169,85 @@ def pad_title(value):
 
 def total_seconds(span):
     return (span.microseconds + (span.seconds + span.days * 24 * 3600) * 1e6) / 1e6
+
+
+def sum(values):
+    result = 0
+
+    for x in values:
+        result = result + x
+
+    return result
+
+
+def timestamp():
+    return int(time.time())
+
+
+# <bound method type.start of <class 'Scrobbler'>>
+RE_BOUND_METHOD = Regex(r"<bound method (type\.)?(?P<name>.*?) of <(class '(?P<class>.*?)')?")
+
+
+def get_func_name(obj):
+    if inspect.ismethod(obj):
+        match = RE_BOUND_METHOD.match(repr(obj))
+
+        if match:
+            cls = match.group('class')
+            if not cls:
+                return match.group('name')
+
+            return '%s.%s' % (
+                match.group('class'),
+                match.group('name')
+            )
+
+    return None
+
+
+def spawn(func, *args, **kwargs):
+    thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
+
+    thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
+
+    thread.start()
+
+    Log.Debug("Spawned thread with name '%s'" % thread_name)
+    return thread
+
+
+def build_repr(obj, keys):
+    key_part = ', '.join([
+        ('%s: %s' % (key, repr(getattr(obj, key))))
+        for key in keys
+    ])
+
+    cls = getattr(obj, '__class__')
+
+    return '<%s %s>' % (getattr(cls, '__name__'), key_part)
+
+
+def plural(value):
+    if type(value) is list:
+        value = len(value)
+
+    if value == 1:
+        return ''
+
+    return 's'
+
+
+def get_pref(key):
+    if Dict['preferences'] and key in Dict['preferences']:
+        return Dict['preferences'][key]
+
+    return Prefs[key]
+
+
+def join_attributes(**kwargs):
+    fragments = [
+        (('%s: %s' % (key, value)) if value else None)
+        for (key, value) in kwargs.items()
+    ]
+
+    return ', '.join([x for x in fragments if x])

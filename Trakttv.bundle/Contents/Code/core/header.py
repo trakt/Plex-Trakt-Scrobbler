@@ -22,6 +22,10 @@ class Header(object):
         cls.print_version(main)
         cls.separator('-')
 
+        if Dict['developer']:
+            cls.line('Developer Mode: Enabled')
+            cls.separator('-')
+
         [cls.line(module_name) for module_name in cls.get_module_names()]
         cls.separator('=')
 
