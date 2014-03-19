@@ -1,4 +1,4 @@
-from core.helpers import try_convert, json_encode, json_decode
+from core.helpers import try_convert, json_encode, json_decode, get_pref
 from core.logger import Logger
 from plex.plex_base import PlexBase
 from caper import Caper
@@ -171,7 +171,7 @@ class PlexMatcher(PlexBase):
     @classmethod
     def get_extended(cls, video, p_season, p_episode):
         # Ensure extended matcher is enabled
-        if Dict['preferences']['matcher'] != 'plex_extended':
+        if get_pref('matcher') != 'plex_extended':
             return []
 
         # Parse filename for extra info
