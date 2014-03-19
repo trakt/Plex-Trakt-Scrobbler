@@ -32,6 +32,7 @@ class Migration(object):
             return False
 
         os.remove(path)
+        return True
 
     @staticmethod
     def delete_directory(path, conditions=None):
@@ -39,6 +40,7 @@ class Migration(object):
             return False
 
         shutil.rmtree(path)
+        return True
 
 
 class Clean(Migration):
