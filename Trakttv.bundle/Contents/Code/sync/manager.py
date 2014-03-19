@@ -195,6 +195,7 @@ class SyncManager(object):
 
         # Ensure account details are set
         if not get_pref('valid'):
+            cls.lock.release()
             return False
 
         cls.reset()
