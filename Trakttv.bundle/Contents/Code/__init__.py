@@ -14,7 +14,7 @@ import interface
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
-from core.helpers import total_seconds
+from core.helpers import total_seconds, spawn
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
@@ -92,12 +92,36 @@ class Main(object):
         log.info('Preferences updated %s', preferences)
         EventManager.fire('preferences.updated', preferences)
 
+    @classmethod
+    def validate_auth(cls):
+        if not Prefs['username'] or not Prefs['password']:
+            log.warn('Authentication failed, username or password field empty')
+
+            cls.update_config(False)
+            return False
+
+        status = Trakt.Account.test()
+
+        if not status['success']:
+            log.warn('Authentication failed, username or password is incorrect (trakt returned: %s)', status['message'])
+
+            Main.update_config(False)
+            return False
+
+        log.info('Authentication successful')
+
+        Main.update_config(True)
+        return True
+
     def start(self):
         # Get current server version and save it to dict.
         server_version = PlexMediaServer.get_version()
         if server_version:
             Log('Server Version is %s' % server_version)
             Dict['server_version'] = server_version
+
+        # Validate username/password
+        spawn(self.validate_auth)
 
         # Check for updates
         self.update_checker.run_once(async=True)
@@ -156,28 +180,21 @@ def Start():
 
 
 def ValidatePrefs():
-    if Prefs['username'] is None:
-        Main.update_config(False)
-        return MessageContainer("Error", "No login information entered.")
-
     if not Prefs['sync_watched'] and not Prefs['sync_ratings'] and not Prefs['sync_collection']:
-        Main.update_config(False)
-        return MessageContainer("Error", "At least one sync type need to be enabled.")
-
-    status = Trakt.Account.test()
-
-    if not status['success']:
-        log.warn('Username or password invalid')
         Main.update_config(False)
 
         return MessageContainer(
             "Error",
-            "Trakt responded with: %s " % status['message']
+            "At least one sync type need to be enabled."
         )
 
-    Main.update_config(True)
+    if Main.validate_auth():
+        return MessageContainer(
+            "Success",
+            "Authentication successful"
+        )
 
     return MessageContainer(
-        "Success",
-        "Trakt responded with: %s " % status['message']
+        "Error",
+        "Authentication failed, incorrect username or password"
     )

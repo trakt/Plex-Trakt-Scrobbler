@@ -194,7 +194,7 @@ class SyncManager(object):
             return False
 
         # Ensure account details are set
-        if not Prefs['username'] or not Prefs['password']:
+        if not get_pref('valid'):
             return False
 
         cls.reset()

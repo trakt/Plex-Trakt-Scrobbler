@@ -237,11 +237,11 @@ def plural(value):
     return 's'
 
 
-def get_pref(key):
+def get_pref(key, default=None):
     if Dict['preferences'] and key in Dict['preferences']:
         return Dict['preferences'][key]
 
-    return Prefs[key]
+    return Prefs[key] or default
 
 
 def join_attributes(**kwargs):
