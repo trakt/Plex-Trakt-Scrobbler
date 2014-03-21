@@ -11,3 +11,9 @@ PLUGIN_VERSION = ''.join([
 NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+
+ACTIVITY_MODE = {
+    'Automatic':            None,
+    'Logging (Legacy)':     ['LoggingActivity', 'LoggingScrobbler'],
+    'WebSocket (PlexPass)': ['WebSocketActivity', 'WebSocketScrobbler']
+}
