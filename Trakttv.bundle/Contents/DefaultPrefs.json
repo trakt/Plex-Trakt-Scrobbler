@@ -76,9 +76,10 @@
         "default": ""
     },
     {
-        "id": "force_legacy",
-        "type": "bool",
-        "label": "Force legacy activity method (restart required)",
-        "default": "false"
+        "id": "activity_mode",
+        "type": "enum",
+        "label": "Activity mode",
+        "values": ["Automatic", "Logging (Legacy)", "WebSocket (PlexPass)"],
+        "default": "Automatic"
     }
 ]
