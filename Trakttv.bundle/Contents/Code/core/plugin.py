@@ -1,4 +1,5 @@
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
+PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 
 PLUGIN_VERSION_BASE = (0, 8, 1, 1)
 PLUGIN_VERSION_BRANCH = 'develop'
