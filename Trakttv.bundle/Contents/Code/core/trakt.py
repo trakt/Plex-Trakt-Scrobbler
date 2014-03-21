@@ -229,7 +229,6 @@ class Trakt(object):
         watched = cls.User.get_library(
             media, 'watched',
             extended=extended,
-
             **kwargs
         ).get('data')
 
@@ -247,12 +246,18 @@ class Trakt(object):
 
     @classmethod
     def merge_ratings(cls, result, media, **kwargs):
-        ratings = cls.User.get_ratings(media, **kwargs).get('data')
+        ratings = cls.User.get_ratings(
+            media,
+            **kwargs
+        ).get('data')
 
         episode_ratings = None
 
         if media == 'shows':
-            episode_ratings = cls.User.get_ratings('episodes', **kwargs).get('data')
+            episode_ratings = cls.User.get_ratings(
+                'episodes',
+                **kwargs
+            ).get('data')
 
         if ratings is None or (media == 'shows' and episode_ratings is None):
             log.warn('Unable to fetch ratings from trakt')
