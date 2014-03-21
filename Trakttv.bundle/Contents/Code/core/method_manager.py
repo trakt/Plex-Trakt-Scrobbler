@@ -8,7 +8,6 @@ log = Logger('core.method_manager')
 
 class Method(object):
     name = None
-    legacy = None
 
     def __init__(self, threaded=True):
         if threaded:
