@@ -62,7 +62,7 @@ class PlexMetadata(PlexBase):
 
     @classmethod
     def on_refresh(cls, key):
-        return cls.request('library/metadata/%s' % key)
+        return cls.request('library/metadata/%s' % key, timeout=10)
 
     @classmethod
     def get_cache(cls, key):
