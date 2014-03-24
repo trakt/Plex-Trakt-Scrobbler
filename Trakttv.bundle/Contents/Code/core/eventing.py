@@ -56,6 +56,7 @@ class EventManager(object):
             return
 
         cls.events[key] = EventHandler(key)
+        log.trace('Created event with key "%s"', key)
 
     @classmethod
     def subscribe(cls, key, handler):
@@ -79,6 +80,7 @@ class EventManager(object):
     def fire(cls, key, *args, **kwargs):
         if key not in SILENT_FIRE:
             attributes = join_attributes(args=args, kwargs=kwargs)
+            log.trace("fire '%s'%s", key, (' [%s]' % attributes) if attributes else '')
 
         cls.ensure_exists(key)
         return cls.events[key].fire(*args, **kwargs)
