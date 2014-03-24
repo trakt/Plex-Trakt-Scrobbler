@@ -81,5 +81,11 @@
         "label": "Activity mode",
         "values": ["Automatic", "Logging (Legacy)", "WebSocket (PlexPass)"],
         "default": "Automatic"
+    },
+    {
+        "id": "logging_tracing",
+        "type": "bool",
+        "label": "Logging - Write tracing events",
+        "default": "false"
     }
 ]
