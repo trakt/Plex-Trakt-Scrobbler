@@ -1,5 +1,6 @@
 from core.helpers import spawn, plural
 from core.logger import Logger
+from core.plugin import ACTIVITY_MODE
 import threading
 
 log = Logger('core.method_manager')
@@ -7,7 +8,6 @@ log = Logger('core.method_manager')
 
 class Method(object):
     name = None
-    legacy = None
 
     def __init__(self, threaded=True):
         if threaded:
@@ -61,17 +61,24 @@ class Manager(object):
         cls.available.append(item)
 
     @classmethod
+    def filter_available(cls):
+        allowed = ACTIVITY_MODE.get(Prefs['activity_mode'])
+
+        if not allowed:
+            return
+
+        cls.available = [
+            (k, v) for (k, v) in cls.available
+            if v.name in allowed
+        ]
+
+    @classmethod
     def start(cls, blocking=False):
         if not blocking:
             spawn(cls.start, blocking=True)
             return
 
-        if Prefs['force_legacy']:
-            # Only use legacy methods
-            cls.available = [
-                (k, v) for (k, v) in cls.available
-                if v.legacy or v.legacy is None
-            ]
+        cls.filter_available()
 
         # Test methods until an available method is found
         for weight, method in cls.available:
@@ -79,9 +86,7 @@ class Manager(object):
                 cls.start_method(method)
             elif method.test():
                 cls.start_method(method)
-
-                if not Prefs['force_legacy']:
-                    break
+                break
             else:
                 log.info("method '%s' not available" % method.name, tag=cls.tag)
 

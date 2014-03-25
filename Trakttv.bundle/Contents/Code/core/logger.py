@@ -13,6 +13,12 @@ class Logger(object):
 
         func(ENTRY_FORMAT % (tag, (str(message) % args)))
 
+    def trace(self, message, *args, **kwargs):
+        if not Prefs['logging_tracing']:
+            return
+
+        self.write(Log.Debug, message, *args, **kwargs)
+
     def debug(self, message, *args, **kwargs):
         self.write(Log.Debug, message, *args, **kwargs)
 

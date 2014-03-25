@@ -1,6 +1,7 @@
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
+PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 
-PLUGIN_VERSION_BASE = (0, 8, 1, 1)
+PLUGIN_VERSION_BASE = (0, 8, 1, 2)
 PLUGIN_VERSION_BRANCH = 'master'
 
 PLUGIN_VERSION = ''.join([
@@ -11,3 +12,9 @@ PLUGIN_VERSION = ''.join([
 NAME = L('Title')
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
+
+ACTIVITY_MODE = {
+    'Automatic':            None,
+    'Logging (Legacy)':     ['LoggingActivity', 'LoggingScrobbler'],
+    'WebSocket (PlexPass)': ['WebSocketActivity', 'WebSocketScrobbler']
+}

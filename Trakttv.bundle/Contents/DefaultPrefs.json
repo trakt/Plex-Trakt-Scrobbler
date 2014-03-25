@@ -76,9 +76,16 @@
         "default": ""
     },
     {
-        "id": "force_legacy",
+        "id": "activity_mode",
+        "type": "enum",
+        "label": "Activity mode",
+        "values": ["Automatic", "Logging (Legacy)", "WebSocket (PlexPass)"],
+        "default": "Automatic"
+    },
+    {
+        "id": "logging_tracing",
         "type": "bool",
-        "label": "Force legacy activity method (restart required)",
+        "label": "Logging - Write tracing events",
         "default": "false"
     }
 ]

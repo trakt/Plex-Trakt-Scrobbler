@@ -14,7 +14,7 @@ import interface
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
-from core.helpers import total_seconds, spawn
+from core.helpers import total_seconds, spawn, get_pref
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
@@ -79,6 +79,8 @@ class Main(object):
             valid = preferences.get('valid', True)
 
         preferences['valid'] = valid
+
+        preferences['activity_mode'] = Prefs['activity_mode']
 
         preferences['scrobble'] = Prefs['start_scrobble'] and valid
         preferences['sync_run_library'] = Prefs['sync_run_library'] and valid
@@ -180,21 +182,22 @@ def Start():
 
 
 def ValidatePrefs():
-    if not Prefs['sync_watched'] and not Prefs['sync_ratings'] and not Prefs['sync_collection']:
-        Main.update_config(False)
-
-        return MessageContainer(
-            "Error",
-            "At least one sync type need to be enabled."
-        )
+    last_activity_mode = get_pref('activity_mode')
 
     if Main.validate_auth():
-        return MessageContainer(
+        message = MessageContainer(
             "Success",
             "Authentication successful"
         )
+    else:
+        message = MessageContainer(
+            "Error",
+            "Authentication failed, incorrect username or password"
+        )
 
-    return MessageContainer(
-        "Error",
-        "Authentication failed, incorrect username or password"
-    )
+    # Restart if activity_mode has changed
+    if Prefs['activity_mode'] != last_activity_mode:
+        log.info('Activity mode has changed, restarting plugin...')
+        spawn(PlexMediaServer.restart_plugin)
+
+    return message

@@ -1,6 +1,8 @@
 from core.helpers import all
 from core.logger import Logger
+from core.plugin import PLUGIN_IDENTIFIER
 from plex.plex_base import PlexBase
+import os
 
 log = Logger('plex.plex_media_server')
 
@@ -151,3 +153,13 @@ class PlexMediaServer(PlexBase):
         )
 
         return result is not None
+
+    @classmethod
+    def restart_plugin(cls, identifier=None):
+        if identifier is None:
+            identifier = PLUGIN_IDENTIFIER
+
+        # Touch plugin directory to update modified time
+        os.utime(os.path.join(Core.code_path), None)
+
+        cls.request(':/plugins/%s/reloadServices' % identifier)

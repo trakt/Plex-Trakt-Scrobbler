@@ -78,7 +78,7 @@ class PlexLibrary(PlexBase):
 
         result = {}
 
-        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
+        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=30, cache_id=cache_id)
 
         for video in container:
             season, episodes = PlexMatcher.get_identifier(video)
