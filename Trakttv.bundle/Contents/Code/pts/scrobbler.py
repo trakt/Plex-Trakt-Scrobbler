@@ -1,4 +1,4 @@
-from core.helpers import str_pad, get_filter
+from core.helpers import str_pad, get_filter, get_pref
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from core.trakt import Trakt
@@ -55,7 +55,7 @@ class ScrobblerMethod(Method):
 
         elif state == 'playing':
             # scrobble item
-            if not session.scrobbled and session.progress >= 80:
+            if not session.scrobbled and session.progress >= get_pref('scrobble_percentage'):
                 log.info('%s Scrobbling %s' % (status_label, session.get_title()))
                 return 'scrobble'
 
