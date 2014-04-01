@@ -1,4 +1,4 @@
-from core.helpers import str_pad
+from core.helpers import str_pad, get_filter
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from core.trakt import Trakt
@@ -192,16 +192,78 @@ class ScrobblerMethod(Method):
         if Prefs['scrobble_names'] is None:
             return True
 
-        return session.user and Prefs['scrobble_names'].lower() == session.user.title.lower()
+        # Normalize username
+        username = session.user.title.lower() if session.user else None
+
+        # Fetch filter
+        filter = get_filter('scrobble_names')
+        if filter is None:
+            return True
+
+        log.debug('validate user - username: "%s", filter: %s', username, filter)
+
+        if not session.user or username not in filter:
+            log.info('Ignoring item [%s](%s) played by filtered user: %s' % (
+                session.item_key,
+                session.get_title(),
+                session.user.title if session.user else None
+            ))
+            return False
+
+        return True
 
     @staticmethod
     def valid_client(session):
         if Prefs['scrobble_clients'] is None:
             return True
 
-        clients = [x.strip().lower() for x in Prefs['scrobble_clients'].split(',')]
+        # Normalize client name
+        client_name = session.client.name.lower() if session.client else None
 
-        return session.client and session.client.name.lower() in clients
+        # Fetch filter
+        filter = get_filter('scrobble_clients')
+        if filter is None:
+            return True
+
+        log.debug('validate client - client_name: "%s", filter: %s', client_name, filter)
+
+        if not session.client or client_name not in filter:
+            log.info('Ignoring item [%s](%s) played by filtered client: %s' % (
+                session.item_key,
+                session.get_title(),
+                client_name
+            ))
+            return False
+
+        return True
+
+    @staticmethod
+    def valid_section(session):
+        title = session.metadata.get('section_title')
+        if not title:
+            return True
+
+        # Fetch filter
+        filter = get_filter('filter_sections')
+        if filter is None:
+            return True
+
+        # Normalize title
+        title = title.strip().lower()
+
+        log.debug('validate section - title: "%s", filter: %s', title, filter)
+
+        # Check section title against filter
+        if title not in filter:
+            log.info('Ignoring item [%s](%s) played from filtered section "%s"' % (
+                session.item_key,
+                session.get_title(),
+                session.metadata.get('section_title')
+            ))
+            return False
+
+        return True
+
 
 
 class Scrobbler(Manager):

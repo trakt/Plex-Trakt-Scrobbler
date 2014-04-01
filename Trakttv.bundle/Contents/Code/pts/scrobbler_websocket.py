@@ -121,6 +121,17 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         return session
 
+    def valid(self, session):
+        # Check filters
+        if not self.valid_user(session) or\
+           not self.valid_client(session) or \
+           not self.valid_section(session):
+            session.skip = True
+            session.save()
+            return False
+
+        return True
+
     def update(self, session_key, state, view_offset):
         # Ignore if scrobbling is disabled
         if not get_pref('scrobble'):
@@ -128,33 +139,15 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         session = self.get_session(session_key, state, view_offset)
         if not session:
-            log.info('Invalid session, unable to continue')
+            log.trace('Invalid or ignored session, nothing to do')
             return
 
         # Ignore sessions flagged as 'skip'
         if session.skip:
             return
 
-        # Ensure we are only scrobbling for the myPlex user listed in preferences
-        if not self.valid_user(session):
-            log.info('Ignoring item [%s](%s) played by other user: %s' % (
-                session_key,
-                session.get_title(),
-                session.user.title if session.user else None
-            ))
-            session.skip = True
-
-        # Ensure we are only scrobbling for the client listed in preferences
-        if not self.valid_client(session):
-            log.info('Ignoring item [%s](%s) played by other client: %s' % (
-                session_key,
-                session.get_title(),
-                session.client.name if session.client else None
-            ))
-            session.skip = True
-
-        if session.skip:
-            session.save()
+        # Validate session (check filters)
+        if not self.valid(session):
             return
 
         media_type = session.get_type()

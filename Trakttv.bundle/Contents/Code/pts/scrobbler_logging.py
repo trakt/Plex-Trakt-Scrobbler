@@ -81,6 +81,16 @@ class LoggingScrobbler(ScrobblerMethod):
 
         return session
 
+    def valid(self, session):
+        # Check filters
+        if not self.valid_client(session) or\
+           not self.valid_section(session):
+            session.skip = True
+            session.save()
+            return False
+
+        return True
+
     def update(self, info):
         # Ignore if scrobbling is disabled
         if not get_pref('scrobble'):
@@ -91,14 +101,8 @@ class LoggingScrobbler(ScrobblerMethod):
             log.info('Invalid session, ignoring')
             return
 
-        # Ensure we are only scrobbling for the client listed in preferences
-        if not self.valid_client(session):
-            log.info('Ignoring item (%s) played by other client: %s' % (
-                session.get_title(),
-                session.client.name if session.client else None
-            ))
-            session.skip = True
-            session.save()
+        # Validate session (check filters)
+        if not self.valid(session):
             return
 
         media_type = session.get_type()
