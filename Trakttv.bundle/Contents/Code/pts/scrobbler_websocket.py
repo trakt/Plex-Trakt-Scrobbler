@@ -74,9 +74,15 @@ class WebSocketScrobbler(ScrobblerMethod):
         log.debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
 
         if session.item_key != video_section.get('ratingKey'):
-            log.info('Invalid Session: Media changed')
+            log.debug('Invalid Session: Media changed')
             return False
 
+        session.last_view_offset = view_offset
+        session.update_required = False
+
+        return True
+
+    def session_valid(self, session):
         if not session.metadata:
             log.debug('Invalid Session: Missing metadata')
             return False
@@ -84,9 +90,6 @@ class WebSocketScrobbler(ScrobblerMethod):
         if session.metadata.get('duration', 0) <= 0:
             log.debug('Invalid Session: Invalid duration')
             return False
-
-        session.last_view_offset = view_offset
-        session.update_required = False
 
         return True
 
@@ -105,6 +108,11 @@ class WebSocketScrobbler(ScrobblerMethod):
                     log.debug('Media changed, deleting the session')
                     session.delete()
                     return None
+
+            # Delete session if invalid
+            if not self.session_valid(session):
+                session.delete()
+                return None
 
             if session.skip:
                 return None
