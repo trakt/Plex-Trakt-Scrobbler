@@ -85,7 +85,12 @@ class ScrobblerMethod(Method):
             return None
 
         if session_type == 'show':
-            if 'episodes' not in session.metadata:
+            if not session.metadata.get('episodes'):
+                log.warn('No episodes found in metadata')
+                return None
+
+            if session.cur_episode >= len(session.metadata['episodes']):
+                log.warn('Unable to find episode at index %s, available episodes: %s', session.cur_episode, session.metadata['episodes'])
                 return None
 
             values.update({
