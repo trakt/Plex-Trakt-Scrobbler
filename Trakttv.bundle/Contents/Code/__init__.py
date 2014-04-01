@@ -11,10 +11,11 @@ import interface
 # ------------------------------------------------
 
 
+from core.configuration import Configuration
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
-from core.helpers import total_seconds, spawn, get_pref
+from core.helpers import total_seconds, spawn, get_pref, try_convert
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
@@ -70,8 +71,8 @@ class Main(object):
                 log.debug("Initializing module %s", module)
                 module.initialize()
 
-    @staticmethod
-    def update_config(valid=None):
+    @classmethod
+    def update_config(cls, valid=None):
         preferences = Dict['preferences'] or {}
 
         # If no validation provided, use last stored result or assume true
@@ -86,6 +87,8 @@ class Main(object):
         preferences['sync_run_library'] = Prefs['sync_run_library'] and valid
 
         preferences['matcher'] = MATCHER_MAP[Prefs['matcher']]
+
+        Configuration.transform(preferences)
 
         # Ensure preferences dictionary is stored
         Dict['preferences'] = preferences
