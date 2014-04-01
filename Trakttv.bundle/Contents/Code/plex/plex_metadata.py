@@ -170,7 +170,13 @@ class PlexMetadata(PlexBase):
 
     @staticmethod
     def add_identifier(data, p_item):
-        service, sid = p_item['key'] if type(p_item) is dict else p_item.key
+        key = p_item['key'] if type(p_item) is dict else p_item.key
+
+        # Ensure key is valid
+        if not key:
+            return data
+
+        service, sid = key
 
         # Parse identifier and append relevant '*_id' attribute to data
         if service == 'imdb':
