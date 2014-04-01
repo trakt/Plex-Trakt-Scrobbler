@@ -1,5 +1,5 @@
 from core.eventing import EventManager
-from core.helpers import all, merge
+from core.helpers import all, merge, get_filter
 from core.logger import Logger
 from core.task import Task, CancelException
 from core.trakt import Trakt
@@ -21,12 +21,26 @@ class Base(object):
 
 class PlexInterface(Base):
     @classmethod
-    def sections(cls, types=None, keys=None):
-        return PlexMediaServer.get_sections(types, keys, cache_id=cls.get_cache_id())
+    def sections(cls, types=None, keys=None, titles=None):
+        # Default to 'titles' filter preference
+        if titles is None:
+            titles = get_filter('filter_sections')
+
+        return PlexMediaServer.get_sections(
+            types, keys, titles,
+            cache_id=cls.get_cache_id()
+        )
 
     @classmethod
-    def library(cls, types=None, keys=None):
-        return PlexLibrary.fetch(types, keys, cache_id=cls.get_cache_id())
+    def library(cls, types=None, keys=None, titles=None):
+        # Default to 'titles' filter preference
+        if titles is None:
+            titles = get_filter('filter_sections')
+
+        return PlexLibrary.fetch(
+            types, keys, titles,
+            cache_id=cls.get_cache_id()
+        )
 
     @classmethod
     def episodes(cls, key, parent=None):

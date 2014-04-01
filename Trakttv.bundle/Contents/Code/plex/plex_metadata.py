@@ -78,27 +78,27 @@ class PlexMetadata(PlexBase):
 
     @classmethod
     def get(cls, key):
-        data = cls.get_cache(key)
-        if data is None:
+        container = cls.get_cache(key)
+        if container is None:
             return None
 
-        data = data[0]
+        media = container[0]
 
-        parsed_guid, item_key = cls.get_key(guid=data.get('guid'), required=False)
+        parsed_guid, item_key = cls.get_key(guid=media.get('guid'), required=False)
 
         # Create object for the data
-        data_type = data.get('type')
+        data_type = media.get('type')
 
         if data_type == 'movie':
-            return PlexMovie.create(data, parsed_guid, item_key)
+            return PlexMovie.create(container, media, parsed_guid, item_key)
 
         if data_type == 'show':
-            return PlexShow.create(data, parsed_guid, item_key)
+            return PlexShow.create(container, media, parsed_guid, item_key)
 
         if data_type == 'episode':
-            season, episodes = PlexMatcher.get_identifier(data)
+            season, episodes = PlexMatcher.get_identifier(media)
 
-            return PlexEpisode.create(data, season, episodes, parsed_guid=parsed_guid, key=item_key)
+            return PlexEpisode.create(container, media, season, episodes, parsed_guid, item_key)
 
         log.warn('Failed to parse item "%s" with type "%s"', key, data_type)
         return None

@@ -74,8 +74,11 @@ class PlexMedia(object):
 
         self.user_rating = None
 
+        self.section_key = None
+        self.section_title = None
+
     @staticmethod
-    def fill(obj, video, parsed_guid=None):
+    def fill(obj, container, video, parsed_guid=None):
         obj.type = video.get('type')
 
         obj.title = video.get('title')
@@ -86,13 +89,23 @@ class PlexMedia(object):
         if obj.user_rating:
             obj.user_rating = int(round(obj.user_rating, 0))
 
+        obj.section_key = try_convert(container.get('librarySectionID'), int)
+        obj.section_title = container.get('librarySectionTitle')
+
         if parsed_guid is not None:
             obj.agent = parsed_guid.agent
             obj.sid = parsed_guid.sid
 
     @staticmethod
     def get_repr_keys():
-        return ['rating_key', 'key', 'type', 'title', 'year', 'agent', 'sid', 'user_rating']
+        return [
+            'rating_key', 'key',
+            'type',
+            'title', 'year',
+            'agent', 'sid',
+            'user_rating',
+            'section_key', 'section_title'
+        ]
 
     def to_dict(self):
         items = []
@@ -126,8 +139,8 @@ class PlexVideo(PlexMedia):
         return self.view_count and self.view_count > 0
 
     @staticmethod
-    def fill(obj, video, parsed_guid=None):
-        PlexMedia.fill(obj, video, parsed_guid)
+    def fill(obj, container, video, parsed_guid=None):
+        PlexMedia.fill(obj, container, video, parsed_guid)
 
         obj.view_count = try_convert(video.get('viewCount'), int)
         obj.duration = try_convert(video.get('duration'), int, 0) / float(1000 * 60)  # Convert to minutes
@@ -142,13 +155,13 @@ class PlexShow(PlexMedia):
         super(PlexShow, self).__init__(rating_key, key)
 
     @classmethod
-    def create(cls, directory, parsed_guid, key):
+    def create(cls, container, directory, parsed_guid, key):
         if parsed_guid.season or parsed_guid.episode:
             raise ValueError('parsed_guid is not valid for PlexShow')
 
         show = cls(directory.get('ratingKey'), key)
 
-        cls.fill(show, directory, parsed_guid)
+        cls.fill(show, container, directory, parsed_guid)
         return show
 
 
@@ -164,7 +177,7 @@ class PlexEpisode(PlexVideo):
         self.episodes = None
 
     @classmethod
-    def create(cls, video, season, episodes, parsed_guid=None, key=None, parent=None):
+    def create(cls, container, video, season, episodes, parsed_guid=None, key=None, parent=None):
         obj = cls(parent, video.get('ratingKey'), key)
 
         obj.grandparent_title = video.get('grandparentTitle')
@@ -172,7 +185,7 @@ class PlexEpisode(PlexVideo):
         obj.season = season
         obj.episodes = episodes
 
-        cls.fill(obj, video, parsed_guid)
+        cls.fill(obj, container, video, parsed_guid)
         return obj
 
     @staticmethod
@@ -185,11 +198,11 @@ class PlexMovie(PlexVideo):
         super(PlexMovie, self).__init__(rating_key, key)
 
     @classmethod
-    def create(cls, video, parsed_guid, key):
+    def create(cls, container, video, parsed_guid, key):
         if parsed_guid.season or parsed_guid.episode:
             raise ValueError('parsed_guid is not valid for PlexShow')
 
         movie = cls(video.get('ratingKey'), key)
 
-        cls.fill(movie, video, parsed_guid)
+        cls.fill(movie, container, video, parsed_guid)
         return movie

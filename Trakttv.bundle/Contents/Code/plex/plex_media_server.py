@@ -68,7 +68,7 @@ class PlexMediaServer(PlexBase):
     #
 
     @classmethod
-    def get_sections(cls, types=None, keys=None, cache_id=None):
+    def get_sections(cls, types=None, keys=None, titles=None, cache_id=None):
         """Get the current sections available on the server, optionally filtering by type and/or key
 
         :param types: Section type filter
@@ -87,6 +87,12 @@ class PlexMediaServer(PlexBase):
         if keys and isinstance(keys, basestring):
             keys = [keys]
 
+        if titles:
+            if isinstance(titles, basestring):
+                titles = [titles]
+
+            titles = [x.lower() for x in titles]
+
         container = cls.request('library/sections', cache_id=cache_id)
 
         sections = []
@@ -102,12 +108,16 @@ class PlexMediaServer(PlexBase):
             if not all(x for x in section):
                 continue
 
+            # Apply type filter
+            if types is not None and section[0] not in types:
+                continue
+
             # Apply key filter
             if keys is not None and section[1] not in keys:
                 continue
 
-            # Apply type filter
-            if types is not None and section[0] not in types:
+            # Apply title filter
+            if titles is not None and section[2].lower() not in titles:
                 continue
 
             sections.append(section)
@@ -117,22 +127,6 @@ class PlexMediaServer(PlexBase):
     @classmethod
     def get_section(cls, key, cache_id=None):
         return cls.request('library/sections/%s/all' % key, timeout=10, cache_id=cache_id)
-
-    @classmethod
-    def get_directories(cls, key, cache_id=None):
-        section = cls.get_section(key, cache_id=cache_id)
-        if section is None:
-            return []
-
-        return section.xpath('//Directory')
-
-    @classmethod
-    def get_videos(cls, key, cache_id=None):
-        section = cls.get_section(key, cache_id=cache_id)
-        if section is None:
-            return []
-
-        return section.xpath('//Video')
 
     @classmethod
     def scrobble(cls, key):

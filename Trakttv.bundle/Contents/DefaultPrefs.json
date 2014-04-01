@@ -76,6 +76,12 @@
         "default": ""
     },
     {
+        "id": "filter_sections",
+        "type": "text",
+        "label": "Filter - Sections (comma separated)",
+        "default": "*"
+    },
+    {
         "id": "activity_mode",
         "type": "enum",
         "label": "Activity mode",
