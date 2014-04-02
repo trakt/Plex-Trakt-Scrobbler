@@ -1,5 +1,5 @@
 from core.logger import Logger
-from core.network import request, RequestError
+from core.network import request, RequestError, NetworkError
 from core.plugin import PLUGIN_VERSION
 from core.helpers import all, total_seconds
 from core.trakt_objects import TraktShow, TraktEpisode, TraktMovie
@@ -67,14 +67,20 @@ class Trakt(object):
                 kwargs['data_type'] = 'json'
 
             response = request(data_url, 'json', **kwargs)
+        except NetworkError, e:
+            log.warn('Network error: (%s) message: %s data: %s' % (e, repr(e.message), repr(e.data)))
+            return cls.parse_response(e)
         except RequestError, e:
-            log.warn('[trakt] Request error: (%s) %s' % (e, e.message))
+            log.warn('Request error: (%s) %s' % (e, e.message))
             return {'success': False, 'exception': e, 'message': e.message}
 
         return cls.parse_response(response)
 
     @classmethod
     def parse_response(cls, response):
+        if isinstance(response, RequestError) and response.data is None:
+            return {'success': False, 'message': response.message}
+
         if response is None:
             return {'success': False, 'message': 'Unknown Failure'}
 
@@ -91,12 +97,10 @@ class Trakt(object):
             result.setdefault('message', 'Unknown success')
         else:
             result.setdefault('message', response.data.get('error'))
-            result.setdefault('data', response.data)
 
         # Log result for debugging
         if not result.get('success'):
-            log.warn('Request failure: (%s) %s' % (
-                result.get('exception'),
+            log.warn('Request failure: %s' % (
                 result.get('message', 'Unknown Result')
             ))
 

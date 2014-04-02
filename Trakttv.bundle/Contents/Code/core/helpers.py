@@ -216,6 +216,14 @@ def spawn(func, *args, **kwargs):
     return thread
 
 
+def schedule(func, seconds, *args, **kwargs):
+    def schedule_sleep():
+        time.sleep(seconds)
+        func(*args, **kwargs)
+
+    spawn(schedule_sleep)
+
+
 def build_repr(obj, keys):
     key_part = ', '.join([
         ('%s: %s' % (key, repr(getattr(obj, key))))

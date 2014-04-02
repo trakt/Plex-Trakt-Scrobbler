@@ -15,7 +15,7 @@ from core.configuration import Configuration
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
-from core.helpers import total_seconds, spawn, get_pref, try_convert
+from core.helpers import total_seconds, spawn, get_pref, try_convert, schedule
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
 from core.update_checker import UpdateChecker
@@ -85,7 +85,7 @@ class Main(object):
         EventManager.fire('preferences.updated', preferences)
 
     @classmethod
-    def validate_auth(cls):
+    def validate_auth(cls, retry_interval=30):
         if not Prefs['username'] or not Prefs['password']:
             log.warn('Authentication failed, username or password field empty')
 
@@ -95,7 +95,19 @@ class Main(object):
         status = Trakt.Account.test()
 
         if not status['success']:
-            log.warn('Authentication failed, username or password is incorrect (trakt returned: %s)', status['message'])
+            if status.get('status') == 'failure':
+                log.warn('Authentication failed, username or password is incorrect (trakt returned: %s)', status['message'])
+            else:
+                # Increase retry interval each time to a maximum of 30 minutes
+                if retry_interval < 60 * 30:
+                    retry_interval = int(retry_interval * 1.3)
+
+                # Ensure we never go over 30 minutes
+                if retry_interval > 60 * 30:
+                    retry_interval = 60 * 30
+
+                log.warn('Unable to verify account details, will try again in %s seconds', retry_interval)
+                schedule(cls.validate_auth, retry_interval, retry_interval)
 
             Main.update_config(False)
             return False

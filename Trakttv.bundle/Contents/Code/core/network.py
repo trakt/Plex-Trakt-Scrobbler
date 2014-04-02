@@ -143,7 +143,7 @@ def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
             # If this is possibly a client error, stop retrying and just return
             if not should_retry(e.code):
                 log.debug('Request error code %s is possibly client related, not retrying the request', e.code)
-                return None
+                break
 
         except RequestError, e:
             last_exception = e
@@ -179,7 +179,7 @@ def internal_request(req, response_type='text', raise_exceptions=False, default=
     except RequestError, e:
         ex = e
     except Exception, e:
-        ex = NetworkError.from_exception(e)
+        ex = NetworkError.from_exception(e, response_type=response_type)
 
     if raise_exceptions:
         raise ex
@@ -261,22 +261,32 @@ class RequestError(Exception):
 
 
 class NetworkError(RequestError):
-    def __init__(self, message, code, inner_exception=None):
+    def __init__(self, message, code, inner_exception=None, data=None):
         super(NetworkError, self).__init__(message, inner_exception)
 
         self.code = code
+        self.data = data
 
     @classmethod
-    def from_exception(cls, e):
+    def from_exception(cls, e, response_type=None):
         code = None
+        data = None
 
         if type(e) is urllib2.HTTPError:
             code = e.code
+            data = e.read()
+
+            # Parse data if response_type has been provided
+            if data and response_type:
+                data = Response.parse_data(response_type, data)
 
         if type(e) is socket.timeout:
             code = 408
 
-        return NetworkError(e.message or str(e), code, e)
+        return NetworkError(
+            e.message or str(e), code,
+            inner_exception=e, data=data
+        )
 
 
 class ParseError(RequestError):
