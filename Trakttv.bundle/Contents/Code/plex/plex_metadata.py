@@ -78,6 +78,9 @@ class PlexMetadata(PlexBase):
 
     @classmethod
     def get(cls, key):
+        if not key:
+            return None
+
         container = cls.get_cache(key)
         if container is None:
             return None
