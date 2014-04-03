@@ -40,6 +40,13 @@
         "default": "Synchronize (Pull + Push)"
     },
     {
+        "id": "sync_ratings_conflict",
+        "type": "enum",
+        "label": "Sync - Ratings - Conflict resolution",
+        "values": ["latest", "trakt", "plex"],
+        "default": "latest"
+    },
+    {
         "id": "sync_collection",
         "type": "enum",
         "label": "Sync - Collection",
