@@ -205,7 +205,7 @@ class ScrobblerMethod(Method):
         if filter is None:
             return True
 
-        log.debug('validate user - username: "%s", filter: %s', username, filter)
+        log.trace('validate user - username: "%s", filter: %s', username, filter)
 
         if not session.user or username not in filter:
             log.info('Ignoring item [%s](%s) played by filtered user: %s' % (
@@ -230,7 +230,7 @@ class ScrobblerMethod(Method):
         if filter is None:
             return True
 
-        log.debug('validate client - client_name: "%s", filter: %s', client_name, filter)
+        log.trace('validate client - client_name: "%s", filter: %s', client_name, filter)
 
         if not session.client or client_name not in filter:
             log.info('Ignoring item [%s](%s) played by filtered client: %s' % (
@@ -256,7 +256,7 @@ class ScrobblerMethod(Method):
         # Normalize title
         title = title.strip().lower()
 
-        log.debug('validate section - title: "%s", filter: %s', title, filter)
+        log.trace('validate section - title: "%s", filter: %s', title, filter)
 
         # Check section title against filter
         if title not in filter:
