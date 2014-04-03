@@ -27,21 +27,24 @@
     },
     {
         "id": "sync_watched",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Watched",
-        "default": "true"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Synchronize (Pull + Push)"
     },
     {
         "id": "sync_ratings",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Ratings",
-        "default": "true"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Synchronize (Pull + Push)"
     },
     {
         "id": "sync_collection",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Collection",
-        "default": "false"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
     },
     {
         "id": "sync_clean_collection",

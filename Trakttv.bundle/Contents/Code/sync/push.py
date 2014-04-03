@@ -146,6 +146,9 @@ class Show(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping push.show')
+            return True
 
         p_shows = self.plex.library('show', section)
         if not p_shows:
@@ -226,6 +229,9 @@ class Movie(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping push.movie')
+            return True
 
         p_movies = self.plex.library('movie', section)
         if not p_movies:

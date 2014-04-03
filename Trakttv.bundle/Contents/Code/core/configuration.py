@@ -5,8 +5,15 @@ from core.logger import Logger
 log = Logger('core.configuration')
 
 MATCHER_MAP = {
-    'Plex': 'plex',
-    'Plex Extended': 'plex_extended'
+    'Plex':             'plex',
+    'Plex Extended':    'plex_extended'
+}
+
+SYNC_TASK_MAP = {
+    'Disabled':                     [],
+    'Synchronize (Pull + Push)':    ['pull', 'push'],
+    'Pull':                         ['pull'],
+    'Push':                         ['push']
 }
 
 
@@ -50,6 +57,15 @@ class ConfigurationProcessor(object):
     def sync_run_library(self, value):
         return value and self.preferences['valid']
 
+    def sync_collection(self, value):
+        return SYNC_TASK_MAP.get(value)
+
+    def sync_ratings(self, value):
+        return SYNC_TASK_MAP.get(value)
+
+    def sync_watched(self, value):
+        return SYNC_TASK_MAP.get(value)
+
 
 class Configuration(object):
     keys = [
@@ -57,7 +73,10 @@ class Configuration(object):
         'matcher',
         'scrobble',
         'scrobble_percentage',
-        'sync_run_library'
+        'sync_run_library',
+        'sync_collection',
+        'sync_ratings',
+        'sync_watched'
     ]
 
     keys_map = {

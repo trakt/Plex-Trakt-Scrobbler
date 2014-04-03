@@ -35,6 +35,39 @@ class Migration(object):
     def preferences_path(self):
         return os.path.join(self.plex_path, 'Plug-in Support', 'Preferences', 'com.plexapp.plugins.trakttv.xml')
 
+    def get_preferences(self):
+        if not os.path.exists(self.preferences_path):
+            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            return None
+
+        data = Core.storage.load(self.preferences_path)
+        doc = etree.fromstring(data)
+
+        return dict([(elem.tag, elem.text) for elem in doc])
+
+    def set_preferences(self, changes):
+        if not os.path.exists(self.preferences_path):
+            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            return False
+
+        data = Core.storage.load(self.preferences_path)
+        doc = etree.fromstring(data)
+
+        for key, value in changes.items():
+            elem = doc.find(key)
+
+            # Ensure node exists
+            if elem is None:
+                elem = etree.SubElement(doc, key)
+
+            # Update node value, ensure it is a string
+            elem.text = str(value)
+
+            log.trace('Updated preference with key "%s" to value %s', key, repr(value))
+
+        # Write back new preferences
+        Core.storage.save(self.preferences_path, etree.tostring(doc, pretty_print=True))
+
     @staticmethod
     def delete_file(path, conditions=None):
         if not all([c(path) for c in conditions]):
@@ -102,44 +135,74 @@ class ForceLegacy(Migration):
             log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return
 
-        data = Core.storage.load(self.preferences_path)
-        doc = etree.fromstring(data)
+        preferences = self.get_preferences()
 
         # Read 'force_legacy' option from raw preferences
-        force_legacy = doc.find('force_legacy')
+        force_legacy = preferences.get('force_legacy')
 
         if force_legacy is None:
             return
 
-        force_legacy = (force_legacy.text or '').lower() == "true"
+        force_legacy = force_legacy.lower() == "true"
 
         if not force_legacy:
             return
 
         # Read 'activity_mode' option from raw preferences
-        activity_mode_node = doc.find('activity_mode')
-        activity_mode = None
-
-        if activity_mode_node is not None:
-            activity_mode = activity_mode_node.text
+        activity_mode = preferences.get('activity_mode')
 
         # Activity mode has already been set, not changing it
         if activity_mode is not None:
             return
 
-        # Ensure 'activity_mode' node exists
-        if activity_mode_node is None:
-            activity_mode_node = etree.SubElement(doc, "activity_mode")
+        self.set_preferences({
+            'activity_mode': '1'
+        })
 
-        # Set mode to 1 Legacy (Logging)
-        activity_mode_node.text = '1'
 
-        log.debug('Activity mode updated to 1 "Legacy (Logging)"')
+class SelectiveSync(Migration):
+    """Migrates the syncing task bool options to selective synchronize/push/pull enums"""
 
-        # Store back new preferences
-        Core.storage.save(self.preferences_path, etree.tostring(doc, pretty_print=True))
+    option_keys = [
+        'sync_watched',
+        'sync_ratings',
+        'sync_collection'
+    ]
+
+    value_map = {
+        'false': '0',
+        'true': '1',
+    }
+
+    def run(self):
+        self.upgrade()
+
+    def upgrade(self):
+        preferences = self.get_preferences()
+
+        # Filter to only relative preferences
+        preferences = dict([
+            (key, value)
+            for key, value in preferences.items()
+            if key in self.option_keys
+        ])
+
+        changes = {}
+
+        for key, value in preferences.items():
+            if value not in self.value_map:
+                continue
+
+            changes[key] = self.value_map[value]
+
+        if not changes:
+            return
+
+        log.debug('Updating preferences with changes: %s', changes)
+        self.set_preferences(changes)
 
 
 Migrator.register(Clean)
 Migrator.register(ForceLegacy)
+Migrator.register(SelectiveSync)
 Migrator.run()
