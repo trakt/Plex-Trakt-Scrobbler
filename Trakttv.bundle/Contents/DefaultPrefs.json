@@ -30,14 +30,14 @@
         "type": "enum",
         "label": "Sync - Watched",
         "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
-        "default": "Disabled"
+        "default": "Synchronize (Pull + Push)"
     },
     {
         "id": "sync_ratings",
         "type": "enum",
         "label": "Sync - Ratings",
         "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
-        "default": "Disabled"
+        "default": "Synchronize (Pull + Push)"
     },
     {
         "id": "sync_collection",
