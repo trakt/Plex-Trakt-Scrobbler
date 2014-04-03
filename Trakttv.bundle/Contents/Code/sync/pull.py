@@ -107,6 +107,9 @@ class Show(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping pull.show')
+            return True
 
         p_shows = self.plex.library('show')
         Data.Save('last_library.show.plex.json', repr(p_shows))
@@ -206,6 +209,9 @@ class Movie(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping pull.movie')
+            return True
 
         p_movies = self.plex.library('movie')
         Data.Save('last_library.movie.plex.json', repr(p_movies))

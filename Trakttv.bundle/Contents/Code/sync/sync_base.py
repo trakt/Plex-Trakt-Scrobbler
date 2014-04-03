@@ -1,5 +1,5 @@
 from core.eventing import EventManager
-from core.helpers import all, merge, get_filter
+from core.helpers import all, merge, get_filter, get_pref
 from core.logger import Logger
 from core.task import Task, CancelException
 from core.trakt import Trakt
@@ -157,17 +157,17 @@ class SyncBase(Base):
         if self.is_stopping():
             raise CancelException()
 
-    @staticmethod
-    def get_enabled_functions():
+    @classmethod
+    def get_enabled_functions(cls):
         result = []
 
-        if Prefs['sync_watched']:
+        if cls.task in get_pref('sync_watched'):
             result.append('watched')
 
-        if Prefs['sync_ratings']:
+        if cls.task in get_pref('sync_ratings'):
             result.append('ratings')
 
-        if Prefs['sync_collection']:
+        if cls.task in get_pref('sync_collection'):
             result.append('collected')
 
         return result
