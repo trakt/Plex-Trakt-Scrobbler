@@ -216,6 +216,14 @@ def spawn(func, *args, **kwargs):
     return thread
 
 
+def schedule(func, seconds, *args, **kwargs):
+    def schedule_sleep():
+        time.sleep(seconds)
+        func(*args, **kwargs)
+
+    spawn(schedule_sleep)
+
+
 def build_repr(obj, keys):
     key_part = ', '.join([
         ('%s: %s' % (key, repr(getattr(obj, key))))
@@ -251,3 +259,18 @@ def join_attributes(**kwargs):
     ]
 
     return ', '.join([x for x in fragments if x])
+
+
+def get_filter(key):
+    value = get_pref(key)
+    if not value:
+        return None
+
+    value = value.strip()
+
+    # Allow all if wildcard (*) or blank
+    if not value or value == '*':
+        return None
+
+    # Split, strip and lower-case comma-separated values
+    return [x.strip().lower() for x in value.split(',')]

@@ -18,6 +18,9 @@ sys.modules['core.model'] = model
 import helpers
 sys.modules['core.helpers'] = helpers
 
+import configuration
+sys.modules['core.configuration'] = configuration
+
 import numeric
 sys.modules['core.numeric'] = numeric
 

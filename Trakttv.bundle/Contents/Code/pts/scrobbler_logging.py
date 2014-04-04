@@ -33,6 +33,10 @@ class LoggingScrobbler(ScrobblerMethod):
         return True
 
     def create_session(self, info):
+        if not info.get('ratingKey'):
+            log.warn('Invalid ratingKey provided from activity info')
+            return None
+
         client = None
         if info.get('machineIdentifier'):
             client = PlexMediaServer.get_client(info['machineIdentifier'])
@@ -75,11 +79,20 @@ class LoggingScrobbler(ScrobblerMethod):
 
             if not session or session.skip:
                 return None
-
         else:
             session = self.create_session(info)
 
         return session
+
+    def valid(self, session):
+        # Check filters
+        if not self.valid_client(session) or\
+           not self.valid_section(session):
+            session.skip = True
+            session.save()
+            return False
+
+        return True
 
     def update(self, info):
         # Ignore if scrobbling is disabled
@@ -88,17 +101,11 @@ class LoggingScrobbler(ScrobblerMethod):
 
         session = self.get_session(info)
         if not session:
-            log.info('Invalid session, ignoring')
+            log.trace('Invalid or ignored session, nothing to do')
             return
 
-        # Ensure we are only scrobbling for the client listed in preferences
-        if not self.valid_client(session):
-            log.info('Ignoring item (%s) played by other client: %s' % (
-                session.get_title(),
-                session.client.name if session.client else None
-            ))
-            session.skip = True
-            session.save()
+        # Validate session (check filters)
+        if not self.valid(session):
             return
 
         media_type = session.get_type()

@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, plural, get_pref
+from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
 from datetime import datetime
@@ -21,7 +21,9 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    for _, key, title in PlexMediaServer.get_sections(['show', 'movie']):
+    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=get_filter('filter_sections'))
+
+    for _, key, title in sections:
         oc.add(DirectoryObject(
             key=Callback(Push, section=key),
             title=pad_title('Push "' + title + '" to trakt'),

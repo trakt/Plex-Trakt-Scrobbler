@@ -20,22 +20,38 @@
         "default": "false"
     },
     {
+        "id": "scrobble_percentage",
+        "type": "text",
+        "label": "Scrobble - Percentage",
+        "default": "80"
+    },
+    {
         "id": "sync_watched",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Watched",
-        "default": "true"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Synchronize (Pull + Push)"
     },
     {
         "id": "sync_ratings",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Ratings",
-        "default": "true"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Synchronize (Pull + Push)"
+    },
+    {
+        "id": "sync_ratings_conflict",
+        "type": "enum",
+        "label": "Sync - Ratings - Conflict resolution",
+        "values": ["latest", "trakt", "plex"],
+        "default": "latest"
     },
     {
         "id": "sync_collection",
-        "type": "bool",
+        "type": "enum",
         "label": "Sync - Collection",
-        "default": "false"
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
     },
     {
         "id": "sync_clean_collection",
@@ -74,6 +90,12 @@
         "type": "text",
         "label": "Filter - Clients (optional, comma separated)",
         "default": ""
+    },
+    {
+        "id": "filter_sections",
+        "type": "text",
+        "label": "Filter - Sections (comma separated)",
+        "default": "*"
     },
     {
         "id": "activity_mode",
