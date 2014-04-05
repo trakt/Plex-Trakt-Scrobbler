@@ -38,7 +38,7 @@ class Migration(object):
     def get_preferences(self):
         if not os.path.exists(self.preferences_path):
             log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
-            return None
+            return {}
 
         data = Core.storage.load(self.preferences_path)
         doc = etree.fromstring(data)
