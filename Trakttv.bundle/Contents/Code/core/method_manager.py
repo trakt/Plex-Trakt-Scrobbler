@@ -2,6 +2,7 @@ from core.helpers import spawn, plural
 from core.logger import Logger
 from core.plugin import ACTIVITY_MODE
 import threading
+import traceback
 
 log = Logger('core.method_manager')
 
@@ -11,7 +12,7 @@ class Method(object):
 
     def __init__(self, threaded=True):
         if threaded:
-            self.thread = threading.Thread(target=self.run, name=self.get_name())
+            self.thread = threading.Thread(target=self.run_wrapper, name=self.get_name())
             self.running = False
 
         self.threaded = threaded
@@ -29,6 +30,13 @@ class Method(object):
 
         self.thread.start()
         self.running = True
+
+    def run_wrapper(self):
+        # Wrap run method to catch any exceptions
+        try:
+            self.run()
+        except Exception, ex:
+            log.error(traceback.format_exc())
 
     def run(self):
         raise NotImplementedError()
