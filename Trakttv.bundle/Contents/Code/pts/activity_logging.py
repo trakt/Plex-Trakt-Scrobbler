@@ -168,7 +168,7 @@ class LoggingActivity(ActivityMethod):
             if key in match and match[key] is not None:
                 info[key] = match[key]
             else:
-                log.warn('Invalid activity match, missing key %s (%s)', (key, match))
+                log.warn('Invalid activity match, missing key %s (%s)', key, match)
                 return
 
         # - Add in any extra info parameters
