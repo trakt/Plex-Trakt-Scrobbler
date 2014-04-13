@@ -27,6 +27,12 @@ METADATA_AGENT_MAP = {
     ],
 }
 
+SUPPORTED_MEDIA_TYPES = [
+    'movie',
+    'show',
+    'episode'
+]
+
 
 class PlexMetadata(PlexBase):
     cache = Cache('metadata')
@@ -86,24 +92,26 @@ class PlexMetadata(PlexBase):
             return None
 
         media = container[0]
+        media_type = media.get('type')
+
+        if media_type not in SUPPORTED_MEDIA_TYPES:
+            raise NotImplementedError('Metadata with type "%s" is unsupported' % media_type)
 
         parsed_guid, item_key = cls.get_key(guid=media.get('guid'), required=False)
 
         # Create object for the data
-        data_type = media.get('type')
-
-        if data_type == 'movie':
+        if media_type == 'movie':
             return PlexMovie.create(container, media, parsed_guid, item_key)
 
-        if data_type == 'show':
+        if media_type == 'show':
             return PlexShow.create(container, media, parsed_guid, item_key)
 
-        if data_type == 'episode':
+        if media_type == 'episode':
             season, episodes = PlexMatcher.get_identifier(media)
 
             return PlexEpisode.create(container, media, season, episodes, parsed_guid, item_key)
 
-        log.warn('Failed to parse item "%s" with type "%s"', key, data_type)
+        log.warn('Failed to parse item "%s" with type "%s"', key, media_type)
         return None
 
     #
