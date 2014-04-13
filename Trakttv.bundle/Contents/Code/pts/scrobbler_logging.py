@@ -37,17 +37,33 @@ class LoggingScrobbler(ScrobblerMethod):
             log.warn('Invalid ratingKey provided from activity info')
             return None
 
+        skip = False
+
+        # Client
         client = None
         if info.get('machineIdentifier'):
             client = PlexMediaServer.get_client(info['machineIdentifier'])
         else:
             log.info('No machineIdentifier available, client filtering not available')
 
-        return WatchSession.from_info(
-            info,
-            PlexMetadata.get(info['ratingKey']).to_dict(),
-            client
-        )
+        # Metadata
+        metadata = None
+
+        try:
+            metadata = PlexMetadata.get(info['ratingKey'])
+
+            if metadata:
+                metadata = metadata.to_dict()
+        except NotImplementedError, e:
+            # metadata not supported (music, etc..)
+            log.debug('%s, ignoring session' % e.message)
+            skip = True
+
+        session = WatchSession.from_info(info, metadata, client)
+        session.skip = skip
+        session.save()
+
+        return session
 
     def session_valid(self, session, info):
         if session.item_key != info['ratingKey']:
@@ -59,6 +75,9 @@ class LoggingScrobbler(ScrobblerMethod):
             return False
 
         if not session.metadata:
+            if session.skip:
+                return True
+
             log.debug('Invalid Session: Missing metadata')
             return False
 
@@ -71,16 +90,16 @@ class LoggingScrobbler(ScrobblerMethod):
     def get_session(self, info):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
-        if session:
-            if not self.session_valid(session, info):
-                session.delete()
-                session = None
-                log.info('Session deleted')
-
-            if not session or session.skip:
-                return None
-        else:
+        if not session:
             session = self.create_session(info)
+
+        if not self.session_valid(session, info):
+            session.delete()
+            session = None
+            log.debug('Session deleted')
+
+        if not session or session.skip:
+            return None
 
         return session
 
