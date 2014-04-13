@@ -117,17 +117,29 @@ class WebSocketScrobbler(ScrobblerMethod):
         if not session:
             session = self.create_session(session_key, state)
 
+            if not session:
+                return None
+
+        update_session = False
+
+        # Update session when view offset goes backwards
         if session.last_view_offset and session.last_view_offset > view_offset:
             log.debug('View offset has gone backwards (last: %s, cur: %s)' % (
                 session.last_view_offset, view_offset
             ))
 
-            # First try update the session if the media hasn't changed
-            # otherwise delete the session
-            if not self.update_session(session, view_offset):
-                log.debug('Media changed, deleting the session')
-                session.delete()
-                return None
+            update_session = True
+
+        # Update session on missing metadata + session skip
+        if not session.metadata and session.skip:
+            update_session = True
+
+        # First try update the session if the media hasn't changed
+        # otherwise delete the session
+        if update_session and not self.update_session(session, view_offset):
+            log.debug('Media changed, deleting the session')
+            session.delete()
+            return None
 
         # Delete session if invalid
         if not self.session_valid(session):
