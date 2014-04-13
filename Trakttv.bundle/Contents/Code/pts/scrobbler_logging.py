@@ -93,6 +93,9 @@ class LoggingScrobbler(ScrobblerMethod):
         if not session:
             session = self.create_session(info)
 
+            if not session:
+                return None
+
         if not self.session_valid(session, info):
             session.delete()
             session = None
