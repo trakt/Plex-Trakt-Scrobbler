@@ -150,10 +150,7 @@ class LoggingScrobbler(ScrobblerMethod):
         if action:
             self.handle_action(session, media_type, action, info['state'])
         else:
-            log.debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session.progress, info.get('state')),
-                session.get_title()
-            ))
+            log.debug(self.status_message(session, info.get('state'))('Nothing to do this time for %s'))
             session.save()
 
         if self.handle_state(session, info['state']) or action:

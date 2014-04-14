@@ -210,10 +210,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         if action:
             self.handle_action(session, media_type, action, state)
         else:
-            log.debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session.progress, state),
-                session.get_title()
-            ))
+            log.debug(self.status_message(session, state)('Nothing to do this time for %s'))
             session.save()
 
         if self.handle_state(session, state) or action:
