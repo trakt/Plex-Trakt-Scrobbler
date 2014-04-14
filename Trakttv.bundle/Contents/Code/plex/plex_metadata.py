@@ -142,16 +142,16 @@ class PlexMetadata(PlexBase):
             mappings = [mappings]
 
         for mapping in mappings:
-            agent, sid_pattern = mapping
+            map_agent, map_pattern = mapping
 
-            if sid_pattern is None:
-                return agent, None, None
+            if map_pattern is None:
+                return map_agent, None, None
 
-            match = sid_pattern.match(parsed_guid.sid)
+            match = map_pattern.match(parsed_guid.sid)
             if not match:
                 continue
 
-            return agent, sid_pattern, match
+            return map_agent, map_pattern, match
 
         return agent, None, None
 
