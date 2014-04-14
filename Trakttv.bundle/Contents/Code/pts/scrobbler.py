@@ -13,11 +13,29 @@ class ScrobblerMethod(Method):
         super(ScrobblerMethod, self).__init__(threaded=False)
 
     @staticmethod
-    def get_status_label(progress, state):
-        return '[%s%s]' % (
-            str_pad(state[:2].upper() if state else '?', 2, trim=True),
-            str_pad(progress if progress is not None else '?', 3, 'right', trim=True)
+    def status_message(session, state):
+        state = state[:2].upper() if state else '?'
+        progress = session.progress if session.progress is not None else '?'
+
+        status = '[%s%s]' % (
+            str_pad(state, 2, trim=True),
+            str_pad(progress, 3, 'right', trim=True)
         )
+
+        metadata_key = None
+
+        if session.metadata and session.metadata.get('key'):
+            metadata_key = session.metadata['key']
+
+            if type(metadata_key) is tuple:
+                metadata_key = ', '.join(repr(x) for x in metadata_key)
+
+        title = '%s (%s)' % (session.get_title(), metadata_key)
+
+        def build(message_format):
+            return '%s %s' % (status, message_format % title)
+
+        return build
 
     def get_action(self, session, state):
         """
@@ -27,50 +45,43 @@ class ScrobblerMethod(Method):
         :rtype: str or None
         """
 
-        status_label = self.get_status_label(session.progress, state)
+        status_message = self.status_message(session, state)
 
         # State has changed
         if state not in [session.cur_state, 'buffering']:
             session.cur_state = state
 
             if state == 'stopped' and session.watching:
-                log.info('%s %s stopped, watching status cancelled' % (
-                    status_label, session.get_title()
-                ))
+                log.info(status_message('%s stopped, watching status cancelled'))
                 session.watching = False
                 return 'cancelwatching'
 
             if state == 'paused' and not session.paused_since:
-                log.info("%s %s just paused, waiting 15s before cancelling the watching status" % (
-                    status_label, session.get_title()
-                ))
+                log.info(status_message("%s just paused, waiting 15s before cancelling the watching status"))
 
                 session.paused_since = Datetime.Now()
                 return None
 
             if state == 'playing' and not session.watching:
-                log.info('%s Sending watch status for %s' % (status_label, session.get_title()))
+                log.info(status_message('Sending watch status for %s'))
                 session.watching = True
                 return 'watching'
 
         elif state == 'playing':
             # scrobble item
             if not session.scrobbled and session.progress >= get_pref('scrobble_percentage'):
-                log.info('%s Scrobbling %s' % (status_label, session.get_title()))
+                log.info(status_message('Scrobbling %s'))
                 return 'scrobble'
 
             # update every 10 min if media hasn't finished
             elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-                log.info('%s Updating watch status for %s' % (status_label, session.get_title()))
+                log.info(status_message('Updating watch status for %s'))
                 session.watching = True
                 return 'watching'
 
             # cancel watching status on items at 100% progress
             elif session.progress >= 100 and session.watching:
-                log.info('%s Media finished, cancelling watching status for %s' % (
-                    status_label,
-                    session.get_title()
-                ))
+                log.info(status_message('Media finished, cancelling watching status for %s'))
                 session.watching = False
                 return 'cancelwatching'
 
@@ -143,6 +154,8 @@ class ScrobblerMethod(Method):
         if not parameters:
             log.info('Invalid parameters, unable to continue')
             return False
+
+        log.trace('Sending action "%s/%s" - parameters: %s', media_type, action, parameters)
 
         response = Trakt.Media.action(media_type, action, **parameters)
         if not response['success']:

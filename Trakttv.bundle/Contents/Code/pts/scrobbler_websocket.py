@@ -46,19 +46,34 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         log.debug('Creating a WatchSession for the current media')
 
-        video_section = PlexMediaServer.get_session(session_key)
-        if not video_section:
+        skip = False
+
+        info = PlexMediaServer.get_session(session_key)
+        if not info:
             return None
 
-        player_section = video_section.findall('Player')
+        # Client
+        player_section = info.findall('Player')
         if len(player_section):
             player_section = player_section[0]
 
-        session = WatchSession.from_section(
-            video_section, state,
-            PlexMetadata.get(video_section.get('ratingKey')).to_dict(),
-            PlexMediaServer.get_client(player_section.get('machineIdentifier'))
-        )
+        client = PlexMediaServer.get_client(player_section.get('machineIdentifier'))
+
+        # Metadata
+        metadata = None
+
+        try:
+            metadata = PlexMetadata.get(info.get('ratingKey'))
+
+            if metadata:
+                metadata = metadata.to_dict()
+        except NotImplementedError, e:
+            # metadata not supported (music, etc..)
+            log.debug('%s, ignoring session' % e.message)
+            skip = True
+
+        session = WatchSession.from_section(info, state, metadata, client)
+        session.skip = skip
         session.save()
 
         return session
@@ -84,6 +99,9 @@ class WebSocketScrobbler(ScrobblerMethod):
 
     def session_valid(self, session):
         if not session.metadata:
+            if session.skip:
+                return True
+
             log.debug('Invalid Session: Missing metadata')
             return False
 
@@ -96,36 +114,48 @@ class WebSocketScrobbler(ScrobblerMethod):
     def get_session(self, session_key, state, view_offset):
         session = WatchSession.load(session_key)
 
-        if session:
-            if session.last_view_offset and session.last_view_offset > view_offset:
-                log.debug('View offset has gone backwards (last: %s, cur: %s)' % (
-                    session.last_view_offset, view_offset
-                ))
+        if not session:
+            session = self.create_session(session_key, state)
 
-                # First try update the session if the media hasn't changed
-                # otherwise delete the session
-                if not self.update_session(session, view_offset):
-                    log.debug('Media changed, deleting the session')
-                    session.delete()
-                    return None
+            if not session:
+                return None
 
-            # Delete session if invalid
-            if not self.session_valid(session):
+        update_session = False
+
+        # Update session when view offset goes backwards
+        if session.last_view_offset and session.last_view_offset > view_offset:
+            log.debug('View offset has gone backwards (last: %s, cur: %s)' % (
+                session.last_view_offset, view_offset
+            ))
+
+            update_session = True
+
+        # Update session on missing metadata + session skip
+        if not session.metadata and session.skip:
+            update_session = True
+
+        # First try update the session if the media hasn't changed
+        # otherwise delete the session
+        if update_session and not self.update_session(session, view_offset):
+            log.debug('Media changed, deleting the session')
+            session.delete()
+            return None
+
+        # Delete session if invalid
+        if not self.session_valid(session):
+            session.delete()
+            return None
+
+        if session.skip:
+            return None
+
+        if state == 'playing' and session.update_required:
+            log.debug('Session update required, updating the session...')
+
+            if not self.update_session(session, view_offset):
+                log.debug('Media changed, deleting the session')
                 session.delete()
                 return None
-
-            if session.skip:
-                return None
-
-            if state == 'playing' and session.update_required:
-                log.debug('Session update required, updating the session...')
-
-                if not self.update_session(session, view_offset):
-                    log.debug('Media changed, deleting the session')
-                    session.delete()
-                    return None
-        else:
-            session = self.create_session(session_key, state)
 
         return session
 
@@ -180,10 +210,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         if action:
             self.handle_action(session, media_type, action, state)
         else:
-            log.debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session.progress, state),
-                session.get_title()
-            ))
+            log.debug(self.status_message(session, state)('Nothing to do this time for %s'))
             session.save()
 
         if self.handle_state(session, state) or action:
