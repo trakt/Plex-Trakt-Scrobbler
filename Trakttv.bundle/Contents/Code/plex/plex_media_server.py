@@ -56,7 +56,7 @@ class PlexMediaServer(PlexBase):
             log.warn('Sessions request failed')
             return None
 
-        for section in sessions.xpath('//MediaContainer/Video'):
+        for section in sessions:
             if section.get('sessionKey') == session_key and '/library/metadata' in section.get('key'):
                 return section
 
