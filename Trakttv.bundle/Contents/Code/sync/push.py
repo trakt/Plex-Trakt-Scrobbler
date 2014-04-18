@@ -1,7 +1,8 @@
 from core.helpers import all, plural, json_encode
 from core.logger import Logger
-from core.trakt import Trakt
 from sync.sync_base import SyncBase
+
+from trakt import Trakt
 
 
 log = Logger('sync.push')

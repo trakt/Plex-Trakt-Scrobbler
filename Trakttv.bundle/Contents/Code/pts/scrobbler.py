@@ -1,8 +1,9 @@
 from core.helpers import str_pad, get_filter, get_pref
 from core.logger import Logger
 from core.method_manager import Method, Manager
-from core.trakt import Trakt
 from plex.plex_metadata import PlexMetadata
+
+from trakt import Trakt
 import math
 
 log = Logger('pts.scrobbler')
@@ -148,17 +149,17 @@ class ScrobblerMethod(Method):
         return False
 
     @classmethod
-    def handle_action(cls, session, media_type, action, state):
-        # Setup Data to send to Trakt
+    def handle_action(cls, session, media, action, state):
+        # Setup Data to send to trakt
         parameters = cls.get_request_parameters(session)
         if not parameters:
             log.info('Invalid parameters, unable to continue')
             return False
 
-        log.trace('Sending action "%s/%s" - parameters: %s', media_type, action, parameters)
+        log.trace('Sending action "%s/%s" - parameters: %s', media, action, parameters)
 
-        response = Trakt.Media.action(media_type, action, **parameters)
-        if not response['success']:
+        response = Trakt[media].send(action, parameters)
+        if not response or response.get('status') != 'success':
             log.warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()

@@ -2,12 +2,13 @@ from core.eventing import EventManager
 from core.helpers import all, merge, get_filter, get_pref
 from core.logger import Logger
 from core.task import Task, CancelException
-from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
 from plex.plex_media_server import PlexMediaServer
 from plex.plex_metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
+
 from datetime import datetime
+from trakt import Trakt
 
 
 log = Logger('sync.sync_base')
