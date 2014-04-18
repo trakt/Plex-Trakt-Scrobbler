@@ -15,6 +15,7 @@ from core.configuration import Configuration
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
+from core.logging_handler import PlexHandler
 from core.helpers import total_seconds, spawn, get_pref, try_convert, schedule
 from core.plugin import ART, NAME, ICON
 from core.trakt import Trakt
@@ -27,6 +28,8 @@ from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from sync.manager import SyncManager
 from datetime import datetime
+
+import logging
 
 
 log = Logger('Code')
@@ -45,6 +48,11 @@ class Main(object):
         PlexMetadata
     ]
 
+    loggers_allowed = [
+        'requests',
+        'trakt'
+    ]
+
     def __init__(self):
         self.update_checker = UpdateChecker()
         self.session_manager = SessionManager()
@@ -59,11 +67,23 @@ class Main(object):
 
         Main.update_config()
 
+        self.init_logging()
+
         # Initialize modules
         for module in self.modules:
             if hasattr(module, 'initialize'):
                 log.debug("Initializing module %s", module)
                 module.initialize()
+
+    @classmethod
+    def init_logging(cls):
+        logging.basicConfig(level=logging.DEBUG)
+
+        for name in cls.loggers_allowed:
+            logger = logging.getLogger(name)
+
+            logger.setLevel(logging.DEBUG)
+            logger.handlers = [PlexHandler()]
 
     @classmethod
     def update_config(cls, valid=None):
