@@ -1,4 +1,4 @@
-from trakt.interfaces.base import Interface
+from trakt.interfaces.base import Interface, authenticated
 
 
 class MediaInterface(Interface):
@@ -12,6 +12,7 @@ class MediaInterface(Interface):
 
         return self.get_data(response, catch_errors=False)
 
+    @authenticated
     def send(self, action, data, credentials=None):
         response = self.request(
             action,
