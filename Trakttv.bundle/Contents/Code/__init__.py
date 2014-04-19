@@ -128,12 +128,12 @@ class Main(object):
             cls.update_config(False)
             return False
 
-        status = Trakt['account'].test()
+        success = Trakt['account'].test()
 
-        if not status:
+        if not success:
             # status - False = invalid credentials, None = request failed
-            if status is False:
-                log.warn('Authentication failed, username or password is incorrect (trakt returned: %s)', status['message'])
+            if success is False:
+                log.warn('Authentication failed, username or password is incorrect')
             else:
                 # Increase retry interval each time to a maximum of 30 minutes
                 if retry_interval < 60 * 30:
