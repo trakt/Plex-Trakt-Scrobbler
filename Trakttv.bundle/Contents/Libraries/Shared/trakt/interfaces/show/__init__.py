@@ -7,7 +7,7 @@ class ShowInterface(MediaInterface):
 
     @media_center
     @authenticated
-    def scrobble(self, title, year, season, episode, duration, progress, credentials=None, **kwargs):
+    def scrobble(self, title, year, season, episode, duration, progress, **kwargs):
         """Notify trakt that a user has finished watching a show.
 
         This commits the show to the users profile. You should use show/watching
@@ -83,7 +83,7 @@ class ShowInterface(MediaInterface):
         )
 
     @authenticated
-    def unlibrary(self, title, year, **kwargs):
+    def unlibrary(self, title=None, year=None, **kwargs):
         """Remove an entire show (including all episodes) from your library collection.
 
         :param title: Show title.
@@ -99,3 +99,8 @@ class ShowInterface(MediaInterface):
             },
             **kwargs
         )
+
+    @classmethod
+    def validate_action(cls, action, data):
+        if action in ['unlibrary']:
+            cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id')

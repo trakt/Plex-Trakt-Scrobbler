@@ -5,7 +5,7 @@ class ShowEpisodeInterface(Interface):
     path = 'show/episode'
 
     @authenticated
-    def library(self, title, year, episodes, **kwargs):
+    def library(self, title=None, year=None, episodes=None, **kwargs):
         """Add episodes to your library collection.
 
         :param title: Show title.
@@ -27,7 +27,7 @@ class ShowEpisodeInterface(Interface):
         )
 
     @authenticated
-    def seen(self, title, year, episodes, **kwargs):
+    def seen(self, title=None, year=None, episodes=None, **kwargs):
         """Add episodes watched outside of trakt to your library.
 
         :param title: Show title.
@@ -49,7 +49,7 @@ class ShowEpisodeInterface(Interface):
         )
 
     @authenticated
-    def unlibrary(self, title, year, episodes, **kwargs):
+    def unlibrary(self, title=None, year=None, episodes=None, **kwargs):
         """Remove episodes from your library collection.
 
         :param title: Show title.
@@ -69,3 +69,9 @@ class ShowEpisodeInterface(Interface):
             },
             **kwargs
         )
+
+    @classmethod
+    def validate_action(cls, action, data):
+        if action in ['seen', 'library', 'unlibrary']:
+            cls.data_requirements(data, 'episodes')
+            cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id')
