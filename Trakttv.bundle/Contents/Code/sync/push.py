@@ -1,7 +1,8 @@
 from core.helpers import all, plural, json_encode
 from core.logger import Logger
-from core.trakt import Trakt
 from sync.sync_base import SyncBase
+
+from trakt import Trakt
 
 
 log = Logger('sync.push')
@@ -40,7 +41,7 @@ class Base(SyncBase):
         p_item = p_items[0]
 
         # Ignore if rating is already on trakt
-        if t_item and t_item.rating_advanced == p_item.user_rating:
+        if t_item and t_item.rating and t_item.rating.advanced == p_item.user_rating:
             return True
 
         data = self.plex.to_trakt(key, p_item)
@@ -77,8 +78,12 @@ class Base(SyncBase):
 
         raise ValueError('Unknown level specified')
 
-    def send(self, action, data):
-        response = Trakt.request(action, data, authenticate=True)
+    def send(self, action, **kwargs):
+        # TODO maybe this can be handled in trakt.py somehow?
+        path = action[:action.rfind('/')]
+        action = action[action.rfind('/') + 1:]
+
+        response = Trakt[path][action](**kwargs)
 
         # Log successful items
         if 'rated' in response:
@@ -107,7 +112,7 @@ class Base(SyncBase):
         if not items:
             return
 
-        return self.send(action, {key: items})
+        return self.send(action, **{key: items})
 
 
 class Episode(Base):
@@ -198,19 +203,19 @@ class Show(Base):
         # Push changes to trakt
         #
         for show in self.retrieve('collected'):
-            self.send('show/episode/library', show)
+            self.send('show/episode/library', **show)
 
         for show in self.retrieve('watched'):
-            self.send('show/episode/seen', show)
+            self.send('show/episode/seen', **show)
 
         self.send_artifact('rate/shows', 'shows', 'ratings')
         self.send_artifact('rate/episodes', 'episodes', 'episode_ratings')
 
         for show in self.retrieve('missing.shows'):
-            self.send('show/unlibrary', show)
+            self.send('show/unlibrary', **show)
 
         for show in self.retrieve('missing.episodes'):
-            self.send('show/episode/unlibrary', show)
+            self.send('show/episode/unlibrary', **show)
 
         Data.Save('last_artifacts.show.json', json_encode(self.artifacts))
 

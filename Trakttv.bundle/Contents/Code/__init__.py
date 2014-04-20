@@ -15,9 +15,9 @@ from core.configuration import Configuration
 from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
+from core.logging_handler import PlexHandler
 from core.helpers import total_seconds, spawn, get_pref, try_convert, schedule
 from core.plugin import ART, NAME, ICON
-from core.trakt import Trakt
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plex.plex_media_server import PlexMediaServer
@@ -27,6 +27,10 @@ from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from sync.manager import SyncManager
 from datetime import datetime
+
+from trakt import Trakt
+import hashlib
+import logging
 
 
 log = Logger('Code')
@@ -45,6 +49,11 @@ class Main(object):
         PlexMetadata
     ]
 
+    loggers_allowed = [
+        'requests',
+        'trakt'
+    ]
+
     def __init__(self):
         self.update_checker = UpdateChecker()
         self.session_manager = SessionManager()
@@ -59,11 +68,38 @@ class Main(object):
 
         Main.update_config()
 
+        self.init_logging()
+        self.init_trakt()
+
         # Initialize modules
         for module in self.modules:
             if hasattr(module, 'initialize'):
                 log.debug("Initializing module %s", module)
                 module.initialize()
+
+    @classmethod
+    def init_logging(cls):
+        logging.basicConfig(level=logging.DEBUG)
+
+        for name in cls.loggers_allowed:
+            logger = logging.getLogger(name)
+
+            logger.setLevel(logging.DEBUG)
+            logger.handlers = [PlexHandler()]
+
+    @staticmethod
+    def init_trakt():
+        Trakt.api_key = 'ba5aa61249c02dc5406232da20f6e768f3c82b28'
+
+        def get_credentials():
+            password_hash = hashlib.sha1(Prefs['password'])
+
+            return (
+                Prefs['username'],
+                password_hash.hexdigest()
+            )
+
+        Trakt.credentials = get_credentials
 
     @classmethod
     def update_config(cls, valid=None):
@@ -92,11 +128,12 @@ class Main(object):
             cls.update_config(False)
             return False
 
-        status = Trakt.Account.test()
+        success = Trakt['account'].test()
 
-        if not status['success']:
-            if status.get('status') == 'failure':
-                log.warn('Authentication failed, username or password is incorrect (trakt returned: %s)', status['message'])
+        if not success:
+            # status - False = invalid credentials, None = request failed
+            if success is False:
+                log.warn('Authentication failed, username or password is incorrect')
             else:
                 # Increase retry interval each time to a maximum of 30 minutes
                 if retry_interval < 60 * 30:
