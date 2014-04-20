@@ -1,5 +1,7 @@
+from core.helpers import all
 from core.logger import Logger
 from core.plugin import PLUGIN_VERSION_BASE
+from lxml import etree
 import shutil
 import os
 
@@ -25,27 +27,182 @@ class Migration(object):
     def code_path(self):
         return Core.code_path
 
+    @property
+    def plex_path(self):
+        return os.path.abspath(os.path.join(self.code_path, '..', '..', '..', '..'))
 
-class SyncMigration(Migration):
+    @property
+    def preferences_path(self):
+        return os.path.join(self.plex_path, 'Plug-in Support', 'Preferences', 'com.plexapp.plugins.trakttv.xml')
+
+    def get_preferences(self):
+        if not os.path.exists(self.preferences_path):
+            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            return {}
+
+        data = Core.storage.load(self.preferences_path)
+        doc = etree.fromstring(data)
+
+        return dict([(elem.tag, elem.text) for elem in doc])
+
+    def set_preferences(self, changes):
+        if not os.path.exists(self.preferences_path):
+            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            return False
+
+        data = Core.storage.load(self.preferences_path)
+        doc = etree.fromstring(data)
+
+        for key, value in changes.items():
+            elem = doc.find(key)
+
+            # Ensure node exists
+            if elem is None:
+                elem = etree.SubElement(doc, key)
+
+            # Update node value, ensure it is a string
+            elem.text = str(value)
+
+            log.trace('Updated preference with key "%s" to value %s', key, repr(value))
+
+        # Write back new preferences
+        Core.storage.save(self.preferences_path, etree.tostring(doc, pretty_print=True))
+
+    @staticmethod
+    def delete_file(path, conditions=None):
+        if not all([c(path) for c in conditions]):
+            return False
+
+        os.remove(path)
+        return True
+
+    @staticmethod
+    def delete_directory(path, conditions=None):
+        if not all([c(path) for c in conditions]):
+            return False
+
+        shutil.rmtree(path)
+        return True
+
+
+class Clean(Migration):
+    tasks_upgrade = [
+        (
+            'delete_file', [
+                'data/dict_object.py',
+                'plex/media_server.py',
+                'sync.py'
+            ], os.path.isfile
+        )
+    ]
+
     def run(self):
         if PLUGIN_VERSION_BASE >= (0, 8):
             self.upgrade()
-        else:
-            self.downgrade()
 
     def upgrade(self):
-        sync_path = os.path.join(self.code_path, 'sync.py')
+        self.execute(self.tasks_upgrade, 'upgrade')
 
-        if os.path.exists(sync_path) and os.path.isfile(sync_path):
-            log.debug('Removing "sync.py" file')
-            os.remove(sync_path)
+    def execute(self, tasks, name):
+        for action, paths, conditions in tasks:
+            if type(paths) is not list:
+                paths = [paths]
 
-    def downgrade(self):
-        sync_path = os.path.join(self.code_path, 'sync')
+            if type(conditions) is not list:
+                conditions = [conditions]
 
-        if os.path.exists(sync_path) and os.path.isdir(sync_path):
-            log.debug('Removing "sync" folder')
-            shutil.rmtree(sync_path)
+            if not hasattr(self, action):
+                log.warn('Unknown migration action "%s"', action)
+                continue
 
-Migrator.register(SyncMigration)
+            m = getattr(self, action)
+
+            for path in paths:
+                log.debug('(%s) %s: "%s"', name, action, path)
+
+                if m(os.path.join(self.code_path, path), conditions):
+                    log.debug('(%s) %s: "%s" - finished', name, action, path)
+
+
+class ForceLegacy(Migration):
+    """Migrates the 'force_legacy' option to the 'activity_mode' option."""
+
+    def run(self):
+        self.upgrade()
+
+    def upgrade(self):
+        if not os.path.exists(self.preferences_path):
+            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            return
+
+        preferences = self.get_preferences()
+
+        # Read 'force_legacy' option from raw preferences
+        force_legacy = preferences.get('force_legacy')
+
+        if force_legacy is None:
+            return
+
+        force_legacy = force_legacy.lower() == "true"
+
+        if not force_legacy:
+            return
+
+        # Read 'activity_mode' option from raw preferences
+        activity_mode = preferences.get('activity_mode')
+
+        # Activity mode has already been set, not changing it
+        if activity_mode is not None:
+            return
+
+        self.set_preferences({
+            'activity_mode': '1'
+        })
+
+
+class SelectiveSync(Migration):
+    """Migrates the syncing task bool options to selective synchronize/push/pull enums"""
+
+    option_keys = [
+        'sync_watched',
+        'sync_ratings',
+        'sync_collection'
+    ]
+
+    value_map = {
+        'false': '0',
+        'true': '1',
+    }
+
+    def run(self):
+        self.upgrade()
+
+    def upgrade(self):
+        preferences = self.get_preferences()
+
+        # Filter to only relative preferences
+        preferences = dict([
+            (key, value)
+            for key, value in preferences.items()
+            if key in self.option_keys
+        ])
+
+        changes = {}
+
+        for key, value in preferences.items():
+            if value not in self.value_map:
+                continue
+
+            changes[key] = self.value_map[value]
+
+        if not changes:
+            return
+
+        log.debug('Updating preferences with changes: %s', changes)
+        self.set_preferences(changes)
+
+
+Migrator.register(Clean)
+Migrator.register(ForceLegacy)
+Migrator.register(SelectiveSync)
 Migrator.run()

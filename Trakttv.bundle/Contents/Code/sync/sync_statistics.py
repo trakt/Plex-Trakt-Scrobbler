@@ -87,11 +87,11 @@ class SyncStatistics(object):
 
         self.calculate_timing(stat, progress)
 
-        log.debug(
-            '[%s] progress: %02d%%, estimated time remaining: ~%s seconds',
-            key, progress * 100,
-            round(stat.seconds_remaining, 2) if stat.seconds_remaining else '?'
-        )
+        #log.debug(
+        #    '[%s] progress: %02d%%, estimated time remaining: ~%s seconds',
+        #    key, progress * 100,
+        #    round(stat.seconds_remaining, 2) if stat.seconds_remaining else '?'
+        #)
 
         stat.progress = progress
         stat.last_update = datetime.utcnow()

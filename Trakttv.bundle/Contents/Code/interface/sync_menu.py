@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, plural
+from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
 from datetime import datetime
@@ -9,9 +9,6 @@ from ago import human
 
 @route('/applications/trakttv/sync')
 def SyncMenu(refresh=None):
-    if Prefs['username'] is None:
-        return MessageContainer("Error", "No login information entered.")
-
     oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
     all_keys = []
 
@@ -24,7 +21,9 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    for _, key, title in PlexMediaServer.get_sections(['show', 'movie']):
+    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=get_filter('filter_sections'))
+
+    for _, key, title in sections:
         oc.add(DirectoryObject(
             key=Callback(Push, section=key),
             title=pad_title('Push "' + title + '" to trakt'),

@@ -11,7 +11,23 @@ class Logger(object):
         if 'tag' in kwargs:
             tag = kwargs.pop('tag')
 
-        func(ENTRY_FORMAT % (tag, (str(message) % args)))
+        try:
+            if args:
+                message = str(message) % args
+
+            func(ENTRY_FORMAT % (tag, message))
+        except Exception, ex:
+            self.error(
+                'Error writing log entry (%s) %s [message: %s, args: %s]',
+                type(ex).__name__, ex.message,
+                repr(message), args
+            )
+
+    def trace(self, message, *args, **kwargs):
+        if not Prefs['logging_tracing']:
+            return
+
+        self.write(Log.Debug, message, *args, **kwargs)
 
     def debug(self, message, *args, **kwargs):
         self.write(Log.Debug, message, *args, **kwargs)

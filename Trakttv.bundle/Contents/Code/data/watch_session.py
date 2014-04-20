@@ -17,23 +17,26 @@ class WatchSession(DictModel):
 
         self.item_key = item_key
 
+        # Plex
         self.metadata = metadata
         self.user = user
         self.client = client
 
+        # States
         self.skip = False
         self.scrobbled = False
         self.watching = False
-        self.update_required = False
+
+        # Multi-episode scrobbling
+        self.cur_episode = None
 
         self.progress = None
-
         self.cur_state = state
-
-        self.cur_episode = None
 
         self.paused_since = None
         self.last_view_offset = 0
+
+        self.update_required = False
         self.last_updated = Datetime.FromTimestamp(0)
 
     def get_type(self):

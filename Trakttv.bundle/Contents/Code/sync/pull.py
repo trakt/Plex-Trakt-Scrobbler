@@ -1,4 +1,4 @@
-from core.helpers import plural, all, json_encode
+from core.helpers import plural, all, json_encode, get_pref
 from core.logger import Logger
 from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
@@ -38,10 +38,10 @@ class Base(SyncBase):
         if type(p_items) is not list:
             p_items = [p_items]
 
-        if t_item.rating_advanced is None:
+        if t_item.rating is None:
             return True
 
-        t_rating = t_item.rating_advanced
+        t_rating = t_item.rating.advanced
 
         for p_item in p_items:
             # Ignore already rated episodes
@@ -60,15 +60,21 @@ class Base(SyncBase):
         if status.last_success is None:
             return True
 
-        t_timestamp = datetime.utcfromtimestamp(t_item.rating_timestamp)
+        resolution = get_pref('sync_ratings_conflict')
 
-        # If trakt rating was created after the last sync, update plex rating
-        if t_timestamp > status.last_success:
+        if resolution == 'trakt':
             return True
+
+        if resolution == 'latest':
+            t_timestamp = datetime.utcfromtimestamp(t_item.rating.timestamp)
+
+            # If trakt rating was created after the last sync, update plex rating
+            if t_timestamp > status.last_success:
+                return True
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.rating_key, p_item.user_rating, t_item.rating_advanced
+            p_item.rating_key, p_item.user_rating, t_item.rating.advanced
         )
 
         return False
@@ -107,6 +113,9 @@ class Show(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping pull.show')
+            return True
 
         p_shows = self.plex.library('show')
         Data.Save('last_library.show.plex.json', repr(p_shows))
@@ -206,6 +215,9 @@ class Movie(Base):
         self.check_stopping()
 
         enabled_funcs = self.get_enabled_functions()
+        if not enabled_funcs:
+            log.info('There are no functions enabled, skipping pull.movie')
+            return True
 
         p_movies = self.plex.library('movie')
         Data.Save('last_library.movie.plex.json', repr(p_movies))

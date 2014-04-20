@@ -13,7 +13,6 @@ log = Logger('pts.scrobbler_logging')
 
 class LoggingScrobbler(ScrobblerMethod):
     name = 'LoggingScrobbler'
-    legacy = True
 
     def __init__(self):
         super(LoggingScrobbler, self).__init__()
@@ -34,17 +33,37 @@ class LoggingScrobbler(ScrobblerMethod):
         return True
 
     def create_session(self, info):
+        if not info.get('ratingKey'):
+            log.warn('Invalid ratingKey provided from activity info')
+            return None
+
+        skip = False
+
+        # Client
         client = None
         if info.get('machineIdentifier'):
             client = PlexMediaServer.get_client(info['machineIdentifier'])
         else:
             log.info('No machineIdentifier available, client filtering not available')
 
-        return WatchSession.from_info(
-            info,
-            PlexMetadata.get(info['ratingKey']).to_dict(),
-            client
-        )
+        # Metadata
+        metadata = None
+
+        try:
+            metadata = PlexMetadata.get(info['ratingKey'])
+
+            if metadata:
+                metadata = metadata.to_dict()
+        except NotImplementedError, e:
+            # metadata not supported (music, etc..)
+            log.debug('%s, ignoring session' % e.message)
+            skip = True
+
+        session = WatchSession.from_info(info, metadata, client)
+        session.skip = skip
+        session.save()
+
+        return session
 
     def session_valid(self, session, info):
         if session.item_key != info['ratingKey']:
@@ -56,6 +75,9 @@ class LoggingScrobbler(ScrobblerMethod):
             return False
 
         if not session.metadata:
+            if session.skip:
+                return True
+
             log.debug('Invalid Session: Missing metadata')
             return False
 
@@ -68,19 +90,31 @@ class LoggingScrobbler(ScrobblerMethod):
     def get_session(self, info):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
-        if session:
-            if not self.session_valid(session, info):
-                session.delete()
-                session = None
-                log.info('Session deleted')
-
-            if not session or session.skip:
-                return None
-
-        else:
+        if not session:
             session = self.create_session(info)
 
+            if not session:
+                return None
+
+        if not self.session_valid(session, info):
+            session.delete()
+            session = None
+            log.debug('Session deleted')
+
+        if not session or session.skip:
+            return None
+
         return session
+
+    def valid(self, session):
+        # Check filters
+        if not self.valid_client(session) or\
+           not self.valid_section(session):
+            session.skip = True
+            session.save()
+            return False
+
+        return True
 
     def update(self, info):
         # Ignore if scrobbling is disabled
@@ -89,17 +123,11 @@ class LoggingScrobbler(ScrobblerMethod):
 
         session = self.get_session(info)
         if not session:
-            log.info('Invalid session, ignoring')
+            log.trace('Invalid or ignored session, nothing to do')
             return
 
-        # Ensure we are only scrobbling for the client listed in preferences
-        if not self.valid_client(session):
-            log.info('Ignoring item (%s) played by other client: %s' % (
-                session.get_title(),
-                session.client.name if session.client else None
-            ))
-            session.skip = True
-            session.save()
+        # Validate session (check filters)
+        if not self.valid(session):
             return
 
         media_type = session.get_type()
@@ -122,10 +150,7 @@ class LoggingScrobbler(ScrobblerMethod):
         if action:
             self.handle_action(session, media_type, action, info['state'])
         else:
-            log.debug('%s Nothing to do this time for %s' % (
-                self.get_status_label(session.progress, info.get('state')),
-                session.get_title()
-            ))
+            log.debug(self.status_message(session, info.get('state'))('Nothing to do this time for %s'))
             session.save()
 
         if self.handle_state(session, info['state']) or action:

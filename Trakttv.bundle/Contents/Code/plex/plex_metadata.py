@@ -21,8 +21,17 @@ METADATA_AGENT_MAP = {
     # TV
     'abstvdb':          'thetvdb',
     'thetvdbdvdorder':  'thetvdb',
-    'xbmcnfotv':        'thetvdb',
+    'xbmcnfotv':        [
+        ('imdb', r'(tt\d+)'),
+        'thetvdb'
+    ],
 }
+
+SUPPORTED_MEDIA_TYPES = [
+    'movie',
+    'show',
+    'episode'
+]
 
 
 class PlexMetadata(PlexBase):
@@ -37,23 +46,29 @@ class PlexMetadata(PlexBase):
         cls.cache.on_refresh.subscribe(cls.on_refresh)
 
         # Compile agent mapping patterns
-        for key, value in METADATA_AGENT_MAP.items():
-            # Transform into tuple of length 2
-            if type(value) is str:
-                value = (value, None)
-            elif type(value) is tuple and len(value) == 1:
-                value = (value, None)
+        for key, mappings in METADATA_AGENT_MAP.items():
+            # Transform into list
+            if type(mappings) is not list:
+                mappings = [mappings]
 
-            # Compile pattern
-            if value[1]:
-                value = (value[0], re.compile(value[1], re.IGNORECASE))
+            for x, value in enumerate(mappings):
+                # Transform into tuple of length 2
+                if type(value) is str:
+                    value = (value, None)
+                elif type(value) is tuple and len(value) == 1:
+                    value = (value, None)
 
-            # Update dictionary
-            METADATA_AGENT_MAP[key] = value
+                # Compile pattern
+                if value[1]:
+                    value = (value[0], re.compile(value[1], re.IGNORECASE))
+
+                mappings[x] = value
+
+            METADATA_AGENT_MAP[key] = mappings
 
     @classmethod
     def on_refresh(cls, key):
-        return cls.request('library/metadata/%s' % key)
+        return cls.request('library/metadata/%s' % key, timeout=10)
 
     @classmethod
     def get_cache(cls, key):
@@ -69,29 +84,34 @@ class PlexMetadata(PlexBase):
 
     @classmethod
     def get(cls, key):
-        data = cls.get_cache(key)
-        if data is None:
+        if not key:
             return None
 
-        data = data[0]
+        container = cls.get_cache(key)
+        if container is None:
+            return None
 
-        parsed_guid, item_key = cls.get_key(guid=data.get('guid'), required=False)
+        media = container[0]
+        media_type = media.get('type')
+
+        if media_type not in SUPPORTED_MEDIA_TYPES:
+            raise NotImplementedError('Metadata with type "%s" is unsupported' % media_type)
+
+        parsed_guid, item_key = cls.get_key(guid=media.get('guid'), required=False)
 
         # Create object for the data
-        data_type = data.get('type')
+        if media_type == 'movie':
+            return PlexMovie.create(container, media, parsed_guid, item_key)
 
-        if data_type == 'movie':
-            return PlexMovie.create(data, parsed_guid, item_key)
+        if media_type == 'show':
+            return PlexShow.create(container, media, parsed_guid, item_key)
 
-        if data_type == 'show':
-            return PlexShow.create(data, parsed_guid, item_key)
+        if media_type == 'episode':
+            season, episodes = PlexMatcher.get_identifier(media)
 
-        if data_type == 'episode':
-            season, episodes = PlexMatcher.get_identifier(data)
+            return PlexEpisode.create(container, media, season, episodes, parsed_guid, item_key)
 
-            return PlexEpisode.create(data, season, episodes, parsed_guid=parsed_guid, key=item_key)
-
-        log.warn('Failed to parse item "%s" with type "%s"', key, data_type)
+        log.warn('Failed to parse item "%s" with type "%s"', key, media_type)
         return None
 
     #
@@ -111,16 +131,29 @@ class PlexMetadata(PlexBase):
         return PlexParsedGuid.from_guid(guid)
 
     @classmethod
-    def get_mapping(cls, agent):
+    def get_mapping(cls, parsed_guid):
         # Strip leading key
-        agent = agent[agent.rfind('.') + 1:]
-
-        # Return if there is no mapping present
-        if agent not in METADATA_AGENT_MAP:
-            return agent, None
+        agent = parsed_guid.agent[parsed_guid.agent.rfind('.') + 1:]
 
         # Return mapped agent and sid_pattern (if present)
-        return METADATA_AGENT_MAP.get(agent)
+        mappings = METADATA_AGENT_MAP.get(agent, [])
+
+        if type(mappings) is not list:
+            mappings = [mappings]
+
+        for mapping in mappings:
+            map_agent, map_pattern = mapping
+
+            if map_pattern is None:
+                return map_agent, None, None
+
+            match = map_pattern.match(parsed_guid.sid)
+            if not match:
+                continue
+
+            return map_agent, map_pattern, match
+
+        return agent, None, None
 
     @classmethod
     def get_key(cls, key=None, guid=None, required=True):
@@ -131,14 +164,12 @@ class PlexMetadata(PlexBase):
             log.warn('Missing GUID or service identifier for item with ratingKey "%s" (parsed_guid: %s)', key, parsed_guid)
             return None, None
 
-        agent, sid_pattern = cls.get_mapping(parsed_guid.agent)
+        agent, sid_pattern, match = cls.get_mapping(parsed_guid)
 
         parsed_guid.agent = agent
 
         # Match sid with regex
         if sid_pattern:
-            match = sid_pattern.match(parsed_guid.sid)
-
             if not match:
                 log.warn('Failed to match "%s" against sid_pattern for "%s" agent', parsed_guid.sid, parsed_guid.agent)
                 return None, None
@@ -150,7 +181,13 @@ class PlexMetadata(PlexBase):
 
     @staticmethod
     def add_identifier(data, p_item):
-        service, sid = p_item['key'] if type(p_item) is dict else p_item.key
+        key = p_item['key'] if type(p_item) is dict else p_item.key
+
+        # Ensure key is valid
+        if not key:
+            return data
+
+        service, sid = key
 
         # Parse identifier and append relevant '*_id' attribute to data
         if service == 'imdb':

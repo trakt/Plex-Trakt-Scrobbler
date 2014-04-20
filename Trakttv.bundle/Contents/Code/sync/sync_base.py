@@ -1,13 +1,14 @@
 from core.eventing import EventManager
-from core.helpers import all, merge
+from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
-from core.trakt import Trakt
 from plex.plex_library import PlexLibrary
 from plex.plex_media_server import PlexMediaServer
 from plex.plex_metadata import PlexMetadata
 from plex.plex_objects import PlexEpisode
+
 from datetime import datetime
+from trakt import Trakt
 
 
 log = Logger('sync.sync_base')
@@ -21,12 +22,26 @@ class Base(object):
 
 class PlexInterface(Base):
     @classmethod
-    def sections(cls, types=None, keys=None):
-        return PlexMediaServer.get_sections(types, keys, cache_id=cls.get_cache_id())
+    def sections(cls, types=None, keys=None, titles=None):
+        # Default to 'titles' filter preference
+        if titles is None:
+            titles = get_filter('filter_sections')
+
+        return PlexMediaServer.get_sections(
+            types, keys, titles,
+            cache_id=cls.get_cache_id()
+        )
 
     @classmethod
-    def library(cls, types=None, keys=None):
-        return PlexLibrary.fetch(types, keys, cache_id=cls.get_cache_id())
+    def library(cls, types=None, keys=None, titles=None):
+        # Default to 'titles' filter preference
+        if titles is None:
+            titles = get_filter('filter_sections')
+
+        return PlexLibrary.fetch(
+            types, keys, titles,
+            cache_id=cls.get_cache_id()
+        )
 
     @classmethod
     def episodes(cls, key, parent=None):
@@ -59,10 +74,10 @@ class PlexInterface(Base):
         if include_identifier:
             p_root = cls.get_root(p_item)
 
-            data.update({
-                'title': p_root.title,
-                'year': p_root.year
-            })
+            data['title'] = p_root.title
+
+            if p_root.year:
+                data['year'] = p_root.year
 
             cls.add_identifier(data, p_root)
 
@@ -70,9 +85,73 @@ class PlexInterface(Base):
 
 
 class TraktInterface(Base):
+    merged_cache = {}
+
     @classmethod
     def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
-        return Trakt.User.get_merged(media, watched, ratings, collected, extended, cache_id=cls.get_cache_id())
+        cached = cls.merged_cache.get(media)
+
+        # Check if the cached library is valid
+        if cached and cached['cache_id'] == cls.get_cache_id():
+            items, table = cached['result']
+
+            log.debug(
+                'merged() returned cached %s library with %s keys for %s items',
+                media, len(table), len(items)
+            )
+
+            return items, table
+
+        # Start building merged library
+        start = datetime.utcnow()
+
+        # Merge data
+        items = {}
+
+        # Merge watched library
+        if watched and Trakt['user/library/%s' % media].watched(extended=extended, store=items) is None:
+            log.warn('Unable to fetch watched library')
+            return None, None
+
+        # Merge ratings
+        if ratings:
+            if Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
+                log.warn('Unable to fetch ratings')
+                return None, None
+
+            # Fetch episode ratings (if we are fetching shows)
+            if media == 'shows' and Trakt['user/ratings'].get('episodes', extended=extended, store=items) is None:
+                log.warn('Unable to fetch episode ratings')
+                return None, None
+
+        # Merge collected library
+        if collected and Trakt['user/library/%s' % media].collection(extended=extended, store=items) is None:
+            log.warn('Unable to fetch collected library')
+            return None, None
+
+        # Generate item table with alternative keys
+        table = items.copy()
+
+        for key, item in table.items():
+            # Skip first key (because it's the root_key)
+            for alt_key in item.keys[1:]:
+                table[alt_key] = item
+
+        # Calculate elapsed time
+        elapsed = datetime.utcnow() - start
+
+        log.debug(
+            'merged() built %s library with %s keys for %s items in %s seconds',
+            media, len(table), len(items), total_seconds(elapsed)
+        )
+
+        # Cache for future calls
+        cls.merged_cache[media] = {
+            'cache_id': cls.get_cache_id(),
+            'result': (items, table)
+        }
+
+        return items, table
 
 
 class SyncBase(Base):
@@ -143,17 +222,17 @@ class SyncBase(Base):
         if self.is_stopping():
             raise CancelException()
 
-    @staticmethod
-    def get_enabled_functions():
+    @classmethod
+    def get_enabled_functions(cls):
         result = []
 
-        if Prefs['sync_watched']:
+        if cls.task in get_pref('sync_watched'):
             result.append('watched')
 
-        if Prefs['sync_ratings']:
+        if cls.task in get_pref('sync_ratings'):
             result.append('ratings')
 
-        if Prefs['sync_collection']:
+        if cls.task in get_pref('sync_collection'):
             result.append('collected')
 
         return result

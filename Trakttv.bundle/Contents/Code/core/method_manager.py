@@ -1,17 +1,18 @@
 from core.helpers import spawn, plural
 from core.logger import Logger
+from core.plugin import ACTIVITY_MODE
 import threading
+import traceback
 
 log = Logger('core.method_manager')
 
 
 class Method(object):
     name = None
-    legacy = None
 
     def __init__(self, threaded=True):
         if threaded:
-            self.thread = threading.Thread(target=self.run, name=self.get_name())
+            self.thread = threading.Thread(target=self.run_wrapper, name=self.get_name())
             self.running = False
 
         self.threaded = threaded
@@ -29,6 +30,13 @@ class Method(object):
 
         self.thread.start()
         self.running = True
+
+    def run_wrapper(self):
+        # Wrap run method to catch any exceptions
+        try:
+            self.run()
+        except Exception, ex:
+            log.error(traceback.format_exc())
 
     def run(self):
         raise NotImplementedError()
@@ -61,17 +69,24 @@ class Manager(object):
         cls.available.append(item)
 
     @classmethod
+    def filter_available(cls):
+        allowed = ACTIVITY_MODE.get(Prefs['activity_mode'])
+
+        if not allowed:
+            return
+
+        cls.available = [
+            (k, v) for (k, v) in cls.available
+            if v.name in allowed
+        ]
+
+    @classmethod
     def start(cls, blocking=False):
         if not blocking:
             spawn(cls.start, blocking=True)
             return
 
-        if Prefs['force_legacy']:
-            # Only use legacy methods
-            cls.available = [
-                (k, v) for (k, v) in cls.available
-                if v.legacy or v.legacy is None
-            ]
+        cls.filter_available()
 
         # Test methods until an available method is found
         for weight, method in cls.available:
@@ -79,9 +94,7 @@ class Manager(object):
                 cls.start_method(method)
             elif method.test():
                 cls.start_method(method)
-
-                if not Prefs['force_legacy']:
-                    break
+                break
             else:
                 log.info("method '%s' not available" % method.name, tag=cls.tag)
 

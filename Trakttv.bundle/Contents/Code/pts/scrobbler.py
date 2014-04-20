@@ -1,8 +1,9 @@
-from core.helpers import str_pad
+from core.helpers import str_pad, get_filter, get_pref
 from core.logger import Logger
 from core.method_manager import Method, Manager
-from core.trakt import Trakt
 from plex.plex_metadata import PlexMetadata
+
+from trakt import Trakt
 import math
 
 log = Logger('pts.scrobbler')
@@ -13,11 +14,29 @@ class ScrobblerMethod(Method):
         super(ScrobblerMethod, self).__init__(threaded=False)
 
     @staticmethod
-    def get_status_label(progress, state):
-        return '[%s%s]' % (
-            str_pad(state[:2].upper() if state else '?', 2, trim=True),
-            str_pad(progress if progress is not None else '?', 3, 'right', trim=True)
+    def status_message(session, state):
+        state = state[:2].upper() if state else '?'
+        progress = session.progress if session.progress is not None else '?'
+
+        status = '[%s%s]' % (
+            str_pad(state, 2, trim=True),
+            str_pad(progress, 3, 'right', trim=True)
         )
+
+        metadata_key = None
+
+        if session.metadata and session.metadata.get('key'):
+            metadata_key = session.metadata['key']
+
+            if type(metadata_key) is tuple:
+                metadata_key = ', '.join(repr(x) for x in metadata_key)
+
+        title = '%s (%s)' % (session.get_title(), metadata_key)
+
+        def build(message_format):
+            return '%s %s' % (status, message_format % title)
+
+        return build
 
     def get_action(self, session, state):
         """
@@ -27,50 +46,43 @@ class ScrobblerMethod(Method):
         :rtype: str or None
         """
 
-        status_label = self.get_status_label(session.progress, state)
+        status_message = self.status_message(session, state)
 
         # State has changed
         if state not in [session.cur_state, 'buffering']:
             session.cur_state = state
 
             if state == 'stopped' and session.watching:
-                log.info('%s %s stopped, watching status cancelled' % (
-                    status_label, session.get_title()
-                ))
+                log.info(status_message('%s stopped, watching status cancelled'))
                 session.watching = False
                 return 'cancelwatching'
 
             if state == 'paused' and not session.paused_since:
-                log.info("%s %s just paused, waiting 15s before cancelling the watching status" % (
-                    status_label, session.get_title()
-                ))
+                log.info(status_message("%s just paused, waiting 15s before cancelling the watching status"))
 
                 session.paused_since = Datetime.Now()
                 return None
 
             if state == 'playing' and not session.watching:
-                log.info('%s Sending watch status for %s' % (status_label, session.get_title()))
+                log.info(status_message('Sending watch status for %s'))
                 session.watching = True
                 return 'watching'
 
         elif state == 'playing':
             # scrobble item
-            if not session.scrobbled and session.progress >= 80:
-                log.info('%s Scrobbling %s' % (status_label, session.get_title()))
+            if not session.scrobbled and session.progress >= get_pref('scrobble_percentage'):
+                log.info(status_message('Scrobbling %s'))
                 return 'scrobble'
 
             # update every 10 min if media hasn't finished
             elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-                log.info('%s Updating watch status for %s' % (status_label, session.get_title()))
+                log.info(status_message('Updating watch status for %s'))
                 session.watching = True
                 return 'watching'
 
             # cancel watching status on items at 100% progress
             elif session.progress >= 100 and session.watching:
-                log.info('%s Media finished, cancelling watching status for %s' % (
-                    status_label,
-                    session.get_title()
-                ))
+                log.info(status_message('Media finished, cancelling watching status for %s'))
                 session.watching = False
                 return 'cancelwatching'
 
@@ -85,7 +97,12 @@ class ScrobblerMethod(Method):
             return None
 
         if session_type == 'show':
-            if 'episodes' not in session.metadata:
+            if not session.metadata.get('episodes'):
+                log.warn('No episodes found in metadata')
+                return None
+
+            if session.cur_episode >= len(session.metadata['episodes']):
+                log.warn('Unable to find episode at index %s, available episodes: %s', session.cur_episode, session.metadata['episodes'])
                 return None
 
             values.update({
@@ -132,15 +149,17 @@ class ScrobblerMethod(Method):
         return False
 
     @classmethod
-    def handle_action(cls, session, media_type, action, state):
-        # Setup Data to send to Trakt
+    def handle_action(cls, session, media, action, state):
+        # Setup Data to send to trakt
         parameters = cls.get_request_parameters(session)
         if not parameters:
             log.info('Invalid parameters, unable to continue')
             return False
 
-        response = Trakt.Media.action(media_type, action, **parameters)
-        if not response['success']:
+        log.trace('Sending action "%s/%s" - parameters: %s', media, action, parameters)
+
+        response = Trakt[media].send(action, parameters)
+        if not response or response.get('status') != 'success':
             log.warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()
@@ -192,16 +211,78 @@ class ScrobblerMethod(Method):
         if Prefs['scrobble_names'] is None:
             return True
 
-        return session.user and Prefs['scrobble_names'].lower() == session.user.title.lower()
+        # Normalize username
+        username = session.user.title.lower() if session.user else None
+
+        # Fetch filter
+        filter = get_filter('scrobble_names')
+        if filter is None:
+            return True
+
+        log.trace('validate user - username: "%s", filter: %s', username, filter)
+
+        if not session.user or username not in filter:
+            log.info('Ignoring item [%s](%s) played by filtered user: %s' % (
+                session.item_key,
+                session.get_title(),
+                session.user.title if session.user else None
+            ))
+            return False
+
+        return True
 
     @staticmethod
     def valid_client(session):
         if Prefs['scrobble_clients'] is None:
             return True
 
-        clients = [x.strip().lower() for x in Prefs['scrobble_clients'].split(',')]
+        # Normalize client name
+        client_name = session.client.name.lower() if session.client else None
 
-        return session.client and session.client.name.lower() in clients
+        # Fetch filter
+        filter = get_filter('scrobble_clients')
+        if filter is None:
+            return True
+
+        log.trace('validate client - client_name: "%s", filter: %s', client_name, filter)
+
+        if not session.client or client_name not in filter:
+            log.info('Ignoring item [%s](%s) played by filtered client: %s' % (
+                session.item_key,
+                session.get_title(),
+                client_name
+            ))
+            return False
+
+        return True
+
+    @staticmethod
+    def valid_section(session):
+        title = session.metadata.get('section_title')
+        if not title:
+            return True
+
+        # Fetch filter
+        filter = get_filter('filter_sections')
+        if filter is None:
+            return True
+
+        # Normalize title
+        title = title.strip().lower()
+
+        log.trace('validate section - title: "%s", filter: %s', title, filter)
+
+        # Check section title against filter
+        if title not in filter:
+            log.info('Ignoring item [%s](%s) played from filtered section "%s"' % (
+                session.item_key,
+                session.get_title(),
+                session.metadata.get('section_title')
+            ))
+            return False
+
+        return True
+
 
 
 class Scrobbler(Manager):

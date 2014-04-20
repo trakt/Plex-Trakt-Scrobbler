@@ -10,9 +10,9 @@ log = Logger('plex.plex_library')
 
 class PlexLibrary(PlexBase):
     @classmethod
-    def map_item(cls, table, data):
+    def map_item(cls, table, container, media):
         # Get the key for the item
-        parsed_guid, key = PlexMetadata.get_key(data.get('ratingKey'))
+        parsed_guid, key = PlexMetadata.get_key(media.get('ratingKey'))
         if parsed_guid is None:
             return False
 
@@ -20,13 +20,13 @@ class PlexLibrary(PlexBase):
             table[key] = []
 
         # Create object for the data
-        data_type = data.get('type')
+        data_type = media.get('type')
         if data_type == 'movie':
-            item = PlexMovie.create(data, parsed_guid, key)
+            item = PlexMovie.create(container, media, parsed_guid, key)
         elif data_type == 'show':
-            item = PlexShow.create(data, parsed_guid, key)
+            item = PlexShow.create(container, media, parsed_guid, key)
         else:
-            log.info('Unknown item "%s" with type "%s"', data.get('ratingKey'), data_type)
+            log.info('Unknown item "%s" with type "%s"', media.get('ratingKey'), data_type)
             return False
 
         # Map item into table
@@ -34,24 +34,30 @@ class PlexLibrary(PlexBase):
         return True
 
     @classmethod
-    def fetch(cls, types=None, keys=None, cache_id=None):
+    def fetch(cls, types=None, keys=None, titles=None, cache_id=None):
         if types and isinstance(types, basestring):
             types = [types]
 
         # Get all sections or filter based on 'types' and 'sections'
-        sections = [(type, key) for (type, key, _) in PlexMediaServer.get_sections(types, keys, cache_id=cache_id)]
+        sections = [(type, key) for (type, key, _) in PlexMediaServer.get_sections(
+            types, keys, titles,
+            cache_id=cache_id
+        )]
 
         movies = {}
         shows = {}
 
         for type, key in sections:
-            if type == 'movie':
-                for video in PlexMediaServer.get_videos(key, cache_id=cache_id):
-                    cls.map_item(movies, video)
+            container = PlexMediaServer.get_section(key, cache_id=cache_id)
+            if container is None:
+                continue
 
-            if type == 'show':
-                for directory in PlexMediaServer.get_directories(key, cache_id=cache_id):
-                    cls.map_item(shows, directory)
+            for media in container:
+                if type == 'movie':
+                    cls.map_item(movies, container, media)
+
+                if type == 'show':
+                    cls.map_item(shows, container, media)
 
         if len(types) == 1:
             if types[0] == 'movie':
@@ -78,12 +84,12 @@ class PlexLibrary(PlexBase):
 
         result = {}
 
-        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=10, cache_id=cache_id)
+        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=30, cache_id=cache_id)
 
         for video in container:
             season, episodes = PlexMatcher.get_identifier(video)
 
-            obj = PlexEpisode.create(video, season, episodes, parent=parent)
+            obj = PlexEpisode.create(container, video, season, episodes, parent=parent)
 
             for episode in episodes:
                 result[season, episode] = obj
