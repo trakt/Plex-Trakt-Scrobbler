@@ -38,10 +38,10 @@ class Base(SyncBase):
         if type(p_items) is not list:
             p_items = [p_items]
 
-        if t_item.rating_advanced is None:
+        if t_item.rating is None:
             return True
 
-        t_rating = t_item.rating_advanced
+        t_rating = t_item.rating.advanced
 
         for p_item in p_items:
             # Ignore already rated episodes
@@ -66,7 +66,7 @@ class Base(SyncBase):
             return True
 
         if resolution == 'latest':
-            t_timestamp = datetime.utcfromtimestamp(t_item.rating_timestamp)
+            t_timestamp = datetime.utcfromtimestamp(t_item.rating.timestamp)
 
             # If trakt rating was created after the last sync, update plex rating
             if t_timestamp > status.last_success:
@@ -74,7 +74,7 @@ class Base(SyncBase):
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.rating_key, p_item.user_rating, t_item.rating_advanced
+            p_item.rating_key, p_item.user_rating, t_item.rating.advanced
         )
 
         return False

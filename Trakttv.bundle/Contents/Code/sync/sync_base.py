@@ -1,5 +1,5 @@
 from core.eventing import EventManager
-from core.helpers import all, merge, get_filter, get_pref
+from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
 from plex.plex_library import PlexLibrary
@@ -87,7 +87,43 @@ class PlexInterface(Base):
 class TraktInterface(Base):
     @classmethod
     def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
-        return Trakt.User.get_merged(media, watched, ratings, collected, extended, cache_id=cls.get_cache_id())
+        start = datetime.utcnow()
+
+        # Merge data
+        items = {}
+
+        # Merge watched library
+        if watched and Trakt['user/library/%s' % media].watched(extended=extended, store=items) is None:
+            log.warn('Unable to fetch watched library')
+            return None, None
+
+        # Merge ratings
+        if ratings and Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
+            log.warn('Unable to fetch ratings')
+            return None, None
+
+        # Merge collected library
+        if collected and Trakt['user/library/%s' % media].collection(extended=extended, store=items) is None:
+            log.warn('Unable to fetch collected library')
+            return None, None
+
+        # Generate item table with alternative keys
+        table = items.copy()
+
+        for key, item in table.items():
+            # Skip first key (because it's the root_key)
+            for alt_key in item.keys[1:]:
+                table[alt_key] = item
+
+        # Calculate elapsed time
+        elapsed = datetime.utcnow() - start
+
+        log.debug(
+            'get_merged returned dictionary with %s keys for %s items in %s seconds',
+            len(table), len(items), total_seconds(elapsed)
+        )
+
+        return items, table
 
 
 class SyncBase(Base):
