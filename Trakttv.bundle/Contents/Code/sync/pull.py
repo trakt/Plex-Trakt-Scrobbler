@@ -15,7 +15,8 @@ class Base(SyncBase):
     def get_missing(t_items, is_collected=True):
         return dict([
             (t_item.pk, t_item) for t_item in t_items.itervalues()
-            if (not is_collected or t_item.is_collected) and not t_item.is_local
+            if (not is_collected or t_item.is_collected) and
+                not getattr(t_item, 'is_local', False)
         ])
 
     def watch(self, p_items, t_item):
