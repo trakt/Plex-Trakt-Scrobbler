@@ -74,10 +74,10 @@ class PlexInterface(Base):
         if include_identifier:
             p_root = cls.get_root(p_item)
 
-            data.update({
-                'title': p_root.title,
-                'year': p_root.year
-            })
+            data['title'] = p_root.title
+
+            if p_root.year:
+                data['year'] = p_root.year
 
             cls.add_identifier(data, p_root)
 
