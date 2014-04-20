@@ -17,6 +17,10 @@ class UserLibraryInterface(Interface):
         )
 
         items = self.get_data(response)
+
+        if type(items) is not list:
+            return None
+
         flags = self.get_flags(library)
 
         return self.media_mapper(store, media, items, **flags)
