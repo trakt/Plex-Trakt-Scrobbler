@@ -1,6 +1,7 @@
 from trakt.helpers import setdefault
 
 from requests import Request
+import json
 
 
 class TraktRequest(object):
@@ -23,7 +24,7 @@ class TraktRequest(object):
         self.transform_parameters()
         self.request.url = self.construct_url()
 
-        self.request.data = self.transform_data()
+        self.request.data = json.dumps(self.transform_data())
         self.request.method = self.transform_method()
 
         return self.request.prepare()

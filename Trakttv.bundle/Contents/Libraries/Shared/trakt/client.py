@@ -3,7 +3,10 @@ from trakt.interfaces import construct_map
 from trakt.interfaces.base import InterfaceProxy
 from trakt.request import TraktRequest
 
+import logging
 import requests
+
+log = logging.getLogger(__name__)
 
 
 class TraktClient(object):
@@ -30,6 +33,8 @@ class TraktClient(object):
     def request(self, path, params=None, data=None, credentials=None, **kwargs):
         if not self.api_key:
             raise ValueError('Missing "api_key", unable to send requests to trakt.tv')
+
+        log.debug('"%s" - data: %s', path, data)
 
         request = TraktRequest(
             self,

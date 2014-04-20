@@ -54,12 +54,18 @@ class Interface(object):
         raise ValueError('Unknown action "%s" on %s', name, self)
 
     def request(self, path, params=None, data=None, credentials=None, **kwargs):
-        path = '%s/%s' % (self.path, path)
-
-        return self.client.request(path, params, data, credentials, **kwargs)
+        return self.client.request(
+            '%s/%s' % (self.path, path),
+            params, data,
+            credentials,
+            **kwargs
+        )
 
     @authenticated
-    def action(self, action, data=None, credentials=None):
+    def action(self, action, data=None, credentials=None, **kwargs):
+        if data:
+            data.update(kwargs)
+
         response = self.request(
             action, data=data,
             credentials=credentials
