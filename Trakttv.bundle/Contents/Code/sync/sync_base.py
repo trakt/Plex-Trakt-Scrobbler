@@ -85,8 +85,24 @@ class PlexInterface(Base):
 
 
 class TraktInterface(Base):
+    merged_cache = {}
+
     @classmethod
     def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
+        cached = cls.merged_cache.get(media)
+
+        # Check if the cached library is valid
+        if cached and cached['cache_id'] == cls.get_cache_id():
+            items, table = cached['result']
+
+            log.debug(
+                'merged() returned cached %s library with %s keys for %s items',
+                media, len(table), len(items)
+            )
+
+            return items, table
+
+        # Start building merged library
         start = datetime.utcnow()
 
         # Merge data
@@ -125,9 +141,15 @@ class TraktInterface(Base):
         elapsed = datetime.utcnow() - start
 
         log.debug(
-            'get_merged returned dictionary with %s keys for %s items in %s seconds',
-            len(table), len(items), total_seconds(elapsed)
+            'merged() built %s library with %s keys for %s items in %s seconds',
+            media, len(table), len(items), total_seconds(elapsed)
         )
+
+        # Cache for future calls
+        cls.merged_cache[media] = {
+            'cache_id': cls.get_cache_id(),
+            'result': (items, table)
+        }
 
         return items, table
 
