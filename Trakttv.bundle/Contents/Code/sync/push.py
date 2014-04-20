@@ -78,8 +78,12 @@ class Base(SyncBase):
 
         raise ValueError('Unknown level specified')
 
-    def send(self, action, data):
-        response = Trakt.request(action, data, authenticate=True)
+    def send(self, action, items):
+        # TODO maybe this can be handled in trakt.py somehow?
+        path = action[:action.rfind('/')]
+        action = action[action.rfind('/') + 1:]
+
+        response = Trakt[path][action](items)
 
         # Log successful items
         if 'rated' in response:
@@ -103,12 +107,12 @@ class Base(SyncBase):
         if skipped > 0:
             self.log_artifact(action, 'Skipped', skipped, level='warn')
 
-    def send_artifact(self, action, key, artifact):
+    def send_artifact(self, action, artifact):
         items = self.artifacts.get(artifact)
         if not items:
             return
 
-        return self.send(action, {key: items})
+        return self.send(action, items)
 
 
 class Episode(Base):
@@ -204,8 +208,8 @@ class Show(Base):
         for show in self.retrieve('watched'):
             self.send('show/episode/seen', show)
 
-        self.send_artifact('rate/shows', 'shows', 'ratings')
-        self.send_artifact('rate/episodes', 'episodes', 'episode_ratings')
+        self.send_artifact('rate/shows', 'ratings')
+        self.send_artifact('rate/episodes', 'episode_ratings')
 
         for show in self.retrieve('missing.shows'):
             self.send('show/unlibrary', show)
@@ -269,10 +273,10 @@ class Movie(Base):
         #
         # Push changes to trakt
         #
-        self.send_artifact('movie/seen', 'movies', 'watched')
-        self.send_artifact('rate/movies', 'movies', 'ratings')
-        self.send_artifact('movie/library', 'movies', 'collected')
-        self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
+        self.send_artifact('movie/seen', 'watched')
+        self.send_artifact('rate/movies', 'ratings')
+        self.send_artifact('movie/library', 'collected')
+        self.send_artifact('movie/unlibrary', 'missing.movies')
 
         Data.Save('last_artifacts.movie.json', json_encode(self.artifacts))
 

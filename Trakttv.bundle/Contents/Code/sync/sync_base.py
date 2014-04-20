@@ -98,9 +98,15 @@ class TraktInterface(Base):
             return None, None
 
         # Merge ratings
-        if ratings and Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
-            log.warn('Unable to fetch ratings')
-            return None, None
+        if ratings:
+            if Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
+                log.warn('Unable to fetch ratings')
+                return None, None
+
+            # Fetch episode ratings (if we are fetching shows)
+            if media == 'shows' and Trakt['user/ratings'].get('episodes', extended=extended, store=items) is None:
+                log.warn('Unable to fetch episode ratings')
+                return None, None
 
         # Merge collected library
         if collected and Trakt['user/library/%s' % media].collection(extended=extended, store=items) is None:
