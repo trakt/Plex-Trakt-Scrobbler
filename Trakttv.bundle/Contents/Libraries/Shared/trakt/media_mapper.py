@@ -30,7 +30,14 @@ class MediaMapper(object):
         raise ValueError('Unknown media provided')
 
     def movie(self, media, item, **kwargs):
-        pass
+        pk, keys = self.get_keys(media, item)
+
+        if pk not in self.store:
+            self.store[pk] = self.create(media, item, keys, **kwargs)
+        else:
+            self.store[pk].update(item, **kwargs)
+
+        return self.store[pk]
 
     def show(self, media, item, **kwargs):
         pk, keys = self.get_keys(media, item)

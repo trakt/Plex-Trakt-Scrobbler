@@ -60,6 +60,7 @@ class UserRatingsInterface(Interface):
         return self.get(
             'movies', username,
             rating, extended,
+            store=store,
             credentials=credentials
         )
 

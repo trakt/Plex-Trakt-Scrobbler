@@ -44,7 +44,7 @@ class ShowInterface(MediaInterface):
 
         data.update(kwargs)
 
-        return self.send(
+        return self.action(
             'scrobble', data,
             credentials=credentials
         )
@@ -85,7 +85,7 @@ class ShowInterface(MediaInterface):
 
         data.update(kwargs)
 
-        return self.send(
+        return self.action(
             'watching', data,
             credentials=credentials
         )

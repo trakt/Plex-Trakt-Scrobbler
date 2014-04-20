@@ -7,16 +7,65 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def authenticated(func):
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        if args and isinstance(args[0], Interface):
+            interface = args[0]
+
+            if 'credentials' not in kwargs:
+                kwargs['credentials'] = interface.client.credentials
+            else:
+                kwargs['credentials'] = parse_credentials(kwargs['credentials'])
+
+        return func(*args, **kwargs)
+
+    return wrap
+
+
+def media_center(func):
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        if args and isinstance(args[0], Interface):
+            interface = args[0]
+
+            setdefault(kwargs, {
+                'plugin_version': interface.client.plugin_version,
+
+                'media_center_version': interface.client.media_center_version,
+                'media_center_date': interface.client.media_center_date
+            }, lambda key, value: value)
+
+        return func(*args, **kwargs)
+
+    return wrap
+
+
 class Interface(object):
     path = None
 
     def __init__(self, client):
         self.client = client
 
+    def __getitem__(self, name):
+        if hasattr(self, name):
+            return getattr(self, name)
+
+        raise ValueError('Unknown action "%s" on %s', name, self)
+
     def request(self, path, params=None, data=None, credentials=None, **kwargs):
         path = '%s/%s' % (self.path, path)
 
         return self.client.request(path, params, data, credentials, **kwargs)
+
+    @authenticated
+    def action(self, action, data=None, credentials=None):
+        response = self.request(
+            action, data=data,
+            credentials=credentials
+        )
+
+        return self.get_data(response, catch_errors=False)
 
     @staticmethod
     def get_data(response, catch_errors=True):
@@ -73,37 +122,3 @@ class InterfaceProxy(object):
             return value(*args, **kwargs)
 
         return wrap
-
-
-def authenticated(func):
-    @wraps(func)
-    def wrap(*args, **kwargs):
-        if args and isinstance(args[0], Interface):
-            interface = args[0]
-
-            if 'credentials' not in kwargs:
-                kwargs['credentials'] = interface.client.credentials
-            else:
-                kwargs['credentials'] = parse_credentials(kwargs['credentials'])
-
-        return func(*args, **kwargs)
-
-    return wrap
-
-
-def media_center(func):
-    @wraps(func)
-    def wrap(*args, **kwargs):
-        if args and isinstance(args[0], Interface):
-            interface = args[0]
-
-            setdefault(kwargs, {
-                'plugin_version': interface.client.plugin_version,
-
-                'media_center_version': interface.client.media_center_version,
-                'media_center_date': interface.client.media_center_date
-            }, lambda key, value: value)
-
-        return func(*args, **kwargs)
-
-    return wrap

@@ -1,15 +1,18 @@
 from trakt.interfaces.account import AccountInterface
 from trakt.interfaces.movie import MovieInterface
+from trakt.interfaces.rate import RateInterface
 from trakt.interfaces.show import ShowInterface
 from trakt.interfaces.user import UserInterface
 from trakt.interfaces.user.library import UserLibraryInterface
 from trakt.interfaces.user.ratings import UserRatingsInterface
 
 
+# TODO automatic interface discovery
 INTERFACES = [
     # /
     AccountInterface,
     MovieInterface,
+    RateInterface,
     ShowInterface,
 
     # /user

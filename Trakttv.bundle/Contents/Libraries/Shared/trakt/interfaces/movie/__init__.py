@@ -35,8 +35,32 @@ class MovieInterface(MediaInterface):
 
         data.update(kwargs)
 
-        return self.send(
+        return self.action(
             'scrobble', data,
+            credentials=credentials
+        )
+
+    @authenticated
+    def seen(self, movies, credentials=None):
+        """Add movies watched outside of trakt to your library.
+
+        :param movies: list of movies to mark as seen
+        :type movies: list of dict {title, year, [imdb_id], [last_played]}
+        """
+        return self.action(
+            'seen', data={'movies': movies},
+            credentials=credentials
+        )
+
+    @authenticated
+    def library(self, movies, credentials=None):
+        """Add movies to your library collection.
+
+        :param movies: list of movies to add to your collection
+        :type movies: list of dict {title, year, [imdb_id]}
+        """
+        return self.action(
+            'library', data={'movies': movies},
             credentials=credentials
         )
 
@@ -67,7 +91,19 @@ class MovieInterface(MediaInterface):
 
         data.update(kwargs)
 
-        return self.send(
+        return self.action(
             'watching', data,
+            credentials=credentials
+        )
+
+    @authenticated
+    def unlibrary(self, movies, credentials=None):
+        """Remove movies from your library collection.
+
+        :param movies: list of movies to remove from your collection
+        :type movies: list of dict {title, year, [imdb_id]}
+        """
+        return self.action(
+            'unlibrary', data={'movies': movies},
             credentials=credentials
         )
