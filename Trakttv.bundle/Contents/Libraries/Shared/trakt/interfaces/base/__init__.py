@@ -63,16 +63,16 @@ class Interface(object):
 
     @authenticated
     def action(self, action, data=None, credentials=None, **kwargs):
-        # Merge kwargs (extra request parameters)
         if data:
+            # Merge kwargs (extra request parameters)
             data.update(kwargs)
 
-        # Strip any parameters with 'None' values
-        data = dict([
-            (key, value)
-            for key, value in data.items()
-            if value is not None
-        ])
+            # Strip any parameters with 'None' values
+            data = dict([
+                (key, value)
+                for key, value in data.items()
+                if value is not None
+            ])
 
         self.validate_action(action, data)
 
