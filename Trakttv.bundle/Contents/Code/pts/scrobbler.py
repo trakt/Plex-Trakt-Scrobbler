@@ -156,9 +156,13 @@ class ScrobblerMethod(Method):
             log.info('Invalid parameters, unable to continue')
             return False
 
-        log.trace('Sending action "%s/%s" - parameters: %s', media, action, parameters)
+        log.trace('Sending action "%s/%s"', media, action)
 
-        response = Trakt[media].send(action, parameters)
+        if action in ['watching', 'scrobble']:
+            response = Trakt[media][action](**parameters)
+        else:
+            response = Trakt[media][action]()
+
         if not response or response.get('status') != 'success':
             log.warn('Unable to send scrobbler action')
 
