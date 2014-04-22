@@ -132,6 +132,7 @@ class ScrobblerMethod(Method):
     def handle_state(cls, session, state):
         if state == 'playing' and session.paused_since:
             session.paused_since = None
+            session.save()
             return True
 
         # If stopped, delete the session
@@ -144,6 +145,7 @@ class ScrobblerMethod(Method):
         if state == 'paused' and not session.update_required:
             log.debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
+            session.save()
             return True
 
         return False
@@ -177,6 +179,32 @@ class ScrobblerMethod(Method):
         session.save()
 
     @staticmethod
+    def offset_jumped(session, current):
+        duration = session.metadata['duration'] * 60 * 1000
+
+        last = session.last_view_offset
+
+        if last is None:
+            return False
+
+        perc_current = (float(current) / duration) * 100
+        perc_last = (float(last) / duration) * 100
+
+        perc_change = perc_current - perc_last
+
+        log.trace(
+            'Checking for offset jump - last: %s (%s), current: %s (%s), change: %s',
+            last, perc_last, current, perc_current,
+            perc_change
+        )
+
+        if perc_change > 98:
+            log.debug('View offset jumped by %.02f%%', perc_change)
+            return True
+
+        return False
+
+    @staticmethod
     def update_progress(session, view_offset):
         if not session or not session.metadata:
             return False
@@ -207,7 +235,6 @@ class ScrobblerMethod(Method):
             total_progress = (len(session.metadata['episodes']) * total_progress) - session.cur_episode
 
         session.progress = int(round(total_progress * 100, 0))
-
         return True
 
     @staticmethod

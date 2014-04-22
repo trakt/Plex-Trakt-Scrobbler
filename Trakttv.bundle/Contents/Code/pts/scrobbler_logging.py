@@ -90,16 +90,16 @@ class LoggingScrobbler(ScrobblerMethod):
     def get_session(self, info):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
+        if session and not self.session_valid(session, info):
+            session.delete()
+            session = None
+            log.debug('Session deleted')
+
         if not session:
             session = self.create_session(info)
 
             if not session:
                 return None
-
-        if not self.session_valid(session, info):
-            session.delete()
-            session = None
-            log.debug('Session deleted')
 
         if not session or session.skip:
             return None
@@ -138,6 +138,14 @@ class LoggingScrobbler(ScrobblerMethod):
             session.skip = True
             return
 
+        # Check if the view_offset has jumped (#131)
+        if self.offset_jumped(session, info['time']):
+            log.info('View offset jump detected, ignoring the state update')
+            session.save()
+            return
+
+        session.last_view_offset = info['time']
+
         # Calculate progress
         if not self.update_progress(session, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
@@ -154,7 +162,6 @@ class LoggingScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, info['state']) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(LoggingScrobbler, weight=1)
