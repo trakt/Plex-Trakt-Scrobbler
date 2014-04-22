@@ -220,7 +220,6 @@ class WebSocketScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, state) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(WebSocketScrobbler, weight=10)

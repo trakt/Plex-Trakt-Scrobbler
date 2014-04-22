@@ -131,6 +131,7 @@ class ScrobblerMethod(Method):
     def handle_state(cls, session, state):
         if state == 'playing' and session.paused_since:
             session.paused_since = None
+            session.save()
             return True
 
         # If stopped, delete the session
@@ -143,6 +144,7 @@ class ScrobblerMethod(Method):
         if state == 'paused' and not session.update_required:
             log.debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
+            session.save()
             return True
 
         return False

@@ -162,7 +162,6 @@ class LoggingScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, info['state']) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(LoggingScrobbler, weight=1)
