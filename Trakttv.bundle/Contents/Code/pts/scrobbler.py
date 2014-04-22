@@ -185,14 +185,16 @@ class ScrobblerMethod(Method):
         perc_current = (float(current) / duration) * 100
         perc_last = (float(last) / duration) * 100
 
-        log.debug('offset_jumped - last: %s (%s), current: %s (%s)', last, perc_last, current, perc_current)
-
         perc_change = perc_current - perc_last
 
-        log.debug('perc_change: %s', perc_change)
+        log.trace(
+            'Checking for offset jump - last: %s (%s), current: %s (%s), change: %s',
+            last, perc_last, current, perc_current,
+            perc_change
+        )
 
         if perc_change > 98:
-            log.info('View offset jumped by %.02f%%', perc_change)
+            log.debug('View offset jumped by %.02f%%', perc_change)
             return True
 
         return False
