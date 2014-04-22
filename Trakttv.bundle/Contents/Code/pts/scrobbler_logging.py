@@ -90,16 +90,16 @@ class LoggingScrobbler(ScrobblerMethod):
     def get_session(self, info):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
+        if session and not self.session_valid(session, info):
+            session.delete()
+            session = None
+            log.debug('Session deleted')
+
         if not session:
             session = self.create_session(info)
 
             if not session:
                 return None
-
-        if not self.session_valid(session, info):
-            session.delete()
-            session = None
-            log.debug('Session deleted')
 
         if not session or session.skip:
             return None
