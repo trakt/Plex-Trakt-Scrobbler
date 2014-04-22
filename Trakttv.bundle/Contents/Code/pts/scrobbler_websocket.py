@@ -196,6 +196,12 @@ class WebSocketScrobbler(ScrobblerMethod):
             session.skip = True
             return
 
+        # Check if the view_offset has jumped (#131)
+        if self.offset_jumped(session, view_offset):
+            log.info('View offset jump detected, ignoring the state update')
+            session.save()
+            return
+
         session.last_view_offset = view_offset
 
         # Calculate progress
@@ -214,7 +220,6 @@ class WebSocketScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, state) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(WebSocketScrobbler, weight=10)
