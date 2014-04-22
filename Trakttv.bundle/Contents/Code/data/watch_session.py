@@ -34,7 +34,7 @@ class WatchSession(DictModel):
         self.cur_state = state
 
         self.paused_since = None
-        self.last_view_offset = 0
+        self.last_view_offset = None
 
         self.update_required = False
         self.last_updated = Datetime.FromTimestamp(0)

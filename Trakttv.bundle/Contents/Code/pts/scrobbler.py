@@ -172,6 +172,30 @@ class ScrobblerMethod(Method):
         session.save()
 
     @staticmethod
+    def offset_jumped(session, current):
+        duration = session.metadata['duration'] * 60 * 1000
+
+        last = session.last_view_offset
+
+        if last is None:
+            return False
+
+        perc_current = (float(current) / duration) * 100
+        perc_last = (float(last) / duration) * 100
+
+        log.debug('offset_jumped - last: %s (%s), current: %s (%s)', last, perc_last, current, perc_current)
+
+        perc_change = perc_current - perc_last
+
+        log.debug('perc_change: %s', perc_change)
+
+        if perc_change > 98:
+            log.info('View offset jumped by %.02f%%', perc_change)
+            return True
+
+        return False
+
+    @staticmethod
     def update_progress(session, view_offset):
         if not session or not session.metadata:
             return False
@@ -202,7 +226,6 @@ class ScrobblerMethod(Method):
             total_progress = (len(session.metadata['episodes']) * total_progress) - session.cur_episode
 
         session.progress = int(round(total_progress * 100, 0))
-
         return True
 
     @staticmethod
