@@ -199,8 +199,8 @@ class PlexMovie(PlexVideo):
 
     @classmethod
     def create(cls, container, video, parsed_guid, key):
-        if parsed_guid.season or parsed_guid.episode:
-            raise ValueError('parsed_guid is not valid for PlexShow')
+        if parsed_guid and (parsed_guid.season or parsed_guid.episode):
+            raise ValueError('parsed_guid is not valid for PlexMovie')
 
         movie = cls(video.get('ratingKey'), key)
 
