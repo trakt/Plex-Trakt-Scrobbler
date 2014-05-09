@@ -1,7 +1,8 @@
 from core.eventing import EventManager
-from core.helpers import try_convert
+from core.helpers import try_convert, all
 from core.logger import Logger
 from pts.activity import ActivityMethod, Activity
+
 import websocket
 import time
 
@@ -100,17 +101,26 @@ class WebSocketActivity(ActivityMethod):
             if len(results) and results[0]:
                 return True
 
-        log.warn('Unable to process notification: %s', info)
+        log.debug('Unable to process notification: %s', info)
         return False
 
     @staticmethod
     def process_playing(item):
-        session_key = str(item['sessionKey'])
-        state = str(item['state'])
-        view_offset = try_convert(item['viewOffset'], int)
+        session_key = item.get('sessionKey')
+        state = item.get('state')
+        view_offset = try_convert(item.get('viewOffset'), int)
 
-        EventManager.fire('notifications.playing', session_key, state, view_offset)
-        return True
+        valid = all([
+            x is not None
+            for x in [session_key, state, view_offset]
+        ])
+
+        if valid:
+            EventManager.fire('notifications.playing', str(session_key), str(state), view_offset)
+            return True
+
+        log.warn("'playing' notification doesn't look valid, ignoring: %s" % item)
+        return False
 
     @staticmethod
     def process_timeline(item):
