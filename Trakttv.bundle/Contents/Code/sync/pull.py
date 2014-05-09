@@ -85,6 +85,9 @@ class Episode(Base):
     auto_run = False
 
     def run(self, p_episodes, t_episodes):
+        if p_episodes is None:
+            return False
+
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():
@@ -118,11 +121,11 @@ class Show(Base):
             return True
 
         p_shows = self.plex.library('show')
-        Data.Save('last_library.show.plex.json', repr(p_shows))
+        self.save('last_library', repr(p_shows), source='plex')
 
         # Fetch library, and only get ratings and collection if enabled
         t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
-        Data.Save('last_library.show.trakt.json', repr(t_shows_table))
+        self.save('last_library', repr(t_shows_table), source='trakt')
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -220,11 +223,11 @@ class Movie(Base):
             return True
 
         p_movies = self.plex.library('movie')
-        Data.Save('last_library.movie.plex.json', repr(p_movies))
+        self.save('last_library', repr(p_movies), source='plex')
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
-        Data.Save('last_library.movie.trakt.json', repr(t_movies_table))
+        self.save('last_library', repr(t_movies_table), source='trakt')
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')

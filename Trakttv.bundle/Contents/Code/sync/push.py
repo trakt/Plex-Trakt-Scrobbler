@@ -117,6 +117,9 @@ class Episode(Base):
     def run(self, p_episodes, t_episodes, artifacts=None):
         self.reset(artifacts)
 
+        if p_episodes is None:
+            return False
+
         enabled_funcs = self.get_enabled_functions()
 
         for key, p_episode in p_episodes.items():
@@ -212,7 +215,7 @@ class Show(Base):
         for show in self.retrieve('missing.episodes'):
             self.send('show/episode/unlibrary', show)
 
-        Data.Save('last_artifacts.show.json', json_encode(self.artifacts))
+        self.save('last_artifacts', json_encode(self.artifacts))
 
         log.info('Finished pushing shows to trakt')
         return True
@@ -273,7 +276,7 @@ class Movie(Base):
         self.send_artifact('movie/library', 'movies', 'collected')
         self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
 
-        Data.Save('last_artifacts.movie.json', json_encode(self.artifacts))
+        self.save('last_artifacts', json_encode(self.artifacts))
 
         log.info('Finished pushing movies to trakt')
         return True
