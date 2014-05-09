@@ -375,3 +375,16 @@ class SyncBase(Base):
             return
 
         self.store(key, merge({'episodes': episodes}, show))
+
+    # TODO switch to a streamed format (to avoid the MemoryError)
+    def save(self, group, data, source=None):
+        name = '%s.%s' % (group, self.key)
+
+        if source:
+            name += '.%s' % source
+
+        try:
+            log.debug('Saving artifacts to "%s.json"', name)
+            Data.Save(name + '.json', repr(data))
+        except MemoryError:
+            log.warn('Unable to save artifacts, out of memory')
