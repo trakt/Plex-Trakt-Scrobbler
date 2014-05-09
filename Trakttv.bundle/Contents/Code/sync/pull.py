@@ -85,6 +85,9 @@ class Episode(Base):
     auto_run = False
 
     def run(self, p_episodes, t_episodes):
+        if p_episodes is None:
+            return False
+
         enabled_funcs = self.get_enabled_functions()
 
         for key, t_episode in t_episodes.items():

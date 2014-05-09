@@ -117,6 +117,9 @@ class Episode(Base):
     def run(self, p_episodes, t_episodes, artifacts=None):
         self.reset(artifacts)
 
+        if p_episodes is None:
+            return False
+
         enabled_funcs = self.get_enabled_functions()
 
         for key, p_episode in p_episodes.items():
