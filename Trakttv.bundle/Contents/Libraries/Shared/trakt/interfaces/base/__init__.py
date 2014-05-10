@@ -96,7 +96,7 @@ class Interface(object):
         data = response.json()
 
         # unknown result - no json data returned
-        if not data:
+        if data is None:
             return None
 
         # invalid result - request failure
