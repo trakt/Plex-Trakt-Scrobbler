@@ -86,7 +86,7 @@ class PlexLibrary(PlexBase):
 
         container = cls.request(
             'library/metadata/%s/allLeaves' % key,
-            timeout=30, max_retries=2, retry_sleep=2,
+            timeout=30, max_retries=2,
             cache_id=cache_id
         )
 
