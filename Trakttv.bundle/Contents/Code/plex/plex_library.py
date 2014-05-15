@@ -84,7 +84,11 @@ class PlexLibrary(PlexBase):
 
         result = {}
 
-        container = cls.request('library/metadata/%s/allLeaves' % key, timeout=30, retry_sleep=2, cache_id=cache_id)
+        container = cls.request(
+            'library/metadata/%s/allLeaves' % key,
+            timeout=30, max_retries=2, retry_sleep=2,
+            cache_id=cache_id
+        )
 
         if container is None:
             log.warn('Unable to retrieve episodes (key: "%s")', key)

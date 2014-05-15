@@ -6,7 +6,7 @@ class PlexBase(object):
 
     @classmethod
     def request(cls, path='/', response_type='xml', raise_exceptions=False,
-                retry=True, timeout=3, retry_sleep=5, **kwargs):
+                retry=True, timeout=3, max_retries=3, retry_sleep=5, **kwargs):
         if not path.startswith('/'):
             path = '/' + path
 
@@ -18,6 +18,7 @@ class PlexBase(object):
 
             retry=retry,
             timeout=timeout,
+            max_retries=max_retries,
             retry_sleep=retry_sleep,
 
             **kwargs
