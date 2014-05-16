@@ -1,4 +1,4 @@
-from core.helpers import str_pad, get_filter, get_pref
+from core.helpers import str_pad, get_filter, get_pref, normalize
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from plex.plex_metadata import PlexMetadata
@@ -243,7 +243,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize username
-        username = session.user.title.lower() if session.user else None
+        username = normalize(session.user.title) if session.user else None
 
         # Fetch filter
         filter = get_filter('scrobble_names')
@@ -268,7 +268,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize client name
-        client_name = session.client.name.lower() if session.client else None
+        client_name = normalize(session.client.name) if session.client else None
 
         # Fetch filter
         filter = get_filter('scrobble_clients')
@@ -299,7 +299,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize title
-        title = title.strip().lower()
+        title = normalize(title)
 
         log.trace('validate section - title: "%s", filter: %s', title, filter)
 
@@ -313,7 +313,6 @@ class ScrobblerMethod(Method):
             return False
 
         return True
-
 
 
 class Scrobbler(Manager):
