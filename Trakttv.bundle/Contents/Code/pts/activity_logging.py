@@ -17,10 +17,11 @@ PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", pa
 IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
     r'Comparing request from.*?',
-    r'We found auth token (.*?), enabling token-based authentication.'
+    r'We found auth token (.*?), enabling token-based authentication\.',
+    r'Came in with a super-token, authorization succeeded\.'
 ]
 
-IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='|'.join('(%s)' % x for x in IGNORE_PATTERNS)))
+IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='(%s)' % ('|'.join('(%s)' % x for x in IGNORE_PATTERNS))))
 
 PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>.*?) =\> (?P<value>.*?)'))
 RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
