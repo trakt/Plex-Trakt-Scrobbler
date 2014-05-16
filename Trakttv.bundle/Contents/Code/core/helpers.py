@@ -1,7 +1,9 @@
 import inspect
+import re
+import sys
 import threading
 import time
-import sys
+import unicodedata
 
 
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
@@ -273,4 +275,22 @@ def get_filter(key):
         return None
 
     # Split, strip and lower-case comma-separated values
-    return [x.strip().lower() for x in value.split(',')]
+    return [normalize(x) for x in value.split(',')]
+
+
+def normalize(text):
+    # Normalize unicode characters
+    if type(text) is unicode:
+        text = unicodedata.normalize('NFKD', text)
+
+    # Ensure text is ASCII, ignore unknown characters
+    text = text.encode('ascii', 'ignore')
+
+    # Remove special characters
+    text = re.sub('[^A-Za-z0-9\s]+', '', text)
+
+    # Merge duplicate spaces
+    text = ' '.join(text.split())
+
+    # Convert to lower-case
+    return text.lower()
