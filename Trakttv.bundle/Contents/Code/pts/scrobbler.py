@@ -1,8 +1,10 @@
-from core.helpers import str_pad, get_filter, get_pref, normalize
+from core.helpers import str_pad, get_filter, get_pref, normalize, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from core.trakt import Trakt
 from plex.plex_metadata import PlexMetadata
+
+import ipaddress
 import math
 
 log = Logger('pts.scrobbler')
@@ -205,6 +207,18 @@ class ScrobblerMethod(Method):
 
         return True
 
+    def valid(self, session):
+        # Check filters
+        if not self.valid_user(session) or \
+           not self.valid_client(session) or \
+           not self.valid_section(session) or\
+           not self.valid_address(session):
+            session.skip = True
+            session.save()
+            return False
+
+        return True
+
     @staticmethod
     def valid_user(session):
         if Prefs['scrobble_names'] is None:
@@ -277,6 +291,39 @@ class ScrobblerMethod(Method):
                 session.item_key,
                 session.get_title(),
                 session.metadata.get('section_title')
+            ))
+            return False
+
+        return True
+
+
+    @staticmethod
+    def valid_address(session):
+        if Prefs['filter_networks'] is None:
+            return True
+
+        # Normalize client name
+        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client else None
+
+        # Fetch filter
+        filter = get_filter('filter_networks', normalize_values=False)
+        if filter is None:
+            return True
+
+        networks = [ipaddress.ip_network(unicode(x)) for x in filter]
+
+        log.trace('validate address - client_address: "%s", networks: %s', client_address, networks)
+
+        valid = client_address and any([
+            client_address in network
+            for network in networks
+        ])
+
+        if not valid:
+            log.info('Ignoring item [%s](%s) played by filtered client address: %s' % (
+                session.item_key,
+                session.get_title(),
+                client_address
             ))
             return False
 

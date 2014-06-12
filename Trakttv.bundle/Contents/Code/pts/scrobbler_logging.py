@@ -104,17 +104,6 @@ class LoggingScrobbler(ScrobblerMethod):
 
         return session
 
-    def valid(self, session):
-        # Check filters
-        if not self.valid_user(session) or\
-           not self.valid_client(session) or\
-           not self.valid_section(session):
-            session.skip = True
-            session.save()
-            return False
-
-        return True
-
     def update(self, info):
         # Ignore if scrobbling is disabled
         if not get_pref('scrobble'):
