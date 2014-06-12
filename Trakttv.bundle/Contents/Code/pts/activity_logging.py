@@ -10,7 +10,7 @@ import time
 import os
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
-REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[(?P<netloc>.*?)\]\s)?{method} {path}.*?")
+REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[(?P<address>.*?):(?P<port>\d+)\]\s)?{method} {path}.*?")
 
 PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
 
@@ -176,7 +176,8 @@ class LoggingActivity(ActivityMethod):
 
         # Sanitize the activity result
         info = {
-            'netloc': header_match.group('netloc')
+            'address': header_match.group('address'),
+            'port': header_match.group('port')
         }
 
         # - Get required info parameters

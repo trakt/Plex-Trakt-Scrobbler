@@ -76,6 +76,8 @@ class WebSocketScrobbler(ScrobblerMethod):
         session.skip = skip
         session.save()
 
+        log.debug('created session: %s', session)
+
         return session
 
     def update_session(self, session, view_offset):

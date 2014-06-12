@@ -1,3 +1,4 @@
+from core.helpers import build_repr
 from core.model import DictModel
 
 
@@ -34,3 +35,11 @@ class User(DictModel):
             elements[0].get('id'),
             elements[0].get('title')
         )
+
+    def __repr__(self):
+        return build_repr(self, [
+            'user_id', 'title'
+        ])
+
+    def __str__(self):
+        return self.__repr__()

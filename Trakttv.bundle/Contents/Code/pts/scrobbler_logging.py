@@ -40,11 +40,7 @@ class LoggingScrobbler(ScrobblerMethod):
         skip = False
 
         # Client
-        client = None
-        if info.get('machineIdentifier'):
-            client = PlexMediaServer.get_client(info['machineIdentifier'])
-        else:
-            log.info('No machineIdentifier available, client filtering not available')
+        client = PlexMediaServer.get_client(info['machineIdentifier'])
 
         # Metadata
         metadata = None
@@ -62,6 +58,8 @@ class LoggingScrobbler(ScrobblerMethod):
         session = WatchSession.from_info(info, metadata, client)
         session.skip = skip
         session.save()
+
+        log.debug('created session: %s', session)
 
         return session
 
@@ -108,7 +106,8 @@ class LoggingScrobbler(ScrobblerMethod):
 
     def valid(self, session):
         # Check filters
-        if not self.valid_client(session) or\
+        if not self.valid_user(session) or\
+           not self.valid_client(session) or\
            not self.valid_section(session):
             session.skip = True
             session.save()
