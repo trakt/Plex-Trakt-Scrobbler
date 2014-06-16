@@ -1,8 +1,10 @@
-from core.helpers import str_pad, get_filter, get_pref, normalize
+from core.helpers import str_pad, get_filter, get_pref, normalize, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
-from core.trakt import Trakt
 from plex.plex_metadata import PlexMetadata
+
+from trakt import Trakt
+import ipaddress
 import math
 
 log = Logger('pts.scrobbler')
@@ -131,6 +133,7 @@ class ScrobblerMethod(Method):
     def handle_state(cls, session, state):
         if state == 'playing' and session.paused_since:
             session.paused_since = None
+            session.save()
             return True
 
         # If stopped, delete the session
@@ -143,22 +146,27 @@ class ScrobblerMethod(Method):
         if state == 'paused' and not session.update_required:
             log.debug(session.get_title() + ' paused, session update queued to run when resumed')
             session.update_required = True
+            session.save()
             return True
 
         return False
 
     @classmethod
-    def handle_action(cls, session, media_type, action, state):
-        # Setup Data to send to Trakt
+    def handle_action(cls, session, media, action, state):
+        # Setup Data to send to trakt
         parameters = cls.get_request_parameters(session)
         if not parameters:
             log.info('Invalid parameters, unable to continue')
             return False
 
-        log.trace('Sending action "%s/%s" - parameters: %s', media_type, action, parameters)
+        log.trace('Sending action "%s/%s"', media, action)
 
-        response = Trakt.Media.action(media_type, action, **parameters)
-        if not response['success']:
+        if action in ['watching', 'scrobble']:
+            response = Trakt[media][action](**parameters)
+        else:
+            response = Trakt[media][action]()
+
+        if not response or response.get('status') != 'success':
             log.warn('Unable to send scrobbler action')
 
         session.last_updated = Datetime.Now()
@@ -170,6 +178,32 @@ class ScrobblerMethod(Method):
             session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
         session.save()
+
+    @staticmethod
+    def offset_jumped(session, current):
+        duration = session.metadata['duration'] * 60 * 1000
+
+        last = session.last_view_offset
+
+        if last is None:
+            return False
+
+        perc_current = (float(current) / duration) * 100
+        perc_last = (float(last) / duration) * 100
+
+        perc_change = perc_current - perc_last
+
+        log.trace(
+            'Checking for offset jump - last: %s (%s), current: %s (%s), change: %s',
+            last, perc_last, current, perc_current,
+            perc_change
+        )
+
+        if perc_change > 98:
+            log.debug('View offset jumped by %.02f%%', perc_change)
+            return True
+
+        return False
 
     @staticmethod
     def update_progress(session, view_offset):
@@ -202,8 +236,26 @@ class ScrobblerMethod(Method):
             total_progress = (len(session.metadata['episodes']) * total_progress) - session.cur_episode
 
         session.progress = int(round(total_progress * 100, 0))
-
         return True
+
+    def valid(self, session):
+        filtered = None
+
+        # Check filters
+        if not self.valid_user(session) or \
+           not self.valid_client(session) or \
+           not self.valid_section(session) or\
+           not self.valid_address(session):
+            filtered = True
+        else:
+            filtered = False
+
+        if session.filtered != filtered:
+            # value changed, update session
+            session.filtered = filtered
+            session.save()
+
+        return not filtered
 
     @staticmethod
     def valid_user(session):
@@ -277,6 +329,39 @@ class ScrobblerMethod(Method):
                 session.item_key,
                 session.get_title(),
                 session.metadata.get('section_title')
+            ))
+            return False
+
+        return True
+
+
+    @staticmethod
+    def valid_address(session):
+        if Prefs['filter_networks'] is None:
+            return True
+
+        # Normalize client name
+        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client else None
+
+        # Fetch filter
+        filter = get_filter('filter_networks', normalize_values=False)
+        if filter is None:
+            return True
+
+        networks = [ipaddress.ip_network(unicode(x)) for x in filter]
+
+        log.trace('validate address - client_address: "%s", networks: %s', client_address, networks)
+
+        valid = client_address and any([
+            client_address in network
+            for network in networks
+        ])
+
+        if not valid:
+            log.info('Ignoring item [%s](%s) played by filtered client address: %s' % (
+                session.item_key,
+                session.get_title(),
+                client_address
             ))
             return False
 

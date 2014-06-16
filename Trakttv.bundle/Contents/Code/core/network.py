@@ -14,7 +14,7 @@ cache = Cache('network')
 
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
-            timeout=None, max_retries=3, retry_sleep=5, method=None, cache_id=None, **kwargs):
+            timeout=None, max_retries=3, retry_sleep=2, method=None, cache_id=None, **kwargs):
     """Send an HTTP Request
 
     :param url: Request url
@@ -112,7 +112,7 @@ def internal_log_request(req, response_type, cache_id):
     ))
 
 
-def internal_retry(req, retry=False, max_retries=3, retry_sleep=5, **kwargs):
+def internal_retry(req, retry=False, max_retries=3, retry_sleep=2, **kwargs):
     if not retry:
         return internal_request(req, **kwargs)
 

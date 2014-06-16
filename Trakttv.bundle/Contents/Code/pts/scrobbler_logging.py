@@ -40,11 +40,7 @@ class LoggingScrobbler(ScrobblerMethod):
         skip = False
 
         # Client
-        client = None
-        if info.get('machineIdentifier'):
-            client = PlexMediaServer.get_client(info['machineIdentifier'])
-        else:
-            log.info('No machineIdentifier available, client filtering not available')
+        client = PlexMediaServer.get_client(info['machineIdentifier'])
 
         # Metadata
         metadata = None
@@ -62,6 +58,8 @@ class LoggingScrobbler(ScrobblerMethod):
         session = WatchSession.from_info(info, metadata, client)
         session.skip = skip
         session.save()
+
+        log.debug('created session: %s', session)
 
         return session
 
@@ -90,31 +88,21 @@ class LoggingScrobbler(ScrobblerMethod):
     def get_session(self, info):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
+        if session and not self.session_valid(session, info):
+            session.delete()
+            session = None
+            log.debug('Session deleted')
+
         if not session:
             session = self.create_session(info)
 
             if not session:
                 return None
 
-        if not self.session_valid(session, info):
-            session.delete()
-            session = None
-            log.debug('Session deleted')
-
         if not session or session.skip:
             return None
 
         return session
-
-    def valid(self, session):
-        # Check filters
-        if not self.valid_client(session) or\
-           not self.valid_section(session):
-            session.skip = True
-            session.save()
-            return False
-
-        return True
 
     def update(self, info):
         # Ignore if scrobbling is disabled
@@ -138,6 +126,14 @@ class LoggingScrobbler(ScrobblerMethod):
             session.skip = True
             return
 
+        # Check if the view_offset has jumped (#131)
+        if self.offset_jumped(session, info['time']):
+            log.info('View offset jump detected, ignoring the state update')
+            session.save()
+            return
+
+        session.last_view_offset = info['time']
+
         # Calculate progress
         if not self.update_progress(session, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
@@ -154,7 +150,6 @@ class LoggingScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, info['state']) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(LoggingScrobbler, weight=1)

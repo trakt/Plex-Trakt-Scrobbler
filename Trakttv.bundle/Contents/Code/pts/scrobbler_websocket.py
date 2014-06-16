@@ -76,6 +76,8 @@ class WebSocketScrobbler(ScrobblerMethod):
         session.skip = skip
         session.save()
 
+        log.debug('created session: %s', session)
+
         return session
 
     def update_session(self, session, view_offset):
@@ -159,17 +161,6 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         return session
 
-    def valid(self, session):
-        # Check filters
-        if not self.valid_user(session) or\
-           not self.valid_client(session) or \
-           not self.valid_section(session):
-            session.skip = True
-            session.save()
-            return False
-
-        return True
-
     def update(self, session_key, state, view_offset):
         # Ignore if scrobbling is disabled
         if not get_pref('scrobble'):
@@ -196,6 +187,12 @@ class WebSocketScrobbler(ScrobblerMethod):
             session.skip = True
             return
 
+        # Check if the view_offset has jumped (#131)
+        if self.offset_jumped(session, view_offset):
+            log.info('View offset jump detected, ignoring the state update')
+            session.save()
+            return
+
         session.last_view_offset = view_offset
 
         # Calculate progress
@@ -214,7 +211,6 @@ class WebSocketScrobbler(ScrobblerMethod):
             session.save()
 
         if self.handle_state(session, state) or action:
-            session.save()
             Dict.Save()
 
 Scrobbler.register(WebSocketScrobbler, weight=10)

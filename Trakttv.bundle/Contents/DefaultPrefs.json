@@ -82,7 +82,7 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Filter - myPlex users (optional, PlexPass)",
+        "label": "Filter - myPlex users (optional, comma separated)",
         "default": ""
     },
     {
@@ -95,6 +95,12 @@
         "id": "filter_sections",
         "type": "text",
         "label": "Filter - Sections (comma separated)",
+        "default": "*"
+    },
+    {
+        "id": "filter_networks",
+        "type": "text",
+        "label": "Filter - IP Networks (comma separated)",
         "default": "*"
     },
     {

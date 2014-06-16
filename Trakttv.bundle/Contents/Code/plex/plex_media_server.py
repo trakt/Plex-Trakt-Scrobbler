@@ -27,7 +27,7 @@ class PlexMediaServer(PlexBase):
     @classmethod
     def get_client(cls, client_id):
         if not client_id:
-            log.warn('Invalid client_id provided')
+            log.warn('invalid client_id provided, unable to find client')
             return None
 
         result = cls.request('clients')

@@ -10,7 +10,7 @@ import time
 import os
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
-REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[.*?\]\s)?{method} {path}.*?")
+REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[(?P<address>.*?):(?P<port>\d+)\]\s)?{method} {path}.*?")
 
 PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
 
@@ -18,7 +18,9 @@ IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
     r'Comparing request from.*?',
     r'We found auth token (.*?), enabling token-based authentication\.',
-    r'Came in with a super-token, authorization succeeded\.'
+    r'Came in with a super-token, authorization succeeded\.',
+    r'Refreshing tokens inside the token-based authentication filter.',
+    r'Play progress on .*? - got played .*? ms by account .*?!'
 ]
 
 IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='(%s)' % ('|'.join('(%s)' % x for x in IGNORE_PATTERNS))))
@@ -27,13 +29,26 @@ PARAM_REGEX = Regex(str_format(LOG_PATTERN, message=r' \* (?P<key>.*?) =\> (?P<v
 RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'))
 CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
+NOW_USER_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] User is (?P<user_name>.+) \(ID: (?P<user_id>\d+)\)'))
+NOW_CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<client>.+)\.'))
+
 log = Logger('pts.activity_logging')
 
 
 class LoggingActivity(ActivityMethod):
     name = 'LoggingActivity'
-    required_info = ['ratingKey', 'state', 'time']
-    extra_info = ['duration', 'machineIdentifier']
+
+    required_info = [
+        'ratingKey',
+        'state', 'time'
+    ]
+
+    extra_info = [
+        'duration',
+
+        'user_name', 'user_id',
+        'machineIdentifier', 'client'
+    ]
 
     log_path = None
     log_file = None
@@ -162,7 +177,10 @@ class LoggingActivity(ActivityMethod):
             return
 
         # Sanitize the activity result
-        info = {}
+        info = {
+            'address': header_match.group('address'),
+            'port': header_match.group('port')
+        }
 
         # - Get required info parameters
         for key in self.required_info:
@@ -183,7 +201,14 @@ class LoggingActivity(ActivityMethod):
         EventManager.fire('scrobbler.logging.update', info)
 
     def timeline(self):
-        return self.read_parameters(self.client_match, self.range_match)
+        return self.read_parameters(
+            lambda line: self.regex_match(CLIENT_REGEX, line),
+            lambda line: self.regex_match(RANGE_REGEX, line),
+
+            # [Now]* entries
+            lambda line: self.regex_match(NOW_USER_REGEX, line),
+            lambda line: self.regex_match(NOW_CLIENT_REGEX, line),
+        )
 
     def progress(self):
         data = self.read_parameters()
@@ -220,6 +245,7 @@ class LoggingActivity(ActivityMethod):
             if match:
                 info.update(match)
             elif match is None and IGNORE_REGEX.match(line.strip()) is None:
+                log.trace('break on "%s"', line)
                 break
 
         return info
@@ -235,16 +261,8 @@ class LoggingActivity(ActivityMethod):
         return {match['key']: match['value']}
 
     @staticmethod
-    def range_match(line):
-        match = RANGE_REGEX.match(line.strip())
-        if not match:
-            return None
-
-        return match.groupdict()
-
-    @staticmethod
-    def client_match(line):
-        match = CLIENT_REGEX.match(line.strip())
+    def regex_match(regex, line):
+        match = regex.match(line.strip())
         if not match:
             return None
 

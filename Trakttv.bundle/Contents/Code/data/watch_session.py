@@ -1,3 +1,4 @@
+from core.helpers import build_repr
 from core.model import DictModel
 from data.client import Client
 from data.user import User
@@ -24,6 +25,7 @@ class WatchSession(DictModel):
 
         # States
         self.skip = False
+        self.filtered = False
         self.scrobbled = False
         self.watching = False
 
@@ -34,7 +36,7 @@ class WatchSession(DictModel):
         self.cur_state = state
 
         self.paused_since = None
-        self.last_view_offset = 0
+        self.last_view_offset = None
 
         self.update_required = False
         self.last_updated = Datetime.FromTimestamp(0)
@@ -95,19 +97,48 @@ class WatchSession(DictModel):
             section.get('sessionKey'),
             section.get('ratingKey'),
             metadata, state,
+
             user=User.from_section(section),
             client=Client.from_section(client_section)
         )
 
     @staticmethod
-    def from_info(info, metadata, client_section):
+    def from_info(info, metadata, client_section=None):
         if not info:
             return None
+
+        # Build user object
+        user = None
+
+        if info['user_id'] and info['user_name']:
+            user = User(info['user_id'], info['user_name'])
+
+        # Build client object
+        client = None
+
+        if client_section:
+            client = Client.from_section(client_section)
+        elif info.get('client'):
+            client = Client(
+                info['machineIdentifier'],
+                info['client'],
+                info['address']
+            )
 
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
             info['ratingKey'],
-            metadata,
-            info['state'],
-            client=Client.from_section(client_section)
+            metadata, info['state'],
+
+            user=user,
+            client=client
         )
+
+    def __repr__(self):
+        return build_repr(self, [
+            'key', 'item_key', 'cur_state',
+            'user', 'client'
+        ])
+
+    def __str__(self):
+        return self.__repr__()

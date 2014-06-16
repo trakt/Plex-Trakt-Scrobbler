@@ -1,3 +1,4 @@
+from core.helpers import build_repr
 from core.model import DictModel
 
 
@@ -13,13 +14,6 @@ class Client(DictModel):
         self.name = name
         self.address = address
 
-    def __str__(self):
-        return '<Client key: "%s", name: "%s", address: "%s">' % (
-            self.key,
-            self.name,
-            self.address
-        )
-
     @classmethod
     def from_section(cls, section):
         if section is None:
@@ -30,3 +24,11 @@ class Client(DictModel):
             section.get('name'),
             section.get('address')
         )
+
+    def __repr__(self):
+        return build_repr(self, [
+            'key', 'name', 'address'
+        ])
+
+    def __str__(self):
+        return self.__repr__()
