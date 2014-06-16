@@ -82,7 +82,7 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Filter - myPlex users (optional, PlexPass)",
+        "label": "Filter - myPlex users (optional, comma separated)",
         "default": ""
     },
     {
