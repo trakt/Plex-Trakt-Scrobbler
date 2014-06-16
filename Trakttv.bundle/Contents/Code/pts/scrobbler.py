@@ -1,9 +1,10 @@
-from core.helpers import str_pad, get_filter, get_pref
+from core.helpers import str_pad, get_filter, get_pref, normalize, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
 from plex.plex_metadata import PlexMetadata
 
 from trakt import Trakt
+import ipaddress
 import math
 
 log = Logger('pts.scrobbler')
@@ -237,13 +238,32 @@ class ScrobblerMethod(Method):
         session.progress = int(round(total_progress * 100, 0))
         return True
 
+    def valid(self, session):
+        filtered = None
+
+        # Check filters
+        if not self.valid_user(session) or \
+           not self.valid_client(session) or \
+           not self.valid_section(session) or\
+           not self.valid_address(session):
+            filtered = True
+        else:
+            filtered = False
+
+        if session.filtered != filtered:
+            # value changed, update session
+            session.filtered = filtered
+            session.save()
+
+        return not filtered
+
     @staticmethod
     def valid_user(session):
         if Prefs['scrobble_names'] is None:
             return True
 
         # Normalize username
-        username = session.user.title.lower() if session.user else None
+        username = normalize(session.user.title) if session.user else None
 
         # Fetch filter
         filter = get_filter('scrobble_names')
@@ -268,7 +288,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize client name
-        client_name = session.client.name.lower() if session.client else None
+        client_name = normalize(session.client.name) if session.client else None
 
         # Fetch filter
         filter = get_filter('scrobble_clients')
@@ -299,7 +319,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize title
-        title = title.strip().lower()
+        title = normalize(title)
 
         log.trace('validate section - title: "%s", filter: %s', title, filter)
 
@@ -314,6 +334,38 @@ class ScrobblerMethod(Method):
 
         return True
 
+
+    @staticmethod
+    def valid_address(session):
+        if Prefs['filter_networks'] is None:
+            return True
+
+        # Normalize client name
+        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client else None
+
+        # Fetch filter
+        filter = get_filter('filter_networks', normalize_values=False)
+        if filter is None:
+            return True
+
+        networks = [ipaddress.ip_network(unicode(x)) for x in filter]
+
+        log.trace('validate address - client_address: "%s", networks: %s', client_address, networks)
+
+        valid = client_address and any([
+            client_address in network
+            for network in networks
+        ])
+
+        if not valid:
+            log.info('Ignoring item [%s](%s) played by filtered client address: %s' % (
+                session.item_key,
+                session.get_title(),
+                client_address
+            ))
+            return False
+
+        return True
 
 
 class Scrobbler(Manager):

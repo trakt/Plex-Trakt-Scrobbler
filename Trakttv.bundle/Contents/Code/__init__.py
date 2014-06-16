@@ -16,8 +16,8 @@ from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
 from core.logging_handler import PlexHandler
-from core.helpers import total_seconds, spawn, get_pref, try_convert, schedule
-from core.plugin import ART, NAME, ICON
+from core.helpers import total_seconds, spawn, get_pref, schedule
+from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plex.plex_media_server import PlexMediaServer
@@ -91,6 +91,9 @@ class Main(object):
     def init_trakt():
         Trakt.api_key = 'ba5aa61249c02dc5406232da20f6e768f3c82b28'
 
+        Trakt.plugin_version = PLUGIN_VERSION
+        Trakt.media_center_version = PlexMediaServer.get_version()
+
         def get_credentials():
             password_hash = hashlib.sha1(Prefs['password'])
 
@@ -155,12 +158,6 @@ class Main(object):
         return True
 
     def start(self):
-        # Get current server version and save it to dict.
-        server_version = PlexMediaServer.get_version()
-        if server_version:
-            Log('Server Version is %s' % server_version)
-            Dict['server_version'] = server_version
-
         # Validate username/password
         spawn(self.validate_auth)
 
