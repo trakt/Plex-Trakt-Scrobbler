@@ -40,6 +40,14 @@ def all(items):
     return True
 
 
+def any(items):
+    for item in items:
+        if item:
+            return True
+
+    return False
+
+
 def json_import():
     try:
         import simplejson as json
@@ -263,7 +271,7 @@ def join_attributes(**kwargs):
     return ', '.join([x for x in fragments if x])
 
 
-def get_filter(key):
+def get_filter(key, normalize_values=True):
     value = get_pref(key)
     if not value:
         return None
@@ -274,8 +282,13 @@ def get_filter(key):
     if not value or value == '*':
         return None
 
-    # Split, strip and lower-case comma-separated values
-    return [normalize(x) for x in value.split(',')]
+    values = value.split(',')
+
+    if normalize_values:
+        # Split, strip and lower-case comma-separated values
+        return [normalize(x) for x in values]
+
+    return [x.strip() for x in values]
 
 
 def normalize(text):
