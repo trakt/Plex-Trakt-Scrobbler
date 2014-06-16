@@ -245,7 +245,7 @@ class LoggingActivity(ActivityMethod):
             if match:
                 info.update(match)
             elif match is None and IGNORE_REGEX.match(line.strip()) is None:
-                log.debug('break on "%s"', line)
+                log.trace('break on "%s"', line)
                 break
 
         return info
