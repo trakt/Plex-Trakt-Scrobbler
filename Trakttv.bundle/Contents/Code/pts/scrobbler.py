@@ -239,16 +239,23 @@ class ScrobblerMethod(Method):
         return True
 
     def valid(self, session):
+        filtered = None
+
         # Check filters
         if not self.valid_user(session) or \
            not self.valid_client(session) or \
            not self.valid_section(session) or\
            not self.valid_address(session):
-            session.skip = True
-            session.save()
-            return False
+            filtered = True
+        else:
+            filtered = False
 
-        return True
+        if session.filtered != filtered:
+            # value changed, update session
+            session.filtered = filtered
+            session.save()
+
+        return not filtered
 
     @staticmethod
     def valid_user(session):

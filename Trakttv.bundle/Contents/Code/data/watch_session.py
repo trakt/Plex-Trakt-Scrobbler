@@ -25,6 +25,7 @@ class WatchSession(DictModel):
 
         # States
         self.skip = False
+        self.filtered = False
         self.scrobbled = False
         self.watching = False
 

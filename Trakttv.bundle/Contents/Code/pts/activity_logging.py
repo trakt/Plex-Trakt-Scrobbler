@@ -18,7 +18,9 @@ IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
     r'Comparing request from.*?',
     r'We found auth token (.*?), enabling token-based authentication\.',
-    r'Came in with a super-token, authorization succeeded\.'
+    r'Came in with a super-token, authorization succeeded\.',
+    r'Refreshing tokens inside the token-based authentication filter.',
+    r'Play progress on .*? - got played .*? ms by account .*?!'
 ]
 
 IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='(%s)' % ('|'.join('(%s)' % x for x in IGNORE_PATTERNS))))
@@ -243,6 +245,7 @@ class LoggingActivity(ActivityMethod):
             if match:
                 info.update(match)
             elif match is None and IGNORE_REGEX.match(line.strip()) is None:
+                log.debug('break on "%s"', line)
                 break
 
         return info
