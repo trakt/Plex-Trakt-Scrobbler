@@ -89,6 +89,8 @@ class Clean(Migration):
     tasks_upgrade = [
         (
             'delete_file', [
+                'core/trakt.py',
+                'core/trakt_objects.py',
                 'data/dict_object.py',
                 'plex/media_server.py',
                 'sync.py'
