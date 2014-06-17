@@ -30,7 +30,7 @@ RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'
 CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
 NOW_USER_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] User is (?P<user_name>.+) \(ID: (?P<user_id>\d+)\)'))
-NOW_CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<client>.+)\.'))
+NOW_CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<product>.+?) \((?P<client>.+)\)\.'))
 
 log = Logger('pts.activity_logging')
 
