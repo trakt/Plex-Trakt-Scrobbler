@@ -31,6 +31,13 @@ class TraktClient(object):
         # Construct interfaces
         self.interfaces = construct_map(self)
 
+    def configure(self, **kwargs):
+        for key, value in kwargs.items():
+            if not hasattr(self, key):
+                raise ValueError('Unknown option "%s" specified' % key)
+
+            setattr(self, key, value)
+
     def request(self, path, params=None, data=None, credentials=None, **kwargs):
         if not self.api_key:
             raise ValueError('Missing "api_key", unable to send requests to trakt.tv')
@@ -93,9 +100,11 @@ class TraktClient(object):
 
         return cur
 
-
     @property
     def credentials(self):
+        if not self._get_credentials:
+            return None
+
         return parse_credentials(self._get_credentials())
 
     @credentials.setter
