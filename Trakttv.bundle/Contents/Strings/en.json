@@ -4,4 +4,8 @@
     "VideoTitle": "trakt",
     "PhotosTitle": "trakt",
     "ApplicationsTitle": "trakt"
+
+    "sync.manager:not_initialized"                : "Sync manager has not been initialized",
+    "sync.manager:already_running"                : "Sync task already running",
+    "sync.manager:invalid_credentials"            : "Invalid credentials"
 }

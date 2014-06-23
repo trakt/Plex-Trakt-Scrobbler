@@ -33,6 +33,7 @@ INTERVAL_MAP = {
 
 
 class SyncManager(object):
+    initialized = False
     thread = None
     lock = None
 
@@ -54,6 +55,8 @@ class SyncManager(object):
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
         cls.statistics = SyncStatistics(HANDLERS, cls)
+
+        cls.initialized = True
 
     @classmethod
     def get_cache_id(cls):
@@ -129,6 +132,12 @@ class SyncManager(object):
     @classmethod
     def run(cls):
         while cls.running:
+            # Ensure manager has been initialized
+            if not cls.initialized:
+                time.sleep(3)
+                continue
+
+            # Check for scheduled syncing
             if not cls.current and not cls.check_schedule():
                 time.sleep(3)
                 continue
@@ -189,20 +198,25 @@ class SyncManager(object):
 
     @classmethod
     def trigger(cls, key, blocking=False, **kwargs):
+        # Ensure manager is initialized
+        if not cls.initialized:
+            log.warn(L('sync.manager:not_initialized'))
+            return False, L('sync.manager:not_initialized')
+
         # Ensure sync task isn't already running
         if not cls.lock.acquire(blocking):
-            return False
+            return False, L('sync.manager:already_running')
 
         # Ensure account details are set
         if not get_pref('valid'):
             cls.lock.release()
-            return False
+            return False, L('sync.manager:invalid_credentials')
 
         cls.reset()
         cls.current = SyncTask(key, kwargs)
 
         cls.lock.release()
-        return True
+        return True, ''
 
     @classmethod
     def trigger_push(cls, section=None):
