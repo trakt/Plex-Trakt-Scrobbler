@@ -8,6 +8,9 @@ sys.modules['core.plugin'] = plugin
 import logger
 sys.modules['core.logger'] = logger
 
+import localization
+sys.modules['core.localization'] = localization
+
 import logging_handler
 sys.modules['core.logging_handler'] = logging_handler
 

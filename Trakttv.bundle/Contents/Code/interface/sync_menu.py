@@ -1,15 +1,19 @@
 from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
+from core.localization import localization
 from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
+
 from datetime import datetime
 from ago import human
+
+L, LF = localization('interface.sync_menu')
 
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
 @route('/applications/trakttv/sync')
 def SyncMenu(refresh=None):
-    oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
+    oc = ObjectContainer(title2=L('sync_menu:title'), no_history=True, no_cache=True)
     all_keys = []
 
     create_active_item(oc)
@@ -134,44 +138,41 @@ def get_task_status(key, section=None):
 
 @route('/applications/trakttv/sync/synchronize')
 def Synchronize():
-    if not SyncManager.trigger_synchronize():
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_synchronize()
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Synchronize has started and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Synchronize')
     )
 
 
 
 @route('/applications/trakttv/sync/push')
 def Push(section=None):
-    if not SyncManager.trigger_push(section):
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_push(section)
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Push has been triggered and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Push')
     )
 
 
 @route('/applications/trakttv/sync/pull')
 def Pull():
-    if not SyncManager.trigger_pull():
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_pull()
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Pull has been triggered and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Pull')
     )
 
 
@@ -179,11 +180,11 @@ def Pull():
 def Cancel():
     if not SyncManager.cancel():
         return MessageContainer(
-            'Unable to cancel',
-            'There is no syncing task running'
+            L('cancel_failure:title'),
+            L('cancel_failure:message'),
         )
 
     return MessageContainer(
-        'Syncing cancelled',
-        'Syncing task has been notified to cancel'
+        L('cancel_success:title'),
+        L('cancel_success:message')
     )
