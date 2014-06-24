@@ -1,10 +1,10 @@
-from trakt.objects import Media, Episode, Movie, Show
+from trakt.objects import Episode, Movie, Show
 
 IDENTIFIERS = {
-    'movies': {
+    'movies': [
         ('imdb_id', 'imdb'),
         ('tmdb_id', 'themoviedb')
-    },
+    ],
     'shows': [
         ('tvdb_id', 'thetvdb'),
         ('imdb_id', 'imdb'),
