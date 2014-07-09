@@ -103,4 +103,7 @@ class ShowInterface(MediaInterface):
     @classmethod
     def validate_action(cls, action, data):
         if action in ['unlibrary']:
-            cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id')
+            if not cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id'):
+                return False
+
+        return True

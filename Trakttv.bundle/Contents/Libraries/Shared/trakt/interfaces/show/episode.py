@@ -73,5 +73,10 @@ class ShowEpisodeInterface(Interface):
     @classmethod
     def validate_action(cls, action, data):
         if action in ['seen', 'library', 'unlibrary']:
-            cls.data_requirements(data, 'episodes')
-            cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id')
+            if not cls.data_requirements(data, 'episodes'):
+                return False
+
+            if not cls.data_requirements(data, ('title', 'year'), 'imdb_id', 'tvdb_id'):
+                return False
+
+        return True
