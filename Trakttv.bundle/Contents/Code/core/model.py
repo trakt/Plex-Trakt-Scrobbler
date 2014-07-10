@@ -11,13 +11,16 @@ class DictModel(object):
         Dict[self.root_key][self.key] = self.to_json()
 
     @classmethod
-    def all(cls):
+    def all(cls, filter=None):
         if not cls.root_key or cls.root_key not in Dict:
             return []
 
         items = []
 
         for key, value in Dict[cls.root_key].items():
+            if filter and not filter(value):
+                continue
+
             items.append((key, cls.from_json(value)))
 
         return items

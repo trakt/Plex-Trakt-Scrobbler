@@ -1,5 +1,6 @@
 from core.helpers import all, plural, json_encode
 from core.logger import Logger
+from data.watch_session import WatchSession
 from sync.sync_base import SyncBase
 
 from trakt import Trakt
@@ -11,6 +12,18 @@ log = Logger('sync.push')
 class Base(SyncBase):
     task = 'push'
 
+    def is_watching(self, p_item):
+        sessions = WatchSession.all(lambda s:
+            s.get('metadata') and
+            s['metadata'].get('rating_key') == p_item.rating_key
+        )
+
+        for key, session in sessions:
+            if session.watching:
+                return True
+
+        return False
+
     def watch(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
             p_items = [p_items]
@@ -21,6 +34,11 @@ class Base(SyncBase):
 
         # Ignore if none of the plex items are watched
         if all([not x.seen for x in p_items]):
+            return True
+
+        # Ignore if we are currently watching this item
+        if self.is_watching(p_items[0]):
+            log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
             return True
 
         # TODO should we instead pick the best result, instead of just the first?

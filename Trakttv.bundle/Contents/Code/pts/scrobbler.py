@@ -341,7 +341,7 @@ class ScrobblerMethod(Method):
             return True
 
         # Normalize client name
-        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client else None
+        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client and session.client.address else None
 
         # Fetch filter
         filter = get_filter('filter_networks', normalize_values=False)

@@ -116,7 +116,7 @@ class WatchSession(DictModel):
         # Build client object
         client = None
 
-        if client_section:
+        if client_section is not None:
             client = Client.from_section(client_section)
         elif info.get('client'):
             client = Client(

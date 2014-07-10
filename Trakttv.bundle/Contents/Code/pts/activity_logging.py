@@ -4,15 +4,19 @@ from core.logger import Logger
 from plex.plex_media_server import PlexMediaServer
 from plex.plex_preferences import PlexPreferences
 from pts.activity import ActivityMethod, Activity
+
 from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
-import time
 import os
+import time
+import urlparse
+
 
 LOG_PATTERN = r'^.*?\[\w+\]\s\w+\s-\s{message}$'
 REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[(?P<address>.*?):(?P<port>\d+)\]\s)?{method} {path}.*?")
 
-PLAYING_HEADER_REGEX = Regex(str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)"))
+PLAYING_HEADER_PATTERN = str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)/?(?:\?(?P<query>.*?))?\s")
+PLAYING_HEADER_REGEX = Regex(PLAYING_HEADER_PATTERN)
 
 IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
@@ -20,7 +24,9 @@ IGNORE_PATTERNS = [
     r'We found auth token (.*?), enabling token-based authentication\.',
     r'Came in with a super-token, authorization succeeded\.',
     r'Refreshing tokens inside the token-based authentication filter.',
-    r'Play progress on .*? - got played .*? ms by account .*?!'
+    r'Play progress on .*? - got played .*? ms by account .*?!',
+    r'Request: \[.*?\] (GET|PUT) /video/:/transcode/.*?',
+    r'Received transcode session ping for session .*?'
 ]
 
 IGNORE_REGEX = Regex(str_format(LOG_PATTERN, message='(%s)' % ('|'.join('(%s)' % x for x in IGNORE_PATTERNS))))
@@ -30,7 +36,7 @@ RANGE_REGEX = Regex(str_format(LOG_PATTERN, message=r'Request range: \d+ to \d+'
 CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'Client \[(?P<machineIdentifier>.*?)\].*?'))
 
 NOW_USER_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] User is (?P<user_name>.+) \(ID: (?P<user_id>\d+)\)'))
-NOW_CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<client>.+)\.'))
+NOW_CLIENT_REGEX = Regex(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<product>.+?) \((?P<client>.+)\)\.'))
 
 log = Logger('pts.activity_logging')
 
@@ -172,6 +178,9 @@ class LoggingActivity(ActivityMethod):
             log.warn('Unknown activity type "%s"', activity_type)
             return
 
+        # Extend match with query info
+        self.query(match, header_match.group('query'))
+
         # Ensure we successfully matched a result
         if not match:
             return
@@ -199,6 +208,18 @@ class LoggingActivity(ActivityMethod):
 
         # Update the scrobbler with the current state
         EventManager.fire('scrobbler.logging.update', info)
+
+    def query(self, match, value):
+        if not value:
+            return
+
+        try:
+            parameters = urlparse.parse_qsl(value, strict_parsing=True)
+        except ValueError:
+            return
+
+        for key, value in parameters:
+            match.setdefault(key, value)
 
     def timeline(self):
         return self.read_parameters(

@@ -1,5 +1,6 @@
 from core.eventing import EventManager
 from core.helpers import total_seconds, sum, get_pref
+from core.localization import localization
 from core.logger import Logger
 from data.sync_status import SyncStatus
 from sync.sync_base import CancelException
@@ -8,12 +9,13 @@ from sync.sync_task import SyncTask
 from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
+
 from datetime import datetime
 import threading
 import traceback
 import time
 
-
+L, LF = localization('sync.manager')
 log = Logger('sync.manager')
 
 HANDLERS = [Pull, Push, Synchronize]
@@ -33,6 +35,7 @@ INTERVAL_MAP = {
 
 
 class SyncManager(object):
+    initialized = False
     thread = None
     lock = None
 
@@ -54,6 +57,8 @@ class SyncManager(object):
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
         cls.statistics = SyncStatistics(HANDLERS, cls)
+
+        cls.initialized = True
 
     @classmethod
     def get_cache_id(cls):
@@ -129,6 +134,12 @@ class SyncManager(object):
     @classmethod
     def run(cls):
         while cls.running:
+            # Ensure manager has been initialized
+            if not cls.initialized:
+                time.sleep(3)
+                continue
+
+            # Check for scheduled syncing
             if not cls.current and not cls.check_schedule():
                 time.sleep(3)
                 continue
@@ -189,20 +200,25 @@ class SyncManager(object):
 
     @classmethod
     def trigger(cls, key, blocking=False, **kwargs):
+        # Ensure manager is initialized
+        if not cls.initialized:
+            log.warn(L('not_initialized'))
+            return False, L('not_initialized')
+
         # Ensure sync task isn't already running
         if not cls.lock.acquire(blocking):
-            return False
+            return False, L('already_running')
 
         # Ensure account details are set
         if not get_pref('valid'):
             cls.lock.release()
-            return False
+            return False, L('invalid_credentials')
 
         cls.reset()
         cls.current = SyncTask(key, kwargs)
 
         cls.lock.release()
-        return True
+        return True, ''
 
     @classmethod
     def trigger_push(cls, section=None):

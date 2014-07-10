@@ -89,11 +89,6 @@ class Main(object):
 
     @staticmethod
     def init_trakt():
-        Trakt.api_key = 'ba5aa61249c02dc5406232da20f6e768f3c82b28'
-
-        Trakt.plugin_version = PLUGIN_VERSION
-        Trakt.media_center_version = PlexMediaServer.get_version()
-
         def get_credentials():
             password_hash = hashlib.sha1(Prefs['password'])
 
@@ -102,7 +97,17 @@ class Main(object):
                 password_hash.hexdigest()
             )
 
-        Trakt.credentials = get_credentials
+        Trakt.configure(
+            # Application
+            api_key='ba5aa61249c02dc5406232da20f6e768f3c82b28',
+
+            # Version
+            plugin_version=PLUGIN_VERSION,
+            media_center_version=PlexMediaServer.get_version(),
+
+            # Account
+            credentials=get_credentials
+        )
 
     @classmethod
     def update_config(cls, valid=None):
