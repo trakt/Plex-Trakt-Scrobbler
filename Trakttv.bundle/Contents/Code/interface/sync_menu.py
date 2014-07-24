@@ -25,7 +25,8 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=get_filter('filter_sections'))
+    f_allow, f_deny = get_filter('filter_sections')
+    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=f_allow)
 
     for _, key, title in sections:
         oc.add(DirectoryObject(

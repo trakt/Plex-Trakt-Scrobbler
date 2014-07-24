@@ -258,114 +258,134 @@ class ScrobblerMethod(Method):
         return not filtered
 
     @staticmethod
-    def valid_user(session):
-        if Prefs['scrobble_names'] is None:
+    def match(session, key, f_current, f_validate, f_check=None, f_transform=None, normalize_values=True):
+        if Prefs[key] is None:
             return True
 
-        # Normalize username
-        username = normalize(session.user.title) if session.user else None
+        if f_check and f_check():
+            return True
+
+        value = f_current()
+
+        # Normalize value
+        if normalize_values:
+            if value:
+                value = value.strip()
+
+            value = normalize(value)
 
         # Fetch filter
-        filter = get_filter('scrobble_names')
-        if filter is None:
+        f_allow, f_deny = get_filter(key, normalize_values=normalize_values)
+
+        # Wildcard
+        if f_allow is None and f_deny is None:
             return True
 
-        log.trace('validate user - username: "%s", filter: %s', username, filter)
+        if f_transform:
+            # Transform filter values
+            f_allow = [f_transform(x) for x in f_allow]
+            f_deny = [f_transform(x) for x in f_deny]
 
-        if not session.user or username not in filter:
-            log.info('Ignoring item [%s](%s) played by filtered user: %s' % (
+        log.trace('validate "%s" - value: %s, allow: %s, deny: %s', key, repr(value), f_allow, f_deny)
+
+        if f_validate(value, f_allow, f_deny):
+            log.info('Ignoring item [%s](%s) played by filtered "%s": %s' % (
                 session.item_key,
                 session.get_title(),
-                session.user.title if session.user else None
+                key, repr(f_current())
             ))
             return False
 
         return True
 
-    @staticmethod
-    def valid_client(session):
-        if Prefs['scrobble_clients'] is None:
-            return True
+    @classmethod
+    def valid_user(cls, session):
+        return cls.match(
+            session, 'scrobble_names',
+            f_current=lambda: session.user.title if session.user else None,
+            f_validate=lambda value, f_allow, f_deny: (
+                not session.user or
+                (f_allow and value not in f_allow) or
+                value in f_deny
+            )
+        )
 
-        # Normalize client name
-        client_name = normalize(session.client.name) if session.client else None
+    @classmethod
+    def valid_client(cls, session):
+        return cls.match(
+            session, 'scrobble_clients',
+            f_current=lambda: session.client.name if session.client else None,
+            f_validate=lambda value, f_allow, f_deny: (
+                not session.client or
+                (f_allow and value not in f_allow) or
+                value in f_deny
+            )
+        )
 
-        # Fetch filter
-        filter = get_filter('scrobble_clients')
-        if filter is None:
-            return True
+    @classmethod
+    def valid_section(cls, session):
+        return cls.match(
+            session, 'filter_sections',
+            f_current=lambda: session.metadata['section_title'],
+            f_validate=lambda value, f_allow, f_deny: (
+                (f_allow and value not in f_allow) or
+                value in f_deny
+            ),
+            f_check=lambda: (
+                not session.metadata or
+                not session.metadata.get('section_title')
+            )
+        )
 
-        log.trace('validate client - client_name: "%s", filter: %s', client_name, filter)
+    @classmethod
+    def valid_address(cls, session):
+        def f_current():
+            if not session.client or not session.client.address:
+                return None
 
-        if not session.client or client_name not in filter:
-            log.info('Ignoring item [%s](%s) played by filtered client: %s' % (
-                session.item_key,
-                session.get_title(),
-                client_name
-            ))
-            return False
+            value = session.client.address
 
-        return True
+            try:
+                return ipaddress.ip_address(unicode(value))
+            except ValueError, ex:
+                log.warn('validate "filter_networks" - unable to parse IP Address: %s', repr(value))
+                return None
 
-    @staticmethod
-    def valid_section(session):
-        title = session.metadata.get('section_title')
-        if not title:
-            return True
+        def f_validate(value, f_allow, f_deny):
+            if not value:
+                return True
 
-        # Fetch filter
-        filter = get_filter('filter_sections')
-        if filter is None:
-            return True
+            allowed = any([
+                value in network
+                for network in f_allow
+                if network is not None
+            ])
 
-        # Normalize title
-        title = normalize(title)
+            denied = any([
+                value in network
+                for network in f_deny
+                if network is not None
+            ])
 
-        log.trace('validate section - title: "%s", filter: %s', title, filter)
+            return not allowed or denied
 
-        # Check section title against filter
-        if title not in filter:
-            log.info('Ignoring item [%s](%s) played from filtered section "%s"' % (
-                session.item_key,
-                session.get_title(),
-                session.metadata.get('section_title')
-            ))
-            return False
+        def f_transform(value):
+            if not value:
+                return None
 
-        return True
+            try:
+                return ipaddress.ip_network(unicode(value))
+            except ValueError, ex:
+                log.warn('validate "filter_networks" - unable to parse IP Network: %s', repr(value))
+                return None
 
-
-    @staticmethod
-    def valid_address(session):
-        if Prefs['filter_networks'] is None:
-            return True
-
-        # Normalize client name
-        client_address = ipaddress.ip_address(unicode(session.client.address)) if session.client and session.client.address else None
-
-        # Fetch filter
-        filter = get_filter('filter_networks', normalize_values=False)
-        if filter is None:
-            return True
-
-        networks = [ipaddress.ip_network(unicode(x)) for x in filter]
-
-        log.trace('validate address - client_address: "%s", networks: %s', client_address, networks)
-
-        valid = client_address and any([
-            client_address in network
-            for network in networks
-        ])
-
-        if not valid:
-            log.info('Ignoring item [%s](%s) played by filtered client address: %s' % (
-                session.item_key,
-                session.get_title(),
-                client_address
-            ))
-            return False
-
-        return True
+        return cls.match(
+            session, 'filter_networks',
+            normalize_values=False,
+            f_current=f_current,
+            f_validate=f_validate,
+            f_transform=f_transform
+        )
 
 
 class Scrobbler(Manager):
