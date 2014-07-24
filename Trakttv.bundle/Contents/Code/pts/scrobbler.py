@@ -304,8 +304,10 @@ class ScrobblerMethod(Method):
             session, 'scrobble_names',
             f_current=lambda: session.user.title if session.user else None,
             f_validate=lambda value, f_allow, f_deny: (
-                not session.user or
-                (f_allow and value not in f_allow) or
+                (f_allow and (
+                    not session.user or
+                    value not in f_allow
+                )) or
                 value in f_deny
             )
         )
@@ -316,8 +318,10 @@ class ScrobblerMethod(Method):
             session, 'scrobble_clients',
             f_current=lambda: session.client.name if session.client else None,
             f_validate=lambda value, f_allow, f_deny: (
-                not session.client or
-                (f_allow and value not in f_allow) or
+                (f_allow and (
+                    not session.client or
+                    value not in f_allow
+                )) or
                 value in f_deny
             )
         )
