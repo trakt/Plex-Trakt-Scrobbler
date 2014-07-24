@@ -339,6 +339,18 @@ class ScrobblerMethod(Method):
 
     @classmethod
     def valid_address(cls, session):
+        def f_current():
+            if not session.client or not session.client.address:
+                return None
+
+            value = session.client.address
+
+            try:
+                return ipaddress.ip_address(unicode(value))
+            except ValueError, ex:
+                log.warn('validate "filter_networks" - unable to parse IP Address: %s', repr(value))
+                return None
+
         def f_validate(value, f_allow, f_deny):
             if not value:
                 return True
@@ -357,18 +369,22 @@ class ScrobblerMethod(Method):
 
             return not allowed or denied
 
+        def f_transform(value):
+            if not value:
+                return None
+
+            try:
+                return ipaddress.ip_network(unicode(value))
+            except ValueError, ex:
+                log.warn('validate "filter_networks" - unable to parse IP Network: %s', repr(value))
+                return None
+
         return cls.match(
             session, 'filter_networks',
             normalize_values=False,
+            f_current=f_current,
             f_validate=f_validate,
-            f_current=lambda: (
-                ipaddress.ip_address(unicode(session.client.address))
-                if session.client and session.client.address else None
-            ),
-            f_transform=lambda value: (
-                ipaddress.ip_network(unicode(value))
-                if value else None
-            )
+            f_transform=f_transform
         )
 
 
