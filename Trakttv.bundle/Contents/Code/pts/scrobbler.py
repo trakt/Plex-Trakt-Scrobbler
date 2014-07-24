@@ -286,13 +286,13 @@ class ScrobblerMethod(Method):
             f_allow = [f_transform(x) for x in f_allow]
             f_deny = [f_transform(x) for x in f_deny]
 
-        log.trace('validate "%s" - value: "%s", allow: %s, deny: %s', key, value, f_allow, f_deny)
+        log.trace('validate "%s" - value: %s, allow: %s, deny: %s', key, repr(value), f_allow, f_deny)
 
         if f_validate(value, f_allow, f_deny):
             log.info('Ignoring item [%s](%s) played by filtered "%s": %s' % (
                 session.item_key,
                 session.get_title(),
-                key, f_current()
+                key, repr(f_current())
             ))
             return False
 
@@ -331,33 +331,44 @@ class ScrobblerMethod(Method):
                 (f_allow and value not in f_allow) or
                 value in f_deny
             ),
-            f_check=lambda: not session.metadata or not session.metadata.get('section_title')
+            f_check=lambda: (
+                not session.metadata or
+                not session.metadata.get('section_title')
+            )
         )
 
     @classmethod
     def valid_address(cls, session):
         def f_validate(value, f_allow, f_deny):
+            if not value:
+                return True
+
             allowed = any([
                 value in network
                 for network in f_allow
+                if network is not None
             ])
 
             denied = any([
                 value in network
                 for network in f_deny
+                if network is not None
             ])
 
-            return not value or not allowed or denied
+            return not allowed or denied
 
         return cls.match(
             session, 'filter_networks',
             normalize_values=False,
+            f_validate=f_validate,
             f_current=lambda: (
                 ipaddress.ip_address(unicode(session.client.address))
                 if session.client and session.client.address else None
             ),
-            f_validate=f_validate,
-            f_transform=lambda value: ipaddress.ip_network(unicode(value))
+            f_transform=lambda value: (
+                ipaddress.ip_network(unicode(value))
+                if value else None
+            )
         )
 
 
