@@ -25,7 +25,7 @@ class PlexInterface(Base):
     def sections(cls, types=None, keys=None, titles=None):
         # Default to 'titles' filter preference
         if titles is None:
-            titles = get_filter('filter_sections')
+            titles, _ = get_filter('filter_sections')
 
         return PlexMediaServer.get_sections(
             types, keys, titles,
@@ -36,7 +36,7 @@ class PlexInterface(Base):
     def library(cls, types=None, keys=None, titles=None):
         # Default to 'titles' filter preference
         if titles is None:
-            titles = get_filter('filter_sections')
+            titles, _ = get_filter('filter_sections')
 
         return PlexLibrary.fetch(
             types, keys, titles,
