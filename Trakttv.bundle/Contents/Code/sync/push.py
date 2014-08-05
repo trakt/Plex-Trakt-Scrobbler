@@ -103,6 +103,10 @@ class Base(SyncBase):
 
         response = Trakt[path][action](**kwargs)
 
+        if response is None:
+            # Request failed (rejected unmatched media, etc..)
+            return
+
         # Log successful items
         if 'rated' in response:
             rated = response.get('rated')
