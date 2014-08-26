@@ -12,37 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from asio_base import BaseASIO, BaseFile, DEFAULT_BUFFER_SIZE
+from asio.file import File, DEFAULT_BUFFER_SIZE
+from asio.interfaces.base import Interface
+
 import os
+
 
 NULL = 0
 
 if os.name == 'nt':
-    from asio_windows_interop import WindowsInterop
+    from asio.interfaces.windows.interop import WindowsInterop
 
 
-class WindowsASIO(BaseASIO):
+class WindowsInterface(Interface):
     @classmethod
     def open(cls, file_path, parameters=None):
         """
         :type file_path: str
-        :rtype: WindowsFile
+        :rtype: asio.interfaces.windows.WindowsFile
         """
         if not parameters:
             parameters = {}
 
         return WindowsFile(WindowsInterop.create_file(
             file_path,
-            parameters.get('desired_access', WindowsASIO.GenericAccess.READ),
-            parameters.get('share_mode', WindowsASIO.ShareMode.ALL),
-            parameters.get('creation_disposition', WindowsASIO.CreationDisposition.OPEN_EXISTING),
+            parameters.get('desired_access', WindowsInterface.GenericAccess.READ),
+            parameters.get('share_mode', WindowsInterface.ShareMode.ALL),
+            parameters.get('creation_disposition', WindowsInterface.CreationDisposition.OPEN_EXISTING),
             parameters.get('flags_and_attributes', NULL)
         ))
 
     @classmethod
     def get_size(cls, fp):
         """
-        :type fp: WindowsFile:
+        :type fp: asio.interfaces.windows.WindowsFile
         :rtype: int
         """
         return WindowsInterop.get_file_size(fp.handle)
@@ -50,15 +53,15 @@ class WindowsASIO(BaseASIO):
     @classmethod
     def get_path(cls, fp):
         """
-        :type fp: WindowsFile:
+        :type fp: asio.interfaces.windows.WindowsFile
         :rtype: str
         """
 
         if not fp.file_map:
-            fp.file_map = WindowsInterop.create_file_mapping(fp.handle, WindowsASIO.Protection.READONLY)
+            fp.file_map = WindowsInterop.create_file_mapping(fp.handle, WindowsInterface.Protection.READONLY)
 
         if not fp.map_view:
-            fp.map_view = WindowsInterop.map_view_of_file(fp.file_map, WindowsASIO.FileMapAccess.READ, 1)
+            fp.map_view = WindowsInterop.map_view_of_file(fp.file_map, WindowsInterface.FileMapAccess.READ, 1)
 
         file_name = WindowsInterop.get_mapped_file_name(fp.map_view)
 
@@ -67,7 +70,7 @@ class WindowsASIO(BaseASIO):
     @classmethod
     def seek(cls, fp, offset, origin):
         """
-        :type fp: WindowsFile
+        :type fp: asio.interfaces.windows.WindowsFile
         :type offset: int
         :type origin: int
         :rtype: int
@@ -80,18 +83,27 @@ class WindowsASIO(BaseASIO):
         )
 
     @classmethod
-    def read(cls, fp, buf_size=DEFAULT_BUFFER_SIZE):
+    def read(cls, fp, n=DEFAULT_BUFFER_SIZE):
         """
-        :type fp: WindowsFile
-        :type buf_size: int
+        :type fp: asio.interfaces.windows.WindowsFile
+        :type n: int
         :rtype: str
         """
-        return WindowsInterop.read_file(fp.handle, buf_size)
+        return WindowsInterop.read(fp.handle, n)
+
+    @classmethod
+    def read_into(cls, fp, b):
+        """
+        :type fp: asio.interfaces.windows.WindowsFile
+        :type b: str
+        :rtype: int
+        """
+        return WindowsInterop.read_into(fp.handle, b)
 
     @classmethod
     def close(cls, fp):
         """
-        :type fp: WindowsFile
+        :type fp: asio.interfaces.windows.WindowsFile
         :rtype: bool
         """
         if fp.map_view:
@@ -171,14 +183,19 @@ class WindowsASIO(BaseASIO):
         EXECUTE = 0x0020
 
 
-class WindowsFile(BaseFile):
-    platform_handler = WindowsASIO
+class WindowsFile(File):
+    platform_handler = WindowsInterface
 
-    def __init__(self, handle):
+    def __init__(self, handle, *args, **kwargs):
+        super(WindowsFile, self).__init__(*args, **kwargs)
+
         self.handle = handle
 
         self.file_map = None
         self.map_view = None
+
+    def readinto(self, b):
+        return self.get_handler().read_into(self, b)
 
     def __str__(self):
         return "<asio_windows.WindowsFile file: %s>" % self.handle

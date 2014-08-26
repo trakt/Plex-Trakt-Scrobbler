@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from asio_base import BaseASIO, DEFAULT_BUFFER_SIZE, BaseFile
+from asio.file import File, DEFAULT_BUFFER_SIZE
+from asio.interfaces.base import Interface
+
 import sys
 import os
 
@@ -26,12 +28,12 @@ if os.name == 'posix':
 F_GETPATH = 50
 
 
-class PosixASIO(BaseASIO):
+class PosixInterface(Interface):
     @classmethod
     def open(cls, file_path, parameters=None):
         """
         :type file_path: str
-        :rtype: PosixFile
+        :rtype: asio.interfaces.posix.PosixFile
         """
         if not parameters:
             parameters = {}
@@ -49,7 +51,7 @@ class PosixASIO(BaseASIO):
     @classmethod
     def get_size(cls, fp):
         """
-        :type fp: PosixFile
+        :type fp: asio.interfaces.posix.PosixFile
         :rtype: int
         """
         return os.fstat(fp.fd).st_size
@@ -57,7 +59,7 @@ class PosixASIO(BaseASIO):
     @classmethod
     def get_path(cls, fp):
         """
-        :type fp: PosixFile
+        :type fp: asio.interfaces.posix.PosixFile
         :rtype: int
         """
 
@@ -75,41 +77,43 @@ class PosixASIO(BaseASIO):
     @classmethod
     def seek(cls, fp, offset, origin):
         """
-        :type fp: PosixFile
+        :type fp: asio.interfaces.posix.PosixFile
         :type offset: int
         :type origin: int
         """
         os.lseek(fp.fd, offset, origin)
 
     @classmethod
-    def read(cls, fp, buf_size=DEFAULT_BUFFER_SIZE):
+    def read(cls, fp, n=DEFAULT_BUFFER_SIZE):
         """
-        :type fp: PosixFile
-        :type buf_size: int
+        :type fp: asio.interfaces.posix.PosixFile
+        :type n: int
         :rtype: str
         """
         r, w, x = select.select([fp.fd], [], [], 5)
 
         if r:
-            return os.read(fp.fd, buf_size)
+            return os.read(fp.fd, n)
 
         return None
 
     @classmethod
     def close(cls, fp):
         """
-        :type fp: PosixFile
+        :type fp: asio.interfaces.posix.PosixFile
         """
         os.close(fp.fd)
 
 
-class PosixFile(BaseFile):
-    platform_handler = PosixASIO
+class PosixFile(File):
+    platform_handler = PosixInterface
 
-    def __init__(self, fd):
+    def __init__(self, fd, *args, **kwargs):
         """
-        :type file_object: FileIO
+        :type fd: asio.file.File
         """
+        super(PosixFile, self).__init__(*args, **kwargs)
+
         self.fd = fd
 
     def __str__(self):

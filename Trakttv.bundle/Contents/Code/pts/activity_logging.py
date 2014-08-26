@@ -5,8 +5,9 @@ from plex.plex_media_server import PlexMediaServer
 from plex.plex_preferences import PlexPreferences
 from pts.activity import ActivityMethod, Activity
 
-from asio_base import SEEK_ORIGIN_CURRENT
 from asio import ASIO
+from asio.file import SEEK_ORIGIN_CURRENT
+from io import BufferedReader
 import os
 import time
 import urlparse
@@ -56,18 +57,20 @@ class LoggingActivity(ActivityMethod):
         'machineIdentifier', 'client'
     ]
 
-    log_path = None
-    log_file = None
+    path = None
+
+    file = None
+    reader = None
 
     @classmethod
     def get_path(cls):
-        if not cls.log_path:
-            cls.log_path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
-            cls.log_path = os.path.abspath(cls.log_path)
+        if not cls.path:
+            cls.path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+            cls.path = os.path.abspath(cls.path)
 
-            log.debug('log_path = "%s"' % cls.log_path)
+            log.debug('path = "%s"' % cls.path)
 
-        return cls.log_path
+        return cls.path
 
     @classmethod
     def test(cls):
@@ -80,73 +83,71 @@ class LoggingActivity(ActivityMethod):
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
-        if cls.try_read_line(True):
+        if cls.try_read_line(timeout=15, ping=True, stale_sleep=0.5):
             return True
 
         return False
 
     @classmethod
     def read_line(cls, timeout=30):
-        if not cls.log_file:
-            cls.log_file = ASIO.open(cls.get_path(), opener=False)
-            cls.log_file.seek(cls.log_file.get_size(), SEEK_ORIGIN_CURRENT)
-            cls.log_path = cls.log_file.get_path()
-            log.info('Opened file path: "%s"' % cls.log_path)
+        if not cls.file:
+            cls.file = ASIO.open(cls.get_path(), opener=False)
+            cls.file.seek(cls.file.get_size(), SEEK_ORIGIN_CURRENT)
 
-        return cls.log_file.read_line(timeout=timeout, timeout_type='return')
+            cls.reader = BufferedReader(cls.file)
+
+            cls.path = cls.file.get_path()
+            log.info('Opened file path: "%s"' % cls.path)
+
+        return cls.reader.readline()
 
     @classmethod
-    def try_read_line(cls, start_interval=1, interval_step=1.6, max_interval=5, max_tries=4, timeout=30):
+    def try_read_line(cls, timeout=60, ping=False, stale_sleep=1.0):
         line = None
+        stale_since = None
 
-        try_count = 0
-        retry_interval = float(start_interval)
-
-        while not line and try_count <= max_tries:
-            try_count += 1
-
+        while not line:
             line = cls.read_line(timeout)
+
             if line:
+                stale_since = None
+                time.sleep(0.05)
                 break
 
-            if cls.log_file.get_path() != cls.log_path:
-                log.debug("Log file moved (probably rotated), closing")
-                cls.close()
+            if stale_since is None:
+                stale_since = time.time()
+                time.sleep(stale_sleep)
+                continue
+            elif (time.time() - stale_since) > timeout:
+                return None
+            elif (time.time() - stale_since) > timeout / 2:
+                # Nothing returned for 5 seconds
+                if cls.file.get_path() != cls.path:
+                    log.debug("Log file moved (probably rotated), closing")
+                    cls.close()
+                elif ping:
+                    # Ping server to see if server is still active
+                    PlexMediaServer.get_info(quiet=True)
 
-            # If we are below max_interval, keep increasing the interval
-            if retry_interval < max_interval:
-                retry_interval = retry_interval * interval_step
+                    ping = False
 
-                # Ensure the new retry_interval is below max_interval
-                if retry_interval > max_interval:
-                    retry_interval = max_interval
-
-            # Sleep if we should still retry
-            if try_count <= max_tries:
-                if try_count > 1:
-                    log.debug('Log file read returned nothing, waiting %.02f seconds and then trying again' % retry_interval)
-                    time.sleep(retry_interval)
-
-                # Ping server to see if server is still active
-                PlexMediaServer.get_info(quiet=True)
-
-        if line and try_count > 2:
-            log.debug('Successfully read the log file after retrying')
-        elif not line:
-            log.warn('Finished retrying, still no success')
+            time.sleep(stale_sleep)
 
         return line
 
     @classmethod
     def close(cls):
-        if not cls.log_file:
+        if not cls.file:
             return
 
-        cls.log_file.close()
-        cls.log_file = None
+        cls.reader.close()
+        cls.reader = None
+
+        cls.file.close()
+        cls.file = None
 
     def run(self):
-        line = self.try_read_line(timeout=60)
+        line = self.try_read_line(ping=True, stale_sleep=0.5)
         if not line:
             log.warn('Unable to read log file')
             return
@@ -155,7 +156,7 @@ class LoggingActivity(ActivityMethod):
 
         while True:
             # Grab the next line of the log
-            line = self.try_read_line(timeout=60)
+            line = self.try_read_line(ping=True)
 
             if line:
                 self.process(line)
