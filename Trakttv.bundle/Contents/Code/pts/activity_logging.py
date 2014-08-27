@@ -45,22 +45,39 @@ log = Logger('pts.activity_logging')
 class LoggingActivity(ActivityMethod):
     name = 'LoggingActivity'
 
-    required_info = [
-        'ratingKey',
-        'state', 'time'
-    ]
-
-    extra_info = [
-        'duration',
-
-        'user_name', 'user_id',
-        'machineIdentifier', 'client'
-    ]
-
     path = None
-
     file = None
     reader = None
+
+    parsers = []
+
+    def __init__(self):
+        super(LoggingActivity, self).__init__()
+
+        self.parsers = [o(self) for o in self.parsers]
+
+    def run(self):
+        line = self.try_read_line(ping=True, stale_sleep=0.5)
+        if not line:
+            log.warn('Unable to read log file')
+            return
+
+        log.debug('Ready')
+
+        while True:
+            # Grab the next line of the log
+            line = self.try_read_line(ping=True)
+
+            if line:
+                self.process(line)
+            else:
+                log.warn('Unable to read log file')
+
+    def process(self, line):
+        for parser in self.parsers:
+            if parser.process(line):
+                cls = getattr(parser, '__class__')
+                return
 
     @classmethod
     def get_path(cls):
@@ -89,7 +106,7 @@ class LoggingActivity(ActivityMethod):
         return False
 
     @classmethod
-    def read_line(cls, timeout=30):
+    def read_line(cls):
         if not cls.file:
             cls.file = ASIO.open(cls.get_path(), opener=False)
             cls.file.seek(cls.file.get_size(), SEEK_ORIGIN_CURRENT)
@@ -107,7 +124,7 @@ class LoggingActivity(ActivityMethod):
         stale_since = None
 
         while not line:
-            line = cls.read_line(timeout)
+            line = cls.read_line()
 
             if line:
                 stale_since = None
@@ -146,27 +163,95 @@ class LoggingActivity(ActivityMethod):
         cls.file.close()
         cls.file = None
 
-    def run(self):
-        line = self.try_read_line(ping=True, stale_sleep=0.5)
-        if not line:
-            log.warn('Unable to read log file')
-            return
+    @classmethod
+    def register(cls, parser):
+        cls.parsers.append(parser)
 
-        log.debug('Ready')
+
+class Parser(object):
+    def __init__(self, core):
+        self.core = core
+
+    def read_parameters(self, *match_functions):
+        match_functions = [self.parameter_match] + list(match_functions)
+
+        info = {}
 
         while True:
-            # Grab the next line of the log
-            line = self.try_read_line(ping=True)
-
-            if line:
-                self.process(line)
-            else:
+            line = self.core.try_read_line(timeout=5)
+            if not line:
                 log.warn('Unable to read log file')
+                return None
+
+            # Run through each match function to find a result
+            match = None
+            for func in match_functions:
+                match = func(line)
+
+                if match is not None:
+                    break
+
+            # Update info dict with result, otherwise finish reading
+            if match:
+                info.update(match)
+            elif match is None and IGNORE_REGEX.match(line.strip()) is None:
+                log.trace('break on "%s"', line)
+                break
+
+        return info
+
+    def process(self, line):
+        raise NotImplementError()
+
+    @staticmethod
+    def parameter_match(line):
+        match = PARAM_REGEX.match(line.strip())
+        if not match:
+            return None
+
+        match = match.groupdict()
+
+        return {match['key']: match['value']}
+
+    @staticmethod
+    def regex_match(regex, line):
+        match = regex.match(line.strip())
+        if not match:
+            return None
+
+        return match.groupdict()
+
+    @staticmethod
+    def query(match, value):
+        if not value:
+            return
+
+        try:
+            parameters = urlparse.parse_qsl(value, strict_parsing=True)
+        except ValueError:
+            return
+
+        for key, value in parameters:
+            match.setdefault(key, value)
+
+
+class NowPlayingParser(Parser):
+    required_info = [
+        'ratingKey',
+        'state', 'time'
+    ]
+
+    extra_info = [
+        'duration',
+
+        'user_name', 'user_id',
+        'machineIdentifier', 'client'
+    ]
 
     def process(self, line):
         header_match = PLAYING_HEADER_REGEX.match(line)
         if not header_match:
-            return
+            return False
 
         activity_type = header_match.group('type')
 
@@ -177,14 +262,14 @@ class LoggingActivity(ActivityMethod):
             match = self.progress()
         else:
             log.warn('Unknown activity type "%s"', activity_type)
-            return
+            return True
 
         # Extend match with query info
         self.query(match, header_match.group('query'))
 
         # Ensure we successfully matched a result
         if not match:
-            return
+            return True
 
         # Sanitize the activity result
         info = {
@@ -198,7 +283,7 @@ class LoggingActivity(ActivityMethod):
                 info[key] = match[key]
             else:
                 log.warn('Invalid activity match, missing key %s (%s)', key, match)
-                return
+                return True
 
         # - Add in any extra info parameters
         for key in self.extra_info:
@@ -209,18 +294,7 @@ class LoggingActivity(ActivityMethod):
 
         # Update the scrobbler with the current state
         EventManager.fire('scrobbler.logging.update', info)
-
-    def query(self, match, value):
-        if not value:
-            return
-
-        try:
-            parameters = urlparse.parse_qsl(value, strict_parsing=True)
-        except ValueError:
-            return
-
-        for key, value in parameters:
-            match.setdefault(key, value)
+        return True
 
     def timeline(self):
         return self.read_parameters(
@@ -244,51 +318,28 @@ class LoggingActivity(ActivityMethod):
             'time': data.get('time')
         }
 
-    def read_parameters(self, *match_functions):
-        match_functions = [self.parameter_match] + list(match_functions)
 
-        info = {}
+class ScrobbleParser(Parser):
+    pattern = str_format(LOG_PATTERN, message=r'Library item (?P<rating_key>\d+) \'(?P<title>.*?)\' got (?P<action>(?:un)?played) by account (?P<account_key>\d+)!.*?')
+    regex = Regex(pattern)
 
-        while True:
-            line = self.try_read_line(timeout=5)
-            if not line:
-                log.warn('Unable to read log file')
-                return None
-
-            # Run through each match function to find a result
-            match = None
-            for func in match_functions:
-                match = func(line)
-
-                if match is not None:
-                    break
-
-            # Update info dict with result, otherwise finish reading
-            if match:
-                info.update(match)
-            elif match is None and IGNORE_REGEX.match(line.strip()) is None:
-                log.trace('break on "%s"', line)
-                break
-
-        return info
-
-    @staticmethod
-    def parameter_match(line):
-        match = PARAM_REGEX.match(line.strip())
+    def process(self, line):
+        match = self.regex.match(line)
         if not match:
-            return None
+            return False
 
-        match = match.groupdict()
+        EventManager.fire('plex.activity.scrobble', {
+            'account_key': match.group('account_key'),
+            'rating_key': match.group('rating_key'),
 
-        return {match['key']: match['value']}
+            'title': match.group('title'),
+            'action': match.group('action'),
+        })
+        return True
 
-    @staticmethod
-    def regex_match(regex, line):
-        match = regex.match(line.strip())
-        if not match:
-            return None
+# register parsers
+LoggingActivity.register(NowPlayingParser)
+LoggingActivity.register(ScrobbleParser)
 
-        return match.groupdict()
-
-
+# register activity method
 Activity.register(LoggingActivity, weight=1)
