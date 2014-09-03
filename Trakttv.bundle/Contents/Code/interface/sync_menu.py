@@ -1,5 +1,6 @@
 from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from core.localization import localization
+from core.plugin import PLUGIN_PREFIX
 from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
 
@@ -11,7 +12,7 @@ L, LF = localization('interface.sync_menu')
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
-@route('/applications/trakttv/sync')
+@route(PLUGIN_PREFIX + '/sync')
 def SyncMenu(refresh=None):
     oc = ObjectContainer(title2=L('sync_menu:title'), no_history=True, no_cache=True)
     all_keys = []
@@ -137,7 +138,7 @@ def get_task_status(key, section=None):
     return 'Not run yet.'
 
 
-@route('/applications/trakttv/sync/synchronize')
+@route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize():
     success, message = SyncManager.trigger_synchronize()
 
@@ -151,7 +152,7 @@ def Synchronize():
 
 
 
-@route('/applications/trakttv/sync/push')
+@route(PLUGIN_PREFIX + '/sync/push')
 def Push(section=None):
     success, message = SyncManager.trigger_push(section)
 
@@ -164,7 +165,7 @@ def Push(section=None):
     )
 
 
-@route('/applications/trakttv/sync/pull')
+@route(PLUGIN_PREFIX + '/sync/pull')
 def Pull():
     success, message = SyncManager.trigger_pull()
 
@@ -177,7 +178,7 @@ def Pull():
     )
 
 
-@route('/applications/trakttv/sync/cancel')
+@route(PLUGIN_PREFIX + '/sync/cancel')
 def Cancel():
     if not SyncManager.cancel():
         return MessageContainer(

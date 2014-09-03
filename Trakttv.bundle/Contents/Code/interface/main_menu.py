@@ -1,15 +1,15 @@
 from core.helpers import pad_title, get_pref
-from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
+from core.plugin import ART, NAME, ICON, PLUGIN_PREFIX, PLUGIN_VERSION
 from interface.sync_menu import SyncMenu
 
 
-@handler('/applications/trakttv', NAME, thumb=ICON, art=ART)
+@handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)
 def MainMenu():
     oc = ObjectContainer(no_cache=True)
 
     if not get_pref('valid'):
         oc.add(DirectoryObject(
-            key='/applications/trakttv',
+            key=PLUGIN_PREFIX,
             title=L("Error: Authentication failed"),
         ))
 
@@ -33,7 +33,7 @@ def MainMenu():
     return oc
 
 
-@route('/applications/trakttv/about')
+@route(PLUGIN_PREFIX + '/about')
 def AboutMenu():
     oc = ObjectContainer(title2="About")
 
