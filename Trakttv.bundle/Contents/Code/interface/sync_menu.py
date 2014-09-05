@@ -1,8 +1,8 @@
 from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from core.localization import localization
 from core.plugin import PLUGIN_PREFIX
-from plex.plex_media_server import PlexMediaServer
-from sync.manager import SyncManager
+# TODO from plex.plex_media_server import PlexMediaServer
+# TODO from sync.manager import SyncManager
 
 from datetime import datetime
 from ago import human

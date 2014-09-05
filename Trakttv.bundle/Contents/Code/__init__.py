@@ -4,9 +4,8 @@
 # ------------------------------------------------
 import core
 import data
-import plex
-import pts
-import sync
+# TODO import pts
+# TODO import sync
 import interface
 # ------------------------------------------------
 
@@ -20,14 +19,14 @@ from core.helpers import total_seconds, spawn, get_pref, schedule
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from pts.activity import Activity
-from pts.scrobbler import Scrobbler
-from pts.session_manager import SessionManager
-from sync.manager import SyncManager
-from datetime import datetime
+# TODO from plex.plex_media_server import PlexMediaServer
+# TODO from plex.plex_metadata import PlexMetadata
+# TODO from pts.activity import Activity
+# TODO from pts.scrobbler import Scrobbler
+# TODO from pts.session_manager import SessionManager
+# TODO from sync.manager import SyncManager
 
+from datetime import datetime
 from trakt import Trakt
 import hashlib
 import logging
@@ -39,14 +38,14 @@ log = Logger('Code')
 class Main(object):
     modules = [
         # pts
-        Activity,
-        Scrobbler,
+        # TODO Activity,
+        # TODO Scrobbler,
 
         # sync
-        SyncManager,
+        # TODO SyncManager,
 
         # plex
-        PlexMetadata
+        # TODO PlexMetadata
     ]
 
     loggers_allowed = [
@@ -56,7 +55,7 @@ class Main(object):
 
     def __init__(self):
         self.update_checker = UpdateChecker()
-        self.session_manager = SessionManager()
+        # TODO self.session_manager = SessionManager()
 
         Header.show(self)
 
@@ -103,7 +102,7 @@ class Main(object):
 
             # Version
             plugin_version=PLUGIN_VERSION,
-            media_center_version=PlexMediaServer.get_version(),
+            # TODO media_center_version=PlexMediaServer.get_version(),
 
             # Account
             credentials=get_credentials
@@ -169,7 +168,7 @@ class Main(object):
         # Check for updates
         self.update_checker.run_once(async=True)
 
-        self.session_manager.start()
+        # TODO self.session_manager.start()
 
         # Start modules
         for module in self.modules:
@@ -239,6 +238,6 @@ def ValidatePrefs():
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
-        spawn(PlexMediaServer.restart_plugin)
+        # TODO spawn(PlexMediaServer.restart_plugin)
 
     return message
