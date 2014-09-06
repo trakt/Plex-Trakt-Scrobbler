@@ -1,6 +1,10 @@
 from plex.request import PlexRequest
 
+import logging
 import requests
+import socket
+
+log = logging.getLogger(__name__)
 
 
 class HttpClient(object):
@@ -25,6 +29,8 @@ class HttpClient(object):
             path = self.base_path + '/' + path
         elif self.base_path:
             path = self.base_path
+        else:
+            path = ''
 
         request = PlexRequest(
             self.client,

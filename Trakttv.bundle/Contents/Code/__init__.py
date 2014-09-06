@@ -16,10 +16,9 @@ from core.header import Header
 from core.logger import Logger
 from core.logging_handler import PlexHandler
 from core.helpers import total_seconds, spawn, get_pref, schedule
-from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
+from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-# TODO from plex.plex_media_server import PlexMediaServer
 # TODO from plex.plex_metadata import PlexMetadata
 # TODO from pts.activity import Activity
 # TODO from pts.scrobbler import Scrobbler
@@ -27,6 +26,7 @@ from interface.main_menu import MainMenu
 # TODO from sync.manager import SyncManager
 
 from datetime import datetime
+from plex import Plex
 from trakt import Trakt
 import hashlib
 import logging
@@ -49,6 +49,9 @@ class Main(object):
     ]
 
     loggers_allowed = [
+        'plex',
+        'plex_activity',
+        'plex_metadata',
         'requests',
         'trakt'
     ]
@@ -102,7 +105,7 @@ class Main(object):
 
             # Version
             plugin_version=PLUGIN_VERSION,
-            # TODO media_center_version=PlexMediaServer.get_version(),
+            media_center_version=Plex.version(),
 
             # Account
             credentials=get_credentials
@@ -238,6 +241,8 @@ def ValidatePrefs():
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
-        # TODO spawn(PlexMediaServer.restart_plugin)
+        # TODO this can cause the preferences dialog to get stuck on "saving"
+        #  - might need to delay this for a few seconds to avoid this.
+        spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
 
     return message

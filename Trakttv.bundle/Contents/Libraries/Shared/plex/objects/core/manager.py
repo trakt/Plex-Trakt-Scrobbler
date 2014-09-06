@@ -3,6 +3,8 @@ import os
 
 log = logging.getLogger(__name__)
 
+UNC_PREFIX = '\\\\?\\'
+
 
 class ObjectManager(object):
     base_dir = None
@@ -38,6 +40,10 @@ class ObjectManager(object):
                 # Ensure path is not in ignore list
                 if not all([not path.endswith(p) for p in cls.ignore_paths]):
                     continue
+
+                # Remove UNC prefix (if it exists)
+                if path.startswith(UNC_PREFIX):
+                    path = path[len(UNC_PREFIX):]
 
                 path = os.path.relpath(path, cls.base_dir)
                 name = os.path.splitext(path)[0].replace(os.path.sep, '.')

@@ -11,6 +11,14 @@ class RootInterface(Interface):
             })
         })
 
+    def version(self):
+        detail = self.detail()
+
+        if not detail:
+            return None
+
+        return detail.version
+
     def clients(self):
         response = self.http.get('clients')
 
