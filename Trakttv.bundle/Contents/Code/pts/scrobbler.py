@@ -1,8 +1,8 @@
 from core.helpers import str_pad, get_filter, get_pref, normalize, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
-from plex.plex_metadata import PlexMetadata
 
+from plex_metadata import Metadata
 from trakt import Trakt
 import ipaddress
 import math

@@ -2,10 +2,10 @@ from core.eventing import EventManager
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from plex.plex_preferences import PlexPreferences
 from pts.scrobbler import Scrobbler, ScrobblerMethod
+
+from plex import Plex
+from plex_metadata import Metadata
 
 
 log = Logger('pts.scrobbler_logging')

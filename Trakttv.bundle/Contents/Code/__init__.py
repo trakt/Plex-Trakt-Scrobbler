@@ -4,7 +4,7 @@
 # ------------------------------------------------
 import core
 import data
-# TODO import pts
+import pts
 # TODO import sync
 import interface
 # ------------------------------------------------
@@ -19,14 +19,13 @@ from core.helpers import total_seconds, spawn, get_pref, schedule
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-# TODO from plex.plex_metadata import PlexMetadata
-# TODO from pts.activity import Activity
-# TODO from pts.scrobbler import Scrobbler
+from pts.scrobbler import Scrobbler
 # TODO from pts.session_manager import SessionManager
 # TODO from sync.manager import SyncManager
 
 from datetime import datetime
 from plex import Plex
+from plex_activity import Activity
 from trakt import Trakt
 import hashlib
 import logging
@@ -38,14 +37,11 @@ log = Logger('Code')
 class Main(object):
     modules = [
         # pts
-        # TODO Activity,
-        # TODO Scrobbler,
+        Activity,
+        Scrobbler,
 
         # sync
         # TODO SyncManager,
-
-        # plex
-        # TODO PlexMetadata
     ]
 
     loggers_allowed = [

@@ -2,12 +2,10 @@ from core.eventing import EventManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
-from plex.plex_library import PlexLibrary
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from plex.plex_objects import PlexEpisode
 
 from datetime import datetime
+from plex import Plex
+from plex_metadata import Metadata, Library
 from trakt import Trakt
 
 
