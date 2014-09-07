@@ -31,6 +31,9 @@ class Interface(object):
         return self.client.http.configure(self.path)
 
     def parse(self, response, schema):
+        if response.status_code < 200 or response.status_code >= 300:
+            return None
+
         root = ET.fromstring(response.content)
 
         url = urlparse(response.url)

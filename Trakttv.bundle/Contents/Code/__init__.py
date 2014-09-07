@@ -48,6 +48,7 @@ class Main(object):
         'plex',
         'plex_activity',
         'plex_metadata',
+        'pyemitter',
         'requests',
         'trakt'
     ]

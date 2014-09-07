@@ -1,10 +1,11 @@
 from core.eventing import EventManager
-from core.helpers import get_pref
+from core.helpers import get_pref, try_convert
 from core.logger import Logger
 from data.watch_session import WatchSession
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 from plex import Plex
+from plex_activity import Activity
 from plex_metadata import Metadata
 
 
@@ -17,7 +18,7 @@ class WebSocketScrobbler(ScrobblerMethod):
     def __init__(self):
         super(WebSocketScrobbler, self).__init__()
 
-        EventManager.subscribe('notifications.playing', self.update)
+        Activity.on('websocket.playing', self.update)
 
     @classmethod
     def test(cls):
@@ -25,13 +26,12 @@ class WebSocketScrobbler(ScrobblerMethod):
             log.info("Error while retrieving sessions, assuming WebSocket method isn't available")
             return False
 
-        server_info = PlexMediaServer.get_info()
-        if server_info is None:
+        detail = Plex.detail()
+        if detail is None:
             log.info('Error while retrieving server info for testing')
             return False
 
-        multi_user = bool(server_info.get('multiuser', 0))
-        if not multi_user:
+        if not detail.multiuser:
             log.info("Server info indicates multi-user support isn't available, WebSocket method not available")
             return False
 
@@ -49,31 +49,28 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         skip = False
 
-        info = PlexMediaServer.get_session(session_key)
-        if not info:
+        item = Plex['status'].sessions().get(session_key)
+        if not item:
             return None
 
         # Client
-        player_section = info.findall('Player')
-        if len(player_section):
-            player_section = player_section[0]
-
-        client = PlexMediaServer.get_client(player_section.get('machineIdentifier'))
+        client = None
+        # TODO client = Plex.clients().get(info.session.player.machine_identifier)
 
         # Metadata
         metadata = None
 
         try:
-            metadata = PlexMetadata.get(info.get('ratingKey'))
+            metadata = Metadata.get(item.rating_key)
 
-            if metadata:
-                metadata = metadata.to_dict()
+            # if metadata:
+            # TODO metadata = metadata.to_dict()
         except NotImplementedError, e:
             # metadata not supported (music, etc..)
             log.debug('%s, ignoring session' % e.message)
             skip = True
 
-        session = WatchSession.from_section(info, state, metadata, client)
+        session = WatchSession.from_section(item, state, metadata, client)
         session.skip = skip
         session.save()
 
@@ -84,7 +81,7 @@ class WebSocketScrobbler(ScrobblerMethod):
     def update_session(self, session, view_offset):
         log.debug('Trying to update the current WatchSession (session key: %s)' % session.key)
 
-        video_section = PlexMediaServer.get_session(session.key)
+        video_section = Plex['status'].sessions().get(session.key)
         if not video_section:
             log.warn('Session was not found on media server')
             return False
@@ -162,10 +159,14 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         return session
 
-    def update(self, session_key, state, view_offset):
+    def update(self, info):
         # Ignore if scrobbling is disabled
         if not get_pref('scrobble'):
             return
+
+        session_key = try_convert(info.get('sessionKey'), int)
+        state = info.get('state')
+        view_offset = info.get('viewOffset')
 
         session = self.get_session(session_key, state, view_offset)
         if not session:

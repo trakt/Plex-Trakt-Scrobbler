@@ -82,24 +82,24 @@ class WatchSession(DictModel):
         return value
 
     @staticmethod
-    def from_section(section, state, metadata, client_section=None):
+    def from_section(item, state, metadata, client_section=None):
         """
-        :type section: ?
+        :type session: ?
         :type state: str
 
         :rtype: WatchSession or None
         """
 
-        if not section:
+        if not item:
             return None
 
         return WatchSession(
-            section.get('sessionKey'),
-            section.get('ratingKey'),
+            item.session.key,
+            item.rating_key,
             metadata, state,
 
-            user=User.from_section(section),
-            client=Client.from_section(client_section)
+            user=item.session.user,
+            client=item.session.player
         )
 
     @staticmethod

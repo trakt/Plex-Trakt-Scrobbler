@@ -8,7 +8,7 @@ class StatusInterface(Interface):
         response = self.http.get('sessions')
 
         return self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
+            'MediaContainer': ('SessionContainer', {
                 'Track': 'Track',
 
                 'Video': {
