@@ -15,9 +15,9 @@ class ScrobblerMethod(Method):
         super(ScrobblerMethod, self).__init__(threaded=False)
 
     @staticmethod
-    def status_message(session, state):
+    def status_message(ws, state):
         state = state[:2].upper() if state else '?'
-        progress = session.progress if session.progress is not None else '?'
+        progress = ws.progress if ws.progress is not None else '?'
 
         status = '[%s%s]' % (
             str_pad(state, 2, trim=True),
@@ -26,13 +26,13 @@ class ScrobblerMethod(Method):
 
         metadata_key = None
 
-        if session.metadata and session.metadata.get('key'):
-            metadata_key = session.metadata['key']
+        if ws.metadata and ws.guid:
+            metadata_key = (ws.guid.agent, ws.guid.sid)
 
             if type(metadata_key) is tuple:
                 metadata_key = ', '.join(repr(x) for x in metadata_key)
 
-        title = '%s (%s)' % (session.get_title(), metadata_key)
+        title = '%s (%s)' % (ws.title, metadata_key)
 
         def build(message_format):
             return '%s %s' % (status, message_format % title)
@@ -90,42 +90,43 @@ class ScrobblerMethod(Method):
         return None
 
     @staticmethod
-    def get_request_parameters(session):
+    def get_request_parameters(ws):
         values = {}
 
-        session_type = session.get_type()
-        if not session_type:
+        if not ws.type:
             return None
 
-        if session_type == 'show':
-            if not session.metadata.get('episodes'):
-                log.warn('No episodes found in metadata')
+        if ws.type == 'show':
+            if not ws.identifier:
+                log.warn('Unable to retrieve episode identifier')
                 return None
 
-            if session.cur_episode >= len(session.metadata['episodes']):
-                log.warn('Unable to find episode at index %s, available episodes: %s', session.cur_episode, session.metadata['episodes'])
+            season, episodes = ws.identifier
+
+            if ws.cur_episode >= len(episodes):
+                log.warn('Unable to find episode at index %s, available episodes: %s', ws.cur_episode, ws.metadata['episodes'])
                 return None
 
             values.update({
-                'season': session.metadata['season'],
-                'episode': session.metadata['episodes'][session.cur_episode],
+                'season': season,
+                'episode': episodes[ws.cur_episode],
 
                 # Scale duration to number of episodes
-                'duration': session.metadata['duration'] / len(session.metadata['episodes'])
+                'duration': ws.metadata['duration'] / len(episodes)
             })
         else:
-            values['duration'] = session.metadata['duration']
+            values['duration'] = ws.metadata['duration']
 
         # Add TVDB/TMDB identifier
-        values = PlexMetadata.add_identifier(values, session.metadata)
+        values = PlexMetadata.add_identifier(values, ws.metadata)
 
         values.update({
-            'progress': session.progress,
-            'title': session.get_title()
+            'progress': ws.progress,
+            'title': ws.title
         })
 
-        if 'year' in session.metadata:
-            values['year'] = session.metadata['year']
+        if 'year' in ws.metadata:
+            values['year'] = ws.metadata['year']
 
         return values
 
@@ -133,20 +134,20 @@ class ScrobblerMethod(Method):
     def handle_state(cls, session, state):
         if state == 'playing' and session.paused_since:
             session.paused_since = None
-            session.save()
+            #session.save()
             return True
 
         # If stopped, delete the session
         if state == 'stopped':
-            log.debug(session.get_title() + ' stopped, deleting the session')
+            log.debug(session.title + ' stopped, deleting the session')
             session.delete()
             return True
 
         # If paused, queue a session update when playing begins again
         if state == 'paused' and not session.update_required:
-            log.debug(session.get_title() + ' paused, session update queued to run when resumed')
+            log.debug(session.title + ' paused, session update queued to run when resumed')
             session.update_required = True
-            session.save()
+            #session.save()
             return True
 
         return False
@@ -177,7 +178,7 @@ class ScrobblerMethod(Method):
             # If just scrobbled, force update on next status update to set as watching again
             session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
-        session.save()
+        #session.save()
 
     @staticmethod
     def offset_jumped(session, current):
@@ -206,36 +207,40 @@ class ScrobblerMethod(Method):
         return False
 
     @staticmethod
-    def update_progress(session, view_offset):
-        if not session or not session.metadata:
+    def update_progress(ws, view_offset):
+        if not ws or not ws.metadata:
+            log.warn('Invalid session/metadata')
             return False
 
         # Ensure duration is positive
-        if session.metadata.get('duration', 0) <= 0:
+        if not ws.metadata.duration or ws.metadata.duration <= 0:
+            log.warn('Invalid duration')
             return False
 
-        media = session.get_type()
-        duration = session.metadata['duration'] * 60 * 1000
+        duration = ws.metadata.duration * 60 * 1000
 
         total_progress = float(view_offset) / duration
 
-        if media == 'show':
-            if 'episodes' not in session.metadata:
-                return False
+        if ws.type == 'show':
+            if not ws.identifier:
+                log.warn('Unable to retrieve episode identifier')
+                return None
 
-            cur_episode = int(math.floor(len(session.metadata['episodes']) * total_progress))
+            season, episodes = ws.identifier
+
+            cur_episode = int(math.floor(len(episodes) * total_progress))
 
             # If episode has changed, reset the state to start new session
-            if cur_episode != session.cur_episode and session.cur_episode is not None:
+            if cur_episode != ws.cur_episode and ws.cur_episode is not None:
                 log.info('Session has changed episodes, state has been reset')
-                session.reset()
+                ws.reset()
 
-            session.cur_episode = cur_episode
+            ws.cur_episode = cur_episode
 
             # Scale progress based on number of episodes
-            total_progress = (len(session.metadata['episodes']) * total_progress) - session.cur_episode
+            total_progress = (len(episodes) * total_progress) - ws.cur_episode
 
-        session.progress = int(round(total_progress * 100, 0))
+        ws.progress = int(round(total_progress * 100, 0))
         return True
 
     def valid(self, session):
@@ -244,8 +249,8 @@ class ScrobblerMethod(Method):
         # Check filters
         if not self.valid_user(session) or \
            not self.valid_client(session) or \
-           not self.valid_section(session) or\
-           not self.valid_address(session):
+           not self.valid_section(session): #or\
+           # TODO not self.valid_address(session):
             filtered = True
         else:
             filtered = False
@@ -253,7 +258,7 @@ class ScrobblerMethod(Method):
         if session.filtered != filtered:
             # value changed, update session
             session.filtered = filtered
-            session.save()
+            #session.save()
 
         return not filtered
 
@@ -291,7 +296,7 @@ class ScrobblerMethod(Method):
         if f_validate(value, f_allow, f_deny):
             log.info('Ignoring item [%s](%s) played by filtered "%s": %s' % (
                 session.item_key,
-                session.get_title(),
+                session.title,
                 key, repr(f_current())
             ))
             return False
@@ -299,13 +304,13 @@ class ScrobblerMethod(Method):
         return True
 
     @classmethod
-    def valid_user(cls, session):
+    def valid_user(cls, ws):
         return cls.match(
-            session, 'scrobble_names',
-            f_current=lambda: session.user.title if session.user else None,
+            ws, 'scrobble_names',
+            f_current=lambda: ws.session.user.title if ws.session.user else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
-                    not session.user or
+                    not ws.session.user or
                     value not in f_allow
                 )) or
                 value in f_deny
@@ -313,13 +318,13 @@ class ScrobblerMethod(Method):
         )
 
     @classmethod
-    def valid_client(cls, session):
+    def valid_client(cls, ws):
         return cls.match(
-            session, 'scrobble_clients',
-            f_current=lambda: session.client.name if session.client else None,
+            ws, 'scrobble_clients',
+            f_current=lambda: ws.session.client.name if ws.session.client else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
-                    not session.client or
+                    not ws.session.client or
                     value not in f_allow
                 )) or
                 value in f_deny
@@ -327,27 +332,27 @@ class ScrobblerMethod(Method):
         )
 
     @classmethod
-    def valid_section(cls, session):
+    def valid_section(cls, ws):
         return cls.match(
-            session, 'filter_sections',
-            f_current=lambda: session.metadata['section_title'],
+            ws, 'filter_sections',
+            f_current=lambda: ws.metadata.section.title,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and value not in f_allow) or
                 value in f_deny
             ),
             f_check=lambda: (
-                not session.metadata or
-                not session.metadata.get('section_title')
+                not ws.metadata or
+                not ws.metadata.section.title
             )
         )
 
     @classmethod
-    def valid_address(cls, session):
+    def valid_address(cls, ws):
         def f_current():
-            if not session.client or not session.client.address:
+            if not ws.session.client or not ws.session.client.address:
                 return None
 
-            value = session.client.address
+            value = ws.session.client.address
 
             try:
                 return ipaddress.ip_address(unicode(value))
@@ -384,7 +389,7 @@ class ScrobblerMethod(Method):
                 return None
 
         return cls.match(
-            session, 'filter_networks',
+            ws, 'filter_networks',
             normalize_values=False,
             f_current=f_current,
             f_validate=f_validate,

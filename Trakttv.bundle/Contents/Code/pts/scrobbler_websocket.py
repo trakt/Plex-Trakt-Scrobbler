@@ -1,4 +1,3 @@
-from core.eventing import EventManager
 from core.helpers import get_pref, try_convert
 from core.logger import Logger
 from data.watch_session import WatchSession
@@ -6,7 +5,7 @@ from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 from plex import Plex
 from plex_activity import Activity
-from plex_metadata import Metadata
+from plex_metadata import Guid, Metadata
 
 
 log = Logger('pts.scrobbler_websocket')
@@ -62,17 +61,18 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         try:
             metadata = Metadata.get(item.rating_key)
-
-            # if metadata:
-            # TODO metadata = metadata.to_dict()
         except NotImplementedError, e:
             # metadata not supported (music, etc..)
             log.debug('%s, ignoring session' % e.message)
             skip = True
 
-        session = WatchSession.from_section(item, state, metadata, client)
+        # Guid
+        guid = Guid.parse(metadata.guid)
+
+        # Create WatchSession
+        session = WatchSession.from_session(item.session, metadata, guid, state)
         session.skip = skip
-        session.save()
+        #session.save()
 
         log.debug('created session: %s', session)
 
@@ -105,14 +105,15 @@ class WebSocketScrobbler(ScrobblerMethod):
             log.debug('Invalid Session: Missing metadata')
             return False
 
-        if session.metadata.get('duration', 0) <= 0:
+        if not session.metadata.duration or session.metadata.duration <= 0:
             log.debug('Invalid Session: Invalid duration')
             return False
 
         return True
 
     def get_session(self, session_key, state, view_offset):
-        session = WatchSession.load(session_key)
+        # TODO session = WatchSession.load(session_key)
+        session = None
 
         if not session:
             session = self.create_session(session_key, state)
@@ -168,51 +169,49 @@ class WebSocketScrobbler(ScrobblerMethod):
         state = info.get('state')
         view_offset = info.get('viewOffset')
 
-        session = self.get_session(session_key, state, view_offset)
-        if not session:
+        ws = self.get_session(session_key, state, view_offset)
+        if not ws:
             log.trace('Invalid or ignored session, nothing to do')
             return
 
         # Ignore sessions flagged as 'skip'
-        if session.skip:
+        if ws.skip:
             return
 
         # Validate session (check filters)
-        if not self.valid(session):
+        if not self.valid(ws):
             return
 
-        media_type = session.get_type()
-
         # Check if we are scrobbling a known media type
-        if not media_type:
-            log.info('Playing unknown item, will not be scrobbled: "%s"' % session.get_title())
-            session.skip = True
+        if not ws.type:
+            log.info('Playing unknown item, will not be scrobbled: "%s"' % ws.title)
+            ws.skip = True
             return
 
         # Check if the view_offset has jumped (#131)
-        if self.offset_jumped(session, view_offset):
+        if self.offset_jumped(ws, view_offset):
             log.info('View offset jump detected, ignoring the state update')
-            session.save()
+            #ws.save()
             return
 
-        session.last_view_offset = view_offset
+        ws.last_view_offset = view_offset
 
         # Calculate progress
-        if not self.update_progress(session, view_offset):
+        if not self.update_progress(ws, view_offset):
             log.warn('Error while updating session progress, queued session to be updated')
-            session.update_required = True
-            session.save()
+            ws.update_required = True
+            #ws.save()
             return
 
-        action = self.get_action(session, state)
+        action = self.get_action(ws, state)
 
         if action:
-            self.handle_action(session, media_type, action, state)
+            self.handle_action(ws, ws.type, action, state)
         else:
-            log.debug(self.status_message(session, state)('Nothing to do this time for %s'))
-            session.save()
+            log.debug(self.status_message(ws, state)('Nothing to do this time for %s'))
+            #ws.save()
 
-        if self.handle_state(session, state) or action:
+        if self.handle_state(ws, state) or action:
             Dict.Save()
 
 Scrobbler.register(WebSocketScrobbler, weight=10)

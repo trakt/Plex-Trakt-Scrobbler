@@ -57,7 +57,7 @@ class LoggingScrobbler(ScrobblerMethod):
 
         session = WatchSession.from_info(info, metadata, client)
         session.skip = skip
-        session.save()
+        #session.save()
 
         log.debug('created session: %s', session)
 
@@ -122,14 +122,14 @@ class LoggingScrobbler(ScrobblerMethod):
 
         # Check if we are scrobbling a known media type
         if not media_type:
-            log.info('Playing unknown item, will not be scrobbled: "%s"' % session.get_title())
+            log.info('Playing unknown item, will not be scrobbled: "%s"' % session.title)
             session.skip = True
             return
 
         # Check if the view_offset has jumped (#131)
         if self.offset_jumped(session, info['time']):
             log.info('View offset jump detected, ignoring the state update')
-            session.save()
+            #session.save()
             return
 
         session.last_view_offset = info['time']
@@ -138,7 +138,7 @@ class LoggingScrobbler(ScrobblerMethod):
         if not self.update_progress(session, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
             session.update_required = True
-            session.save()
+            #session.save()
             return
 
         action = self.get_action(session, info['state'])
@@ -147,7 +147,7 @@ class LoggingScrobbler(ScrobblerMethod):
             self.handle_action(session, media_type, action, info['state'])
         else:
             log.debug(self.status_message(session, info.get('state'))('Nothing to do this time for %s'))
-            session.save()
+            #session.save()
 
         if self.handle_state(session, info['state']) or action:
             Dict.Save()

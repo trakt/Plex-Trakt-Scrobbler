@@ -3,25 +3,17 @@ from core.model import DictModel
 from data.client import Client
 from data.user import User
 
+from plex_metadata import Matcher
 
-class WatchSession(DictModel):
-    root_key = 'nowPlaying'
 
-    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None, client=None):
-        """
-        :type metadata: ?
-        :type state: str
-        :type user: User
-        """
-
-        super(WatchSession, self).__init__(session_key)
-
-        self.item_key = item_key
+class WatchSession(object):
+    def __init__(self, key, metadata, session, guid, state):
+        self.key = key
 
         # Plex
         self.metadata = metadata
-        self.user = user
-        self.client = client
+        self.session = session
+        self.guid = guid
 
         # States
         self.skip = False
@@ -41,29 +33,40 @@ class WatchSession(DictModel):
         self.update_required = False
         self.last_updated = Datetime.FromTimestamp(0)
 
-    def get_type(self):
-        """
-        :rtype: str or None
-        """
+        # Private
+        self.identifier_ = None
 
-        if not self.metadata or not self.metadata.get('type'):
+    @property
+    def type(self):
+        if not self.metadata or not self.metadata.type:
             return None
 
-        media_type = self.metadata.get('type')
+        media_type = self.metadata.type
 
         if media_type == 'episode':
             return 'show'
 
         return media_type
 
-    def get_title(self):
+    @property
+    def identifier(self):
+        if self.metadata is None:
+            return None
+
+        if self.identifier_ is None:
+            self.identifier_ = Matcher.process(self.metadata)
+
+        return self.identifier_
+
+    @property
+    def title(self):
         if not self.metadata:
             return None
 
-        if 'grandparent_title' in self.metadata:
-            return self.metadata['grandparent_title']
+        if self.metadata.type in ['season', 'episode']:
+            return self.metadata.show.title
 
-        return self.metadata.get('title')
+        return self.metadata.title
 
     def reset(self):
         self.scrobbled = False
@@ -82,24 +85,11 @@ class WatchSession(DictModel):
         return value
 
     @staticmethod
-    def from_section(item, state, metadata, client_section=None):
-        """
-        :type session: ?
-        :type state: str
-
-        :rtype: WatchSession or None
-        """
-
-        if not item:
-            return None
-
+    def from_session(session, metadata, guid, state):
         return WatchSession(
-            item.session.key,
-            item.rating_key,
-            metadata, state,
-
-            user=item.session.user,
-            client=item.session.player
+            session.key,
+            metadata, session, guid,
+            state
         )
 
     @staticmethod

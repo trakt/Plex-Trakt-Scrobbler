@@ -35,19 +35,18 @@ class SessionManager(Thread):
             return
 
         if session.watching and Datetime.Now() > session.paused_since + Datetime.Delta(seconds=15):
-            Log.Debug("%s paused for 15s, watching status cancelled" % session.get_title())
+            Log.Debug("%s paused for 15s, watching status cancelled" % session.title)
             session.watching = False
-            session.save()
+            #session.save()
 
             if not self.send_action(session, 'cancelwatching'):
                 Log.Info('Failed to cancel the watching status')
 
-    def send_action(self, session, action):
-        media_type = session.get_type()
-        if not media_type:
+    def send_action(self, ws, action):
+        if not ws.type:
             return False
 
-        if ScrobblerMethod.handle_action(session, media_type, action, session.cur_state):
+        if ScrobblerMethod.handle_action(ws, ws.type, action, ws.cur_state):
             return False
 
         Dict.Save()

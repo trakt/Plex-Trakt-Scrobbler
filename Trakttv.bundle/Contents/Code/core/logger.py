@@ -17,7 +17,7 @@ class Logger(object):
 
             func(ENTRY_FORMAT % (tag, message))
         except Exception, ex:
-            self.error(
+            Log.Error(
                 'Error writing log entry (%s) %s [message: %s, args: %s]',
                 type(ex).__name__, ex.message,
                 repr(message), args

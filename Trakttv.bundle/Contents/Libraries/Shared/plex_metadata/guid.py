@@ -28,7 +28,7 @@ class Guid(object):
 
         # Nothing more to parse, return now
         if uri.path:
-            cls.parse_path(guid, uri)
+            cls.parse_path(result, uri)
 
         if map:
             return cls.map_guid(result)
