@@ -44,7 +44,7 @@ class Interface(object):
     @classmethod
     def __construct(cls, client, path, node, schema):
         if not schema:
-            raise ValueError('Missing schema for node with tag "%s"' % node.tag)
+            return None
 
         item = schema.get(node.tag)
 
@@ -79,7 +79,10 @@ class Interface(object):
         # Lazy-construct children
         def iter_children():
             for child_node in node:
-                yield cls.__construct(client, path, child_node, child_schema)
+                item = cls.__construct(client, path, child_node, child_schema)
+
+                if item:
+                    yield item
 
         obj._children = iter_children()
 

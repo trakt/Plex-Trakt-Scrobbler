@@ -2,6 +2,7 @@ from plex.interfaces.core.base import Interface
 
 import logging
 import traceback
+import types
 
 log = logging.getLogger(__name__)
 
@@ -143,6 +144,21 @@ class Descriptor(Interface):
 
     def __iter__(self):
         return self._children or []
+
+    def __getstate__(self):
+        data = self.__dict__
+
+        def build():
+            for key, value in data.items():
+                if isinstance(value, types.GeneratorType):
+                    value = list(value)
+
+                if key in ['client']:
+                    continue
+
+                yield key, value
+
+        return dict(build())
 
 
 class DescriptorMixin(Descriptor):
