@@ -1,14 +1,15 @@
 from core.helpers import build_repr
-from core.model import DictModel
-from data.client import Client
-from data.user import User
+from data.model import Model
 
+from jsonpickle.unpickler import ClassRegistry
 from plex_metadata import Matcher
 
 
-class WatchSession(object):
+class WatchSession(Model):
+    group = 'WatchSession'
+
     def __init__(self, key, metadata, session, guid, state):
-        self.key = key
+        super(WatchSession, self).__init__(key)
 
         # Plex
         self.metadata = metadata
@@ -74,16 +75,6 @@ class WatchSession(object):
 
         self.last_updated = Datetime.FromTimestamp(0)
 
-    @classmethod
-    def object_from_json(cls, key, value):
-        if key == 'user':
-            return User.from_json(value)
-
-        if key == 'client':
-            return Client.from_json(value)
-
-        return value
-
     @staticmethod
     def from_session(session, metadata, guid, state):
         return WatchSession(
@@ -132,3 +123,6 @@ class WatchSession(object):
 
     def __str__(self):
         return self.__repr__()
+
+
+ClassRegistry.register('watch_session.WatchSession', WatchSession)

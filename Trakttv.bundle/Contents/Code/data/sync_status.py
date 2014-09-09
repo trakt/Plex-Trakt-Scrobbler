@@ -1,8 +1,8 @@
-from core.helpers import total_seconds, build_repr
-from core.model import DictModel
+from core.helpers import build_repr
+from data.model import Model
 
 
-class SyncStatus(DictModel):
+class SyncStatus(Model):
     root_key = 'syncStatus'
 
     def __init__(self, handler_key=None):
