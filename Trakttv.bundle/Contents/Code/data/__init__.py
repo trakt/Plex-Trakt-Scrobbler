@@ -4,6 +4,8 @@ import sys
 
 import client
 sys.modules['data.client'] = client
+import model
+sys.modules['data.model'] = model
 
 import sync_status
 sys.modules['data.sync_status'] = sync_status
