@@ -241,7 +241,12 @@ class Unpickler(object):
 
     def _restore_object_instance(self, obj, cls):
         factory = self._loadfactory(obj)
-        args = getargs(obj)
+        if has_tag(obj, tags.NEWARGSEX):
+            args, kwargs = obj[tags.NEWARGSEX]
+        else:
+            args = getargs(obj)
+            kwargs = {}
+
         is_oldstyle = not (isinstance(cls, type) or getattr(cls, '__meta__', None))
 
         # This is a placeholder proxy object which allows child objects to
@@ -251,13 +256,15 @@ class Unpickler(object):
 
         if args:
             args = self._restore(args)
+        if kwargs:
+            kwargs = self._restore(kwargs)
         try:
             if (not is_oldstyle) and hasattr(cls, '__new__'): # new style classes
                 if factory:
-                    instance = cls.__new__(cls, factory, *args)
+                    instance = cls.__new__(cls, factory, *args, **kwargs)
                     instance.default_factory = factory
                 else:
-                    instance = cls.__new__(cls, *args)
+                    instance = cls.__new__(cls, *args, **kwargs)
             else:
                 instance = object.__new__(cls)
         except TypeError: # old-style classes
@@ -325,8 +332,8 @@ class Unpickler(object):
 
     def _restore_state(self, obj, instance):
         state = self._restore(obj[tags.STATE])
-        has_slots = (isinstance(state, tuple) and len(state) == 2 
-                     and isinstance(state[1], dict))
+        has_slots = (isinstance(state, tuple) and len(state) == 2
+                        and isinstance(state[1], dict))
         has_slots_and_dict = has_slots and isinstance(state[0], dict)
         if hasattr(instance, '__setstate__'):
             instance.__setstate__(state)
@@ -338,9 +345,10 @@ class Unpickler(object):
         elif has_slots:
             self._restore_from_dict(state[1], instance, ignorereserved=False)
             if has_slots_and_dict:
-                self._restore_from_dict(state[0], 
+                self._restore_from_dict(state[0],
                                         instance, ignorereserved=False)
-        elif not hasattr(instance, '__getnewargs__'):
+        elif (not hasattr(instance, '__getnewargs__')
+              and not hasattr(instance, '__getnewargs_ex__')):
             # __setstate__ is not implemented so that means that the best
             # we can do is return the result of __getstate__() rather than
             # return an empty shell of an object.
@@ -356,7 +364,7 @@ class Unpickler(object):
         method = _obj_setvalue
         proxies = [(parent, idx, value, method)
                     for idx, value in enumerate(parent)
-                        if type(value) is _Proxy]
+                        if isinstance(value, _Proxy)]
         self._proxies.extend(proxies)
         return parent
 
@@ -448,6 +456,18 @@ class Unpickler(object):
         self._namedict[self._refname()] = instance
 
 
+class ClassRegistry(object):
+    map = {}
+
+    @classmethod
+    def register(cls, name, value):
+        cls.map[name] = value
+
+    @classmethod
+    def get(cls, name):
+        return cls.map.get(name)
+
+
 def loadclass(module_and_name):
     """Loads the module and returns the class.
 
@@ -467,12 +487,15 @@ def loadclass(module_and_name):
         __import__(module)
         return getattr(sys.modules[module], name)
     except:
-        return None
+        return ClassRegistry.get(module_and_name)
 
 
 def getargs(obj):
     """Return arguments suitable for __new__()"""
     # Let saved newargs take precedence over everything
+    if has_tag(obj, tags.NEWARGSEX):
+        raise ValueError("__newargs_ex__ returns both args and kwargs")
+
     if has_tag(obj, tags.NEWARGS):
         return obj[tags.NEWARGS]
 

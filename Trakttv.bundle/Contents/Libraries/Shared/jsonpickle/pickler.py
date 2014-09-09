@@ -224,6 +224,7 @@ class Pickler(object):
         has_dict = hasattr(obj, '__dict__')
         has_slots = not has_dict and hasattr(obj, '__slots__')
         has_getnewargs = hasattr(obj, '__getnewargs__')
+        has_getnewargs_ex = hasattr(obj, '__getnewargs_ex__')
         has_getinitargs = hasattr(obj, '__getinitargs__')
         has_reduce, has_reduce_ex = util.has_reduce(obj)
 
@@ -285,7 +286,10 @@ class Pickler(object):
                     # well, we can't do anything with that, so we ignore it
                     pass
 
-            if has_getnewargs:
+            if has_getnewargs_ex:
+                data[tags.NEWARGSEX] = list(map(self._flatten, obj.__getnewargs_ex__()))
+
+            if has_getnewargs and not has_getnewargs_ex:
                 data[tags.NEWARGS] = self._flatten(obj.__getnewargs__())
 
             if has_getinitargs:

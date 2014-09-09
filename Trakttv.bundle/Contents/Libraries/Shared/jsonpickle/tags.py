@@ -15,6 +15,7 @@ INITARGS = 'py/initargs'
 ITERATOR = 'py/iterator'
 JSON_KEY = 'json://'
 NEWARGS = 'py/newargs'
+NEWARGSEX = 'py/newargsex'
 NEWOBJ = 'py/newobj'
 OBJECT = 'py/object'
 REDUCE = 'py/reduce'
@@ -33,6 +34,7 @@ RESERVED = set([
     INITARGS,
     ITERATOR,
     NEWARGS,
+    NEWARGSEX,
     NEWOBJ,
     OBJECT,
     REDUCE,
