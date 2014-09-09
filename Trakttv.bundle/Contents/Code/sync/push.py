@@ -13,9 +13,9 @@ class Base(SyncBase):
     task = 'push'
 
     def is_watching(self, p_item):
-        sessions = WatchSession.all(lambda s:
-            s.get('metadata') and
-            s['metadata'].get('rating_key') == p_item.rating_key
+        sessions = WatchSession.all(lambda ws:
+            ws.metadata and
+            ws.metadata.rating_key == p_item.rating_key
         )
 
         for key, session in sessions:

@@ -70,30 +70,30 @@ class WebSocketScrobbler(ScrobblerMethod):
         guid = Guid.parse(metadata.guid)
 
         # Create WatchSession
-        session = WatchSession.from_session(item.session, metadata, guid, state)
-        session.skip = skip
-        #session.save()
+        ws = WatchSession.from_session(item.session, metadata, guid, state)
+        ws.skip = skip
+        ws.save()
 
-        log.debug('created session: %s', session)
+        log.debug('created session: %s', ws)
 
-        return session
+        return ws
 
-    def update_session(self, session, view_offset):
-        log.debug('Trying to update the current WatchSession (session key: %s)' % session.key)
+    def update_session(self, ws, view_offset):
+        log.debug('Trying to update the current WatchSession (session key: %s)' % ws.key)
 
-        video_section = Plex['status'].sessions().get(session.key)
-        if not video_section:
+        session = Plex['status'].sessions().get(ws.key)
+        if not session:
             log.warn('Session was not found on media server')
             return False
 
-        log.debug('last item key: %s, current item key: %s' % (session.item_key, video_section.get('ratingKey')))
+        log.debug('last item key: %s, current item key: %s' % (ws.metadata.rating_key, session.rating_key))
 
-        if session.item_key != video_section.get('ratingKey'):
+        if ws.metadata.rating_key != session.rating_key:
             log.debug('Invalid Session: Media changed')
             return False
 
-        session.last_view_offset = view_offset
-        session.update_required = False
+        ws.last_view_offset = view_offset
+        ws.update_required = False
 
         return True
 
@@ -112,8 +112,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         return True
 
     def get_session(self, session_key, state, view_offset):
-        # TODO session = WatchSession.load(session_key)
-        session = None
+        session = WatchSession.load(session_key)
 
         if not session:
             session = self.create_session(session_key, state)
@@ -191,7 +190,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         # Check if the view_offset has jumped (#131)
         if self.offset_jumped(ws, view_offset):
             log.info('View offset jump detected, ignoring the state update')
-            #ws.save()
+            ws.save()
             return
 
         ws.last_view_offset = view_offset
@@ -200,7 +199,7 @@ class WebSocketScrobbler(ScrobblerMethod):
         if not self.update_progress(ws, view_offset):
             log.warn('Error while updating session progress, queued session to be updated')
             ws.update_required = True
-            #ws.save()
+            ws.save()
             return
 
         action = self.get_action(ws, state)
@@ -209,7 +208,7 @@ class WebSocketScrobbler(ScrobblerMethod):
             self.handle_action(ws, ws.type, action, state)
         else:
             log.debug(self.status_message(ws, state)('Nothing to do this time for %s'))
-            #ws.save()
+            ws.save()
 
         if self.handle_state(ws, state) or action:
             Dict.Save()

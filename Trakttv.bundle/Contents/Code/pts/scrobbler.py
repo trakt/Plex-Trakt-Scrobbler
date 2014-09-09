@@ -1,4 +1,4 @@
-from core.helpers import str_pad, get_filter, get_pref, normalize, any
+from core.helpers import str_pad, get_filter, get_pref, normalize, any, try_convert
 from core.logger import Logger
 from core.method_manager import Method, Manager
 
@@ -89,8 +89,8 @@ class ScrobblerMethod(Method):
 
         return None
 
-    @staticmethod
-    def get_request_parameters(ws):
+    @classmethod
+    def get_request_parameters(cls, ws):
         values = {}
 
         if not ws.type:
@@ -112,55 +112,67 @@ class ScrobblerMethod(Method):
                 'episode': episodes[ws.cur_episode],
 
                 # Scale duration to number of episodes
-                'duration': ws.metadata['duration'] / len(episodes)
+                'duration': ws.metadata.duration / len(episodes)
             })
         else:
-            values['duration'] = ws.metadata['duration']
+            values['duration'] = ws.metadata.duration
 
         # Add TVDB/TMDB identifier
-        values = PlexMetadata.add_identifier(values, ws.metadata)
+        cls.set_identifier(values, ws.guid)
 
         values.update({
             'progress': ws.progress,
             'title': ws.title
         })
 
-        if 'year' in ws.metadata:
-            values['year'] = ws.metadata['year']
+        if ws.metadata.year is not None:
+            values['year'] = ws.metadata.year
 
         return values
 
     @classmethod
-    def handle_state(cls, session, state):
-        if state == 'playing' and session.paused_since:
-            session.paused_since = None
-            #session.save()
+    def set_identifier(cls, values, guid):
+        if not guid:
+            return
+
+        if guid.agent == 'imdb':
+            values['imdb_id'] = guid.sid
+        elif guid.agent == 'themoviedb':
+            values['tmdb_id'] = try_convert(guid.sid, int)
+        elif guid.agent == 'thetvdb':
+            values['tvdb_id'] = try_convert(guid.sid, int)
+
+    @classmethod
+    def handle_state(cls, ws, state):
+        if state == 'playing' and ws.paused_since:
+            ws.paused_since = None
+            ws.save()
             return True
 
         # If stopped, delete the session
         if state == 'stopped':
-            log.debug(session.title + ' stopped, deleting the session')
-            session.delete()
+            log.debug(ws.title + ' stopped, deleting the session')
+            ws.delete()
             return True
 
         # If paused, queue a session update when playing begins again
-        if state == 'paused' and not session.update_required:
-            log.debug(session.title + ' paused, session update queued to run when resumed')
-            session.update_required = True
-            #session.save()
+        if state == 'paused' and not ws.update_required:
+            log.debug(ws.title + ' paused, session update queued to run when resumed')
+            ws.update_required = True
+            ws.save()
             return True
 
         return False
 
     @classmethod
-    def handle_action(cls, session, media, action, state):
+    def handle_action(cls, ws, media, action, state):
         # Setup Data to send to trakt
-        parameters = cls.get_request_parameters(session)
+        parameters = cls.get_request_parameters(ws)
         if not parameters:
             log.info('Invalid parameters, unable to continue')
             return False
 
-        log.trace('Sending action "%s/%s"', media, action)
+        log.trace('Sending action "%s/%s": %r', media, action, parameters)
 
         if action in ['watching', 'scrobble']:
             response = Trakt[media][action](**parameters)
@@ -170,21 +182,21 @@ class ScrobblerMethod(Method):
         if not response or response.get('status') != 'success':
             log.warn('Unable to send scrobbler action')
 
-        session.last_updated = Datetime.Now()
+        ws.last_updated = Datetime.Now()
 
         if action == 'scrobble':
-            session.scrobbled = True
+            ws.scrobbled = True
 
             # If just scrobbled, force update on next status update to set as watching again
-            session.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
+            ws.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
 
-        #session.save()
+        ws.save()
 
     @staticmethod
-    def offset_jumped(session, current):
-        duration = session.metadata['duration'] * 60 * 1000
+    def offset_jumped(ws, current):
+        duration = ws.metadata.duration * 60 * 1000
 
-        last = session.last_view_offset
+        last = ws.last_view_offset
 
         if last is None:
             return False
@@ -217,9 +229,9 @@ class ScrobblerMethod(Method):
             log.warn('Invalid duration')
             return False
 
-        duration = ws.metadata.duration * 60 * 1000
+        total_progress = float(view_offset) / ws.metadata.duration
 
-        total_progress = float(view_offset) / duration
+        log.debug('total_progress: %s (view_offset: %s, duration: %s)', total_progress, view_offset, ws.metadata.duration)
 
         if ws.type == 'show':
             if not ws.identifier:
@@ -243,22 +255,22 @@ class ScrobblerMethod(Method):
         ws.progress = int(round(total_progress * 100, 0))
         return True
 
-    def valid(self, session):
+    def valid(self, ws):
         filtered = None
 
         # Check filters
-        if not self.valid_user(session) or \
-           not self.valid_client(session) or \
-           not self.valid_section(session): #or\
+        if not self.valid_user(ws) or \
+           not self.valid_client(ws) or \
+           not self.valid_section(ws): #or\
            # TODO not self.valid_address(session):
             filtered = True
         else:
             filtered = False
 
-        if session.filtered != filtered:
+        if ws.filtered != filtered:
             # value changed, update session
-            session.filtered = filtered
-            #session.save()
+            ws.filtered = filtered
+            ws.save()
 
         return not filtered
 
