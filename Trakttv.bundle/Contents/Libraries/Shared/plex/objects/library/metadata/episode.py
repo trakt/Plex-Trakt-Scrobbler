@@ -4,9 +4,10 @@ from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.video import Video
 from plex.objects.mixins.rate import RateMixin
+from plex.objects.mixins.scrobble import ScrobbleMixin
 
 
-class Episode(Video, Metadata, RateMixin):
+class Episode(Video, Metadata, RateMixin, ScrobbleMixin):
     show = Property(resolver=lambda: Episode.construct_show)
     season = Property(resolver=lambda: Episode.construct_season)
 

@@ -5,10 +5,10 @@ from plex_metadata.metadata import Default as Metadata
 
 class Library(object):
     @classmethod
-    def all(cls, titles=None, keys=None, types=None):
+    def all(cls, types=None, keys=None, titles=None):
         result = {}
 
-        sections = Plex['library'].sections().filter(titles, keys, types)
+        sections = Plex['library'].sections().filter(types, keys, titles)
 
         for section in sections:
             if section.type not in result:

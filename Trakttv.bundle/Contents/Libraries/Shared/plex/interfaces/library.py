@@ -49,3 +49,30 @@ class LibraryInterface(Interface):
                 })
             })
         })
+
+    #
+    # Item actions
+    #
+
+    def rate(self, key, rating):
+        response = self.http.get(
+            '/:/rate',
+            query={
+                'identifier': 'com.plexapp.plugins.library',
+                'key': key,
+                'rating': int(round(rating, 0))
+            }
+        )
+
+        return response.status_code == 200
+
+    def scrobble(self, key):
+        response = self.http.get(
+            '/:/scrobble',
+            query={
+                'identifier': 'com.plexapp.plugins.library',
+                'key': key
+            }
+        )
+
+        return response.status_code == 200

@@ -26,10 +26,13 @@ class HttpClient(object):
 
     def request(self, method, path=None, params=None, query=None, data=None, credentials=None, **kwargs):
         if self.base_path and path:
-            path = self.base_path + '/' + path
+            # Prefix `base_path` to relative `path`s
+            if not path.startswith('/'):
+                path = self.base_path + '/' + path
+
         elif self.base_path:
             path = self.base_path
-        else:
+        elif not path:
             path = ''
 
         request = PlexRequest(
