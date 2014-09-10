@@ -194,7 +194,7 @@ class ScrobblerMethod(Method):
 
     @staticmethod
     def offset_jumped(ws, current):
-        duration = ws.metadata.duration * 60 * 1000
+        duration = ws.metadata.duration
 
         last = ws.last_view_offset
 
