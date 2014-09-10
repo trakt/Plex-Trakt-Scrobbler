@@ -41,7 +41,7 @@ class PlexInterface(Base):
 
     @classmethod
     def episodes(cls, key, parent=None):
-        return PlexLibrary.fetch_episodes(key, parent, cache_id=cls.get_cache_id())
+        return Library.episodes(key, parent)
 
     @staticmethod
     def get_root(p_item):
