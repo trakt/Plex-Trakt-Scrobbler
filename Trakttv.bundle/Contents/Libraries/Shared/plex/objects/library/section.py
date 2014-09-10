@@ -42,7 +42,11 @@ class SectionContainer(Container):
         types = to_iterable(types)
         keys = to_iterable(keys)
 
-        titles = [x.lower() for x in to_iterable(titles)]
+        titles = to_iterable(titles)
+
+        if titles:
+            # Normalize titles
+            titles = [x.lower() for x in titles]
 
         for section in self:
             if not self.filter_passes(types, section.type):

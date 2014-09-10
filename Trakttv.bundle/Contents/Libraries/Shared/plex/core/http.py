@@ -25,8 +25,12 @@ class HttpClient(object):
         return self
 
     def request(self, method, path=None, params=None, query=None, data=None, credentials=None, **kwargs):
+        if path is not None and type(path) is not str:
+            # Convert `path` to string (excluding NoneType)
+            path = str(path)
+
         if self.base_path and path:
-            # Prefix `base_path` to relative `path`s
+            # Prepend `base_path` to relative `path`s
             if not path.startswith('/'):
                 path = self.base_path + '/' + path
 

@@ -16,6 +16,10 @@ class Video(Directory, SessionMixin):
 
     duration = Property(type=int)
 
+    @property
+    def seen(self):
+        return self.view_count and self.view_count >= 1
+
     @staticmethod
     def construct_director(client, node):
         return Director.construct(client, node.find('Director'), child=True)

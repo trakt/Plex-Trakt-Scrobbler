@@ -69,7 +69,7 @@ class Matcher(object):
 
         # Ensure plex identifier is valid
         if p_season is None or p_episode is None:
-            log.debug('Ignoring item with key "%s", invalid season or episode attribute', video.get('ratingKey'))
+            log.debug('Ignoring item with key "%s", invalid season or episode attribute', episode.rating_key)
             return None, []
 
         # Find new episodes from identifiers

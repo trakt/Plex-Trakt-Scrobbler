@@ -1,29 +1,51 @@
 from plex import Plex
+from plex.core.helpers import to_iterable
 from plex_metadata.guid import Guid
+from plex_metadata.matcher import Default as Matcher
 from plex_metadata.metadata import Default as Metadata
 
 
 class Library(object):
     @classmethod
     def all(cls, types=None, keys=None, titles=None):
-        result = {}
+        types = to_iterable(types)
 
         sections = Plex['library'].sections().filter(types, keys, titles)
+        result = {}
 
         for section in sections:
             if section.type not in result:
                 result[section.type] = {}
 
             for item in section.all():
-                print '[%s] %s' % (section.title, item.title)
-
                 cls.item_map(result[section.type], item)
+
+        if types and len(types) == 1:
+            # Return single type-map if only one was requested
+            return result.get(types[0], {})
 
         return result
 
+    # TODO Library.episodes() `parent`?
     @classmethod
     def episodes(cls, key, parent=None):
-        pass
+        result = {}
+
+        container = Plex['library/metadata'].all_leaves(key)
+
+        if not container:
+            return None
+
+        for item in container:
+            season, episodes = Matcher.process(item)
+
+            if not season or not episodes:
+                continue
+
+            for episode in episodes:
+                result[season, episode] = item
+
+        return result
 
     @classmethod
     def item_map(cls, table, item):

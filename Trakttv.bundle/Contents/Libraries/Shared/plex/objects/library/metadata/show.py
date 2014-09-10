@@ -21,27 +21,11 @@ class Show(Directory, Metadata, RateMixin):
     episode_count = Property('leafCount', int)
     viewed_episode_count = Property('viewedLeafCount', int)
 
-    def children(self):
-        response = self.http.get('children')
-
-        return self.parse(response, {
-            'MediaContainer': (SeasonContainer, {
-                'Directory': {
-                    'season': 'Season'
-                }
-            })
-        })
-
     def all_leaves(self):
-        response = self.http.get('allLeaves')
+        return self.client['library/metadata'].all_leaves(self.rating_key)
 
-        return self.parse(response, {
-            'MediaContainer': ('EpisodeContainer', {
-                'Video': {
-                    'episode': 'Episode'
-                }
-            })
-        })
+    def children(self):
+        return self.client['library/metadata'].children(self.rating_key)
 
 
 class SeasonContainer(MediaContainer, Show):

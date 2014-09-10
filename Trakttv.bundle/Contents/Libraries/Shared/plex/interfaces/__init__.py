@@ -1,5 +1,6 @@
 from plex.interfaces.channel import ChannelInterface
 from plex.interfaces.library import LibraryInterface
+from plex.interfaces.library.metadata import LibraryMetadataInterface
 from plex.interfaces.plugin import PluginInterface
 from plex.interfaces.preferences import PreferencesInterface
 from plex.interfaces.root import RootInterface
@@ -18,6 +19,7 @@ INTERFACES = [
     StatusInterface,
 
     # /library
+    LibraryMetadataInterface,
     SectionInterface,
 
     # /:
