@@ -1,7 +1,8 @@
 from core.helpers import plural, all, json_encode, get_pref
 from core.logger import Logger
-from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
+
+from plex import Plex
 from datetime import datetime
 
 

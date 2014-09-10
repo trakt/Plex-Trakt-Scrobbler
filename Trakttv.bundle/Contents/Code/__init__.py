@@ -5,7 +5,7 @@
 import core
 import data
 import pts
-# TODO import sync
+import sync
 import interface
 # ------------------------------------------------
 
@@ -21,7 +21,7 @@ from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
-# TODO from sync.manager import SyncManager
+from sync.manager import SyncManager
 
 from datetime import datetime
 from plex import Plex
@@ -41,7 +41,7 @@ class Main(object):
         Scrobbler,
 
         # sync
-        # TODO SyncManager,
+        SyncManager,
     ]
 
     loggers_allowed = [

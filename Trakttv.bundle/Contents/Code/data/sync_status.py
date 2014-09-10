@@ -1,9 +1,11 @@
 from core.helpers import build_repr
 from data.model import Model
 
+from jsonpickle.unpickler import ClassRegistry
+
 
 class SyncStatus(Model):
-    root_key = 'syncStatus'
+    group = 'SyncStatus'
 
     def __init__(self, handler_key=None):
         """Holds the status of syncing tasks
@@ -39,7 +41,9 @@ class SyncStatus(Model):
         Dict.Save()
 
     def __repr__(self):
-        return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_result', 'last_success_timestamp'])
+        return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_success', 'last_success'])
 
     def __str__(self):
         return self.__repr__()
+
+ClassRegistry.register('sync_status.SyncStatus', SyncStatus)

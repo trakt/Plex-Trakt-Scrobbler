@@ -79,6 +79,9 @@ class Model(object):
 
     @classmethod
     def item_path(cls, key):
+        if type(key) is tuple:
+            key = '.'.join(key)
+
         return os.path.join(cls.group_path(), '%s.json' % key)
 
     @classmethod
