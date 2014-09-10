@@ -57,10 +57,7 @@ class Model(object):
         if not Data.Exists(path):
             return None
 
-        data = Data.Load(path)
-        log.debug('Data.Load(%r): %r', path, data)
-
-        return jsonpickle.decode(data)
+        return jsonpickle.decode(Data.Load(path))
 
     def delete(self):
         if not self.group:

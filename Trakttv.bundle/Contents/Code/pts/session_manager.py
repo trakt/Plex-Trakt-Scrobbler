@@ -1,8 +1,9 @@
 from data.watch_session import WatchSession
+from pts.scrobbler import ScrobblerMethod
+
 from threading import Thread
 import traceback
 import time
-from pts.scrobbler import ScrobblerMethod
 
 
 class SessionManager(Thread):
@@ -19,7 +20,7 @@ class SessionManager(Thread):
                 trace = traceback.format_exc()
                 Log.Warn('Exception from SessionManager (%s): %s' % (ex, trace))
 
-            time.sleep(2)
+            time.sleep(5)
 
     def check_sessions(self):
         sessions = WatchSession.all()
@@ -27,19 +28,19 @@ class SessionManager(Thread):
         if not len(sessions):
             return
 
-        for key, session in sessions:
-            self.check_paused(session)
+        for key, ws in sessions:
+            self.check_paused(ws)
 
-    def check_paused(self, session):
-        if session.cur_state != 'paused' or not session.paused_since:
+    def check_paused(self, ws):
+        if ws.cur_state != 'paused' or not ws.paused_since:
             return
 
-        if session.watching and Datetime.Now() > session.paused_since + Datetime.Delta(seconds=15):
-            Log.Debug("%s paused for 15s, watching status cancelled" % session.title)
-            session.watching = False
-            #session.save()
+        if ws.watching and Datetime.Now() > ws.paused_since + Datetime.Delta(seconds=15):
+            Log.Debug("%s paused for 15s, watching status cancelled" % ws.title)
+            ws.watching = False
+            ws.save()
 
-            if not self.send_action(session, 'cancelwatching'):
+            if not self.send_action(ws, 'cancelwatching'):
                 Log.Info('Failed to cancel the watching status')
 
     def send_action(self, ws, action):

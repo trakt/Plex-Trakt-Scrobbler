@@ -20,7 +20,7 @@ from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from pts.scrobbler import Scrobbler
-# TODO from pts.session_manager import SessionManager
+from pts.session_manager import SessionManager
 # TODO from sync.manager import SyncManager
 
 from datetime import datetime
@@ -55,7 +55,7 @@ class Main(object):
 
     def __init__(self):
         self.update_checker = UpdateChecker()
-        # TODO self.session_manager = SessionManager()
+        self.session_manager = SessionManager()
 
         Header.show(self)
 
@@ -168,7 +168,7 @@ class Main(object):
         # Check for updates
         self.update_checker.run_once(async=True)
 
-        # TODO self.session_manager.start()
+        self.session_manager.start()
 
         # Start modules
         for module in self.modules:
