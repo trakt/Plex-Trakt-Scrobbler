@@ -38,16 +38,16 @@ class Section(Directory):
 class SectionContainer(Container):
     filter_passes = lambda _, allowed, value: allowed is None or value in allowed
 
-    def filter(self, keys=None, titles=None, types=None):
+    def filter(self, titles=None, keys=None, types=None):
+        titles = [x.lower() for x in to_iterable(titles)]
         keys = to_iterable(keys)
-        titles = to_iterable(titles)
         types = to_iterable(types)
 
         for section in self:
-            if not self.filter_passes(keys, section.key):
+            if not self.filter_passes(titles, section.title.lower()):
                 continue
 
-            if not self.filter_passes(titles, section.title):
+            if not self.filter_passes(keys, section.key):
                 continue
 
             if not self.filter_passes(types, section.type):
