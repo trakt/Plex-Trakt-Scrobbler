@@ -24,7 +24,7 @@ class Model(object):
 
     @classmethod
     def all(cls, filter=None):
-        if not cls.group:# or cls.group not in Dict:
+        if not cls.group or not os.path.exists(cls.group_path()):
             return []
 
         items = []
