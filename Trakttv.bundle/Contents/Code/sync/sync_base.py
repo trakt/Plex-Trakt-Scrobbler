@@ -25,10 +25,11 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexMediaServer.get_sections(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
+        # Retrieve all sections
+        sections = Plex['library'].sections()
+
+        # Filter sections based on criteria
+        return sections.filter(types, keys, titles)
 
     @classmethod
     def library(cls, types=None, keys=None, titles=None):
@@ -36,10 +37,7 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexLibrary.fetch(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
+        return Library.all(types, keys, titles)
 
     @classmethod
     def episodes(cls, key, parent=None):

@@ -32,7 +32,7 @@ def SyncMenu(refresh=None):
     f_allow, f_deny = get_filter('filter_sections')
     sections = Plex['library'].sections()
 
-    for section in sections.filter(titles=f_allow, types=['show', 'movie']):
+    for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
             key=Callback(Push, section=section.key),
             title=pad_title('Push "' + section.title + '" to trakt'),

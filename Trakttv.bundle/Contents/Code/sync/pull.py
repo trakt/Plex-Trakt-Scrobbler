@@ -32,7 +32,7 @@ class Base(SyncBase):
             if p_item.seen:
                 continue
 
-            PlexMediaServer.scrobble(p_item.rating_key)
+            Plex['library'].scrobble(p_item.rating_key)
 
         return True
 
@@ -51,7 +51,7 @@ class Base(SyncBase):
                 continue
 
             if p_item.user_rating is None or self.rate_conflict(p_item, t_item):
-                PlexMediaServer.rate(p_item.rating_key, t_rating)
+                Plex['library'].rate(p_item.rating_key, t_rating)
 
         return True
 
