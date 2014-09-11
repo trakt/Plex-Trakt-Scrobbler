@@ -210,7 +210,6 @@ class WebSocketScrobbler(ScrobblerMethod):
             log.debug(self.status_message(ws, state)('Nothing to do this time for %s'))
             ws.save()
 
-        if self.handle_state(ws, state) or action:
-            Dict.Save()
+        self.handle_state(ws, state)
 
 Scrobbler.register(WebSocketScrobbler, weight=10)

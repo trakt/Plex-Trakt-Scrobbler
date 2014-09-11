@@ -128,7 +128,7 @@ class LoggingScrobbler(ScrobblerMethod):
         # Check if the view_offset has jumped (#131)
         if self.offset_jumped(ws, info['time']):
             log.info('View offset jump detected, ignoring the state update')
-            #session.save()
+            ws.save()
             return
 
         ws.last_view_offset = info['time']
@@ -137,7 +137,7 @@ class LoggingScrobbler(ScrobblerMethod):
         if not self.update_progress(ws, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
             ws.update_required = True
-            #session.save()
+            ws.save()
             return
 
         action = self.get_action(ws, info['state'])
@@ -146,9 +146,8 @@ class LoggingScrobbler(ScrobblerMethod):
             self.handle_action(ws, ws.type, action, info['state'])
         else:
             log.debug(self.status_message(ws, info.get('state'))('Nothing to do this time for %s'))
-            #session.save()
+            ws.save()
 
-        if self.handle_state(ws, info['state']) or action:
-            Dict.Save()
+        self.handle_state(ws, info['state'])
 
 Scrobbler.register(LoggingScrobbler, weight=1)

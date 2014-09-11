@@ -40,52 +40,52 @@ class ScrobblerMethod(Method):
 
         return build
 
-    def get_action(self, session, state):
+    def get_action(self, ws, state):
         """
-        :type session: WatchSession
+        :type ws: WatchSession
         :type state: str
 
         :rtype: str or None
         """
 
-        status_message = self.status_message(session, state)
+        status_message = self.status_message(ws, state)
 
         # State has changed
-        if state not in [session.cur_state, 'buffering']:
-            session.cur_state = state
+        if state not in [ws.cur_state, 'buffering']:
+            ws.cur_state = state
 
-            if state == 'stopped' and session.watching:
+            if state == 'stopped' and ws.watching:
                 log.info(status_message('%s stopped, watching status cancelled'))
-                session.watching = False
+                ws.watching = False
                 return 'cancelwatching'
 
-            if state == 'paused' and not session.paused_since:
+            if state == 'paused' and not ws.paused_since:
                 log.info(status_message("%s just paused, waiting 15s before cancelling the watching status"))
 
-                session.paused_since = Datetime.Now()
+                ws.paused_since = Datetime.Now()
                 return None
 
-            if state == 'playing' and not session.watching:
+            if state == 'playing' and not ws.watching:
                 log.info(status_message('Sending watch status for %s'))
-                session.watching = True
+                ws.watching = True
                 return 'watching'
 
         elif state == 'playing':
             # scrobble item
-            if not session.scrobbled and session.progress >= get_pref('scrobble_percentage'):
+            if not ws.scrobbled and ws.progress >= get_pref('scrobble_percentage'):
                 log.info(status_message('Scrobbling %s'))
                 return 'scrobble'
 
             # update every 10 min if media hasn't finished
-            elif session.progress < 100 and (session.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
+            elif ws.progress < 100 and (ws.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
                 log.info(status_message('Updating watch status for %s'))
-                session.watching = True
+                ws.watching = True
                 return 'watching'
 
             # cancel watching status on items at 100% progress
-            elif session.progress >= 100 and session.watching:
+            elif ws.progress >= 100 and ws.watching:
                 log.info(status_message('Media finished, cancelling watching status for %s'))
-                session.watching = False
+                ws.watching = False
                 return 'cancelwatching'
 
         return None

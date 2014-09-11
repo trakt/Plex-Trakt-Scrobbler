@@ -37,9 +37,6 @@ class SyncStatus(Model):
 
         self.save()
 
-        # Save to disk
-        Dict.Save()
-
     def __repr__(self):
         return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_success', 'last_success'])
 
