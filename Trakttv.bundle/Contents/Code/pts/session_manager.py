@@ -1,9 +1,14 @@
+from core.helpers import total_seconds
+from core.logger import Logger
 from data.watch_session import WatchSession
 from pts.scrobbler import ScrobblerMethod
 
+from datetime import datetime
 from threading import Thread
 import traceback
 import time
+
+log = Logger('pts.session_manager')
 
 
 class SessionManager(Thread):
@@ -43,15 +48,46 @@ class SessionManager(Thread):
             if not self.send_action(ws, 'cancelwatching'):
                 Log.Info('Failed to cancel the watching status')
 
-    def send_action(self, ws, action):
+    def stop(self):
+        self.active = False
+
+    @staticmethod
+    def send_action(ws, action):
         if not ws.type:
             return False
 
         if ScrobblerMethod.handle_action(ws, ws.type, action, ws.cur_state):
             return False
 
-        Dict.Save()
         return True
 
-    def stop(self):
-        self.active = False
+    @staticmethod
+    def cleanup():
+        log.debug('Cleaning up stale or invalid sessions')
+
+        sessions = WatchSession.all()
+
+        if not len(sessions):
+            return
+
+        for key, ws in sessions:
+            delete = False
+
+            # Destroy invalid sessions
+            if not ws.last_updated or type(ws.last_updated) is not datetime:
+                delete = True
+            elif total_seconds(datetime.now() - ws.last_updated) / 60 / 60 > 24:
+                # Destroy sessions last updated over 24 hours ago
+                log.debug('Session %s was last updated over 24 hours ago, queued for deletion', key)
+                delete = True
+
+            # Delete session or flag for update
+            if delete:
+                log.info('Session %s looks stale or invalid, deleting it now', key)
+                ws.delete()
+            elif not ws.update_required:
+                log.info('Queueing session %s for update', key)
+                ws.update_required = True
+                ws.save()
+
+        Log.Debug('Finished cleaning up')
