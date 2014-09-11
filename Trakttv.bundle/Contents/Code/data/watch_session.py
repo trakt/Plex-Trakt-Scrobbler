@@ -8,13 +8,14 @@ from plex_metadata import Matcher
 class WatchSession(Model):
     group = 'WatchSession'
 
-    def __init__(self, key, metadata, session, guid, state):
+    def __init__(self, key, metadata, guid, state, session=None):
         super(WatchSession, self).__init__(key)
 
         # Plex
         self.metadata = metadata
-        self.session = session
         self.guid = guid
+
+        self.session = session
 
         # States
         self.skip = False
@@ -79,40 +80,38 @@ class WatchSession(Model):
     def from_session(session, metadata, guid, state):
         return WatchSession(
             session.key,
-            metadata, session, guid,
-            state
+            metadata, guid, state,
+
+            session=session
         )
 
     @staticmethod
-    def from_info(info, metadata, client_section=None):
+    def from_info(info, metadata, guid):
         if not info:
             return None
 
-        # Build user object
-        user = None
-
-        if info['user_id'] and info['user_name']:
-            user = User(info['user_id'], info['user_name'])
-
-        # Build client object
-        client = None
-
-        if client_section is not None:
-            client = Client.from_section(client_section)
-        elif info.get('client'):
-            client = Client(
-                info['machineIdentifier'],
-                info['client'],
-                info['address']
-            )
+        # # Build user object
+        # user = None
+        #
+        # if info['user_id'] and info['user_name']:
+        #     user = User(info['user_id'], info['user_name'])
+        #
+        # # Build client object
+        # client = None
+        #
+        # if client_section is not None:
+        #     client = Client.from_section(client_section)
+        # elif info.get('client'):
+        #     client = Client(
+        #         info['machineIdentifier'],
+        #         info['client'],
+        #         info['address']
+        #     )
 
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
-            info['ratingKey'],
-            metadata, info['state'],
-
-            user=user,
-            client=client
+            metadata, guid,
+            info['state']
         )
 
     def __repr__(self):

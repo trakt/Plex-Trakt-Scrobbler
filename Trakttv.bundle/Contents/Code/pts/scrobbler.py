@@ -308,7 +308,7 @@ class ScrobblerMethod(Method):
     def valid_user(cls, ws):
         return cls.match(
             ws, 'scrobble_names',
-            f_current=lambda: ws.session.user.title if ws.session.user else None,
+            f_current=lambda: ws.session.user.title if ws.session and ws.session.user else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
                     not ws.session.user or

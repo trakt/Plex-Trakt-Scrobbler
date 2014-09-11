@@ -1,11 +1,11 @@
-from core.eventing import EventManager
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 from plex import Plex
-from plex_metadata import Metadata
+from plex_activity import Activity
+from plex_metadata import Guid, Metadata
 
 
 log = Logger('pts.scrobbler_logging')
@@ -17,16 +17,16 @@ class LoggingScrobbler(ScrobblerMethod):
     def __init__(self):
         super(LoggingScrobbler, self).__init__()
 
-        EventManager.subscribe('scrobbler.logging.update', self.update)
+        Activity.on('logging.playing', self.update)
 
     @classmethod
     def test(cls):
         # Try enable logging
-        if not PlexPreferences.log_debug(True):
+        if not Plex[':/prefs'].set('log_debug', True):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not PlexPreferences.log_debug():
+        if not Plex[':/prefs'].get('logDebug').value:
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
@@ -40,46 +40,47 @@ class LoggingScrobbler(ScrobblerMethod):
         skip = False
 
         # Client
-        client = PlexMediaServer.get_client(info['machineIdentifier'])
+        client = None
+        # TODO client = PlexMediaServer.get_client(info['machineIdentifier'])
 
         # Metadata
         metadata = None
 
         try:
-            metadata = PlexMetadata.get(info['ratingKey'])
-
-            if metadata:
-                metadata = metadata.to_dict()
+            metadata = Metadata.get(info['ratingKey'])
         except NotImplementedError, e:
             # metadata not supported (music, etc..)
             log.debug('%s, ignoring session' % e.message)
             skip = True
 
-        session = WatchSession.from_info(info, metadata, client)
-        session.skip = skip
-        #session.save()
+        # Guid
+        guid = Guid.parse(metadata.guid)
 
-        log.debug('created session: %s', session)
+        ws = WatchSession.from_info(info, metadata, guid)
+        ws.skip = skip
+        ws.save()
 
-        return session
+        log.debug('created session: %s', ws)
 
-    def session_valid(self, session, info):
-        if session.item_key != info['ratingKey']:
+        return ws
+
+    def session_valid(self, ws, info):
+        if ws.metadata.rating_key != info['ratingKey']:
             log.debug('Invalid Session: Media changed')
             return False
 
-        if session.skip and info.get('state') == 'stopped':
+        if ws.skip and info.get('state') == 'stopped':
             log.debug('Invalid Session: Media stopped')
             return False
 
-        if not session.metadata:
-            if session.skip:
+        if not ws.metadata:
+            if ws.skip:
                 return True
 
             log.debug('Invalid Session: Missing metadata')
             return False
 
-        if session.metadata.get('duration', 0) <= 0:
+        if not ws.metadata.duration or ws.metadata.duration <= 0:
             log.debug('Invalid Session: Invalid duration')
             return False
 
@@ -109,47 +110,45 @@ class LoggingScrobbler(ScrobblerMethod):
         if not get_pref('scrobble'):
             return
 
-        session = self.get_session(info)
-        if not session:
+        ws = self.get_session(info)
+        if not ws:
             log.trace('Invalid or ignored session, nothing to do')
             return
 
         # Validate session (check filters)
-        if not self.valid(session):
+        if not self.valid(ws):
             return
 
-        media_type = session.get_type()
-
         # Check if we are scrobbling a known media type
-        if not media_type:
-            log.info('Playing unknown item, will not be scrobbled: "%s"' % session.title)
-            session.skip = True
+        if not ws.type:
+            log.info('Playing unknown item, will not be scrobbled: "%s"' % ws.title)
+            ws.skip = True
             return
 
         # Check if the view_offset has jumped (#131)
-        if self.offset_jumped(session, info['time']):
+        if self.offset_jumped(ws, info['time']):
             log.info('View offset jump detected, ignoring the state update')
             #session.save()
             return
 
-        session.last_view_offset = info['time']
+        ws.last_view_offset = info['time']
 
         # Calculate progress
-        if not self.update_progress(session, info['time']):
+        if not self.update_progress(ws, info['time']):
             log.warn('Error while updating session progress, queued session to be updated')
-            session.update_required = True
+            ws.update_required = True
             #session.save()
             return
 
-        action = self.get_action(session, info['state'])
+        action = self.get_action(ws, info['state'])
 
         if action:
-            self.handle_action(session, media_type, action, info['state'])
+            self.handle_action(ws, ws.type, action, info['state'])
         else:
-            log.debug(self.status_message(session, info.get('state'))('Nothing to do this time for %s'))
+            log.debug(self.status_message(ws, info.get('state'))('Nothing to do this time for %s'))
             #session.save()
 
-        if self.handle_state(session, info['state']) or action:
+        if self.handle_state(ws, info['state']) or action:
             Dict.Save()
 
 Scrobbler.register(LoggingScrobbler, weight=1)
