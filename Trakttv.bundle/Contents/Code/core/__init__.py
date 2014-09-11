@@ -46,3 +46,6 @@ sys.modules['core.migrator'] = migrator
 
 import task
 sys.modules['core.task'] = task
+
+import action
+sys.modules['core.action'] = action

@@ -1,3 +1,4 @@
+from core.action import ActionHelper
 from core.helpers import str_pad, get_filter, get_pref, normalize, any, try_convert
 from core.logger import Logger
 from core.method_manager import Method, Manager
@@ -118,7 +119,7 @@ class ScrobblerMethod(Method):
             values['duration'] = ws.metadata.duration
 
         # Add TVDB/TMDB identifier
-        cls.set_identifier(values, ws.guid)
+        ActionHelper.set_identifier(values, ws.guid)
 
         values.update({
             'progress': ws.progress,
@@ -129,18 +130,6 @@ class ScrobblerMethod(Method):
             values['year'] = ws.metadata.year
 
         return values
-
-    @classmethod
-    def set_identifier(cls, values, guid):
-        if not guid:
-            return
-
-        if guid.agent == 'imdb':
-            values['imdb_id'] = guid.sid
-        elif guid.agent == 'themoviedb':
-            values['tmdb_id'] = try_convert(guid.sid, int)
-        elif guid.agent == 'thetvdb':
-            values['tvdb_id'] = try_convert(guid.sid, int)
 
     @classmethod
     def handle_state(cls, ws, state):
