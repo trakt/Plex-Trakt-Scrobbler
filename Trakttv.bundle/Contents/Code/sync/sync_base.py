@@ -1,3 +1,4 @@
+from core.action import ActionHelper
 from core.eventing import EventManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
@@ -5,6 +6,7 @@ from core.task import Task, CancelException
 
 from datetime import datetime
 from plex import Plex
+from plex.objects.library.metadata.episode import Episode
 from plex_metadata import Metadata, Library
 from trakt import Trakt
 
@@ -45,21 +47,17 @@ class PlexInterface(Base):
 
     @staticmethod
     def get_root(p_item):
-        if isinstance(p_item, PlexEpisode):
-            return p_item.parent
+        if isinstance(p_item, Episode):
+            return p_item.show
 
         return p_item
-
-    @staticmethod
-    def add_identifier(data, p_item):
-        return PlexMetadata.add_identifier(data, p_item)
 
     @classmethod
     def to_trakt(cls, key, p_item, include_identifier=True):
         data = {}
 
         # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, PlexEpisode):
+        if isinstance(p_item, Episode):
             k_season, k_episode = key
 
             data.update({
@@ -72,10 +70,12 @@ class PlexInterface(Base):
 
             data['title'] = p_root.title
 
-            if p_root.year:
+            if p_root.year is not None:
                 data['year'] = p_root.year
+            elif p_item.year is not None:
+                data['year'] = p_item.year
 
-            cls.add_identifier(data, p_root)
+            ActionHelper.set_identifier(data, p_root.guid)
 
         return data
 

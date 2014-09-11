@@ -28,7 +28,7 @@ class Library(object):
 
     # TODO Library.episodes() `parent`?
     @classmethod
-    def episodes(cls, key, parent=None):
+    def episodes(cls, key, show=None):
         result = {}
 
         container = Plex['library/metadata'].all_leaves(key)
@@ -37,6 +37,9 @@ class Library(object):
             return None
 
         for item in container:
+            if show is not None:
+                item.show = show
+
             season, episodes = Matcher.process(item)
 
             if not season or not episodes:
