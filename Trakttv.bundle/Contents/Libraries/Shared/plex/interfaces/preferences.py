@@ -23,9 +23,11 @@ class PreferencesInterface(Interface):
         return None
 
     def set(self, id, value):
-        self.http.put(query={
+        response = self.http.put(query={
             id: self.to_setting_value(value, type(value))
         })
+
+        return response.status_code == 200
 
     def to_setting_value(self, value, value_type=None):
         if value is None:
