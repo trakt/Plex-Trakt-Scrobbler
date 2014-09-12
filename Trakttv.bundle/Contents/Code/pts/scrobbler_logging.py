@@ -22,7 +22,7 @@ class LoggingScrobbler(ScrobblerMethod):
     @classmethod
     def test(cls):
         # Try enable logging
-        if not Plex[':/prefs'].set('log_debug', True):
+        if not Plex[':/prefs'].set('logDebug', True):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
