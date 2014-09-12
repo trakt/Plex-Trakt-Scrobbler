@@ -1,5 +1,4 @@
 from core.action import ActionHelper
-from core.eventing import EventManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
@@ -8,6 +7,7 @@ from datetime import datetime
 from plex import Plex
 from plex.objects.library.metadata.episode import Episode
 from plex_metadata import Metadata, Library
+from pyemitter import Emitter
 from trakt import Trakt
 
 
@@ -17,7 +17,8 @@ log = Logger('sync.sync_base')
 class Base(object):
     @classmethod
     def get_cache_id(cls):
-        return EventManager.fire('sync.get_cache_id', single=True)
+        # TODO return EventManager.fire('sync.get_cache_id', single=True)
+        pass
 
 
 class PlexInterface(Base):
@@ -141,16 +142,16 @@ class TraktInterface(Base):
             media, len(table), len(items), total_seconds(elapsed)
         )
 
-        # Cache for future calls
-        cls.merged_cache[media] = {
-            'cache_id': cls.get_cache_id(),
-            'result': (items, table)
-        }
+        # TODO Cache for future calls
+        # cls.merged_cache[media] = {
+        #     'cache_id': cls.get_cache_id(),
+        #     'result': (items, table)
+        # }
 
         return items, table
 
 
-class SyncBase(Base):
+class SyncBase(Base, Emitter):
     key = None
     task = None
     title = "Unknown"
@@ -294,23 +295,6 @@ class SyncBase(Base):
     #
     # Status / Progress
     #
-
-    def start(self, end, start=0):
-        EventManager.fire(
-            'sync.%s.started' % self.get_key(),
-            start=start, end=end
-        )
-
-    def progress(self, value):
-        EventManager.fire(
-            'sync.%s.progress' % self.get_key(),
-            value=value
-        )
-
-    def finish(self):
-        EventManager.fire(
-            'sync.%s.finished' % self.get_key()
-        )
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:

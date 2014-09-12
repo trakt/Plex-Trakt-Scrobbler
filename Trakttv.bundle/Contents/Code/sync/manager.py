@@ -1,5 +1,4 @@
-from core.eventing import EventManager
-from core.helpers import total_seconds, sum, get_pref
+from core.helpers import total_seconds, get_pref
 from core.localization import localization
 from core.logger import Logger
 from data.sync_status import SyncStatus
@@ -11,6 +10,7 @@ from sync.push import Push
 from sync.synchronize import Synchronize
 
 from datetime import datetime
+from plex_activity import Activity
 import threading
 import traceback
 import time
@@ -52,11 +52,11 @@ class SyncManager(object):
         cls.thread = threading.Thread(target=cls.run, name="SyncManager")
         cls.lock = threading.Lock()
 
-        EventManager.subscribe('notifications.status.scan_complete', cls.scan_complete)
-        EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
+        Activity.on('websocket.scanner.finished', cls.scanner_finished)
+        # TODO EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
 
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
-        cls.statistics = SyncStatistics(HANDLERS, cls)
+        cls.statistics = SyncStatistics(cls)
 
         cls.initialized = True
 
@@ -189,7 +189,7 @@ class SyncManager(object):
         return success
 
     @classmethod
-    def scan_complete(cls):
+    def scanner_finished(cls):
         if not get_pref('sync_run_library'):
             log.info('"Run after library updates" not enabled, ignoring')
             return

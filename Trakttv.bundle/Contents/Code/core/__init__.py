@@ -26,12 +26,6 @@ sys.modules['core.configuration'] = configuration
 import numeric
 sys.modules['core.numeric'] = numeric
 
-import eventing
-sys.modules['core.eventing'] = eventing
-
-import cache
-sys.modules['core.cache'] = cache
-
 import method_manager
 sys.modules['core.method_manager'] = method_manager
 

@@ -11,7 +11,6 @@ import interface
 
 
 from core.configuration import Configuration
-from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
 from core.logging_handler import PlexHandler
@@ -120,7 +119,7 @@ class Main(object):
         Dict.Save()
 
         log.info('Preferences updated %s', preferences)
-        EventManager.fire('preferences.updated', preferences)
+        # TODO EventManager.fire('preferences.updated', preferences)
 
     @classmethod
     def validate_auth(cls, retry_interval=30):
