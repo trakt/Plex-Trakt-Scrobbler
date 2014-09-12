@@ -2,9 +2,13 @@ from plex_activity.sources.base import Source
 
 import json
 import logging
+import re
 import websocket
 
 log = logging.getLogger(__name__)
+
+SCANNING_REGEX = re.compile('Scanning the "(?P<section>.*?)" section', re.IGNORECASE)
+SCAN_COMPLETE_REGEX = re.compile('Library scan complete', re.IGNORECASE)
 
 TIMELINE_STATES = {
     0: 'created',
@@ -22,8 +26,9 @@ class WebSocket(Source):
     events = [
         'websocket.playing',
 
-        'websocket.notification.progress',
-        'websocket.notification.status',
+        'websocket.scanner.started',
+        'websocket.scanner.progress',
+        'websocket.scanner.finished',
 
         'websocket.timeline.created',
         'websocket.timeline.matching',
@@ -120,6 +125,47 @@ class WebSocket(Source):
         self.emit_notification('%s.playing' % self.name, info)
         return True
 
+    def process_progress(self, info):
+        if not info.get('_children'):
+            return False
+
+        notification = info['_children'][0]
+
+        self.emit_notification('%s.scanner.progress' % self.name, {
+            'message': notification.get('message')
+        })
+        return True
+
+    def process_status(self, info):
+        if not info.get('_children'):
+            return False
+
+        notification = info['_children'][0]
+
+        title = notification.get('title')
+
+        if not title:
+            return False
+
+        # Scan complete message
+        if SCAN_COMPLETE_REGEX.match(title):
+            self.emit_notification('%s.scanner.finished' % self.name)
+            return True
+
+        # Scanning message
+        match = SCANNING_REGEX.match(title)
+
+        if match:
+            section = match.group('section')
+
+            if section:
+                self.emit_notification('%s.scanner.started' % self.name, {
+                    'section': section
+                })
+                return True
+
+        return False
+
     def process_timeline(self, info):
         children = info.get('_children', [])
 
@@ -136,12 +182,17 @@ class WebSocket(Source):
 
         return True
 
-    def emit_notification(self, name, info):
+    def emit_notification(self, name, info=None):
+        if info is None:
+            info = {}
+
         children = info.get('_children', [])
 
         if len(children) > 1:
             self.emit(name, children)
         elif len(children) == 1:
             self.emit(name, children[0])
-        else:
+        elif info:
             self.emit(name, info)
+        else:
+            self.emit(name)
