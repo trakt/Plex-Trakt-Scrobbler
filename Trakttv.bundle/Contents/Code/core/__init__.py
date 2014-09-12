@@ -32,9 +32,6 @@ sys.modules['core.eventing'] = eventing
 import cache
 sys.modules['core.cache'] = cache
 
-import network
-sys.modules['core.network'] = network
-
 import method_manager
 sys.modules['core.method_manager'] = method_manager
 

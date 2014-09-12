@@ -1,7 +1,9 @@
-from core.network import request, RequestError
 from core.plugin import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+
 from threading import Timer
+import json
 import random
+import requests
 
 
 class UpdateChecker(object):
@@ -40,11 +42,11 @@ class UpdateChecker(object):
             'platform': Platform.OS.lower()
         }
 
-        response = request(self.server + '/api/ping', 'json', data, data_type='json')
+        response = requests.post(self.server + '/api/ping', data=json.dumps(data))
         if not response:
             return None
 
-        return response.data
+        return response.json()
 
     def reset(self, available=None):
         self.update_available = available
