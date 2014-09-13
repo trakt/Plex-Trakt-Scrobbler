@@ -23,7 +23,7 @@ class RootInterface(Interface):
         response = self.http.get('clients')
 
         return self.parse(response, {
-            'MediaContainer': ('Container', {
+            'MediaContainer': ('ClientContainer', {
                 'Server': 'Client'
             })
         })
