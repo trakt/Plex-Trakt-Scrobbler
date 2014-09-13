@@ -216,6 +216,13 @@ def get_func_name(obj):
     return None
 
 
+def get_class_name(cls):
+    if not inspect.isclass(cls):
+        cls = getattr(cls, '__class__')
+
+    return getattr(cls, '__name__')
+
+
 def spawn(func, *args, **kwargs):
     thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 

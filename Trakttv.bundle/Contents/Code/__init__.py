@@ -14,10 +14,11 @@ from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
 from core.logging_handler import PlexHandler
-from core.helpers import spawn, get_pref, schedule
+from core.helpers import spawn, get_pref, schedule, get_class_name
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
+from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from sync.manager import SyncManager
@@ -34,9 +35,15 @@ log = Logger('Code')
 
 class Main(object):
     modules = [
-        # pts
         Activity,
+
+        # core
+        UpdateChecker(),
+
+        # pts
+        ActionManager,
         Scrobbler,
+        SessionManager(),
 
         # sync
         SyncManager,
@@ -52,23 +59,24 @@ class Main(object):
     ]
 
     def __init__(self):
-        self.update_checker = UpdateChecker()
-        self.session_manager = SessionManager()
-
-        # Cleanup sessions
-        self.session_manager.cleanup()
-
         Header.show(self)
         Main.update_config()
 
         self.init_logging()
         self.init_trakt()
+        self.init()
+
+    def init(self):
+        names = []
 
         # Initialize modules
         for module in self.modules:
+            names.append(get_class_name(module))
+
             if hasattr(module, 'initialize'):
-                log.debug("Initializing module %s", module)
                 module.initialize()
+
+        log.info('Initialized %s modules: %s', len(names), ', '.join(names))
 
     @classmethod
     def init_logging(cls):
@@ -159,16 +167,18 @@ class Main(object):
         # Validate username/password
         spawn(self.validate_auth)
 
-        # Check for updates
-        self.update_checker.run_once(async=True)
-
-        self.session_manager.start()
-
         # Start modules
+        names = []
+
         for module in self.modules:
-            if hasattr(module, 'start'):
-                log.debug("Starting module %s", module)
-                module.start()
+            if not hasattr(module, 'start'):
+                continue
+
+            names.append(get_class_name(module))
+
+            module.start()
+
+        log.info('Started %s modules: %s', len(names), ', '.join(names))
 
 
 def Start():

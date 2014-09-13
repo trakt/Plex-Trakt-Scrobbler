@@ -48,6 +48,13 @@ class SessionManager(Thread):
             if not self.send_action(ws, 'cancelwatching'):
                 Log.Info('Failed to cancel the watching status')
 
+    def start(self):
+        # Cleanup sessions
+        self.cleanup()
+
+        # Start thread
+        super(SessionManager, self).start()
+
     def stop(self):
         self.active = False
 

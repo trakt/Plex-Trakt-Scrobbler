@@ -2,6 +2,9 @@ import sys
 
 # submodules for Plex plugins "hack"
 
+import action_manager
+sys.modules['pts.action_manager'] = action_manager
+
 import scrobbler
 sys.modules['pts.scrobbler'] = scrobbler
 

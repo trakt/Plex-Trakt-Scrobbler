@@ -29,6 +29,9 @@ class UpdateChecker(object):
         if 'client_id' in Dict:
             self.client_id = Dict['client_id']
 
+    def start(self):
+        self.run_once(async=True)
+
     def run_once(self, first_run=True, async=False):
         if async:
             Thread.Create(self.run, first_run=first_run)
