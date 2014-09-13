@@ -1,6 +1,7 @@
 from core.helpers import get_pref
 from core.logger import Logger
 from data.watch_session import WatchSession
+from plex.objects.user import User
 from pts.scrobbler import Scrobbler, ScrobblerMethod
 
 from plex import Plex
@@ -39,10 +40,6 @@ class LoggingScrobbler(ScrobblerMethod):
 
         skip = False
 
-        # Client
-        client = None
-        # TODO client = PlexMediaServer.get_client(info['machineIdentifier'])
-
         # Metadata
         metadata = None
 
@@ -58,10 +55,18 @@ class LoggingScrobbler(ScrobblerMethod):
 
         ws = WatchSession.from_info(info, metadata, guid)
         ws.skip = skip
+
+        # Fetch client by `machineIdentifier`
+        ws.client = Plex.clients().get(info['machineIdentifier'])
+
+        # Create dummy user from `info`
+        ws.user = User(Plex.client, 'accounts')
+        ws.user.id = info['user_id']
+        ws.user.title = info['user_name']
+
         ws.save()
 
         log.debug('created session: %s', ws)
-
         return ws
 
     def session_valid(self, ws, info):

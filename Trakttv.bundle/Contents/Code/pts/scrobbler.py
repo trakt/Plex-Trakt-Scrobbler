@@ -250,8 +250,8 @@ class ScrobblerMethod(Method):
         # Check filters
         if not self.valid_user(ws) or \
            not self.valid_client(ws) or \
-           not self.valid_section(ws): #or\
-           # TODO not self.valid_address(session):
+           not self.valid_section(ws) or\
+           not self.valid_address(ws):
             filtered = True
         else:
             filtered = False
@@ -308,7 +308,7 @@ class ScrobblerMethod(Method):
     def valid_user(cls, ws):
         return cls.match(
             ws, 'scrobble_names',
-            f_current=lambda: ws.session.user.title if ws.session and ws.session.user else None,
+            f_current=lambda: ws.user.title if ws and ws.user else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
                     not ws.session.user or
@@ -322,7 +322,7 @@ class ScrobblerMethod(Method):
     def valid_client(cls, ws):
         return cls.match(
             ws, 'scrobble_clients',
-            f_current=lambda: ws.session.client.name if ws.session.client else None,
+            f_current=lambda: ws.client.name if ws and ws.client else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
                     not ws.session.client or
@@ -350,10 +350,10 @@ class ScrobblerMethod(Method):
     @classmethod
     def valid_address(cls, ws):
         def f_current():
-            if not ws.session.client or not ws.session.client.address:
+            if not ws.client or not ws.client.address:
                 return None
 
-            value = ws.session.client.address
+            value = ws.client.address
 
             try:
                 return ipaddress.ip_address(unicode(value))

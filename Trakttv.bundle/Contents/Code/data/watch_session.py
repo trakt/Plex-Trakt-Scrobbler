@@ -14,8 +14,10 @@ class WatchSession(Model):
         # Plex
         self.metadata = metadata
         self.guid = guid
-
         self.session = session
+
+        self.client = None
+        self.user = None
 
         # States
         self.skip = False

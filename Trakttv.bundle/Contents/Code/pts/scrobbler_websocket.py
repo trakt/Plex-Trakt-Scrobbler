@@ -52,10 +52,6 @@ class WebSocketScrobbler(ScrobblerMethod):
         if not item:
             return None
 
-        # Client
-        client = None
-        # TODO client = Plex.clients().get(info.session.player.machine_identifier)
-
         # Metadata
         metadata = None
 
@@ -72,10 +68,16 @@ class WebSocketScrobbler(ScrobblerMethod):
         # Create WatchSession
         ws = WatchSession.from_session(item.session, metadata, guid, state)
         ws.skip = skip
+
+        # Fetch client by `machineIdentifier`
+        ws.client = Plex.clients().get(item.session.player.machine_identifier)
+
+        # Use `user` from session
+        ws.user = item.session.user
+
         ws.save()
 
         log.debug('created session: %s', ws)
-
         return ws
 
     def update_session(self, ws, view_offset):
