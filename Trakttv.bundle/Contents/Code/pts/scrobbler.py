@@ -36,7 +36,15 @@ class ScrobblerMethod(Method):
         title = '%s (%s)' % (ws.title, metadata_key)
 
         def build(message_format):
-            return '%s %s' % (status, message_format % title)
+            return '%s %s [%s]' % (status, message_format % title, ', '.join([
+                '%s: %r' % (key, value)
+                for key, value in [
+                    ('u', ws.user.title if ws and ws.user else None),
+                    ('c', ws.client.name if ws and ws.client else None),
+                    ('s', ws.metadata.section.title if ws and ws.metadata and ws.metadata.section else None),
+                    ('a', ws.client.address if ws and ws.client else None)
+                ]
+            ]))
 
         return build
 
