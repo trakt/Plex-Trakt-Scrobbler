@@ -72,9 +72,6 @@ class WebSocketScrobbler(ScrobblerMethod):
         # Fetch client by `machineIdentifier`
         ws.client = Plex.clients().get(item.session.player.machine_identifier)
 
-        # Use `user` from session
-        ws.user = item.session.user
-
         ws.save()
 
         log.debug('created session: %s', ws)

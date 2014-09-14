@@ -17,7 +17,6 @@ class WatchSession(Model):
         self.session = session
 
         self.client = None
-        self.user = None
 
         # States
         self.skip = False
@@ -39,6 +38,7 @@ class WatchSession(Model):
 
         # Private
         self.identifier_ = None
+        self.user_ = None
 
     @property
     def type(self):
@@ -72,6 +72,17 @@ class WatchSession(Model):
 
         return self.metadata.title
 
+    @property
+    def user(self):
+        if self.session:
+            return self.session.user
+
+        return self.user_
+
+    @user.setter
+    def user(self, value):
+        self.user_ = value
+
     def reset(self):
         self.scrobbled = False
         self.watching = False
@@ -91,24 +102,6 @@ class WatchSession(Model):
     def from_info(info, metadata, guid):
         if not info:
             return None
-
-        # # Build user object
-        # user = None
-        #
-        # if info['user_id'] and info['user_name']:
-        #     user = User(info['user_id'], info['user_name'])
-        #
-        # # Build client object
-        # client = None
-        #
-        # if client_section is not None:
-        #     client = Client.from_section(client_section)
-        # elif info.get('client'):
-        #     client = Client(
-        #         info['machineIdentifier'],
-        #         info['client'],
-        #         info['address']
-        #     )
 
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
