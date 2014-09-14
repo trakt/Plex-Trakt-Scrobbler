@@ -304,7 +304,7 @@ class ScrobblerMethod(Method):
 
         if f_validate(value, f_allow, f_deny):
             log.info('Ignoring item [%s](%s) played by filtered "%s": %s' % (
-                session.item_key,
+                session.metadata.rating_key if session.metadata else None,
                 session.title,
                 key, repr(f_current())
             ))
@@ -319,7 +319,7 @@ class ScrobblerMethod(Method):
             f_current=lambda: ws.user.title if ws and ws.user else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
-                    not ws.session.user or
+                    not ws.user or
                     value not in f_allow
                 )) or
                 value in f_deny
@@ -333,7 +333,7 @@ class ScrobblerMethod(Method):
             f_current=lambda: ws.client.name if ws and ws.client else None,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and (
-                    not ws.session.client or
+                    not ws.client or
                     value not in f_allow
                 )) or
                 value in f_deny

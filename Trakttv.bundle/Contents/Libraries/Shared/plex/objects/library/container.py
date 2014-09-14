@@ -33,3 +33,9 @@ class MediaContainer(Container):
         }
 
         return Section.construct(client, node, attribute_map, child=True)
+
+    def __iter__(self):
+        for item in super(MediaContainer, self).__iter__():
+            item.section = self.section
+
+            yield item
