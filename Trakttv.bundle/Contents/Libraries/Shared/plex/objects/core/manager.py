@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 
@@ -56,10 +57,16 @@ class ObjectManager(object):
             mod = __import__(name, fromlist=['*'])
 
             # Get classes in module
-            classes = [(key, getattr(mod, key)) for key in dir(mod) if not key.startswith('_')]
+            classes = [
+                (key, getattr(mod, key)) for key in dir(mod)
+                if not key.startswith('_')
+            ]
 
             # Filter to module-specific classes
-            classes = [(key, value) for (key, value) in classes if value.__module__ == name]
+            classes = [
+                (key, value) for (key, value) in classes
+                if inspect.isclass(value) and value.__module__ == name
+            ]
 
             yield classes
 
