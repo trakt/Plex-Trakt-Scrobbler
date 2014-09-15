@@ -26,7 +26,6 @@ class Library(object):
 
         return result
 
-    # TODO Library.episodes() `parent`?
     @classmethod
     def episodes(cls, key, show=None):
         result = {}
@@ -42,7 +41,7 @@ class Library(object):
 
             season, episodes = Matcher.process(item)
 
-            if not season or not episodes:
+            if season is None or not episodes:
                 continue
 
             for episode in episodes:
