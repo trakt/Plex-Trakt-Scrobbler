@@ -71,6 +71,15 @@ class CacheManager(object):
         return True
 
     @classmethod
+    def statistics(cls):
+        result = []
+
+        for key, shove in cls.active.items():
+            result.append((key, len(getattr(shove, '_cache')), len(getattr(shove, '_store'))))
+
+        return result
+
+    @classmethod
     def store_uri(cls, key, store):
         if store == 'file':
             return 'file://%s' % os.path.join(cls.base_path, key)
