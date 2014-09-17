@@ -1,5 +1,5 @@
+from core.environment import Environment
 from core.logger import Logger
-from core.plugin import PLUGIN_IDENTIFIER
 
 import jsonpickle
 import os
@@ -75,7 +75,7 @@ class Model(object):
 
     @classmethod
     def group_path(cls):
-        return os.path.join(cls.data_path(), cls.group)
+        return os.path.join(Environment.path.plugin_data, cls.group)
 
     @classmethod
     def item_path(cls, key):
@@ -83,14 +83,3 @@ class Model(object):
             key = '.'.join(key)
 
         return os.path.join(cls.group_path(), '%s.json' % key)
-
-    @classmethod
-    def support_path(cls):
-        code_path = Core.code_path
-        base_path = code_path[:code_path.index(os.path.sep + 'Plug-ins')]
-
-        return os.path.join(base_path, 'Plug-in Support')
-
-    @classmethod
-    def data_path(cls):
-        return os.path.join(cls.support_path(), 'Data', PLUGIN_IDENTIFIER)

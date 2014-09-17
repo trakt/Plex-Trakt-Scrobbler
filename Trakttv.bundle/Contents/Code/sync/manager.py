@@ -1,3 +1,4 @@
+from core.cache import CacheManager
 from core.helpers import total_seconds, get_pref
 from core.localization import localization
 from core.logger import Logger
@@ -10,10 +11,12 @@ from sync.push import Push
 from sync.synchronize import Synchronize
 
 from datetime import datetime
+from plex import Plex
 from plex_activity import Activity
 import threading
 import traceback
 import time
+import uuid
 
 L, LF = localization('sync.manager')
 log = Logger('sync.manager')
@@ -41,7 +44,6 @@ class SyncManager(object):
 
     running = False
 
-    cache_id = None
     current = None
 
     handlers = None
@@ -52,17 +54,18 @@ class SyncManager(object):
         cls.thread = threading.Thread(target=cls.run, name="SyncManager")
         cls.lock = threading.Lock()
 
-        Activity.on('websocket.scanner.finished', cls.scanner_finished)
-        # TODO EventManager.subscribe('sync.get_cache_id', cls.get_cache_id)
-
         cls.handlers = dict([(h.key, h(cls)) for h in HANDLERS])
         cls.statistics = SyncStatistics(cls)
 
-        cls.initialized = True
+        # Load/setup matcher cache
+        Plex.configuration.defaults.cache(
+            matcher=CacheManager.get('matcher', persistent=True)
+        )
 
-    @classmethod
-    def get_cache_id(cls):
-        return cls.cache_id
+        # Bind activity events
+        Activity.on('websocket.scanner.finished', cls.scanner_finished)
+
+        cls.initialized = True
 
     @classmethod
     def get_current(cls):
@@ -167,14 +170,18 @@ class SyncManager(object):
             log.warn('Unknown handler "%s"' % key)
             return False
 
-        log.debug('Processing work with handler "%s" and kwargs: %s' % (key, kwargs))
+        sid = uuid.uuid4()
 
-        # Update cache_id to ensure we trigger new requests
-        cls.cache_id = str(time.time())
+        log.debug('Processing work with sid "%s" (handler: %r, kwargs: %r)' % (sid, key, kwargs))
+
+        # Create "http" cache for this task
+        http_cache = CacheManager.open('http.%s' % sid)
+
         success = False
 
         try:
-            success = handler.run(section=section, **kwargs)
+            with Plex.configuration.cache(http=http_cache):
+                success = handler.run(section=section, **kwargs)
         except CancelException, e:
             handler.update_status(False)
             log.info('Task "%s" was cancelled', key)
@@ -184,6 +191,14 @@ class SyncManager(object):
             log.warn('Exception raised in handler for "%s" (%s) %s: %s' % (
                 key, type(e), e, traceback.format_exc()
             ))
+
+        log.debug('Cache Statistics - len(http): %s, len(matcher): %s', len(http_cache), len(CacheManager.get('matcher')))
+
+        # Discard HTTP cache
+        CacheManager.delete('http.%s' % sid)
+
+        # Sync "matcher" cache (back to disk)
+        CacheManager.get('matcher').sync()
 
         # Return task success result
         return success
