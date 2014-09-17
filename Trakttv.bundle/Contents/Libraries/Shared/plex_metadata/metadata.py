@@ -1,6 +1,5 @@
 from plex import Plex
-from plex.ext.activity import Activity
-from plex_metadata.core.cache import Cache
+from plex_activity import Activity
 from plex_metadata.core.defaults import DEFAULT_TYPES
 
 import logging
@@ -16,22 +15,35 @@ class Metadata(object):
         else:
             self.types = DEFAULT_TYPES
 
-        self.cache = Cache('plex.metadata')
-        self.cache.on_refresh.subscribe(self.on_refresh)
+        self.cache = None
 
         # Bind activity events
         Activity.on('websocket.timeline.created', self.timeline_created)
         Activity.on('websocket.timeline.deleted', self.timeline_deleted)
         Activity.on('websocket.timeline.finished', self.timeline_finished)
 
+    def configure(self, cache):
+        self.cache = cache
+
     def get(self, key):
-        return self.cache.get(key, refresh=True)
+        # Try retrieve item from cache (if it exists)
+        value = self.cache.get(key) if self.cache is not None else None
+
+        if value is None:
+            # Item not available in cache / no cache enabled
+            value = self.fetch(key)
+
+        if self.cache is not None:
+            # Store in cache
+            self.cache[key] = value
+
+        return value
 
     #
     # Event handlers
     #
 
-    def on_refresh(self, key):
+    def fetch(self, key):
         container = Plex['library'].metadata(key)
 
         items = list(container)
@@ -58,10 +70,12 @@ class Metadata(object):
         pass
 
     def timeline_deleted(self, item):
-        self.cache.remove(str(item['itemID']))
+        # TODO self.cache.remove(str(item['itemID']))
+        pass
 
     def timeline_finished(self, item):
-        self.cache.invalidate(str(item['itemID']), refresh=True, create=True)
+        # TODO self.cache.invalidate(str(item['itemID']), refresh=True, create=True)
+        pass
 
 
 # Global object

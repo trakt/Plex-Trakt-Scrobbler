@@ -192,7 +192,12 @@ class SyncManager(object):
                 key, type(e), e, traceback.format_exc()
             ))
 
-        log.debug('Cache Statistics - len(http): %s, len(matcher): %s', len(http_cache), len(CacheManager.get('matcher')))
+        log.debug(
+            'Cache Statistics - len(http): %s, len(matcher): %s, len(metadata): %s',
+            len(http_cache),
+            len(CacheManager.get('matcher')),
+            len(CacheManager.get('metadata'))
+        )
 
         # Discard HTTP cache
         CacheManager.delete('http.%s' % sid)

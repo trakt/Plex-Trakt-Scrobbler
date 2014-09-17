@@ -10,6 +10,7 @@ import interface
 # ------------------------------------------------
 
 
+from core.cache import CacheManager
 from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
@@ -25,6 +26,7 @@ from sync.manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
+from plex_metadata import Metadata
 from trakt import Trakt
 import hashlib
 import logging
@@ -65,6 +67,8 @@ class Main(object):
         self.init_logging()
         self.init_trakt()
         self.init()
+
+        Metadata.configure(CacheManager.get('metadata'))
 
     def init(self):
         names = []
