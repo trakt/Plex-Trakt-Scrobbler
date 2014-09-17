@@ -1,7 +1,9 @@
 from plex import Plex
+from plex.core.helpers import synchronized
 from plex_activity import Activity
 from plex_metadata.core.defaults import DEFAULT_TYPES
 
+from threading import Condition
 import logging
 
 log = logging.getLogger(__name__)
@@ -17,6 +19,9 @@ class Metadata(object):
 
         self.cache = None
 
+        # Private
+        self._lock = Condition()
+
         # Bind activity events
         Activity.on('websocket.timeline.created', self.timeline_created)
         Activity.on('websocket.timeline.deleted', self.timeline_deleted)
@@ -25,6 +30,7 @@ class Metadata(object):
     def configure(self, cache):
         self.cache = cache
 
+    @synchronized
     def get(self, key):
         # Try retrieve item from cache (if it exists)
         value = self.cache.get(key) if self.cache is not None else None
