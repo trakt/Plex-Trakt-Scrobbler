@@ -1,3 +1,4 @@
+from plex.core.configuration import ConfigurationManager
 from plex.core.http import HttpClient
 from plex.interfaces import construct_map
 from plex.interfaces.core.base import InterfaceProxy
@@ -17,6 +18,8 @@ class PlexClient(object):
 
         # Construct interfaces
         self.http = HttpClient(self)
+        self.configuration = ConfigurationManager()
+
         self.__interfaces = construct_map(self)
 
         # Discover modules
