@@ -1,5 +1,7 @@
+from plex.core.helpers import synchronized
 from plex.request import PlexRequest
 
+from threading import Condition
 import hashlib
 import logging
 import requests
@@ -14,6 +16,9 @@ class HttpClient(object):
 
         self.session = requests.Session()
         self.c_path = None
+
+        # Private
+        self._lock = Condition()
 
     @property
     def cache(self):
@@ -105,6 +110,7 @@ class HttpClient(object):
 
         return self.session
 
+    @synchronized
     def _cache_lookup(self, request):
         if self.cache is None:
             log.debug('Cache not available')
@@ -117,6 +123,7 @@ class HttpClient(object):
         # Retrieve from cache
         return self.cache.get(self._cache_key(request))
 
+    @synchronized
     def _cache_store(self, request, response):
         if self.cache is None:
             log.debug('Cache not available')
