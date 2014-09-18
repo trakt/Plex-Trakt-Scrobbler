@@ -13,6 +13,7 @@ from sync.synchronize import Synchronize
 from datetime import datetime
 from plex import Plex
 from plex_activity import Activity
+import gc
 import threading
 import traceback
 import time
@@ -208,6 +209,11 @@ class SyncManager(object):
         # Clear memory caches
         CacheManager.get('matcher').cache.clear()
         CacheManager.get('metadata').cache.clear()
+
+        # Run garbage collection
+        log.debug('[GC] Collected %d objects', gc.collect())
+        log.debug('[GC] Count: %s', gc.get_count())
+        log.debug('[GC] Garbage: %s', len(gc.garbage))
 
         # Return task success result
         return success
