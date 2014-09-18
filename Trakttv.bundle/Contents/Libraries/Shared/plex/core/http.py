@@ -61,7 +61,6 @@ class HttpClient(object):
         response = self._cache_lookup(prepared)
 
         if response:
-            log.debug('Returning cached response for request [%s %s]', prepared.method, prepared.url)
             return response
 
         # TODO retrying requests on 502, 503 errors?
@@ -113,11 +112,9 @@ class HttpClient(object):
     @synchronized
     def _cache_lookup(self, request):
         if self.cache is None:
-            log.debug('Cache not available')
             return None
 
         if request.method not in ['GET']:
-            log.debug('Not caching request with method "%s"', request.method)
             return None
 
         # Retrieve from cache
@@ -126,11 +123,9 @@ class HttpClient(object):
     @synchronized
     def _cache_store(self, request, response):
         if self.cache is None:
-            log.debug('Cache not available')
             return None
 
         if request.method not in ['GET']:
-            log.debug('Not caching request with method "%s"', request.method)
             return None
 
         # Store in cache
