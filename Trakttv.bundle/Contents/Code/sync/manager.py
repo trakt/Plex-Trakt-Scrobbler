@@ -205,6 +205,10 @@ class SyncManager(object):
         # Sync "matcher" cache (back to disk)
         CacheManager.get('matcher').sync()
 
+        # Clear memory caches
+        CacheManager.get('matcher').cache.clear()
+        CacheManager.get('metadata').cache.clear()
+
         # Return task success result
         return success
 

@@ -75,7 +75,7 @@ class CacheManager(object):
         result = []
 
         for key, shove in cls.active.items():
-            result.append((key, len(getattr(shove, '_cache')), len(getattr(shove, '_store'))))
+            result.append((key, len(shove.cache), len(shove.store)))
 
         return result
 
