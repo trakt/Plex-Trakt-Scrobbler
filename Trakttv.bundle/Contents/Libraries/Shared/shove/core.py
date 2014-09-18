@@ -20,9 +20,9 @@ class Shove(MutableMapping):
     def __init__(self, store='simple://', cache='simple://', **kw):
         super(Shove, self).__init__()
         # load store backend
-        self._store = store_backend(store, **kw)
+        self.store = store_backend(store, **kw)
         # load cache backend
-        self._cache = cache_backend(cache, **kw)
+        self.cache = cache_backend(cache, **kw)
         # buffer for lazier writing
         self._buffer = dict()
         # setting for syncing frequency
@@ -30,15 +30,15 @@ class Shove(MutableMapping):
 
     def __getitem__(self, key):
         try:
-            return self._cache[key]
+            return self.cache[key]
         except KeyError:
             # synchronize cache with store
             self.sync()
-            self._cache[key] = value = self._store[key]
+            self.cache[key] = value = self.store[key]
             return value
 
     def __setitem__(self, key, value):
-        self._cache[key] = self._buffer[key] = value
+        self.cache[key] = self._buffer[key] = value
         # when buffer reaches self._limit, write buffer to store
         if len(self._buffer) >= self._sync:
             self.sync()
@@ -46,36 +46,43 @@ class Shove(MutableMapping):
     def __delitem__(self, key):
         self.sync()
         try:
-            del self._cache[key]
+            del self.cache[key]
         except KeyError:
             pass
-        del self._store[key]
+        del self.store[key]
 
     def __len__(self):
-        return len(self._store)
+        return len(self.store)
 
     def __iter__(self):
         self.sync()
-        return self._store.__iter__()
+        return self.store.__iter__()
 
     def close(self):
         '''Finalizes and closes shove.'''
         # if close has been called, pass
-        if self._store is not None:
+        if self.store is not None:
             try:
                 self.sync()
             except AttributeError:
                 pass
-            self._store.close()
-        self._store = self._cache = self._buffer = None
+
+            self.store.close()
+
+        if self.cache is not None:
+            self.cache.close()
+
+        self.store = self.cache = self._buffer = None
 
     def sync(self):
         '''Writes buffer to store.'''
-        self._store.update(self._buffer)
+        self.store.update(self._buffer)
         self._buffer.clear()
 
     def clear(self):
-        self._store.clear()
+        self.cache.clear()
+        self.store.clear()
+
         self._buffer.clear()
 
 

@@ -33,6 +33,12 @@ class BaseCache(object):
         # set timeout
         self.timeout = kw.get('timeout', 300)
 
+    def clear(self):
+        pass
+
+    def close(self):
+        pass
+
     def __getitem__(self, key):
         exp, value = super(BaseCache, self).__getitem__(key)
         # delete if item timed out.
@@ -69,6 +75,12 @@ class SimpleCache(BaseCache, Mapping):
     def __init__(self, engine, **kw):
         super(SimpleCache, self).__init__(engine, **kw)
         self._store = dict()
+
+    def clear(self):
+        self._store = dict()
+
+    def close(self):
+        self._store = None
 
 
 class MemoryCache(SimpleCache):
