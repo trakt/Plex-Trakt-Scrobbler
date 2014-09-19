@@ -1,3 +1,4 @@
+from core.action import ActionHelper
 from core.helpers import all, plural, json_encode
 from core.logger import Logger
 from data.watch_session import WatchSession
@@ -42,7 +43,7 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', self.plex.to_trakt(key, p_items[0], include_identifier))
+        self.store('watched', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
 
     def rate(self, key, p_items, t_item, artifact='ratings'):
         if type(p_items) is not list:
@@ -62,7 +63,7 @@ class Base(SyncBase):
         if t_item and t_item.rating and t_item.rating.advanced == p_item.user_rating:
             return True
 
-        data = self.plex.to_trakt(key, p_item)
+        data = ActionHelper.plex.to_trakt(key, p_item)
 
         data.update({
             'rating': p_item.user_rating
@@ -79,7 +80,7 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', self.plex.to_trakt(key, p_items[0], include_identifier))
+        self.store('collected', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
         return True
 
     @staticmethod
@@ -216,7 +217,7 @@ class Show(Base):
                     artifacts=artifacts
                 )
 
-                show = self.plex.to_trakt(key, p_show)
+                show = ActionHelper.plex.to_trakt(key, p_show)
 
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
