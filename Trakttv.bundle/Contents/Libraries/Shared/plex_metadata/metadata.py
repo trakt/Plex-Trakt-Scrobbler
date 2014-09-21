@@ -18,6 +18,7 @@ class Metadata(object):
             self.types = DEFAULT_TYPES
 
         self.cache = None
+        self.client = None
 
         # Private
         self._lock = Condition()
@@ -27,23 +28,43 @@ class Metadata(object):
         Activity.on('websocket.timeline.deleted', self.timeline_deleted)
         Activity.on('websocket.timeline.finished', self.timeline_finished)
 
-    def configure(self, cache):
-        self.cache = cache
+    def configure(self, cache=None, client=None):
+        self.cache = self.cache or cache
+        self.client = self.client or client
 
     @synchronized
     def get(self, key):
         # Try retrieve item from cache (if it exists)
-        value = self.cache.get(key) if self.cache is not None else None
+        value = self._cache_get(key)
 
         if value is None:
             # Item not available in cache / no cache enabled
             value = self.fetch(key)
 
-        if self.cache is not None:
             # Store in cache
-            self.cache[key] = value
+            self._cache_store(key, value)
 
         return value
+
+    def _cache_get(self, key):
+        if self.cache is None:
+            return None
+
+        value = self.cache.get(key)
+
+        if value is None:
+            return None
+
+        # Update `client` attribute
+        value.client = self.client
+
+        return value
+
+    def _cache_store(self, key, value):
+        if self.cache is None:
+            return
+
+        self.cache[key] = value
 
     #
     # Event handlers
