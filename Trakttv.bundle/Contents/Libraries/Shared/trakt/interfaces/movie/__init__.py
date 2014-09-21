@@ -105,3 +105,17 @@ class MovieInterface(MediaInterface):
             },
             **kwargs
         )
+
+    @authenticated
+    def unseen(self, movies, **kwargs):
+        """Remove episodes watched outside of trakt from your watched history.
+
+        :param movies: list of movies to remove from your watched history
+        :type movies: list of dict {title, year, [imdb_id]}
+        """
+        return self.action(
+            'unseen', {
+                'movies': movies
+            },
+            **kwargs
+        )

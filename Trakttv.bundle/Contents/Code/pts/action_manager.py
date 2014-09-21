@@ -60,8 +60,14 @@ class ActionManager(object):
         log.debug('response: %r', response)
 
     @classmethod
-    def request_movie(cls, metadata, guid):
-        return 'movie', {}
+    def request_movie(cls, movie, guid):
+        return 'movie', {'movies': [
+            ActionHelper.plex.to_trakt(
+                (guid.agent, guid.sid),
+                movie,
+                guid=guid
+            )
+        ]}
 
     @classmethod
     def request_season(cls, season, guid):
