@@ -35,3 +35,9 @@ class SeasonContainer(MediaContainer, Show):
         'year':     'parentYear',
         '*':        '*'
     }
+
+    def __iter__(self):
+        for item in super(MediaContainer, self).__iter__():
+            item.show = self
+
+            yield item
