@@ -28,8 +28,15 @@ class Video(Media):
         self.is_watched = None
         self.is_collected = None
 
+        self.collected_at = None
+        self.plays = None
+
     def update(self, info=None, is_watched=None, is_collected=None):
         super(Video, self).update(info)
+
+        update_attributes(self, info, [
+            'collected_at', 'plays'
+        ])
 
         if is_watched is not None:
             self.is_watched = is_watched
@@ -58,7 +65,7 @@ class Show(Media):
     def update(self, info=None, **kwargs):
         super(Show, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year', 'tvdb_id'])
+        update_attributes(self, info['show'], ['title', 'year', 'tvdb_id'])
 
     @classmethod
     def create(cls, keys, info=None, **kwargs):
@@ -115,7 +122,7 @@ class Movie(Video):
     def update(self, info=None, **kwargs):
         super(Movie, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year', 'imdb_id'])
+        update_attributes(self, info['movie'], ['title', 'year', 'imdb_id'])
 
     @classmethod
     def create(cls, keys, info, **kwargs):
@@ -130,9 +137,7 @@ class Movie(Video):
 
 class Rating(object):
     def __init__(self):
-        self.basic = None
-        self.advanced = None
-
+        self.value = None
         self.timestamp = None
 
     @classmethod
@@ -141,14 +146,12 @@ class Rating(object):
             return
 
         r = cls()
-        r.basic = info.get('rating')
-        r.advanced = info.get('rating_advanced')
-
-        r.timestamp = info.get('inserted')
+        r.value = info.get('rating')
+        r.timestamp = info.get('rated_at')
         return r
 
     def __repr__(self):
-        return '<Rating %s (%s/10)>' % (self.basic, self.advanced)
+        return '<Rating %s/10 (%s)>' % (self.value, self.timestamp)
 
     def __str__(self):
         return self.__repr__()

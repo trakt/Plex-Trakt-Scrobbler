@@ -24,8 +24,13 @@ class TraktRequest(object):
         self.transform_parameters()
         self.request.url = self.construct_url()
 
-        self.request.data = json.dumps(self.transform_data())
         self.request.method = self.transform_method()
+        self.request.headers = self.transform_headers()
+
+        data = self.transform_data()
+
+        if data:
+            self.request.data = json.dumps(data)
 
         return self.request.prepare()
 
@@ -54,18 +59,23 @@ class TraktRequest(object):
 
         return self.method
 
+    def transform_headers(self):
+        headers = self.kwargs.get('headers') or {}
+        headers['Content-Type'] = 'application/json'
+        headers['trakt-api-key'] = self.client.client_id
+        headers['trakt-api-version'] = '2'
+
+        if self.client.current and self.client.current.access_token:
+            headers['Authorization'] = 'Bearer %s' % self.client.current.access_token
+
+        return headers
+
     def transform_data(self):
-        self.data = self.kwargs.get('data') or {}
-
-        # Set credentials (if not provided)
-        if self.kwargs.get('credentials'):
-            setdefault(self.data, self.kwargs['credentials'])
-
-        return self.data
+        return self.kwargs.get('data') or None
 
     def construct_url(self):
         """Construct a full trakt request URI, with `api_key` and `params`."""
-        path = [self.path, self.client.api_key]
+        path = [self.path]
         path.extend(self.params)
 
         return self.client.base_url + '/'.join(x for x in path if x)

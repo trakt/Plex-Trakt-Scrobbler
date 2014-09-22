@@ -2,13 +2,13 @@ from trakt.objects import Episode, Movie, Show
 
 IDENTIFIERS = {
     'movies': [
-        ('imdb_id', 'imdb'),
-        ('tmdb_id', 'themoviedb')
+        'imdb',
+        'tmdb'
     ],
     'shows': [
-        ('tvdb_id', 'thetvdb'),
-        ('imdb_id', 'imdb'),
-        ('tvrage_id', 'tvrage')
+        'tvdb',
+        'imdb',
+        'tvrage'
     ]
 }
 
@@ -30,7 +30,7 @@ class MediaMapper(object):
         raise ValueError('Unknown media provided')
 
     def movie(self, media, item, **kwargs):
-        pk, keys = self.get_keys(media, item)
+        pk, keys = self.get_ids(media, item['movie'])
 
         if pk not in self.store:
             self.store[pk] = self.create(media, item, keys, **kwargs)
@@ -40,7 +40,7 @@ class MediaMapper(object):
         return self.store[pk]
 
     def show(self, media, item, **kwargs):
-        pk, keys = self.get_keys(media, item)
+        pk, keys = self.get_ids(media, item['show'])
 
         if pk not in self.store:
             self.store[pk] = self.create(media, item, keys, **kwargs)
@@ -51,9 +51,11 @@ class MediaMapper(object):
 
         # Process any episodes in the item
         for season in item.get('seasons', []):
-            season_num = season.get('season')
+            season_num = season.get('number')
 
-            for episode_num in season.get('episodes', []):
+            for episode in season.get('episodes', []):
+                episode_num = episode.get('number')
+
                 self.show_episode(show, (season_num, episode_num), **kwargs)
 
         return show
@@ -76,13 +78,15 @@ class MediaMapper(object):
         return self.show_episode(show, pk, item, **kwargs)
 
     @staticmethod
-    def get_keys(media, item):
+    def get_ids(media, item):
         if not item:
             return None
 
+        ids = item.get('ids', {})
+
         keys = []
-        for t_key, p_key in IDENTIFIERS.get(media, []):
-            keys.append((p_key, str(item.get(t_key))))
+        for key in IDENTIFIERS.get(media, []):
+            keys.append((key, str(ids.get(key))))
 
         if media == 'episodes':
             keys.append((item.get('season'), item.get('number')))
@@ -95,7 +99,7 @@ class MediaMapper(object):
     @classmethod
     def create(cls, media, item, keys=None, **kwargs):
         if keys is None:
-            pk, keys = cls.get_keys(media, item)
+            pk, keys = cls.get_ids(media, item)
         else:
             pk = keys[0]
 

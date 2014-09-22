@@ -1,11 +1,10 @@
-from trakt.helpers import parse_credentials
+from trakt.core.context import Context
+from trakt.core.http import HttpClient
 from trakt.interfaces import construct_map
 from trakt.interfaces.base import InterfaceProxy
-from trakt.request import TraktRequest
 
 import logging
-import requests
-import socket
+
 
 log = logging.getLogger(__name__)
 
@@ -15,21 +14,31 @@ class TraktClient(object):
     interfaces = None
 
     def __init__(self):
-        self.api_key = None
+        self.client_id = None
+        self.client_secret = None
+
+        self.access_token = None
 
         # Scrobbling parameters
-        self.plugin_version = None
+        self.app_version = None
+        self.app_date = None
 
-        self.media_center_version = None
-        self.media_center_date = None
+        # Construct
+        self.http = HttpClient(self)
+        self.interfaces = construct_map(self)
 
         # Private
-        self._session = requests.Session()
+        self._context_stack = [Context(self)]
 
-        self._get_credentials = None
+    @property
+    def current(self):
+        if not self._context_stack:
+            return None
 
-        # Construct interfaces
-        self.interfaces = construct_map(self)
+        return self._context_stack[-1]
+
+    def context(self, access_token=None):
+        return Context(self, access_token)
 
     def configure(self, **kwargs):
         for key, value in kwargs.items():
@@ -37,47 +46,6 @@ class TraktClient(object):
                 raise ValueError('Unknown option "%s" specified' % key)
 
             setattr(self, key, value)
-
-    def request(self, path, params=None, data=None, credentials=None, **kwargs):
-        if not self.api_key:
-            raise ValueError('Missing "api_key", unable to send requests to trakt.tv')
-
-        log.debug('"%s" - data: %s', path, data)
-
-        request = TraktRequest(
-            self,
-            path=path,
-
-            params=params,
-            data=data,
-
-            credentials=credentials,
-            **kwargs
-        )
-
-        prepared = request.prepare()
-
-        # TODO retrying requests on 502, 503 errors?
-
-        try:
-            return self._session.send(prepared)
-        except socket.gaierror, e:
-            code, _ = e
-
-            if code != 8:
-                raise e
-
-            log.warn('Encountered socket.gaierror (code: 8)')
-
-            return self._rebuild().send(prepared)
-
-    def _rebuild(self):
-        log.info('Rebuilding session and connection pools...')
-
-        # Rebuild the connection pool (old pool has stale connections)
-        self._session = requests.Session()
-
-        return self._session
 
     def __getitem__(self, path):
         parts = path.strip('/').split('/')
@@ -99,19 +67,3 @@ class TraktClient(object):
             return InterfaceProxy(cur, parts)
 
         return cur
-
-    @property
-    def credentials(self):
-        if not self._get_credentials:
-            return None
-
-        return parse_credentials(self._get_credentials())
-
-    @credentials.setter
-    def credentials(self, value):
-        if hasattr(value, '__iter__'):
-            self._get_credentials = lambda: value
-        elif hasattr(value, '__call__'):
-            self._get_credentials = value
-        else:
-            raise ValueError('(<username>, <password>) iterable, or function is required')
