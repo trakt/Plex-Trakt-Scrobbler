@@ -1,4 +1,5 @@
 from core.action import ActionHelper
+from core.helpers import try_convert
 from core.logger import Logger
 
 from plex.objects.library.metadata.episode import Episode
@@ -21,16 +22,27 @@ class ActionManager(object):
     def on_played(cls, info):
         log.debug('on_played - %s', info)
 
-        cls.send('seen', info['rating_key'])
+        cls.send('seen', info)
 
     @classmethod
     def on_unplayed(cls, info):
         log.debug('on_unplayed - %s', info)
 
-        cls.send('unseen', info['rating_key'])
+        cls.send('unseen', info)
 
     @classmethod
-    def send(cls, action, rating_key):
+    def send(cls, action, info):
+        account_key = try_convert(info.get('account_key'), int)
+        rating_key = info.get('rating_key')
+
+        if account_key is None or rating_key is None:
+            log.warn('Invalid "%s" action format', action)
+            return
+
+        if account_key != 1:
+            log.debug('Ignoring action from shared account')
+            return
+
         metadata = Metadata.get(rating_key)
         guid = Guid.parse(metadata.guid)
 
