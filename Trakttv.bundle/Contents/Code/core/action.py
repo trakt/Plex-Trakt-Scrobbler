@@ -15,18 +15,10 @@ class PlexHelper(object):
 
         return p_item
 
+    # TODO [trakt-v2] how are title/year identifiers defined?
     @classmethod
     def to_trakt(cls, key, p_item, include_identifier=True, guid=None, year=None):
         data = {}
-
-        # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, Episode):
-            k_season, k_episode = key
-
-            data.update({
-                'season': k_season,
-                'episode': k_episode
-            })
 
         if include_identifier:
             p_root = cls.get_root(p_item)
@@ -49,7 +41,7 @@ class ActionHelper(object):
     plex = PlexHelper
 
     @classmethod
-    def set_identifier(cls, values, guid):
+    def set_identifier(cls, data, guid):
         if not guid:
             return
 
@@ -57,11 +49,18 @@ class ActionHelper(object):
             # Parse raw guid
             guid = Guid.parse(guid)
 
+        if 'ids' not in data:
+            data['ids'] = {}
+
+        ids = data['ids']
+
         if guid.agent == 'imdb':
-            values['imdb_id'] = guid.sid
+            ids['imdb'] = guid.sid
         elif guid.agent == 'themoviedb':
-            values['tmdb_id'] = try_convert(guid.sid, int)
+            ids['tmdb'] = try_convert(guid.sid, int)
         elif guid.agent == 'thetvdb':
-            values['tvdb_id'] = try_convert(guid.sid, int)
+            ids['tvdb'] = try_convert(guid.sid, int)
         else:
             log.warn('Unknown GUID agent "%s"', guid.agent)
+
+        return data
