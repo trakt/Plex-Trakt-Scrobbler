@@ -7,6 +7,7 @@ import json
 class TraktRequest(object):
     def __init__(self, client, **kwargs):
         self.client = client
+        self.configuration = client.configuration
         self.kwargs = kwargs
 
         self.request = None
@@ -62,11 +63,18 @@ class TraktRequest(object):
     def transform_headers(self):
         headers = self.kwargs.get('headers') or {}
         headers['Content-Type'] = 'application/json'
-        headers['trakt-api-key'] = self.client.client_id
+
+        headers['trakt-api-key'] = self.client.configuration['client.id']
         headers['trakt-api-version'] = '2'
 
-        if self.client.current and self.client.current.access_token:
-            headers['Authorization'] = 'Bearer %s' % self.client.current.access_token
+        if self.configuration['auth.login'] and self.configuration['auth.token']:
+            # xAuth
+            headers['trakt-user-login'] = self.configuration['auth.login']
+            headers['trakt-user-token'] = self.configuration['auth.token']
+
+        if self.configuration['oauth.token']:
+            # OAuth
+            headers['Authorization'] = 'Bearer %s' % self.configuration['oauth.token']
 
         return headers
 

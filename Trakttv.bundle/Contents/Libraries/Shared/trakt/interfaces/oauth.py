@@ -10,7 +10,7 @@ class OAuthInterface(Interface):
             self.client.base_url,
             self.path, 'authorize',
 
-            client_id=self.client.client_id,
+            client_id=self.client.configuration['client.id'],
 
             redirect_uri=redirect_uri,
             response_type=response_type,
@@ -20,8 +20,8 @@ class OAuthInterface(Interface):
 
     def token(self, code=None, redirect_uri=None, grant_type='authorization_code'):
         response = self.http.post('token', data={
-            'client_id': self.client.client_id,
-            'client_secret': self.client.client_secret,
+            'client_id': self.client.configuration['client.id'],
+            'client_secret': self.client.configuration['client.secret'],
 
             'code': code,
             'redirect_uri': redirect_uri,

@@ -25,8 +25,8 @@ def application(func):
             interface = args[0]
 
             setdefault(kwargs, {
-                'app_version': interface.client.app_version,
-                'app_date': interface.client.app_date
+                'app_version': interface.client.configuration['app.version'],
+                'app_date': interface.client.configuration['app.date']
             }, lambda key, value: value)
 
         return func(*args, **kwargs)
