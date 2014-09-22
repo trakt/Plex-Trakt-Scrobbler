@@ -1,6 +1,6 @@
-from trakt.interfaces.sync.base import SyncBaseInterface
+from trakt.interfaces.sync.core.mixins import Get, Add, Remove
 
 
-class SyncWatchlistInterface(SyncBaseInterface):
+class SyncWatchlistInterface(Get, Add, Remove):
     path = 'sync/watchlist'
     flags = {'in_watchlist': True}

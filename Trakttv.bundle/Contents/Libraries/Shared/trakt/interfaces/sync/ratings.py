@@ -1,8 +1,8 @@
 from trakt.interfaces.base import authenticated
-from trakt.interfaces.sync.base import SyncBaseInterface
+from trakt.interfaces.sync.core.mixins import Get, Add, Remove
 
 
-class SyncRatingsInterface(SyncBaseInterface):
+class SyncRatingsInterface(Get, Add, Remove):
     path = 'sync/ratings'
 
     @authenticated

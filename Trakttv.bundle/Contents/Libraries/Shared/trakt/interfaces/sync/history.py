@@ -1,8 +1,5 @@
-from trakt.interfaces.sync.base import SyncBaseInterface
+from trakt.interfaces.sync.core.mixins import Add, Remove
 
 
-class SyncHistoryInterface(SyncBaseInterface):
+class SyncHistoryInterface(Add, Remove):
     path = 'sync/history'
-
-    def get(self, media, store=None, params=None):
-        raise Exception("Invalid request")

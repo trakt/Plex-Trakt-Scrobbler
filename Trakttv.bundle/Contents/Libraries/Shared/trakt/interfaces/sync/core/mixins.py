@@ -1,7 +1,7 @@
-from trakt.interfaces.base import Interface, authenticated
+from trakt.interfaces.base import authenticated, Interface
 
 
-class SyncBaseInterface(Interface):
+class Get(Interface):
     flags = {}
 
     @authenticated
@@ -26,27 +26,6 @@ class SyncBaseInterface(Interface):
         )
 
     @authenticated
-    def post(self, data):
-        response = self.http.post(
-            data=data
-        )
-
-        data = self.get_data(response)
-
-        if not data:
-            return False
-
-        return data
-
-    @authenticated
-    def delete(self, data):
-        pass
-
-    #
-    # Shortcut methods
-    #
-
-    @authenticated
     def shows(self, store=None):
         return self.get(
             'shows',
@@ -59,3 +38,24 @@ class SyncBaseInterface(Interface):
             'movies',
             store
         )
+
+
+class Add(Interface):
+    @authenticated
+    def add(self, items):
+        response = self.http.post(
+            data=items
+        )
+
+        return self.get_data(response)
+
+
+class Remove(Interface):
+    @authenticated
+    def remove(self, items):
+        response = self.http.post(
+            'remove',
+            data=items
+        )
+
+        return self.get_data(response)

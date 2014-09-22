@@ -1,6 +1,6 @@
-from trakt.interfaces.sync.base import SyncBaseInterface
+from trakt.interfaces.sync.core.mixins import Get, Add, Remove
 
 
-class SyncCollectionInterface(SyncBaseInterface):
+class SyncCollectionInterface(Get, Add, Remove):
     path = 'sync/collection'
     flags = {'is_collected': True}
