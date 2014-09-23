@@ -19,8 +19,8 @@ class Base(SyncBase):
             ws.metadata.rating_key == p_item.rating_key
         )
 
-        for key, session in sessions:
-            if session.watching:
+        for key, ws in sessions:
+            if ws.active:
                 return True
 
         return False
