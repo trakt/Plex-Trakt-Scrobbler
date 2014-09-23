@@ -168,6 +168,8 @@ class ScrobblerMethod(Method):
 
         if not response or 'action' not in response:
             log.warn('Unable to send scrobbler action: %s', response)
+        else:
+            log.debug('Response: %s', response)
 
         ws.last_updated = Datetime.Now()
         ws.save()
