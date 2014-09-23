@@ -178,6 +178,9 @@ class LoggingActivity(ActivityMethod):
             log.warn('Unknown activity type "%s"', activity_type)
             return
 
+        if match is None:
+            match = {}
+
         # Extend match with query info
         self.query(match, header_match.group('query'))
 
@@ -233,8 +236,9 @@ class LoggingActivity(ActivityMethod):
 
     def progress(self):
         data = self.read_parameters()
+
         if not data:
-            return None
+            return {}
 
         # Translate parameters into timeline-style form
         return {
@@ -252,7 +256,7 @@ class LoggingActivity(ActivityMethod):
             line = self.try_read_line(timeout=5)
             if not line:
                 log.warn('Unable to read log file')
-                return None
+                return {}
 
             # Run through each match function to find a result
             match = None
