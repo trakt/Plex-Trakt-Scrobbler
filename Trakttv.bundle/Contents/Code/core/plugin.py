@@ -2,7 +2,7 @@ PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
-PLUGIN_VERSION_BASE = (0, 8, 4, 2)
+PLUGIN_VERSION_BASE = (0, 8, 4, 3)
 PLUGIN_VERSION_BRANCH = 'develop'
 
 PLUGIN_VERSION = ''.join([
