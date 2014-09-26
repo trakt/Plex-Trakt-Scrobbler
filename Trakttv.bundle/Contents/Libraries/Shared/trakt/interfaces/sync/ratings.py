@@ -12,7 +12,7 @@ class SyncRatingsInterface(Get, Add, Remove):
         if rating is not None:
             parameters.append(rating)
 
-        super(SyncRatingsInterface, self).get(media, store, parameters)
+        return super(SyncRatingsInterface, self).get(media, store, parameters)
 
     #
     # Shortcut methods

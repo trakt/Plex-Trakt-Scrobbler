@@ -1,4 +1,4 @@
-from trakt.objects import Episode, Movie, Show
+from trakt.objects import Episode, Movie, Show, Season
 
 IDENTIFIERS = {
     'movies': [
@@ -50,24 +50,35 @@ class MediaMapper(object):
         show = self.store[pk]
 
         # Process any episodes in the item
-        for season in item.get('seasons', []):
-            season_num = season.get('number')
+        for i_season in item.get('seasons', []):
+            season_num = i_season.get('number')
 
-            for episode in season.get('episodes', []):
+            season = self.show_season(show, season_num, **kwargs)
+
+            for episode in i_season.get('episodes', []):
                 episode_num = episode.get('number')
 
-                self.show_episode(show, (season_num, episode_num), **kwargs)
+                self.show_episode(season, episode_num, **kwargs)
 
         return show
 
     @staticmethod
-    def show_episode(show, pk, item=None, **kwargs):
-        if pk not in show.episodes:
-            show.episodes[pk] = Episode.create(pk, item, **kwargs)
+    def show_season(show, pk, item=None, **kwargs):
+        if pk not in show.seasons:
+            show.seasons[pk] = Season.create(pk, item, **kwargs)
         else:
-            show.episodes[pk].update(item, **kwargs)
+            show.seasons[pk].update(item, **kwargs)
 
-        return show.episodes[pk]
+        return show.seasons[pk]
+
+    @staticmethod
+    def show_episode(season, pk, item=None, **kwargs):
+        if pk not in season.episodes:
+            season.episodes[pk] = Episode.create(pk, item, **kwargs)
+        else:
+            season.episodes[pk].update(item, **kwargs)
+
+        return season.episodes[pk]
 
     def episode(self, media, item, **kwargs):
         show = self.show('shows', item.get('show'))

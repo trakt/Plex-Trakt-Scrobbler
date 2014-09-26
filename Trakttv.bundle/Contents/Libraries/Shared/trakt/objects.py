@@ -53,7 +53,7 @@ class Show(Media):
         self.year = None
         self.tvdb_id = None
 
-        self.episodes = {}
+        self.seasons = {}
 
     def to_info(self):
         return {
@@ -78,16 +78,39 @@ class Show(Media):
         return '<Show "%s" (%s)>' % (self.title, self.year)
 
 
-class Episode(Video):
-    def __init__(self, pk):
-        super(Episode, self).__init__([pk])
+class Season(Media):
+    def __init__(self, number):
+        super(Season, self).__init__([number])
+
+        self.episodes = {}
 
     def to_info(self):
-        season, episode = self.pk
-
         return {
-            'season': season,
-            'episode': episode
+            'number': self.pk,
+            'episodes': [
+                episode.to_info()
+                for episode in self.episodes.values()
+            ]
+        }
+
+    @classmethod
+    def create(cls, number, info=None, **kwargs):
+        season = cls(number)
+        season.update(info, **kwargs)
+
+        return season
+
+    def __repr__(self):
+        return '<Season S%02d>' % self.pk
+
+
+class Episode(Video):
+    def __init__(self, number):
+        super(Episode, self).__init__([number])
+
+    def to_info(self):
+        return {
+            'number': self.pk
         }
 
     @classmethod
@@ -98,7 +121,7 @@ class Episode(Video):
         return episode
 
     def __repr__(self):
-        return '<Episode S%02dE%02d>' % self.pk
+        return '<Episode E%02d>' % self.pk
 
 
 class Movie(Video):
