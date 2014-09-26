@@ -3,6 +3,7 @@ from core.logger import Logger
 from sync.sync_base import SyncBase
 
 from plex import Plex
+from plex_metadata import Library
 from datetime import datetime
 
 
@@ -110,9 +111,30 @@ class Episode(Base):
         return self.rate(p_episode, t_episode)
 
 
+class Season(Base):
+    key = 'season'
+    auto_run = False
+    children = [Episode]
+
+    def run(self, p_seasons, t_seasons, artifacts=None):
+        self.reset(artifacts)
+
+        if p_seasons is None:
+            return False
+
+        enabled_funcs = self.get_enabled_functions()
+
+        for key, p_season in p_seasons.items():
+            t_season = t_seasons.get(key)
+
+            log.debug('p_season: %s, t_season: %s', p_season, t_season)
+
+            # TODO trigger episode task
+
+
 class Show(Base):
     key = 'show'
-    children = [Episode]
+    children = [Season]
 
     def run(self, section=None):
         self.check_stopping()
@@ -139,7 +161,7 @@ class Show(Base):
             self.check_stopping()
             self.emit('progress', x + 1)
 
-            if key is None or key not in p_shows or not t_show.episodes:
+            if key is None or key not in p_shows or not t_show.seasons:
                 continue
 
             log.debug('Processing "%s" [%s]', t_show.title, key)
@@ -151,16 +173,16 @@ class Show(Base):
 
             # Run through each matched show and run episode functions
             for p_show in p_shows[key]:
-                self.child('episode').run(
-                    p_episodes=self.plex.episodes(p_show.rating_key, p_show),
-                    t_episodes=t_show.episodes
+                self.child('season').run(
+                    p_seasons=Library.episodes(p_show.rating_key, p_show, flat=False),
+                    t_seasons=t_show.seasons
                 )
 
         self.emit('finished')
         self.check_stopping()
 
         # Trigger plex missing show/episode discovery
-        self.discover_missing(t_shows)
+        # TODO self.discover_missing(t_shows)
 
         log.info('Finished pulling shows from trakt')
         return True
@@ -179,7 +201,7 @@ class Show(Base):
         num_shows = 0
         for key, t_show in t_collection_missing.items():
             # Ignore show if there are no collected episodes on trakt
-            if all([not e.is_collected for (_, e) in t_show.episodes.items()]):
+            if all([not e.is_collected for (_, e) in t_show.episodes.items()]):  # TODO update for [Show] episodes restructure
                 continue
 
             self.store('missing.shows', t_show.to_info())
@@ -191,7 +213,7 @@ class Show(Base):
             if t_show.pk in t_collection_missing:
                 continue
 
-            t_episodes_missing = self.get_missing(t_show.episodes)
+            t_episodes_missing = self.get_missing(t_show.episodes)  # TODO update for [Show] episodes restructure
 
             if not t_episodes_missing:
                 continue

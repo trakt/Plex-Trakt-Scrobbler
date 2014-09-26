@@ -94,11 +94,11 @@ class ActionManager(object):
         request = {}
 
         if type(metadata) is Movie:
-            request = cls.build_movie(metadata, guid)
+            request = cls.from_movie(metadata, guid)
         elif type(metadata) is Season:
-            request = cls.build_season(metadata, guid)
+            request = cls.from_season(metadata, guid)
         elif type(metadata) is Episode:
-            request = cls.build_episode(metadata, guid)
+            request = cls.from_episode(metadata, guid)
         else:
             log.warn('Unsupported metadata type: %r', metadata)
             return
@@ -108,7 +108,7 @@ class ActionManager(object):
         return request
 
     @classmethod
-    def build_movie(cls, movie, guid):
+    def from_movie(cls, movie, guid):
         return {
             'movies': [
                 ActionHelper.set_identifier({}, guid)
@@ -116,19 +116,13 @@ class ActionManager(object):
         }
 
     @classmethod
-    def build_season(cls, season, guid):
-        # Build list of episodes
-        episodes = []
-
-        for episode in season.children():
-            cls.append_episode(episodes, episode)
-
+    def from_season(cls, season, guid):
         # Build request
         show = {
             'seasons': [
                 {
                     'number': season.index,
-                    'episodes': episodes
+                    'episodes': ActionHelper.trakt.episodes(season.children())
                 }
             ]
         }
@@ -140,18 +134,13 @@ class ActionManager(object):
         }
 
     @classmethod
-    def build_episode(cls, episode, guid):
-        # Build list of episodes
-        episodes = []
-
-        cls.append_episode(episodes, episode)
-
+    def from_episode(cls, episode, guid):
         # Build request
         show = {
             'seasons': [
                 {
                     'number': episode.season.index,
-                    'episodes': episodes
+                    'episodes': ActionHelper.trakt.episodes([episode])
                 }
             ]
         }
@@ -161,12 +150,3 @@ class ActionManager(object):
                 ActionHelper.set_identifier(show, guid)
             ]
         }
-
-    @classmethod
-    def append_episode(cls, collection, episode):
-        _, episodes = Matcher.process(episode)
-
-        for episode_num in episodes:
-            collection.append({
-                'number': episode_num
-            })
