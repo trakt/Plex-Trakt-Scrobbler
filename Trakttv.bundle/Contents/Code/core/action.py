@@ -86,8 +86,4 @@ class ActionHelper(object):
         else:
             log.warn('Unknown GUID agent "%s"', guid.agent)
 
-        if not data['ids']:
-            # Remove 'ids' dict if it's empty
-            del data['ids']
-
         return data
