@@ -55,10 +55,10 @@ class MediaMapper(object):
 
             season = self.show_season(show, season_num, **kwargs)
 
-            for episode in i_season.get('episodes', []):
-                episode_num = episode.get('number')
+            for i_episode in i_season.get('episodes', []):
+                episode_num = i_episode.get('number')
 
-                self.show_episode(season, episode_num, **kwargs)
+                self.show_episode(season, episode_num, i_episode, **kwargs)
 
         return show
 
@@ -78,15 +78,23 @@ class MediaMapper(object):
         else:
             season.episodes[pk].update(item, **kwargs)
 
+        if item and 'episode' in item:
+            season.episodes[pk].update(item['episode'])
+
         return season.episodes[pk]
 
     def episode(self, media, item, **kwargs):
-        show = self.show('shows', item.get('show'))
+        i_episode = item.get('episode', {})
 
-        ep = item.get('episode')
-        pk = ep.get('season'), ep.get('number')
+        season_num = i_episode.get('season')
+        episode_num = i_episode.get('number')
 
-        return self.show_episode(show, pk, item, **kwargs)
+        show = self.show('shows', item)
+        season = self.show_season(show, season_num, **kwargs)
+
+        episode = self.show_episode(season, episode_num, item, **kwargs)
+
+        return episode
 
     @staticmethod
     def get_ids(media, item):
