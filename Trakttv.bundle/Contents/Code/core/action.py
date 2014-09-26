@@ -79,9 +79,9 @@ class ActionHelper(object):
 
         if guid.agent == 'imdb':
             ids['imdb'] = guid.sid
-        elif guid.agent == 'themoviedb':
+        elif guid.agent == 'tmdb':
             ids['tmdb'] = try_convert(guid.sid, int)
-        elif guid.agent == 'thetvdb':
+        elif guid.agent == 'tvdb':
             ids['tvdb'] = try_convert(guid.sid, int)
         else:
             log.warn('Unknown GUID agent "%s"', guid.agent)
