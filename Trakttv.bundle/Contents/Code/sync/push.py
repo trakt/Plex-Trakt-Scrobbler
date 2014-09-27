@@ -4,6 +4,7 @@ from core.logger import Logger
 from data.watch_session import WatchSession
 from sync.sync_base import SyncBase
 
+from datetime import datetime
 from plex_metadata import Library
 from trakt import Trakt
 
@@ -44,7 +45,13 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', ActionHelper.plex.to_trakt(key, p_items[0]))
+        last_viewed_at = datetime.utcfromtimestamp(p_items[0].last_viewed_at)
+
+        self.store('watched', merge({
+            'watched_at': last_viewed_at.strftime('%Y-%m-%d %H:%M:%S')
+        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+
+        return True
 
     def rate(self, key, p_items, t_item, artifact='ratings', include_metadata=True):
         if type(p_items) is not list:
@@ -87,7 +94,12 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', ActionHelper.plex.to_trakt(key, p_items[0]))
+        added_at = datetime.utcfromtimestamp(p_items[0].added_at)
+
+        self.store('collected', merge({
+            'collected_at': added_at.strftime('%Y-%m-%d %H:%M:%S')
+        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+
         return True
 
     def add(self, path, **kwargs):
