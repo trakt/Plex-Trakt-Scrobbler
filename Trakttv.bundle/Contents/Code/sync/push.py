@@ -103,15 +103,36 @@ class Base(SyncBase):
         return True
 
     def add(self, path, **kwargs):
-        log.debug('[%s] Adding items - kwargs: %s', path, kwargs)
+        log.debug('[%s] Pushing items: %s', path, kwargs)
 
         response = Trakt[path].add(kwargs)
 
-        if response is None:
-            # request failed
+        if not response:
+            log.warn('[%s] Request failed')
             return
 
-        log.debug(response)
+        # Print "not_found" items (if any)
+        not_found = response.get('not_found', {})
+
+        for media, items in not_found.items():
+            for item in items:
+                log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
+
+        # Print "added" items
+        added = response.get('added', {})
+
+        if added.get('movies'):
+            log.info('[%s] Added %s movies', path, added['movies'])
+        elif added.get('episodes'):
+            log.info('[%s] Added %s episodes', path, added['episodes'])
+
+        # Print "existing" items
+        existing = response.get('existing', {})
+
+        if existing.get('movies'):
+            log.info('[%s] Ignored %s existing movies', path, existing['movies'])
+        elif existing.get('episodes'):
+            log.info('[%s] Ignored %s existing episodes', path, existing['episodes'])
 
     def remove(self, path, **kwargs):
         raise NotImplementedError()
