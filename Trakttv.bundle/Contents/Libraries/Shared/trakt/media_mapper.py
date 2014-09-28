@@ -40,14 +40,23 @@ class MediaMapper(object):
         return self.store[pk]
 
     def show(self, media, item, **kwargs):
-        pk, keys = self.get_ids(media, item['show'])
+        if 'show' in item:
+            i_show = item['show']
+        else:
+            i_show = item
+
+        pk, keys = self.get_ids(media, i_show)
 
         if pk not in self.store:
-            self.store[pk] = self.create(media, item, keys, **kwargs)
+            self.store[pk] = self.create(media, i_show, keys, **kwargs)
         else:
-            self.store[pk].update(item, **kwargs)
+            self.store[pk].update(i_show, **kwargs)
 
         show = self.store[pk]
+
+        # Update with root info
+        if 'show' in item:
+            show.update(item)
 
         # Process any episodes in the item
         for i_season in item.get('seasons', []):
@@ -89,7 +98,7 @@ class MediaMapper(object):
         season_num = i_episode.get('season')
         episode_num = i_episode.get('number')
 
-        show = self.show('shows', item)
+        show = self.show('shows', item['show'])
         season = self.show_season(show, season_num, **kwargs)
 
         episode = self.show_episode(season, episode_num, item, **kwargs)

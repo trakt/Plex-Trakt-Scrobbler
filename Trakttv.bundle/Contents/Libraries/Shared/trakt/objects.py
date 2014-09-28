@@ -1,3 +1,4 @@
+from trakt.core.helpers import to_datetime
 from trakt.helpers import update_attributes
 
 
@@ -25,19 +26,22 @@ class Video(Media):
     def __init__(self, keys=None):
         super(Video, self).__init__(keys)
 
-        self.is_watched = None
-        self.is_collected = None
-
         self.collected_at = None
         self.plays = None
+
+        self.is_watched = None
+        self.is_collected = None
 
     def update(self, info=None, is_watched=None, is_collected=None):
         super(Video, self).update(info)
 
         update_attributes(self, info, [
-            'collected_at', 'plays'
+            'plays'
         ])
 
+        self.collected_at = to_datetime(info.get('collected_at'))
+
+        # Set flags
         if is_watched is not None:
             self.is_watched = is_watched
 
@@ -65,7 +69,7 @@ class Show(Media):
     def update(self, info=None, **kwargs):
         super(Show, self).update(info, **kwargs)
 
-        update_attributes(self, info['show'], ['title', 'year', 'tvdb_id'])
+        update_attributes(self, info, ['title', 'year', 'tvdb_id'])
 
     @classmethod
     def create(cls, keys, info=None, **kwargs):
@@ -132,9 +136,6 @@ class Movie(Video):
         self.year = None
         self.imdb_id = None
 
-        self.is_watched = None
-        self.is_collected = None
-
     def to_info(self):
         return {
             'title': self.title,
@@ -170,7 +171,7 @@ class Rating(object):
 
         r = cls()
         r.value = info.get('rating')
-        r.timestamp = info.get('rated_at')
+        r.timestamp = to_datetime(info.get('rated_at'))
         return r
 
     def __repr__(self):
