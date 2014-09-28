@@ -5,8 +5,9 @@ DEFAULT_GUID_MAP = {
     'mcm':              ('tvdb', r'MCM_TV_A_(.*)'),
 
     # Movie
-    'xbmcnfo':          'imdb',
     'standalone':       'tmdb',
+    'themoviedb':       'tmdb',
+    'xbmcnfo':          'imdb',
 
     # TV
     'abstvdb':          'tvdb',
