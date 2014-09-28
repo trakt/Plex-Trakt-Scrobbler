@@ -44,7 +44,7 @@ class Base(SyncBase):
         if t_item.rating is None:
             return True
 
-        t_rating = t_item.rating.advanced
+        t_rating = t_item.rating.value
 
         for p_item in p_items:
             # Ignore already rated episodes
@@ -69,15 +69,13 @@ class Base(SyncBase):
             return True
 
         if resolution == 'latest':
-            t_timestamp = datetime.utcfromtimestamp(t_item.rating.timestamp)
-
             # If trakt rating was created after the last sync, update plex rating
-            if t_timestamp > status.last_success:
+            if t_item.rating.timestamp > status.last_success:
                 return True
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.rating_key, p_item.user_rating, t_item.rating.advanced
+            p_item.rating_key, p_item.user_rating, t_item.rating.value
         )
 
         return False
@@ -116,20 +114,17 @@ class Season(Base):
     auto_run = False
     children = [Episode]
 
-    def run(self, p_seasons, t_seasons, artifacts=None):
-        self.reset(artifacts)
-
+    def run(self, p_seasons, t_seasons):
         if p_seasons is None:
             return False
-
-        enabled_funcs = self.get_enabled_functions()
 
         for key, p_season in p_seasons.items():
             t_season = t_seasons.get(key)
 
-            log.debug('p_season: %s, t_season: %s', p_season, t_season)
-
-            # TODO trigger episode task
+            self.child('episode').run(
+                p_episodes=p_season,
+                t_episodes=t_season.episodes if t_season else {}
+            )
 
 
 class Show(Base):
@@ -175,7 +170,7 @@ class Show(Base):
             for p_show in p_shows[key]:
                 self.child('season').run(
                     p_seasons=Library.episodes(p_show.rating_key, p_show, flat=False),
-                    t_seasons=t_show.seasons
+                    t_seasons=t_show.seasons if t_show else {}
                 )
 
         self.emit('finished')
