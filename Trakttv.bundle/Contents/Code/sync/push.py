@@ -323,10 +323,11 @@ class Movie(Base):
         #
         # Push changes to trakt
         #
+        self.add('sync/collection', movies=self.retrieve('collected'))
+        self.add('sync/history', movies=self.retrieve('watched'))
+        self.add('sync/ratings', movies=self.retrieve('ratings'))
+
         # TODO push movie changes
-        # self.send_artifact('movie/seen', 'movies', 'watched')
-        # self.send_artifact('rate/movies', 'movies', 'ratings')
-        # self.send_artifact('movie/library', 'movies', 'collected')
         # self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
 
         self.save('last_artifacts', json_encode(self.artifacts))
