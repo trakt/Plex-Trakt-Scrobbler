@@ -114,7 +114,12 @@ class MediaMapper(object):
 
         keys = []
         for key in IDENTIFIERS.get(media, []):
-            keys.append((key, str(ids.get(key))))
+            value = ids.get(key)
+
+            if not value:
+                continue
+
+            keys.append((key, str(value)))
 
         if media == 'episodes':
             keys.append((item.get('season'), item.get('number')))
