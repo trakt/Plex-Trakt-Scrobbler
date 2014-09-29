@@ -207,6 +207,8 @@ class Show(Base):
 
             if self.is_missing(t_show):
                 # Entire show is missing
+                log.debug('Unable to find "%s" [%s] in plex', t_show.title, key)
+
                 self.store('missing.shows', show)
                 continue
 
@@ -219,6 +221,8 @@ class Show(Base):
 
                 if self.is_missing(t_season):
                     # Entire season is missing
+                    log.debug('Unable to find S%02d of "%s" [%s] in plex', sk, t_show.title, key)
+
                     show['seasons'].append(i_season)
                     continue
 
@@ -229,6 +233,8 @@ class Show(Base):
                 for ek, t_episode in t_season.episodes.items():
                     if not self.is_missing(t_episode):
                         continue
+
+                    log.debug('Unable to find S%02dE%02d of "%s" [%s] in plex', sk, ek, t_show.title, key)
 
                     # Append episode to season dict
                     i_season['episodes'].append({'number': ek})
@@ -308,15 +314,12 @@ class Movie(Base):
         # Find collected movies that are missing from Plex
         t_collection_missing = self.get_missing(t_movies)
 
-        num_movies = 0
-
         for key, t_movie in t_collection_missing.items():
-            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
+            log.debug('Unable to find "%s" [%s] in plex', t_movie.title, key)
 
             self.store('missing.movies', t_movie.to_info())
-            num_movies = num_movies + 1
 
-        log.info('Found %s movie(s) missing from plex', num_movies)
+        log.info('Discovered %s missing movie(s)', len(self.retrieve('missing.movies')))
 
     def run_watched(self, p_movies, t_movie):
         return self.watch(p_movies, t_movie)
