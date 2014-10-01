@@ -1,3 +1,4 @@
+from trakt.core.context import ContextStack
 from trakt.core.request import TraktRequest
 
 import logging
@@ -11,24 +12,21 @@ class HttpClient(object):
     def __init__(self, client):
         self.client = client
 
+        self.configuration = ContextStack()
         self.session = requests.Session()
-        self.base_path = None
 
     def configure(self, path=None):
-        self.base_path = path
-
-        return self
-
-    def reset(self):
-        self.base_path = None
+        self.configuration.push(base_path=path)
 
         return self
 
     def request(self, method, path=None, params=None, data=None, **kwargs):
-        if self.base_path and path:
-            path = self.base_path + '/' + path
-        elif self.base_path:
-            path = self.base_path
+        ctx = self.configuration.pop()
+
+        if ctx.base_path and path:
+            path = ctx.base_path + '/' + path
+        elif ctx.base_path:
+            path = ctx.base_path
 
         request = TraktRequest(
             self.client,
@@ -39,9 +37,6 @@ class HttpClient(object):
 
             **kwargs
         )
-
-        # Reset base configuration
-        self.reset()
 
         prepared = request.prepare()
 
@@ -74,9 +69,3 @@ class HttpClient(object):
         self.session = requests.Session()
 
         return self.session
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.reset()
