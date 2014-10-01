@@ -103,7 +103,11 @@ class Base(SyncBase):
         return True
 
     def add(self, path, **kwargs):
-        log.debug('[%s] Pushing items: %s', path, kwargs)
+        log.debug('[%s] Adding items: %s', path, kwargs)
+
+        if not kwargs.get('movies') and not kwargs.get('shows'):
+            # Empty request
+            return
 
         response = Trakt[path].add(kwargs)
 
@@ -111,6 +115,24 @@ class Base(SyncBase):
             log.warn('[%s] Request failed')
             return
 
+        self.log_response(path, response)
+
+    def remove(self, path, **kwargs):
+        log.debug('[%s] Removing items: %s', path, kwargs)
+
+        if not kwargs.get('movies') and not kwargs.get('shows'):
+            # Empty request
+            return
+
+        response = Trakt[path].remove(kwargs)
+
+        if not response:
+            log.warn('[%s] Request failed')
+            return
+
+        self.log_response(path, response)
+
+    def log_response(self, path, response):
         # Print "not_found" items (if any)
         not_found = response.get('not_found', {})
 
@@ -118,24 +140,29 @@ class Base(SyncBase):
             for item in items:
                 log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
 
+        # Print "deleted" items
+        deleted = response.get('deleted', {})
+
+        if deleted.get('movies'):
+            log.info('[%s] Deleted %s movie(s)', path, deleted['movies'])
+        elif deleted.get('episodes'):
+            log.info('[%s] Deleted %s episode(s)', path, deleted['episodes'])
+
         # Print "added" items
         added = response.get('added', {})
 
         if added.get('movies'):
-            log.info('[%s] Added %s movies', path, added['movies'])
+            log.info('[%s] Added %s movie(s)', path, added['movies'])
         elif added.get('episodes'):
-            log.info('[%s] Added %s episodes', path, added['episodes'])
+            log.info('[%s] Added %s episode(s)', path, added['episodes'])
 
         # Print "existing" items
         existing = response.get('existing', {})
 
         if existing.get('movies'):
-            log.info('[%s] Ignored %s existing movies', path, existing['movies'])
+            log.info('[%s] Ignored %s existing movie(s)', path, existing['movies'])
         elif existing.get('episodes'):
-            log.info('[%s] Ignored %s existing episodes', path, existing['episodes'])
-
-    def remove(self, path, **kwargs):
-        raise NotImplementedError()
+            log.info('[%s] Ignored %s existing episode(s)', path, existing['episodes'])
 
 
 class Episode(Base):
@@ -263,12 +290,7 @@ class Show(Base):
         self.add('sync/history', shows=self.retrieve('watched'))
         self.add('sync/ratings', shows=self.retrieve('ratings'))
 
-        # TODO show/episode collection cleaning
-        # for show in self.retrieve('missing.shows'):
-        #     self.send('show/unlibrary', **show)
-        #
-        # for show in self.retrieve('missing.episodes'):
-        #     self.send('show/episode/unlibrary', **show)
+        self.remove('sync/collection', shows=self.retrieve('missing.shows'))
 
         self.save('last_artifacts', json_encode(self.artifacts))
 
@@ -327,8 +349,7 @@ class Movie(Base):
         self.add('sync/history', movies=self.retrieve('watched'))
         self.add('sync/ratings', movies=self.retrieve('ratings'))
 
-        # TODO push movie changes
-        # self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
+        self.remove('sync/collection', movies=self.retrieve('missing.movies'))
 
         self.save('last_artifacts', json_encode(self.artifacts))
 

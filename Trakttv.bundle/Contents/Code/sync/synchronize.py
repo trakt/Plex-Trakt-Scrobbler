@@ -29,9 +29,7 @@ class Synchronize(SyncBase):
 
         # Store missing media discovery artifacts
         self.store('missing.movies', pull.child('movie').retrieve('missing.movies'), single=True)
-
         self.store('missing.shows', pull.child('show').retrieve('missing.shows'), single=True)
-        self.store('missing.episodes', pull.child('show').retrieve('missing.episodes'), single=True)
 
         self.check_stopping()
 
