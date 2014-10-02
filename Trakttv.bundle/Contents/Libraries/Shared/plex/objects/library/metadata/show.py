@@ -18,8 +18,12 @@ class Show(Directory, Metadata, RateMixin):
     year = Property(type=int)
     originally_available_at = Property('originallyAvailableAt')
 
+    season_count = Property('childCount', int)
+
     episode_count = Property('leafCount', int)
     viewed_episode_count = Property('viewedLeafCount', int)
+
+    view_count = Property('viewCount', int)
 
     def all_leaves(self):
         return self.client['library/metadata'].all_leaves(self.rating_key)

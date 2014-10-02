@@ -8,6 +8,7 @@ class Metadata(Descriptor):
     key = Property
     guid = Property
     rating_key = Property('ratingKey')
+    extra_key = Property('primaryExtraKey')
 
     title = Property
     title_sort = Property('titleSort')
@@ -19,8 +20,8 @@ class Metadata(Descriptor):
 
     source_title = Property('sourceTitle')
 
-    added_at = Property('addedAt')
-    last_viewed_at = Property('lastViewedAt')
+    added_at = Property('addedAt', int)
+    last_viewed_at = Property('lastViewedAt', int)
 
     @staticmethod
     def construct_section(client, node):

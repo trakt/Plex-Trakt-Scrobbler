@@ -13,9 +13,7 @@ log = logging.getLogger(__name__)
 class PlexClient(object):
     __interfaces = None
 
-    def __init__(self, host='127.0.0.1', port=32400):
-        self.base_url = 'http://%s:%s' % (host, port)
-
+    def __init__(self):
         # Construct interfaces
         self.http = HttpClient(self)
         self.configuration = ConfigurationManager()
@@ -24,6 +22,13 @@ class PlexClient(object):
 
         # Discover modules
         ObjectManager.construct()
+
+    @property
+    def base_url(self):
+        host = self.configuration.get('server.host', '127.0.0.1')
+        port = self.configuration.get('server.port', 32400)
+
+        return 'http://%s:%s' % (host, port)
 
     def __getitem__(self, path):
         parts = path.strip('/').split('/')
