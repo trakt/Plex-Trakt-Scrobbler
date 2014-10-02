@@ -7,28 +7,49 @@ from plex.objects.library.metadata.movie import Movie
 from plex.objects.library.metadata.season import Season
 from plex_activity import Activity
 from plex_metadata import Metadata, Guid, Matcher
+from Queue import Queue
+from threading import Thread
 from trakt import Trakt
 
 log = Logger('pts.action_manager')
 
 
 class ActionManager(object):
+    pending = Queue()
+    thread = None
+
     @classmethod
     def initialize(cls):
+        cls.thread = Thread(target=cls.process)
+
         Activity.on('logging.action.played', cls.on_played)\
                 .on('logging.action.unplayed', cls.on_unplayed)
 
     @classmethod
     def on_played(cls, info):
-        log.debug('on_played - %s', info)
+        cls.pending.put(('seen', info))
 
-        cls.send('seen', info)
+        log.debug('"seen" action queued: %s', info)
 
     @classmethod
     def on_unplayed(cls, info):
-        log.debug('on_unplayed - %s', info)
+        cls.pending.put(('unseen', info))
 
-        cls.send('unseen', info)
+        log.debug('"unseen" action queued: %s', info)
+
+    @classmethod
+    def start(cls):
+        cls.thread.start()
+
+    @classmethod
+    def process(cls):
+        while True:
+            action = cls.pending.get(block=True)
+
+            try:
+                cls.send(*action)
+            except Exception, ex:
+                log.warn('Unable to send action - %s', ex)
 
     @classmethod
     def send(cls, action, info):
