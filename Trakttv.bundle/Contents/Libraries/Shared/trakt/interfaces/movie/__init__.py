@@ -7,29 +7,26 @@ class MovieInterface(MediaInterface):
 
     @media_center
     @authenticated
-    def scrobble(self, title, year, duration, progress, **kwargs):
+    def scrobble(self, duration, progress, **kwargs):
         """Notify trakt that a user has finished watching a movie.
 
         This commits the movie to the users profile. You should use movie/watching
         prior to calling this method.
-
-        :param title: Movie title.
-        :type title: str
-
-        :param year: Movie year.
-        :type year: int
 
         :param duration: Duration in minutes.
         :type duration: int
 
         :param progress: % progress, integer 0-100.
         :type progress: int
+
+        :param title: Movie title.
+        :type title: str
+
+        :param year: Movie year.
+        :type year: int
         """
         return self.action(
             'scrobble', {
-                'title': title,
-                'year': year,
-
                 'duration': duration,
                 'progress': progress
             },
@@ -66,26 +63,23 @@ class MovieInterface(MediaInterface):
 
     @media_center
     @authenticated
-    def watching(self, title, year, duration, progress, **kwargs):
+    def watching(self, duration, progress, **kwargs):
         """Notify trakt that a user has started watching a movie.
-
-        :param title: Movie title.
-        :type title: str
-
-        :param year: Movie year.
-        :type year: int
 
         :param duration: Duration in minutes.
         :type duration: int
 
         :param progress: % progress, integer 0-100.
         :type progress: int
+
+        :param title: Movie title.
+        :type title: str
+
+        :param year: Movie year.
+        :type year: int
         """
         return self.action(
             'watching', {
-                'title': title,
-                'year': year,
-
                 'duration': duration,
                 'progress': progress
             },
