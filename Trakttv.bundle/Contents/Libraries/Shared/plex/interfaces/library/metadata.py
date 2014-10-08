@@ -8,7 +8,7 @@ class LibraryMetadataInterface(Interface):
         response = self.http.get(key, 'allLeaves')
 
         return self.parse(response, {
-            'MediaContainer': ('EpisodeContainer', {
+            'MediaContainer': ('MediaContainer', {
                 'Video': {
                     'episode': 'Episode'
                 }

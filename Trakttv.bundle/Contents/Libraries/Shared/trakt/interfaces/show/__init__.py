@@ -7,17 +7,11 @@ class ShowInterface(MediaInterface):
 
     @media_center
     @authenticated
-    def scrobble(self, title, year, season, episode, duration, progress, **kwargs):
+    def scrobble(self, season, episode, duration, progress, **kwargs):
         """Notify trakt that a user has finished watching a show.
 
         This commits the show to the users profile. You should use show/watching
         prior to calling this method.
-
-        :param title: Show title.
-        :type title: str
-
-        :param year: Show year.
-        :type year: int
 
         :param season: Show season. Send 0 if watching a special.
         :type season: int
@@ -30,12 +24,15 @@ class ShowInterface(MediaInterface):
 
         :param progress: % progress, integer 0-100.
         :type progress: int
+
+        :param title: Show title.
+        :type title: str
+
+        :param year: Show year.
+        :type year: int
         """
         return self.action(
             'scrobble', {
-                'title': title,
-                'year': year,
-
                 'season': season,
                 'episode': episode,
 
@@ -47,14 +44,8 @@ class ShowInterface(MediaInterface):
 
     @media_center
     @authenticated
-    def watching(self, title, year, season, episode, duration, progress, **kwargs):
+    def watching(self, season, episode, duration, progress, **kwargs):
         """Notify trakt that a user has started watching a show.
-
-        :param title: Show title.
-        :type title: str
-
-        :param year: Show year.
-        :type year: int
 
         :param season: Show season. Send 0 if watching a special.
         :type season: int
@@ -67,12 +58,15 @@ class ShowInterface(MediaInterface):
 
         :param progress: % progress, integer 0-100.
         :type progress: int
+
+        :param title: Show title.
+        :type title: str
+
+        :param year: Show year.
+        :type year: int
         """
         return self.action(
             'watching', {
-                'title': title,
-                'year': year,
-
                 'season': season,
                 'episode': episode,
 

@@ -46,40 +46,6 @@ class PlexInterface(Base):
     def episodes(cls, key, parent=None):
         return Library.episodes(key, parent)
 
-    @staticmethod
-    def get_root(p_item):
-        if isinstance(p_item, Episode):
-            return p_item.show
-
-        return p_item
-
-    @classmethod
-    def to_trakt(cls, key, p_item, include_identifier=True):
-        data = {}
-
-        # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, Episode):
-            k_season, k_episode = key
-
-            data.update({
-                'season': k_season,
-                'episode': k_episode
-            })
-
-        if include_identifier:
-            p_root = cls.get_root(p_item)
-
-            data['title'] = p_root.title
-
-            if p_root.year is not None:
-                data['year'] = p_root.year
-            elif p_item.year is not None:
-                data['year'] = p_item.year
-
-            ActionHelper.set_identifier(data, p_root.guid)
-
-        return data
-
 
 class TraktInterface(Base):
     merged_cache = {}

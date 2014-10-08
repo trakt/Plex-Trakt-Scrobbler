@@ -18,8 +18,12 @@ class Show(Directory, Metadata, RateMixin):
     year = Property(type=int)
     originally_available_at = Property('originallyAvailableAt')
 
+    season_count = Property('childCount', int)
+
     episode_count = Property('leafCount', int)
     viewed_episode_count = Property('viewedLeafCount', int)
+
+    view_count = Property('viewCount', int)
 
     def all_leaves(self):
         return self.client['library/metadata'].all_leaves(self.rating_key)
@@ -35,3 +39,9 @@ class SeasonContainer(MediaContainer, Show):
         'year':     'parentYear',
         '*':        '*'
     }
+
+    def __iter__(self):
+        for item in super(MediaContainer, self).__iter__():
+            item.show = self
+
+            yield item

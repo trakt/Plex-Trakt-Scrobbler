@@ -68,7 +68,10 @@ class Main(object):
         self.init_trakt()
         self.init()
 
-        Metadata.configure(CacheManager.get('metadata'))
+        Metadata.configure(
+            cache=CacheManager.get('metadata'),
+            client=Plex.client
+        )
 
     def init(self):
         names = []

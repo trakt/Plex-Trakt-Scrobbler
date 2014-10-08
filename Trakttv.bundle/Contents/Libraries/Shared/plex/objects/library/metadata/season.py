@@ -68,3 +68,10 @@ class EpisodeContainer(MediaContainer, Season):
         }
 
         return Show.construct(client, node, attribute_map, child=True)
+
+    def __iter__(self):
+        for item in super(MediaContainer, self).__iter__():
+            item.show = self.show
+            item.season = self
+
+            yield item

@@ -1,3 +1,4 @@
+from plex.core.helpers import to_iterable
 from plex.objects.core.base import Property
 from plex.objects.container import Container
 from plex.objects.library.section import Section
@@ -20,9 +21,10 @@ class MediaContainer(Container):
     media_tag_prefix = Property('mediaTagPrefix')
     media_tag_version = Property('mediaTagVersion')
 
-    no_cache = Property('nocache', bool)
     allow_sync = Property('allowSync', bool)
     mixed_parents = Property('mixedParents', bool)
+    no_cache = Property('nocache', bool)
+    sort_asc = Property('sortAsc', bool)
 
     @staticmethod
     def construct_section(client, node):
@@ -39,3 +41,29 @@ class MediaContainer(Container):
             item.section = self.section
 
             yield item
+
+
+class SectionContainer(MediaContainer):
+    filter_passes = lambda _, allowed, value: allowed is None or value in allowed
+
+    def filter(self, types=None, keys=None, titles=None):
+        types = to_iterable(types)
+        keys = to_iterable(keys)
+
+        titles = to_iterable(titles)
+
+        if titles:
+            # Normalize titles
+            titles = [x.lower() for x in titles]
+
+        for section in self:
+            if not self.filter_passes(types, section.type):
+                continue
+
+            if not self.filter_passes(keys, section.key):
+                continue
+
+            if not self.filter_passes(titles, section.title.lower()):
+                continue
+
+            yield section

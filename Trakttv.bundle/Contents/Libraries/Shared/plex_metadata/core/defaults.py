@@ -1,4 +1,4 @@
-DEFAULT_TYPES = ['movie', 'show', 'episode']
+DEFAULT_TYPES = ['movie', 'show', 'season', 'episode']
 
 DEFAULT_GUID_MAP = {
     # Multi

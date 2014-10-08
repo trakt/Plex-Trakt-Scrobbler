@@ -1,5 +1,3 @@
-from plex.core.helpers import to_iterable
-from plex.objects.container import Container
 from plex.objects.core.base import Property
 from plex.objects.directory import Directory
 
@@ -13,6 +11,8 @@ class Section(Directory):
     agent = Property
     scanner = Property
     language = Property
+
+    composite = Property
 
     created_at = Property('createdAt', int)
 
@@ -33,29 +33,3 @@ class Section(Directory):
                 }
             })
         })
-
-
-class SectionContainer(Container):
-    filter_passes = lambda _, allowed, value: allowed is None or value in allowed
-
-    def filter(self, types=None, keys=None, titles=None):
-        types = to_iterable(types)
-        keys = to_iterable(keys)
-
-        titles = to_iterable(titles)
-
-        if titles:
-            # Normalize titles
-            titles = [x.lower() for x in titles]
-
-        for section in self:
-            if not self.filter_passes(types, section.type):
-                continue
-
-            if not self.filter_passes(keys, section.key):
-                continue
-
-            if not self.filter_passes(titles, section.title.lower()):
-                continue
-
-            yield section

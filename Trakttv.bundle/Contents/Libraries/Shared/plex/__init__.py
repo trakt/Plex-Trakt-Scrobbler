@@ -5,6 +5,13 @@ __version__ = '0.5.0-develop'
 
 
 class PlexMeta(type):
+    @property
+    def client(cls):
+        if cls._client is None:
+            cls.construct()
+
+        return cls._client
+
     def __getattr__(self, name):
         if has_attribute(self, name):
             return super(PlexMeta, self).__getattribute__(name)
@@ -33,8 +40,8 @@ class PlexMeta(type):
 class Plex(object):
     __metaclass__ = PlexMeta
 
-    client = None
+    _client = None
 
     @classmethod
     def construct(cls):
-        cls.client = PlexClient()
+        cls._client = PlexClient()

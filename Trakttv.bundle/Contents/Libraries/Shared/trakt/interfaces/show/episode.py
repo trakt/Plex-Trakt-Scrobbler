@@ -70,6 +70,28 @@ class ShowEpisodeInterface(Interface):
             **kwargs
         )
 
+    @authenticated
+    def unseen(self, title=None, year=None, episodes=None, **kwargs):
+        """Remove episodes watched outside of trakt from your library.
+
+        :param title: Show title.
+        :type title: str
+
+        :param year: Show year.
+        :type year: int
+
+        :param episodes: list of episodes to add to your collection
+        :type episodes: list of dict {season, episode, [last_played]}
+        """
+        return self.action(
+            'unseen', {
+                'title': title,
+                'year': year,
+                'episodes': episodes
+            },
+            **kwargs
+        )
+
     @classmethod
     def validate_action(cls, action, data):
         if action in ['seen', 'library', 'unlibrary']:
