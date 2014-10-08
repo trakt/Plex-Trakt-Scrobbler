@@ -1,6 +1,8 @@
 from core.helpers import spawn
 from core.logger import Logger
+
 from threading import Lock
+import sys
 import traceback
 
 log = Logger('core.task')
@@ -34,7 +36,7 @@ class Task(object):
             self.lock.acquire()
 
         if self.exception:
-            raise self.exception
+            raise self.exception[1], None, self.exception[2]
 
         return self.result
 
@@ -48,14 +50,14 @@ class Task(object):
         try:
             self.result = self.target(*self.args, **self.kwargs)
         except CancelException, e:
-            self.exception = e
+            self.exception = sys.exc_info()
 
             log.debug('Task cancelled')
         except Exception, e:
-            self.exception = e
+            self.exception = sys.exc_info()
 
             log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
-                self.target, type(e), e, traceback.format_exc()
+                self.target, type(e), e, traceback.format_tb(self.exception[2])
             ))
 
         self.complete = True

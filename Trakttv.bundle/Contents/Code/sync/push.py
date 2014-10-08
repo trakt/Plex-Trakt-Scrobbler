@@ -13,9 +13,9 @@ class Base(SyncBase):
     task = 'push'
 
     def is_watching(self, p_item):
-        sessions = WatchSession.all(lambda s:
-            s.get('metadata') and
-            s['metadata'].get('rating_key') == p_item.rating_key
+        sessions = WatchSession.all(lambda ws:
+            ws.metadata and
+            ws.metadata.rating_key == p_item.rating_key
         )
 
         for key, session in sessions:
@@ -196,11 +196,11 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(p_shows))
+        self.emit('started', len(p_shows))
 
         for x, (key, p_show) in enumerate(p_shows.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             t_show = t_shows_table.get(key)
 
@@ -221,7 +221,7 @@ class Show(Base):
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         #
@@ -279,11 +279,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(p_movies))
+        self.emit('started', len(p_movies))
 
         for x, (key, p_movie) in enumerate(p_movies.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             t_movie = t_movies_table.get(key)
 
@@ -292,7 +292,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         #
@@ -329,7 +329,7 @@ class Push(Base):
 
         if kwargs.get('section') is None:
             # Update the status for each section
-            for (_, k, _) in self.plex.sections():
-                self.update_status(True, start_time=self.start_time, section=k)
+            for section in self.plex.sections():
+                self.update_status(True, start_time=self.start_time, section=section.key)
 
         return success

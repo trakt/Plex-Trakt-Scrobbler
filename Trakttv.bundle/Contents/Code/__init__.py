@@ -4,30 +4,29 @@
 # ------------------------------------------------
 import core
 import data
-import plex
 import pts
 import sync
 import interface
 # ------------------------------------------------
 
 
+from core.cache import CacheManager
 from core.configuration import Configuration
-from core.eventing import EventManager
 from core.header import Header
 from core.logger import Logger
 from core.logging_handler import PlexHandler
-from core.helpers import total_seconds, spawn, get_pref, schedule
-from core.plugin import ART, NAME, ICON, PLUGIN_VERSION
+from core.helpers import spawn, get_pref, schedule, get_class_name
+from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from pts.activity import Activity
+from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from sync.manager import SyncManager
-from datetime import datetime
 
+from plex import Plex
+from plex_activity import Activity
+from plex_metadata import Metadata
 from trakt import Trakt
 import hashlib
 import logging
@@ -38,44 +37,50 @@ log = Logger('Code')
 
 class Main(object):
     modules = [
-        # pts
         Activity,
+
+        # core
+        UpdateChecker(),
+
+        # pts
+        ActionManager,
         Scrobbler,
+        SessionManager(),
 
         # sync
         SyncManager,
-
-        # plex
-        PlexMetadata
     ]
 
     loggers_allowed = [
+        'plex',
+        'plex_activity',
+        'plex_metadata',
+        'pyemitter',
         'requests',
         'trakt'
     ]
 
     def __init__(self):
-        self.update_checker = UpdateChecker()
-        self.session_manager = SessionManager()
-
         Header.show(self)
-
-        if 'nowPlaying' in Dict and type(Dict['nowPlaying']) is dict:
-            self.cleanup()
-            Dict.Save()
-        else:
-            Dict['nowPlaying'] = dict()
-
         Main.update_config()
 
         self.init_logging()
         self.init_trakt()
+        self.init()
+
+        Metadata.configure(CacheManager.get('metadata'))
+
+    def init(self):
+        names = []
 
         # Initialize modules
         for module in self.modules:
+            names.append(get_class_name(module))
+
             if hasattr(module, 'initialize'):
-                log.debug("Initializing module %s", module)
                 module.initialize()
+
+        log.info('Initialized %s modules: %s', len(names), ', '.join(names))
 
     @classmethod
     def init_logging(cls):
@@ -103,7 +108,7 @@ class Main(object):
 
             # Version
             plugin_version=PLUGIN_VERSION,
-            media_center_version=PlexMediaServer.get_version(),
+            media_center_version=Plex.version(),
 
             # Account
             credentials=get_credentials
@@ -126,7 +131,7 @@ class Main(object):
         Dict.Save()
 
         log.info('Preferences updated %s', preferences)
-        EventManager.fire('preferences.updated', preferences)
+        # TODO EventManager.fire('preferences.updated', preferences)
 
     @classmethod
     def validate_auth(cls, retry_interval=30):
@@ -166,50 +171,18 @@ class Main(object):
         # Validate username/password
         spawn(self.validate_auth)
 
-        # Check for updates
-        self.update_checker.run_once(async=True)
-
-        self.session_manager.start()
-
         # Start modules
+        names = []
+
         for module in self.modules:
-            if hasattr(module, 'start'):
-                log.debug("Starting module %s", module)
-                module.start()
+            if not hasattr(module, 'start'):
+                continue
 
-    @staticmethod
-    def cleanup():
-        Log.Debug('Cleaning up stale or invalid sessions')
+            names.append(get_class_name(module))
 
-        for key, session in Dict['nowPlaying'].items():
-            delete = False
+            module.start()
 
-            # Destroy invalid sessions
-            if type(session) is not dict:
-                delete = True
-            elif 'update_required' not in session:
-                delete = True
-            elif 'last_updated' not in session:
-                delete = True
-            elif type(session['last_updated']) is not datetime:
-                delete = True
-            elif total_seconds(datetime.now() - session['last_updated']) / 60 / 60 > 24:
-                # Destroy sessions last updated over 24 hours ago
-                Log.Debug('Session %s was last updated over 24 hours ago, queued for deletion', key)
-                delete = True
-
-            # Delete session or flag for update
-            if delete:
-                Log.Info('Session %s looks stale or invalid, deleting it now', key)
-                del Dict['nowPlaying'][key]
-            elif not session['update_required']:
-                Log.Info('Queueing session %s for update', key)
-                session['update_required'] = True
-
-                # Update session in storage
-                Dict['nowPlaying'][key] = session
-
-        Log.Debug('Finished cleaning up')
+        log.info('Started %s modules: %s', len(names), ', '.join(names))
 
 
 def Start():
@@ -239,6 +212,8 @@ def ValidatePrefs():
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
-        spawn(PlexMediaServer.restart_plugin)
+        # TODO this can cause the preferences dialog to get stuck on "saving"
+        #  - might need to delay this for a few seconds to avoid this.
+        spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
 
     return message

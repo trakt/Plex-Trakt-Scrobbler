@@ -1,13 +1,16 @@
 from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from core.localization import localization
+from core.logger import Logger
 from core.plugin import PLUGIN_PREFIX
-from plex.plex_media_server import PlexMediaServer
 from sync.manager import SyncManager
 
-from datetime import datetime
 from ago import human
+from datetime import datetime
+from plex import Plex
 
 L, LF = localization('interface.sync_menu')
+
+log = Logger('interface.sync_menu')
 
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
@@ -27,16 +30,16 @@ def SyncMenu(refresh=None):
     ))
 
     f_allow, f_deny = get_filter('filter_sections')
-    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=f_allow)
+    sections = Plex['library'].sections()
 
-    for _, key, title in sections:
+    for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, section=key),
-            title=pad_title('Push "' + title + '" to trakt'),
-            summary=get_task_status('push', key),
+            key=Callback(Push, section=section.key),
+            title=pad_title('Push "' + section.title + '" to trakt'),
+            summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
         ))
-        all_keys.append(key)
+        all_keys.append(section.key)
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(

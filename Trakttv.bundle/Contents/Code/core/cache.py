@@ -1,71 +1,94 @@
-from core.eventing import EventHandler
+from core.environment import Environment
 from core.logger import Logger
 
+from shove import Shove
+import os
 
 log = Logger('core.cache')
 
 
-class CacheItem(object):
-    def __init__(self):
-        self.invalidated = False
-        self.data = None
+class CacheManager(object):
+    base_path = Environment.path.plugin_caches
+    active = {}
 
+    @classmethod
+    def get(cls, key, persistent=False, store='file', cache='memory'):
+        if key in cls.active:
+            return cls.active[key]
 
-class Cache(object):
-    def __init__(self, key):
-        self.key = key
-        self.data_store = {}
+        return cls.open(key, persistent, store, cache)
 
-        self.on_refresh = EventHandler('%s.on_refresh' % key)
+    @classmethod
+    def open(cls, key, persistent=False, store='file', cache='memory'):
+        store = cls.store_uri(key, store)
+        cache = cls.cache_uri(key, cache)
 
-    def exists(self, key):
-        return self.is_valid(key)
+        if not store or not cache:
+            log.warn('Unsupported cache options, unable to load "%s"', key)
+            return None
 
-    def get(self, key, default=None, refresh=False, create=True):
-        if not self.is_valid(key):
-            # Refresh and return data if successful
-            if refresh and self.invalidate(key, refresh, create):
-                return self.data_store[key].data
+        # Construct shove
+        shove = Shove(store, cache, optimize=False)
 
-            return default
+        log.debug('Opened "%s" cache', key)
+        cls.active[key] = shove
 
-        return self.data_store[key].data
+        return shove
 
-    def update(self, key, data):
-        if key not in self.data_store:
-            self.data_store[key] = CacheItem()
+    @classmethod
+    def sync(cls):
+        for key, shove in cls.active.items():
+            shove.sync()
 
-        self.data_store[key].data = data
-        self.data_store[key].invalidated = False
-
-    def is_valid(self, key):
-        if key not in self.data_store:
+    @classmethod
+    def close(cls, key):
+        if key not in cls.active:
+            log.debug('Unable to close "%s" - missing')
             return False
 
-        return not self.data_store[key].invalidated
+        shove = cls.active[key]
+        shove.close()
 
-    def invalidate(self, key, refresh=False, create=False):
-        if key not in self.data_store:
-            if not create:
-                return False
+        del cls.active[key]
+        return True
 
-            self.data_store[key] = CacheItem()
-
-        self.data_store[key].invalidated = True
-
-        return self.refresh(key) if refresh else True
-
-    def refresh(self, key):
-        data = self.on_refresh.fire(key, single=True)
-        if not data:
+    @classmethod
+    def delete(cls, key):
+        if key not in cls.active:
+            log.debug('Unable to close "%s" - missing')
             return False
 
-        self.update(key, data)
+        # Clear cache contents
+        shove = cls.active[key]
+        shove.clear()
+
+        # Close the cache
+        cls.close(key)
+
+        # Delete leftover folder
+        os.rmdir(os.path.join(cls.base_path, key))
 
         return True
 
-    def remove(self, key):
-        if key not in self.data_store:
-            return
+    @classmethod
+    def statistics(cls):
+        result = []
 
-        self.data_store.pop(key)
+        for key, shove in cls.active.items():
+            result.append((key, len(shove.cache), len(shove.store)))
+
+        return result
+
+    @classmethod
+    def store_uri(cls, key, store):
+        if store == 'file':
+            return 'file://%s' % os.path.join(cls.base_path, key)
+
+        return None
+
+    @classmethod
+    def cache_uri(cls, key, cache):
+        if cache == 'memory':
+            return 'memory://'
+
+        return None

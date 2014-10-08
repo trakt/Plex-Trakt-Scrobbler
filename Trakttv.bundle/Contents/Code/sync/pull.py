@@ -1,7 +1,8 @@
 from core.helpers import plural, all, json_encode, get_pref
 from core.logger import Logger
-from plex.plex_media_server import PlexMediaServer
 from sync.sync_base import SyncBase
+
+from plex import Plex
 from datetime import datetime
 
 
@@ -31,7 +32,7 @@ class Base(SyncBase):
             if p_item.seen:
                 continue
 
-            PlexMediaServer.scrobble(p_item.rating_key)
+            Plex['library'].scrobble(p_item.rating_key)
 
         return True
 
@@ -50,7 +51,7 @@ class Base(SyncBase):
                 continue
 
             if p_item.user_rating is None or self.rate_conflict(p_item, t_item):
-                PlexMediaServer.rate(p_item.rating_key, t_rating)
+                Plex['library'].rate(p_item.rating_key, t_rating)
 
         return True
 
@@ -132,11 +133,11 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(t_shows_table))
+        self.emit('started', len(t_shows_table))
 
         for x, (key, t_show) in enumerate(t_shows_table.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             if key is None or key not in p_shows or not t_show.episodes:
                 continue
@@ -155,7 +156,7 @@ class Show(Base):
                     t_episodes=t_show.episodes
                 )
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         # Trigger plex missing show/episode discovery
@@ -234,11 +235,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(t_movies_table))
+        self.emit('started', len(t_movies_table))
 
         for x, (key, t_movie) in enumerate(t_movies_table.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             if key is None or key not in p_movies:
                 continue
@@ -249,7 +250,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         # Trigger plex missing movie discovery

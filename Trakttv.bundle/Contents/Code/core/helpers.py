@@ -2,6 +2,7 @@ import inspect
 import re
 import sys
 import threading
+import traceback
 import time
 import unicodedata
 
@@ -215,11 +216,23 @@ def get_func_name(obj):
     return None
 
 
+def get_class_name(cls):
+    if not inspect.isclass(cls):
+        cls = getattr(cls, '__class__')
+
+    return getattr(cls, '__name__')
+
+
 def spawn(func, *args, **kwargs):
     thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 
-    thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
+    def wrapper(thread_name, args, kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception, ex:
+            Log.Error('Thread "%s" raised an exception: %s - %s', thread_name, ex, traceback.format_exc())
 
+    thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
     thread.start()
 
     Log.Debug("Spawned thread with name '%s'" % thread_name)

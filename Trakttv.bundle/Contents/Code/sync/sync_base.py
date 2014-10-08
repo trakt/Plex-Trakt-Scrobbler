@@ -1,13 +1,13 @@
-from core.eventing import EventManager
+from core.action import ActionHelper
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
-from plex.plex_library import PlexLibrary
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from plex.plex_objects import PlexEpisode
 
 from datetime import datetime
+from plex import Plex
+from plex.objects.library.metadata.episode import Episode
+from plex_metadata import Metadata, Library
+from pyemitter import Emitter
 from trakt import Trakt
 
 
@@ -17,7 +17,8 @@ log = Logger('sync.sync_base')
 class Base(object):
     @classmethod
     def get_cache_id(cls):
-        return EventManager.fire('sync.get_cache_id', single=True)
+        # TODO return EventManager.fire('sync.get_cache_id', single=True)
+        pass
 
 
 class PlexInterface(Base):
@@ -27,10 +28,11 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexMediaServer.get_sections(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
+        # Retrieve all sections
+        sections = Plex['library'].sections()
+
+        # Filter sections based on criteria
+        return sections.filter(types, keys, titles)
 
     @classmethod
     def library(cls, types=None, keys=None, titles=None):
@@ -38,32 +40,25 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexLibrary.fetch(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
+        return Library.all(types, keys, titles)
 
     @classmethod
     def episodes(cls, key, parent=None):
-        return PlexLibrary.fetch_episodes(key, parent, cache_id=cls.get_cache_id())
+        return Library.episodes(key, parent)
 
     @staticmethod
     def get_root(p_item):
-        if isinstance(p_item, PlexEpisode):
-            return p_item.parent
+        if isinstance(p_item, Episode):
+            return p_item.show
 
         return p_item
-
-    @staticmethod
-    def add_identifier(data, p_item):
-        return PlexMetadata.add_identifier(data, p_item)
 
     @classmethod
     def to_trakt(cls, key, p_item, include_identifier=True):
         data = {}
 
         # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, PlexEpisode):
+        if isinstance(p_item, Episode):
             k_season, k_episode = key
 
             data.update({
@@ -76,10 +71,12 @@ class PlexInterface(Base):
 
             data['title'] = p_root.title
 
-            if p_root.year:
+            if p_root.year is not None:
                 data['year'] = p_root.year
+            elif p_item.year is not None:
+                data['year'] = p_item.year
 
-            cls.add_identifier(data, p_root)
+            ActionHelper.set_identifier(data, p_root.guid)
 
         return data
 
@@ -145,16 +142,16 @@ class TraktInterface(Base):
             media, len(table), len(items), total_seconds(elapsed)
         )
 
-        # Cache for future calls
-        cls.merged_cache[media] = {
-            'cache_id': cls.get_cache_id(),
-            'result': (items, table)
-        }
+        # TODO Cache for future calls
+        # cls.merged_cache[media] = {
+        #     'cache_id': cls.get_cache_id(),
+        #     'result': (items, table)
+        # }
 
         return items, table
 
 
-class SyncBase(Base):
+class SyncBase(Base, Emitter):
     key = None
     task = None
     title = "Unknown"
@@ -298,23 +295,6 @@ class SyncBase(Base):
     #
     # Status / Progress
     #
-
-    def start(self, end, start=0):
-        EventManager.fire(
-            'sync.%s.started' % self.get_key(),
-            start=start, end=end
-        )
-
-    def progress(self, value):
-        EventManager.fire(
-            'sync.%s.progress' % self.get_key(),
-            value=value
-        )
-
-    def finish(self):
-        EventManager.fire(
-            'sync.%s.finished' % self.get_key()
-        )
 
     def update_status(self, success, end_time=None, start_time=None, section=None):
         if end_time is None:
