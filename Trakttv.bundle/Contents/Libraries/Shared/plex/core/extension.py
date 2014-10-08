@@ -3,7 +3,7 @@
 # :copyright: (c) 2014 by Armin Ronacher.
 # :license: BSD, see LICENSE for more details.
 
-from plex.core.compat import reraise
+from plex.lib.six import reraise
 
 import os
 import sys

@@ -66,7 +66,7 @@ class HttpClient(object):
         # TODO retrying requests on 502, 503 errors?
         try:
             response = self.session.send(prepared)
-        except socket.gaierror, e:
+        except socket.gaierror as e:
             code, _ = e
 
             if code != 8:
@@ -137,7 +137,7 @@ class HttpClient(object):
 
         # Generate MD5 hash of key
         m = hashlib.md5()
-        m.update(raw)
+        m.update(raw.encode('utf-8'))
 
         return m.hexdigest()
 

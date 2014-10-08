@@ -1,6 +1,7 @@
 from plex.objects.core.base import Property
 from plex.objects.directory import Directory
 from plex.objects.library.container import MediaContainer
+from plex.objects.library.extra.genre import Genre
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.metadata.artist import Artist
 from plex.objects.mixins.rate import RateMixin
@@ -8,6 +9,7 @@ from plex.objects.mixins.rate import RateMixin
 
 class Album(Directory, Metadata, RateMixin):
     artist = Property(resolver=lambda: Album.construct_artist)
+    genres = Property(resolver=lambda: Genre.from_node)
 
     index = Property(type=int)
 

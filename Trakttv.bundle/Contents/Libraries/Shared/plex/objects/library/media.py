@@ -3,7 +3,7 @@ from plex.objects.library.part import Part
 
 
 class Media(Descriptor):
-    parts = Property(resolver=lambda: Media.construct_parts)
+    parts = Property(resolver=lambda: Part.from_node)
 
     id = Property(type=int)
 
@@ -23,13 +23,6 @@ class Media(Descriptor):
     bitrate = Property(type=int)
     duration = Property(type=int)
 
-    @staticmethod
-    def construct_parts(client, node):
-        items = []
-
-        for part in node.findall('Part'):
-            _, obj = Part.construct(client, part, child=True)
-
-            items.append(obj)
-
-        return [], items
+    @classmethod
+    def from_node(cls, client, node):
+        return cls.construct(client, node.find('Media'), child=True)

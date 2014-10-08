@@ -1,3 +1,4 @@
+from plex.lib.six import add_metaclass
 from plex.interfaces.core.base import Interface
 
 import logging
@@ -51,7 +52,7 @@ class Property(object):
 
             keys_used.extend(keys)
             return value
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Exception in value function (%s): %s - %s', func, ex, traceback.format_exc())
             return None
 
@@ -63,9 +64,8 @@ class DescriptorMeta(type):
         Interface.object_map[self.__name__] = self
 
 
+@add_metaclass(DescriptorMeta)
 class Descriptor(Interface):
-    __metaclass__ = DescriptorMeta
-
     attribute_map = None
 
     def __init__(self, client, path):
@@ -74,8 +74,9 @@ class Descriptor(Interface):
 
         self._children = None
 
-    def properties(self):
-        keys = [k for k in dir(self) if not k.startswith('_')]
+    @classmethod
+    def properties(cls):
+        keys = [k for k in dir(cls) if not k.startswith('_')]
 
         #log.debug('%s - keys: %s', self, keys)
 
@@ -83,7 +84,7 @@ class Descriptor(Interface):
             if key.startswith('_'):
                 continue
 
-            value = getattr(self, key)
+            value = getattr(cls, key)
 
             if value is Property:
                 yield key, Property(key)
@@ -114,7 +115,7 @@ class Descriptor(Interface):
 
         #log.debug('%s - Properties: %s', cls.__name__, list(obj.properties()))
 
-        for key, prop in obj.properties():
+        for key, prop in cls.properties():
             node_key = prop.name or key
 
             if attribute_map:

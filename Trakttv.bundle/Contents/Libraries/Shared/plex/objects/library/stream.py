@@ -35,3 +35,14 @@ class Stream(Descriptor):
     gmc = Property(type=int)
     level = Property(type=int)
     qpel = Property(type=int)
+
+    @classmethod
+    def from_node(cls, client, node):
+        items = []
+
+        for genre in node.findall('Stream'):
+            _, obj = Stream.construct(client, genre, child=True)
+
+            items.append(obj)
+
+        return [], items

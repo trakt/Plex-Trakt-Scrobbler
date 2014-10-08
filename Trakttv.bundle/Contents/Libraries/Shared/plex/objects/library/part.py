@@ -3,7 +3,7 @@ from plex.objects.library.stream import Stream
 
 
 class Part(Descriptor):
-    streams = Property(resolver=lambda: Part.construct_streams)
+    streams = Property(resolver=lambda: Stream.from_node)
 
     id = Property(type=int)
     key = Property
@@ -14,12 +14,12 @@ class Part(Descriptor):
     duration = Property(type=int)
     size = Property(type=int)
 
-    @staticmethod
-    def construct_streams(client, node):
+    @classmethod
+    def from_node(cls, client, node):
         items = []
 
-        for stream in node.findall('Stream'):
-            _, obj = Stream.construct(client, stream, child=True)
+        for genre in node.findall('Part'):
+            _, obj = Part.construct(client, genre, child=True)
 
             items.append(obj)
 

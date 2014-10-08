@@ -1,7 +1,7 @@
 from plex.objects.core.base import Descriptor, Property
 
 
-class Writer(Descriptor):
+class Genre(Descriptor):
     id = Property(type=int)
     tag = Property
 
@@ -9,8 +9,8 @@ class Writer(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Writer'):
-            _, obj = Writer.construct(client, genre, child=True)
+        for genre in node.findall('Genre'):
+            _, obj = Genre.construct(client, genre, child=True)
 
             items.append(obj)
 

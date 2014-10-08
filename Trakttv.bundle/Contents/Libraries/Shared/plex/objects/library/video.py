@@ -7,9 +7,9 @@ from plex.objects.mixins.session import SessionMixin
 
 
 class Video(Directory, SessionMixin):
-    director = Property(resolver=lambda: Video.construct_director)
-    media = Property(resolver=lambda: Video.construct_media)
-    writers = Property(resolver=lambda: Video.construct_writers)
+    director = Property(resolver=lambda: Director.from_node)
+    media = Property(resolver=lambda: Media.from_node)
+    writers = Property(resolver=lambda: Writer.from_node)
 
     view_count = Property('viewCount', type=int)
     view_offset = Property('viewOffset', type=int)
@@ -19,23 +19,3 @@ class Video(Directory, SessionMixin):
     @property
     def seen(self):
         return self.view_count and self.view_count >= 1
-
-    @staticmethod
-    def construct_director(client, node):
-        return Director.construct(client, node.find('Director'), child=True)
-
-    @staticmethod
-    def construct_media(client, node):
-        return Media.construct(client, node.find('Media'), child=True)
-
-    @staticmethod
-    def construct_writers(client, node):
-        items = []
-
-        for writer in node.findall('Writer'):
-            _, obj = Writer.construct(client, writer, child=True)
-
-            items.append(obj)
-
-        return [], items
-

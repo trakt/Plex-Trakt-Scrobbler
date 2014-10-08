@@ -1,6 +1,7 @@
+from plex.lib.six.moves.urllib_parse import urlencode
+
 from requests import Request
 import json
-import urllib
 
 
 class PlexRequest(object):
@@ -70,6 +71,6 @@ class PlexRequest(object):
         query = self.kwargs.get('query')
 
         if query:
-            url += '?' + urllib.urlencode(query)
+            url += '?' + urlencode(query)
 
         return url

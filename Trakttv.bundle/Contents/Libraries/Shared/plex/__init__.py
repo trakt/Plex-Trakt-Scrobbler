@@ -1,7 +1,8 @@
 from plex.client import PlexClient
+from plex.lib.six import add_metaclass
 from plex.helpers import has_attribute
 
-__version__ = '0.5.0-develop'
+__version__ = '0.6.0'
 
 
 class PlexMeta(type):
@@ -36,10 +37,8 @@ class PlexMeta(type):
 
         return self.client[key]
 
-
+@add_metaclass(PlexMeta)
 class Plex(object):
-    __metaclass__ = PlexMeta
-
     _client = None
 
     @classmethod
