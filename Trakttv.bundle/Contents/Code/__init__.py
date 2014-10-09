@@ -32,7 +32,7 @@ import hashlib
 import logging
 
 
-log = Logger('Code')
+log = Logger()
 
 
 class Main(object):
@@ -51,10 +51,11 @@ class Main(object):
         SyncManager,
     ]
 
-    loggers_allowed = [
+    loggers_enabled = [
         'plex',
         'plex_activity',
         'plex_metadata',
+        'plugin',
         'pyemitter',
         'requests',
         'trakt'
@@ -89,7 +90,7 @@ class Main(object):
     def init_logging(cls):
         logging.basicConfig(level=logging.DEBUG)
 
-        for name in cls.loggers_allowed:
+        for name in cls.loggers_enabled:
             logger = logging.getLogger(name)
 
             logger.setLevel(logging.DEBUG)
