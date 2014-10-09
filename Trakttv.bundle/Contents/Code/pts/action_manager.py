@@ -27,12 +27,20 @@ class ActionManager(object):
 
     @classmethod
     def on_played(cls, info):
+        if not Prefs['sync_instant_actions']:
+            log.debug('"Instant Actions" not enabled, ignoring')
+            return
+
         cls.pending.put(('seen', info))
 
         log.debug('"seen" action queued: %s', info)
 
     @classmethod
     def on_unplayed(cls, info):
+        if not Prefs['sync_instant_actions']:
+            log.debug('"Instant Actions" not enabled, ignoring')
+            return
+
         cls.pending.put(('unseen', info))
 
         log.debug('"unseen" action queued: %s', info)

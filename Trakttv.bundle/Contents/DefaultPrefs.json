@@ -60,6 +60,12 @@
         "default": "false"
     },
     {
+        "id": "sync_instant_actions",
+        "type": "bool",
+        "label": "Sync - Instant Actions",
+        "default": "true"
+    },
+    {
         "id": "sync_run_library",
         "type": "bool",
         "label": "Sync - Run after library updates",
