@@ -221,7 +221,7 @@ class SyncManager(object):
     @classmethod
     def scanner_finished(cls):
         if not get_pref('sync_run_library'):
-            log.info('"Run after library updates" not enabled, ignoring')
+            log.debug('"Run after library updates" not enabled, ignoring')
             return
 
         cls.trigger_synchronize()
