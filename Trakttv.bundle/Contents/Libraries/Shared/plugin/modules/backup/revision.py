@@ -3,18 +3,22 @@ from datetime import datetime
 import logging
 import msgpack
 import os
+import re
 
 log = logging.getLogger(__name__)
+
+RE_FILENAME = re.compile(r"(?P<timestamp>\d+_\d+-\d+-\d+)(_(?P<include>.*))?", re.IGNORECASE)
 
 PatchResult = namedtuple('PatchResult', ['data', 'num_deltas'])
 
 
 class Revision(object):
-    def __init__(self, manager, timestamp, type):
+    def __init__(self, manager, type, include, timestamp):
         self.manager = manager
 
-        self.timestamp = timestamp
         self.type = type
+        self.include = sorted(include) if include else None
+        self.timestamp = timestamp
 
     @property
     def directory(self):
@@ -25,9 +29,14 @@ class Revision(object):
 
     @property
     def path(self):
+        name = self.timestamp.strftime('%d_%H-%M-%S')
+
+        if self.include is not None:
+            name += '_' + ''.join(self.include)
+
         return os.path.join(
             self.directory,
-            '%s.%s' % (self.timestamp.strftime('%d_%H-%M-%S'), self.type)
+            '%s.%s' % (name, self.type)
         )
 
     def patch(self):
@@ -44,10 +53,16 @@ class Revision(object):
         deltas = []
 
         for r in self.manager.history[pos:]:
+            # Skip revisions which don't match our current `include` parameter
+            if r.include != self.include:
+                continue
+
+            # Finish when we find the closest "full" revision
             if r.type == 'full':
                 base = r
                 break
 
+            # Store deltas for later patching
             if r.type == 'delta':
                 deltas.append(r)
 
@@ -120,7 +135,7 @@ class Revision(object):
         return True
 
     @classmethod
-    def create(cls, manager, type, timestamp=None):
+    def create(cls, manager, type, include=None, timestamp=None):
         """Create a new revision
 
         :rtype: Revision
@@ -129,7 +144,7 @@ class Revision(object):
         if timestamp is None:
             timestamp = datetime.now()
 
-        return cls(manager, timestamp, type)
+        return cls(manager, type, include, timestamp)
 
     @classmethod
     def parse(cls, manager, directory, filename):
@@ -140,8 +155,26 @@ class Revision(object):
 
         name, ext = os.path.splitext(filename)
 
+        match = RE_FILENAME.match(name)
+
+        if match is None:
+            return None
+
         # Create timestamp from fragments
-        timestamp = datetime.strptime('-'.join([directory, name]), '%y-%m-%d_%H-%M-%S')
+        timestamp = datetime.strptime('-'.join([directory, match.group('timestamp')]), '%y-%m-%d_%H-%M-%S')
+
+        # Get `include` parameter from match
+        include = match.group('include')
+
+        if include is not None:
+            include = list(include)
 
         # Create `Revision` object
-        return cls(manager, timestamp, ext.lstrip('.'))
+        return cls(manager, ext.lstrip('.'), include, timestamp)
+
+    def __repr__(self):
+        return '<Revision type: %r, include: %r, timestamp: %r>' % (
+            self.type,
+            self.include,
+            self.timestamp
+        )

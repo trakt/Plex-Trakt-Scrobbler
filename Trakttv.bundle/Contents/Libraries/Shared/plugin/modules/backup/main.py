@@ -3,6 +3,7 @@ from plugin.modules.base import Module
 from plugin.modules.backup.packer import Packer
 from plugin.modules.backup.revision import Revision
 
+from datetime import datetime
 import logging
 import os
 
@@ -27,8 +28,13 @@ class Backup(Module):
         # Resolve revision history
         br.resolve()
 
-        # Run backup
-        return br.run(store)
+        # Run backup for each flag separately
+        timestamp = datetime.now()
+
+        for flag in ['c', 'r', 'w']:
+            br.run(store, flag, timestamp)
+
+        return True
 
 
 class BackupRunner(object):
@@ -54,7 +60,7 @@ class BackupRunner(object):
         # Sort backup history
         self.history = sorted(result, key=lambda x: x.timestamp, reverse=True)
 
-    def latest(self):
+    def latest(self, include=None):
         """Retrieve latest revision
 
         :rtype: Revision or None
@@ -63,20 +69,28 @@ class BackupRunner(object):
         if not len(self.history):
             return None
 
-        return self.history[0]
+        for revision in self.history:
+            # Return a revision which matches our current `include` parameter
+            if revision.include == include:
+                return revision
 
-    def run(self, store):
+        return None
+
+    def run(self, store, include=None, timestamp=None):
         """Run backup task (create new revision if there are any changes)"""
 
+        if include and type(include) is not list:
+            include = [include]
+
         # Pack current library (for comparing with other revisions)
-        current = self.pack(store)
+        current = self.pack(store, include)
 
         # Load latest version
-        latest = self.latest()
+        latest = self.latest(include)
 
         if not latest:
             log.debug("First run, creating a full revision...")
-            return self.store('full', current)
+            return self.store('full', current, include, timestamp)
 
         # Compose diff
         latest_patch = latest.patch()
@@ -84,7 +98,7 @@ class BackupRunner(object):
         # Ensure our chain of deltas is less than 20 (to ensure patching is fast)
         if latest_patch.num_deltas > 20:
             log.debug('Reached deltas limit, creating a full revision...')
-            return self.store('full', current)
+            return self.store('full', current, include, timestamp)
 
         # Compare latest revision against current library
         log.debug('Comparing current library against latest revision...')
@@ -98,16 +112,16 @@ class BackupRunner(object):
         if self.delta_savings(current, delta) < 0.25:
             # Minimal revision delta savings, store full library
             log.debug("Minimal delta savings, creating a full revision...")
-            return self.store('full', current)
+            return self.store('full', current, include, timestamp)
 
         log.debug('Creating a delta revision...')
-        return self.store('delta', delta)
+        return self.store('delta', delta, include, timestamp)
 
-    def store(self, type, data):
+    def store(self, type, data, include=None, timestamp=None):
         """Create `type` revision and write `data` to disk"""
 
         # Create revision
-        rev = Revision.create(self, type)
+        rev = Revision.create(self, type, include, timestamp)
 
         # Save data for revision
         return rev.write(data.items())
@@ -151,11 +165,11 @@ class BackupRunner(object):
         return result
 
     @staticmethod
-    def pack(store):
+    def pack(store, include):
         result = {}
 
         for key, value in store.items():
-            result[key] = Packer.pack(value)
+            result[key] = Packer.pack(value, include)
 
         return result
 
