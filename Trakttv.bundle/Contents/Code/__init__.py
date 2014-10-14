@@ -1,5 +1,15 @@
 # ------------------------------------------------
 # IMPORTANT
+# Configure environment module before we import other modules (that could depend on it)
+# ------------------------------------------------
+from plugin.core.environment import Environment
+
+# Configure environment
+Environment.setup(Core)
+# ------------------------------------------------
+
+# ------------------------------------------------
+# IMPORTANT
 # These modules need to be loaded here first
 # ------------------------------------------------
 import core
