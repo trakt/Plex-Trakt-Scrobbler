@@ -32,7 +32,7 @@ from interface.main_menu import MainMenu
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
-from sync.manager import SyncManager
+from sync.sync_manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
