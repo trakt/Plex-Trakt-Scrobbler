@@ -1,12 +1,10 @@
-from core.action import ActionHelper
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
 
 from datetime import datetime
 from plex import Plex
-from plex.objects.library.metadata.episode import Episode
-from plex_metadata import Metadata, Library
+from plex_metadata import Library
 from pyemitter import Emitter
 from trakt import Trakt
 
