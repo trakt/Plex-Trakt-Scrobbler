@@ -7,6 +7,9 @@ from datetime import datetime
 import logging
 import os
 
+MAX_DELTA_CHAIN = 50
+MIN_DELTA_SAVINGS = 0.25
+
 log = logging.getLogger(__name__)
 
 
@@ -96,7 +99,7 @@ class BackupRunner(object):
         latest_patch = latest.patch()
 
         # Ensure our chain of deltas is less than 20 (to ensure patching is fast)
-        if latest_patch.num_deltas > 20:
+        if latest_patch.num_deltas > MAX_DELTA_CHAIN:
             log.debug('Reached deltas limit, creating a full revision...')
             return self.store('full', current, include, timestamp)
 
@@ -109,7 +112,7 @@ class BackupRunner(object):
             return True
 
         # Only store a delta if we reduce the item count by at least 25%
-        if self.delta_savings(current, delta) < 0.25:
+        if self.delta_savings(current, delta) < MIN_DELTA_SAVINGS:
             # Minimal revision delta savings, store full library
             log.debug("Minimal delta savings, creating a full revision...")
             return self.store('full', current, include, timestamp)
