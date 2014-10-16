@@ -2,7 +2,7 @@ from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
 from core.localization import localization
 from core.logger import Logger
 from core.plugin import PLUGIN_PREFIX
-from sync.manager import SyncManager
+from sync.sync_manager import SyncManager
 
 from ago import human
 from datetime import datetime

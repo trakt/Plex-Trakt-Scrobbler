@@ -20,9 +20,6 @@ sys.modules['core.header'] = header
 import helpers
 sys.modules['core.helpers'] = helpers
 
-import environment
-sys.modules['core.environment'] = environment
-
 import cache
 sys.modules['core.cache'] = cache
 

@@ -1,5 +1,15 @@
 # ------------------------------------------------
 # IMPORTANT
+# Configure environment module before we import other modules (that could depend on it)
+# ------------------------------------------------
+from plugin.core.environment import Environment
+
+# Configure environment
+Environment.setup(Core)
+# ------------------------------------------------
+
+# ------------------------------------------------
+# IMPORTANT
 # These modules need to be loaded here first
 # ------------------------------------------------
 import core
@@ -19,10 +29,11 @@ from core.helpers import spawn, get_pref, schedule, get_class_name
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
+from plugin.modules.manager import ModuleManager
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
-from sync.manager import SyncManager
+from sync.sync_manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
@@ -68,6 +79,8 @@ class Main(object):
         self.init_logging()
         self.init_trakt()
         self.init()
+
+        ModuleManager.initialize()
 
         Metadata.configure(
             cache=CacheManager.get('metadata'),
@@ -187,6 +200,8 @@ class Main(object):
             module.start()
 
         log.info('Started %s modules: %s', len(names), ', '.join(names))
+
+        ModuleManager.start()
 
 
 def Start():

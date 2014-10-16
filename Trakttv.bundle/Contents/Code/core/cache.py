@@ -1,4 +1,4 @@
-from core.environment import Environment
+from plugin.core.environment import Environment
 from core.logger import Logger
 
 from shove import Shove

@@ -1,4 +1,4 @@
-from core.plugin import PLUGIN_IDENTIFIER
+from plugin.core.constants import PLUGIN_IDENTIFIER
 
 import os
 
@@ -6,9 +6,12 @@ import os
 class PathEnvironment(object):
     # TODO confirm validity of this on *nix and OS X
 
+    def __init__(self, core):
+        self._core = core
+
     @property
     def code(self):
-        return Core.code_path
+        return self._core.code_path
 
     @property
     def plugin_caches(self):
@@ -26,4 +29,8 @@ class PathEnvironment(object):
 
 
 class Environment(object):
-    path = PathEnvironment()
+    path = None
+
+    @classmethod
+    def setup(cls, core):
+        cls.path = PathEnvironment(core)

@@ -1,12 +1,11 @@
-from core.action import ActionHelper
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
+from plugin.modules.manager import ModuleManager
 
 from datetime import datetime
 from plex import Plex
-from plex.objects.library.metadata.episode import Episode
-from plex_metadata import Metadata, Library
+from plex_metadata import Library
 from pyemitter import Emitter
 from trakt import Trakt
 
@@ -113,6 +112,9 @@ class TraktInterface(Base):
         #     'cache_id': cls.get_cache_id(),
         #     'result': (items, table)
         # }
+
+        # TODO Run asynchronously?
+        ModuleManager['backup'].run(media, items)
 
         return items, table
 

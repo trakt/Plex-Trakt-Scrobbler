@@ -20,5 +20,5 @@ sys.modules['sync.synchronize'] = synchronize
 import sync_statistics
 sys.modules['sync.sync_statistics'] = sync_statistics
 
-import manager
-sys.modules['sync.manager'] = manager
+import sync_manager
+sys.modules['sync.sync_manager'] = sync_manager
