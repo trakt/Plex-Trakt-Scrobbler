@@ -47,7 +47,8 @@ class Packer(object):
 
         # Watched
         if not include or 'w' in include:
-            result['w'] = movie.is_watched
+            # ['w'] = (is_watched)
+            result['w'] = struct.pack('?', movie.is_watched)
 
         # Calculate item hash
         result['@'] = cls.hash(result)
