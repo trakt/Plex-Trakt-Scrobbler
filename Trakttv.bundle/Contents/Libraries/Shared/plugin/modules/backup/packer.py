@@ -38,7 +38,8 @@ class Packer(object):
 
         # Collected
         if not include or 'c' in include:
-            result['c'] = movie.is_collected
+            # ['c'] = (is_collected, timestamp)
+            result['c'] = struct.pack('?I', movie.is_collected, 0)
 
         # Ratings
         if not include or 'r' in include:
@@ -71,8 +72,9 @@ class Packer(object):
 
         # Collected
         if not include or 'c' in include:
+            # ['z']['c'] = (se, ep, timestamp)
             result['z']['c'] = [
-                struct.pack('HH', se, ep)
+                struct.pack('HHI', se, ep, 0)
                 for (se, ep), episode in show.episodes.items()
                 if episode.is_collected
             ]
