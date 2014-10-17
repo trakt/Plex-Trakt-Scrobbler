@@ -1,6 +1,6 @@
 from plex.objects.core.base import Property
 from plex.objects.directory import Directory
-from plex.objects.library.container import MediaContainer
+from plex.objects.library.container import LeavesContainer, ChildrenContainer
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.mixins.rate import RateMixin
 
@@ -32,16 +32,54 @@ class Show(Directory, Metadata, RateMixin):
         return self.client['library/metadata'].children(self.rating_key)
 
 
-class SeasonContainer(MediaContainer, Show):
-    attribute_map = {
-        'index':    'parentIndex',
-        'title':    'parentTitle',
-        'year':     'parentYear',
-        '*':        '*'
-    }
+class ShowChildrenContainer(ChildrenContainer):
+    show = Property(resolver=lambda: ShowLeavesContainer.construct_show)
+
+    key = Property
+    summary = Property
+
+    banner = Property
+    theme = Property
+
+    @staticmethod
+    def construct_show(client, node):
+        attribute_map = {
+            'index': 'parentIndex',
+
+            'title': 'parentTitle',
+            'year' : 'parentYear'
+        }
+
+        return Show.construct(client, node, attribute_map, child=True)
 
     def __iter__(self):
-        for item in super(MediaContainer, self).__iter__():
-            item.show = self
+        for item in super(ChildrenContainer, self).__iter__():
+            item.show = self.show
+
+            yield item
+
+
+class ShowLeavesContainer(LeavesContainer):
+    show = Property(resolver=lambda: ShowLeavesContainer.construct_show)
+
+    key = Property
+
+    banner = Property
+    theme = Property
+
+    @staticmethod
+    def construct_show(client, node):
+        attribute_map = {
+            'index': 'parentIndex',
+
+            'title': 'parentTitle',
+            'year' : 'parentYear'
+        }
+
+        return Show.construct(client, node, attribute_map, child=True)
+
+    def __iter__(self):
+        for item in super(LeavesContainer, self).__iter__():
+            item.show = self.show
 
             yield item

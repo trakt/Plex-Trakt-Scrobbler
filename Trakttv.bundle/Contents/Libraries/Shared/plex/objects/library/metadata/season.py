@@ -1,5 +1,5 @@
 from plex.objects.core.base import Property
-from plex.objects.library.container import MediaContainer
+from plex.objects.library.container import ChildrenContainer
 from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.video import Directory
@@ -18,60 +18,61 @@ class Season(Directory, Metadata):
     episode_count = Property('leafCount', int)
     viewed_episode_count = Property('viewedLeafCount', int)
 
-    def children(self):
-        response = self.http.get('children')
+    view_count = Property('viewCount', type=int)
 
-        return self.parse(response, {
-            'MediaContainer': (EpisodeContainer, {
-                'Video': {
-                    'episode': 'Episode'
-                }
-            })
-        })
+    def children(self):
+        return self.client['library/metadata'].children(self.rating_key)
 
     @staticmethod
     def construct_show(client, node):
         attribute_map = {
-            'index':     'parentIndex',
-            'key':       'parentKey',
+            'index'    : 'parentIndex',
+            'key'      : 'parentKey',
             'ratingKey': 'parentRatingKey',
 
-            'title':     'parentTitle',
-            'summary':   'parentSummary',
-            'thumb':     'parentThumb',
+            'title'    : 'parentTitle',
+            'summary'  : 'parentSummary',
+            'thumb'    : 'parentThumb',
 
-            'theme':     'parentTheme'
+            'theme'    : 'parentTheme'
         }
 
         return Show.construct(client, node, attribute_map, child=True)
 
 
-class EpisodeContainer(MediaContainer, Season):
-    show = Property(resolver=lambda: EpisodeContainer.construct_show)
+class SeasonChildrenContainer(ChildrenContainer):
+    show = Property(resolver=lambda: SeasonChildrenContainer.construct_show)
+    season = Property(resolver=lambda: SeasonChildrenContainer.construct_season)
 
-    attribute_map = {
-        'index':    'parentIndex',
-        'title':    'parentTitle',
-        'year':     'parentYear',
-        '*':        '*'
-    }
+    key = Property
+
+    banner = Property
+    theme = Property
 
     @staticmethod
     def construct_show(client, node):
         attribute_map = {
-            'title':            'grandparentTitle',
+            'title'        : 'grandparentTitle',
 
-            'studio':           'grandparentStudio',
-            'content_rating':   'grandparentContentRating',
-
-            'theme':            'grandparentTheme'
+            'contentRating': 'grandparentContentRating',
+            'studio'       : 'grandparentStudio',
+            'theme'        : 'grandparentTheme'
         }
 
         return Show.construct(client, node, attribute_map, child=True)
 
+    @staticmethod
+    def construct_season(client, node):
+        attribute_map = {
+            'index': 'parentIndex',
+            'title': 'parentTitle'
+        }
+
+        return Season.construct(client, node, attribute_map, child=True)
+
     def __iter__(self):
-        for item in super(MediaContainer, self).__iter__():
+        for item in super(ChildrenContainer, self).__iter__():
             item.show = self.show
-            item.season = self
+            item.season = self.season
 
             yield item

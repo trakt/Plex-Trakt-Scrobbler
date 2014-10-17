@@ -37,6 +37,7 @@ class Track(Directory, Metadata, SessionMixin, ScrobbleMixin):
             'ratingKey':    'parentRatingKey',
 
             'title':        'parentTitle',
+            'year':         'parentYear',
 
             'thumb':        'parentThumb'
         }

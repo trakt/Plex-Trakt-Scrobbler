@@ -54,10 +54,15 @@ class Interface(object):
             raise ValueError('Unknown node with tag "%s"' % node.tag)
 
         if type(item) is dict:
-            item = item.get(node.get('type'))
+            value = node.get(item.get('_', 'type'))
+
+            if value is None:
+                return None
+
+            item = item.get(value)
 
             if item is None:
-                raise ValueError('Unknown node type "%s"' % node.get('type'))
+                raise ValueError('Unknown node type "%s"' % value)
 
         descriptor = None
         child_schema = None

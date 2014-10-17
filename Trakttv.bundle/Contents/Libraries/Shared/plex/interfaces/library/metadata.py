@@ -8,20 +8,54 @@ class LibraryMetadataInterface(Interface):
         response = self.http.get(key, 'allLeaves')
 
         return self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
-                'Video': {
-                    'episode': 'Episode'
-                }
-            })
+            'MediaContainer': {
+                '_': 'viewGroup',
+
+                'episode': ('ShowLeavesContainer', {
+                    'Video': {
+                        'episode': 'Episode'
+                    }
+                }),
+
+                'track': ('ArtistLeavesContainer', {
+                    'Track': 'Track'
+                })
+            }
         })
 
     def children(self, key):
         response = self.http.get(key, 'children')
 
         return self.parse(response, {
-            'MediaContainer': ('SeasonContainer', {
-                'Directory': {
-                    'season': 'Season'
-                }
-            })
+            'MediaContainer': {
+                '_': 'viewGroup',
+
+                # ---------------------------------------
+                # Music
+                # ---------------------------------------
+                'album': ('ArtistChildrenContainer', {
+                    'Directory': {
+                        'album': 'Album'
+                    }
+                }),
+
+                'track': ('AlbumChildrenContainer', {
+                    'Track': 'Track'
+                }),
+
+                # ---------------------------------------
+                # TV
+                # ---------------------------------------
+                'season': ('ShowChildrenContainer', {
+                    'Directory': {
+                        'season': 'Season'
+                    }
+                }),
+
+                'episode': ('SeasonChildrenContainer', {
+                    'Video': {
+                        'episode': 'Episode'
+                    }
+                })
+            }
         })

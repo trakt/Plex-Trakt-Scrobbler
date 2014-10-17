@@ -43,6 +43,14 @@ class MediaContainer(Container):
             yield item
 
 
+class ChildrenContainer(MediaContainer):
+    pass
+
+
+class LeavesContainer(MediaContainer):
+    pass
+
+
 class SectionContainer(MediaContainer):
     filter_passes = lambda _, allowed, value: allowed is None or value in allowed
 

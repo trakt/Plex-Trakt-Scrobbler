@@ -1,6 +1,6 @@
 from plex.objects.core.base import Property
 from plex.objects.directory import Directory
-from plex.objects.library.container import MediaContainer
+from plex.objects.library.container import ChildrenContainer
 from plex.objects.library.extra.genre import Genre
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.metadata.artist import Artist
@@ -20,13 +20,7 @@ class Album(Directory, Metadata, RateMixin):
     viewed_track_count = Property('viewedLeafCount', int)
 
     def children(self):
-        response = self.http.get('children')
-
-        return self.parse(response, {
-            'MediaContainer': (TrackContainer, {
-                'Track': 'Track'
-            })
-        })
+        return self.client['library/metadata'].children(self.rating_key)
 
     @staticmethod
     def construct_artist(client, node):
@@ -41,20 +35,34 @@ class Album(Directory, Metadata, RateMixin):
         return Artist.construct(client, node, attribute_map, child=True)
 
 
-class TrackContainer(MediaContainer, Album):
-    artist = Property(resolver=lambda: TrackContainer.construct_artist)
+class AlbumChildrenContainer(ChildrenContainer):
+    artist = Property(resolver=lambda: AlbumChildrenContainer.construct_artist)
+    album = Property(resolver=lambda: AlbumChildrenContainer.construct_album)
 
-    attribute_map = {
-        'index':            'parentIndex',
-        'title':            'parentTitle',
-        'year':             'parentYear',
-        '*':                '*'
-    }
+    key = Property
 
     @staticmethod
     def construct_artist(client, node):
         attribute_map = {
-            'title':        'grandparentTitle'
+            'title': 'grandparentTitle'
         }
 
         return Artist.construct(client, node, attribute_map, child=True)
+
+    @staticmethod
+    def construct_album(client, node):
+        attribute_map = {
+            'index': 'parentIndex',
+
+            'title': 'parentTitle',
+            'year' : 'parentYear'
+        }
+
+        return Album.construct(client, node, attribute_map, child=True)
+
+    def __iter__(self):
+        for item in super(ChildrenContainer, self).__iter__():
+            item.artist = self.artist
+            item.album = self.album
+
+            yield item
