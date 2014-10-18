@@ -38,7 +38,10 @@ class SyncStatus(Model):
         self.save()
 
     def __repr__(self):
-        return build_repr(self, ['previous_timestamp', 'previous_elapsed', 'previous_success', 'last_success'])
+        return build_repr(self, [
+            'previous_timestamp', 'previous_elapsed',
+            'previous_success', 'last_success'
+        ])
 
     def __str__(self):
         return self.__repr__()

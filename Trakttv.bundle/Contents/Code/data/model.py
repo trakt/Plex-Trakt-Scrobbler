@@ -57,7 +57,19 @@ class Model(object):
         if not Data.Exists(path):
             return None
 
-        return jsonpickle.decode(Data.Load(path))
+        # Try load data from disk
+        try:
+            data = Data.Load(path)
+        except Exception, ex:
+            log.warn('Unable to load "%s" (%s)', path, ex)
+            return None
+
+        # Try decode data with jsonpickle
+        try:
+            return jsonpickle.decode(data)
+        except Exception, ex:
+            log.warn('Unable to decode "%s" (%s) - len(data): %s', path, ex, len(data) if data else None)
+            return None
 
     def delete(self):
         if not self.group:

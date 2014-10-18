@@ -111,7 +111,7 @@ class WatchSession(Model):
 
     def __repr__(self):
         return build_repr(self, [
-            'key', 'item_key', 'cur_state',
+            'key', 'cur_state', 'progress',
             'user', 'client'
         ])
 
