@@ -25,9 +25,10 @@ from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
 from core.helpers import spawn, get_pref, schedule, get_class_name
-from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
+from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.modules.manager import ModuleManager
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler

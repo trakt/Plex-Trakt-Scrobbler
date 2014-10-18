@@ -1,6 +1,7 @@
 from core.helpers import spawn, plural
 from core.logger import Logger
-from core.plugin import ACTIVITY_MODE
+from plugin.core.constants import ACTIVITY_MODE
+
 import threading
 import traceback
 

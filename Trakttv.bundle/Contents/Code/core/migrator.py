@@ -1,6 +1,7 @@
 from core.helpers import all
 from core.logger import Logger
-from core.plugin import PLUGIN_VERSION_BASE
+from plugin.core.constants import PLUGIN_VERSION_BASE
+
 from lxml import etree
 import shutil
 import os

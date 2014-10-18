@@ -1,4 +1,4 @@
-from core.plugin import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 
 from threading import Timer
 import json

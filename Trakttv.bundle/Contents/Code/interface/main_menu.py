@@ -1,7 +1,8 @@
 from core.cache import CacheManager
 from core.helpers import pad_title, get_pref
-from core.plugin import ART, NAME, ICON, PLUGIN_PREFIX, PLUGIN_VERSION
+from core.plugin import ART, NAME, ICON
 from interface.sync_menu import SyncMenu
+from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
 
 
 @handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)

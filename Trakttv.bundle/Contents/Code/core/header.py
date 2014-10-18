@@ -1,4 +1,5 @@
-from core.plugin import PLUGIN_VERSION, PLUGIN_NAME
+from plugin.core.constants import PLUGIN_VERSION, PLUGIN_NAME
+
 import sys
 
 
