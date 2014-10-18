@@ -163,7 +163,7 @@ class Clean(Migration):
                 path = os.path.abspath(path)
 
                 if m(path, conditions):
-                    log.debug('(%s) %s: "%s"', name, action, path)
+                    log.info('(%s) %s: "%s"', name, action, path)
 
 
 class ForceLegacy(Migration):
