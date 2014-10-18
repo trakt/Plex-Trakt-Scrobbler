@@ -1,15 +1,23 @@
 from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
-from plex.plex_media_server import PlexMediaServer
-from sync.manager import SyncManager
-from datetime import datetime
+from core.localization import localization
+from core.logger import Logger
+from sync.sync_manager import SyncManager
+from plugin.core.constants import PLUGIN_PREFIX
+
 from ago import human
+from datetime import datetime
+from plex import Plex
+
+L, LF = localization('interface.sync_menu')
+
+log = Logger('interface.sync_menu')
 
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
-@route('/applications/trakttv/sync')
+@route(PLUGIN_PREFIX + '/sync')
 def SyncMenu(refresh=None):
-    oc = ObjectContainer(title2=L("Sync"), no_history=True, no_cache=True)
+    oc = ObjectContainer(title2=L('sync_menu:title'), no_history=True, no_cache=True)
     all_keys = []
 
     create_active_item(oc)
@@ -21,16 +29,17 @@ def SyncMenu(refresh=None):
         thumb=R("icon-sync.png")
     ))
 
-    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=get_filter('filter_sections'))
+    f_allow, f_deny = get_filter('filter_sections')
+    sections = Plex['library'].sections()
 
-    for _, key, title in sections:
+    for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, section=key),
-            title=pad_title('Push "' + title + '" to trakt'),
-            summary=get_task_status('push', key),
+            key=Callback(Push, section=section.key),
+            title=pad_title('Push "' + section.title + '" to trakt'),
+            summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
         ))
-        all_keys.append(key)
+        all_keys.append(section.key)
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
@@ -132,58 +141,55 @@ def get_task_status(key, section=None):
     return 'Not run yet.'
 
 
-@route('/applications/trakttv/sync/synchronize')
+@route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize():
-    if not SyncManager.trigger_synchronize():
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_synchronize()
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Synchronize has started and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Synchronize')
     )
 
 
 
-@route('/applications/trakttv/sync/push')
+@route(PLUGIN_PREFIX + '/sync/push')
 def Push(section=None):
-    if not SyncManager.trigger_push(section):
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_push(section)
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Push has been triggered and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Push')
     )
 
 
-@route('/applications/trakttv/sync/pull')
+@route(PLUGIN_PREFIX + '/sync/pull')
 def Pull():
-    if not SyncManager.trigger_pull():
-        return MessageContainer(
-            'Unable to sync',
-            'Syncing task already running, unable to start'
-        )
+    success, message = SyncManager.trigger_pull()
+
+    if not success:
+        return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
-        'Syncing started',
-        'Pull has been triggered and will continue in the background'
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Pull')
     )
 
 
-@route('/applications/trakttv/sync/cancel')
+@route(PLUGIN_PREFIX + '/sync/cancel')
 def Cancel():
     if not SyncManager.cancel():
         return MessageContainer(
-            'Unable to cancel',
-            'There is no syncing task running'
+            L('cancel_failure:title'),
+            L('cancel_failure:message'),
         )
 
     return MessageContainer(
-        'Syncing cancelled',
-        'Syncing task has been notified to cancel'
+        L('cancel_success:title'),
+        L('cancel_success:message')
     )

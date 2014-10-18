@@ -1,27 +1,22 @@
 from core.helpers import build_repr
-from core.model import DictModel
-from data.client import Client
-from data.user import User
+from data.model import Model
+
+from jsonpickle.unpickler import ClassRegistry
+from plex_metadata import Matcher
 
 
-class WatchSession(DictModel):
-    root_key = 'nowPlaying'
+class WatchSession(Model):
+    group = 'WatchSession'
 
-    def __init__(self, session_key=None, item_key=None, metadata=None, state=None, user=None, client=None):
-        """
-        :type metadata: ?
-        :type state: str
-        :type user: User
-        """
-
-        super(WatchSession, self).__init__(session_key)
-
-        self.item_key = item_key
+    def __init__(self, key, metadata, guid, state, session=None):
+        super(WatchSession, self).__init__(key)
 
         # Plex
         self.metadata = metadata
-        self.user = user
-        self.client = client
+        self.guid = guid
+        self.session = session
+
+        self.client = None
 
         # States
         self.skip = False
@@ -41,29 +36,52 @@ class WatchSession(DictModel):
         self.update_required = False
         self.last_updated = Datetime.FromTimestamp(0)
 
-    def get_type(self):
-        """
-        :rtype: str or None
-        """
+        # Private
+        self.identifier_ = None
+        self.user_ = None
 
-        if not self.metadata or not self.metadata.get('type'):
+    @property
+    def type(self):
+        if not self.metadata or not self.metadata.type:
             return None
 
-        media_type = self.metadata.get('type')
+        media_type = self.metadata.type
 
         if media_type == 'episode':
             return 'show'
 
         return media_type
 
-    def get_title(self):
+    @property
+    def identifier(self):
+        if self.metadata is None:
+            return None
+
+        if self.identifier_ is None:
+            self.identifier_ = Matcher.process(self.metadata)
+
+        return self.identifier_
+
+    @property
+    def title(self):
         if not self.metadata:
             return None
 
-        if 'grandparent_title' in self.metadata:
-            return self.metadata['grandparent_title']
+        if self.metadata.type in ['season', 'episode']:
+            return self.metadata.show.title
 
-        return self.metadata.get('title')
+        return self.metadata.title
+
+    @property
+    def user(self):
+        if self.session:
+            return self.session.user
+
+        return self.user_
+
+    @user.setter
+    def user(self, value):
+        self.user_ = value
 
     def reset(self):
         self.scrobbled = False
@@ -71,67 +89,24 @@ class WatchSession(DictModel):
 
         self.last_updated = Datetime.FromTimestamp(0)
 
-    @classmethod
-    def object_from_json(cls, key, value):
-        if key == 'user':
-            return User.from_json(value)
-
-        if key == 'client':
-            return Client.from_json(value)
-
-        return value
-
     @staticmethod
-    def from_section(section, state, metadata, client_section=None):
-        """
-        :type section: ?
-        :type state: str
-
-        :rtype: WatchSession or None
-        """
-
-        if not section:
-            return None
-
+    def from_session(session, metadata, guid, state):
         return WatchSession(
-            section.get('sessionKey'),
-            section.get('ratingKey'),
-            metadata, state,
+            session.key,
+            metadata, guid, state,
 
-            user=User.from_section(section),
-            client=Client.from_section(client_section)
+            session=session
         )
 
     @staticmethod
-    def from_info(info, metadata, client_section=None):
+    def from_info(info, metadata, guid):
         if not info:
             return None
 
-        # Build user object
-        user = None
-
-        if info['user_id'] and info['user_name']:
-            user = User(info['user_id'], info['user_name'])
-
-        # Build client object
-        client = None
-
-        if client_section:
-            client = Client.from_section(client_section)
-        elif info.get('client'):
-            client = Client(
-                info['machineIdentifier'],
-                info['client'],
-                info['address']
-            )
-
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
-            info['ratingKey'],
-            metadata, info['state'],
-
-            user=user,
-            client=client
+            metadata, guid,
+            info['state']
         )
 
     def __repr__(self):
@@ -142,3 +117,6 @@ class WatchSession(DictModel):
 
     def __str__(self):
         return self.__repr__()
+
+
+ClassRegistry.register('watch_session.WatchSession', WatchSession)

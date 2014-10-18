@@ -60,6 +60,12 @@
         "default": "false"
     },
     {
+        "id": "sync_instant_actions",
+        "type": "bool",
+        "label": "Sync - Instant Actions",
+        "default": "true"
+    },
+    {
         "id": "sync_run_library",
         "type": "bool",
         "label": "Sync - Run after library updates",
@@ -111,9 +117,24 @@
         "default": "Automatic"
     },
     {
-        "id": "logging_tracing",
-        "type": "bool",
-        "label": "Logging - Write tracing events",
-        "default": "false"
+        "id": "level_pyemitter",
+        "type": "enum",
+        "label": "Logging - Events",
+        "values": ["INFO", "DEBUG"],
+        "default": "INFO"
+    },
+    {
+        "id": "level_plugin",
+        "type": "enum",
+        "label": "Logging - Plugin",
+        "values": ["INFO", "DEBUG", "TRACE"],
+        "default": "INFO"
+    },
+    {
+        "id": "level_libraries",
+        "type": "enum",
+        "label": "Logging - Libraries",
+        "values": ["INFO", "DEBUG"],
+        "default": "INFO"
     }
 ]

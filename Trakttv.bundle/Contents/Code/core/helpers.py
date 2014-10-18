@@ -2,6 +2,7 @@ import inspect
 import re
 import sys
 import threading
+import traceback
 import time
 import unicodedata
 
@@ -215,11 +216,23 @@ def get_func_name(obj):
     return None
 
 
+def get_class_name(cls):
+    if not inspect.isclass(cls):
+        cls = getattr(cls, '__class__')
+
+    return getattr(cls, '__name__')
+
+
 def spawn(func, *args, **kwargs):
     thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 
-    thread = threading.Thread(target=func, name=thread_name, args=args, kwargs=kwargs)
+    def wrapper(thread_name, args, kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception, ex:
+            Log.Error('Thread "%s" raised an exception: %s - %s', thread_name, ex, traceback.format_exc())
 
+    thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
     thread.start()
 
     Log.Debug("Spawned thread with name '%s'" % thread_name)
@@ -274,24 +287,43 @@ def join_attributes(**kwargs):
 def get_filter(key, normalize_values=True):
     value = get_pref(key)
     if not value:
-        return None
+        return None, None
 
     value = value.strip()
 
     # Allow all if wildcard (*) or blank
     if not value or value == '*':
-        return None
+        return None, None
 
     values = value.split(',')
 
-    if normalize_values:
-        # Split, strip and lower-case comma-separated values
-        return [normalize(x) for x in values]
+    allow, deny = [], []
 
-    return [x.strip() for x in values]
+    for value in [v.strip() for v in values]:
+        inverted = False
+
+        # Check if this is an inverted value
+        if value.startswith('-'):
+            inverted = True
+            value = value[1:]
+
+        # Normalize values (if enabled)
+        if normalize_values:
+            value = normalize(value)
+
+        # Append value to list
+        if not inverted:
+            allow.append(value)
+        else:
+            deny.append(value)
+
+    return allow, deny
 
 
 def normalize(text):
+    if text is None:
+        return None
+
     # Normalize unicode characters
     if type(text) is unicode:
         text = unicodedata.normalize('NFKD', text)

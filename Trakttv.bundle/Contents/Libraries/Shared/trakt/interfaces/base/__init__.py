@@ -74,7 +74,8 @@ class Interface(object):
                 if value is not None
             ])
 
-        self.validate_action(action, data)
+        if not self.validate_action(action, data):
+            return None
 
         response = self.request(
             action, data=data,
@@ -85,7 +86,7 @@ class Interface(object):
 
     @classmethod
     def validate_action(cls, action, data):
-        pass
+        return True
 
     @staticmethod
     def get_data(response, catch_errors=True):
@@ -117,9 +118,10 @@ class Interface(object):
             values = [data.get(key) for key in keys]
 
             if all(values):
-                return
+                return True
 
-        raise ValueError("Request doesn't match data requirements %s, one group of parameters is required." % (args,))
+        log.warn("Request %s doesn't match data requirements %s, one group of parameters is required.", data, args)
+        return False
 
     @staticmethod
     def media_mapper(store, media, items, **kwargs):

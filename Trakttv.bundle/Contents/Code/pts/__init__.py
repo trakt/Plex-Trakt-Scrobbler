@@ -2,6 +2,9 @@ import sys
 
 # submodules for Plex plugins "hack"
 
+import action_manager
+sys.modules['pts.action_manager'] = action_manager
+
 import scrobbler
 sys.modules['pts.scrobbler'] = scrobbler
 
@@ -10,15 +13,6 @@ sys.modules['pts.scrobbler_logging'] = scrobbler_logging
 
 import scrobbler_websocket
 sys.modules['pts.scrobbler_websocket'] = scrobbler_websocket
-
-import activity
-sys.modules['pts.activity'] = activity
-
-import activity_logging
-sys.modules['pts.activity_logging'] = activity_logging
-
-import activity_websocket
-sys.modules['pts.activity_websocket'] = activity_websocket
 
 import session_manager
 sys.modules['pts.session_manager'] = session_manager

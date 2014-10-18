@@ -1,5 +1,7 @@
+from core.action import ActionHelper
 from core.helpers import all, plural, json_encode
 from core.logger import Logger
+from data.watch_session import WatchSession
 from sync.sync_base import SyncBase
 
 from trakt import Trakt
@@ -10,6 +12,18 @@ log = Logger('sync.push')
 
 class Base(SyncBase):
     task = 'push'
+
+    def is_watching(self, p_item):
+        sessions = WatchSession.all(lambda ws:
+            ws.metadata and
+            ws.metadata.rating_key == p_item.rating_key
+        )
+
+        for key, session in sessions:
+            if session.watching:
+                return True
+
+        return False
 
     def watch(self, key, p_items, t_item, include_identifier=True):
         if type(p_items) is not list:
@@ -23,8 +37,13 @@ class Base(SyncBase):
         if all([not x.seen for x in p_items]):
             return True
 
+        # Ignore if we are currently watching this item
+        if self.is_watching(p_items[0]):
+            log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
+            return True
+
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', self.plex.to_trakt(key, p_items[0], include_identifier))
+        self.store('watched', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
 
     def rate(self, key, p_items, t_item, artifact='ratings'):
         if type(p_items) is not list:
@@ -44,7 +63,7 @@ class Base(SyncBase):
         if t_item and t_item.rating and t_item.rating.advanced == p_item.user_rating:
             return True
 
-        data = self.plex.to_trakt(key, p_item)
+        data = ActionHelper.plex.to_trakt(key, p_item)
 
         data.update({
             'rating': p_item.user_rating
@@ -61,7 +80,7 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', self.plex.to_trakt(key, p_items[0], include_identifier))
+        self.store('collected', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
         return True
 
     @staticmethod
@@ -84,6 +103,10 @@ class Base(SyncBase):
         action = action[action.rfind('/') + 1:]
 
         response = Trakt[path][action](**kwargs)
+
+        if response is None:
+            # Request failed (rejected unmatched media, etc..)
+            return
 
         # Log successful items
         if 'rated' in response:
@@ -174,11 +197,11 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(p_shows))
+        self.emit('started', len(p_shows))
 
         for x, (key, p_show) in enumerate(p_shows.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             t_show = t_shows_table.get(key)
 
@@ -194,12 +217,12 @@ class Show(Base):
                     artifacts=artifacts
                 )
 
-                show = self.plex.to_trakt(key, p_show)
+                show = ActionHelper.plex.to_trakt(key, p_show)
 
                 self.store_episodes('collected', show)
                 self.store_episodes('watched', show)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         #
@@ -257,11 +280,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(p_movies))
+        self.emit('started', len(p_movies))
 
         for x, (key, p_movie) in enumerate(p_movies.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             t_movie = t_movies_table.get(key)
 
@@ -270,7 +293,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, key=key, p_movies=p_movie, t_movie=t_movie)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         #
@@ -307,7 +330,7 @@ class Push(Base):
 
         if kwargs.get('section') is None:
             # Update the status for each section
-            for (_, k, _) in self.plex.sections():
-                self.update_status(True, start_time=self.start_time, section=k)
+            for section in self.plex.sections():
+                self.update_status(True, start_time=self.start_time, section=section.key)
 
         return success

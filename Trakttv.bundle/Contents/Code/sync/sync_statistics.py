@@ -1,5 +1,4 @@
-from core.helpers import total_seconds, sum
-from core.eventing import EventManager
+from core.helpers import total_seconds
 from core.logger import Logger
 from core.numeric import ema
 from sync.sync_task import SyncTaskStatistics
@@ -18,34 +17,25 @@ MESSAGES = {
 
 
 class SyncStatistics(object):
-    def __init__(self, handlers, manager):
+    def __init__(self, manager):
         self.manager = manager
 
         self.active = []
 
-        for h in handlers:
-            self.bind(h)
+        # Bind to handler status events
+        for _, task in manager.handlers.items():
+            self.bind(task)
 
     def bind(self, task):
         key = task.get_key()
 
-        EventManager.subscribe(
-            'sync.%s.started' % key,
-            lambda start, end: self.started(key, start, end)
-        )
-
-        EventManager.subscribe(
-            'sync.%s.progress' % key,
-            lambda value: self.progress(key, value)
-        )
-
-        EventManager.subscribe(
-            'sync.%s.finished' % key,
-            lambda: self.finished(key)
-        )
+        # Bind events
+        task.on('started', lambda end: self.started(key, end))\
+            .on('progress', lambda value: self.progress(key, value))\
+            .on('finished', lambda: self.finished(key))
 
         # Bind child progress events
-        for child in task.children:
+        for _, child in task.children.items():
             self.bind(child)
 
     def reset(self):
@@ -64,7 +54,7 @@ class SyncStatistics(object):
 
         st.message = MESSAGES.get(self.key)
 
-    def started(self, key, start, end):
+    def started(self, key, end, start=0):
         self.reset()
 
         self.active.append((key, start, end))
@@ -87,11 +77,11 @@ class SyncStatistics(object):
 
         self.calculate_timing(stat, progress)
 
-        #log.debug(
+        # log.debug(
         #    '[%s] progress: %02d%%, estimated time remaining: ~%s seconds',
         #    key, progress * 100,
         #    round(stat.seconds_remaining, 2) if stat.seconds_remaining else '?'
-        #)
+        # )
 
         stat.progress = progress
         stat.last_update = datetime.utcnow()

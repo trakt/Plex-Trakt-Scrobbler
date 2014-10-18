@@ -1,6 +1,7 @@
 from core.helpers import all
 from core.logger import Logger
-from core.plugin import PLUGIN_VERSION_BASE
+from plugin.core.constants import PLUGIN_VERSION_BASE
+
 from lxml import etree
 import shutil
 import os
@@ -26,6 +27,10 @@ class Migration(object):
     @property
     def code_path(self):
         return Core.code_path
+
+    @property
+    def lib_path(self):
+        return os.path.join(self.code_path, '..', 'Libraries')
 
     @property
     def plex_path(self):
@@ -86,14 +91,48 @@ class Migration(object):
 
 
 class Clean(Migration):
-    tasks_upgrade = [
+    tasks_code = [
         (
             'delete_file', [
+                # /core
+                'core/eventing.py',
+                'core/model.py',
+                'core/network.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
+
+                # /data
+                'data/client.py',
                 'data/dict_object.py',
-                'plex/media_server.py',
+                'data/user.py',
+
+                # /pts
+                'pts/activity.py',
+                'pts/activity_logging.py',
+                'pts/activity_websocket.py',
+
+                # /sync
+                'sync/manager.py',
+
+                # /
                 'sync.py'
+            ], os.path.isfile
+        ),
+        (
+            'delete_directory', [
+                'plex'
+            ], os.path.isdir
+        )
+    ]
+
+    tasks_lib = [
+        (
+            'delete_file', [
+                'Shared/asio.py',                 'Shared/asio.pyc',
+                'Shared/asio_base.py',            'Shared/asio_base.pyc',
+                'Shared/asio_posix.py',           'Shared/asio_posix.pyc',
+                'Shared/asio_windows.py',         'Shared/asio_windows.pyc',
+                'Shared/asio_windows_interop.py', 'Shared/asio_windows_interop.pyc'
             ], os.path.isfile
         )
     ]
@@ -103,9 +142,10 @@ class Clean(Migration):
             self.upgrade()
 
     def upgrade(self):
-        self.execute(self.tasks_upgrade, 'upgrade')
+        self.execute(self.tasks_code, 'upgrade', self.code_path)
+        self.execute(self.tasks_lib, 'upgrade', self.lib_path)
 
-    def execute(self, tasks, name):
+    def execute(self, tasks, name, base_path):
         for action, paths, conditions in tasks:
             if type(paths) is not list:
                 paths = [paths]
@@ -120,10 +160,11 @@ class Clean(Migration):
             m = getattr(self, action)
 
             for path in paths:
-                log.debug('(%s) %s: "%s"', name, action, path)
+                path = os.path.join(base_path, path)
+                path = os.path.abspath(path)
 
-                if m(os.path.join(self.code_path, path), conditions):
-                    log.debug('(%s) %s: "%s" - finished', name, action, path)
+                if m(path, conditions):
+                    log.info('(%s) %s: "%s"', name, action, path)
 
 
 class ForceLegacy(Migration):
