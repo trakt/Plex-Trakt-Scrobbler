@@ -93,12 +93,34 @@ class Clean(Migration):
     tasks_code = [
         (
             'delete_file', [
+                # /core
+                'core/eventing.py',
+                'core/model.py',
+                'core/network.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
+
+                # /data
+                'data/client.py',
                 'data/dict_object.py',
-                'plex/media_server.py',
+                'data/user.py',
+
+                # /pts
+                'pts/activity.py',
+                'pts/activity_logging.py',
+                'pts/activity_websocket.py',
+
+                # /sync
+                'sync/manager.py',
+
+                # /
                 'sync.py'
             ], os.path.isfile
+        ),
+        (
+            'delete_directory', [
+                'plex'
+            ], os.path.isdir
         )
     ]
 
@@ -140,10 +162,8 @@ class Clean(Migration):
                 path = os.path.join(base_path, path)
                 path = os.path.abspath(path)
 
-                log.debug('(%s) %s: "%s"', name, action, path)
-
                 if m(path, conditions):
-                    log.debug('(%s) %s: "%s" - finished', name, action, path)
+                    log.debug('(%s) %s: "%s"', name, action, path)
 
 
 class ForceLegacy(Migration):
