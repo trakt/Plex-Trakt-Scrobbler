@@ -1,5 +1,15 @@
 import logging
 
+LOGGERS = [
+    'plex',
+    'plex_activity',
+    'plex_metadata',
+    'plugin',
+    'pyemitter',
+    'requests',
+    'trakt'
+]
+
 TRACE = 5
 
 
@@ -65,3 +75,14 @@ class PlexHandler(logging.StreamHandler):
 
         Log.Warn('Unknown logging level "%s"', value)
         return logging.DEBUG
+
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Set logger levels
+for name in LOGGERS:
+    logger = logging.getLogger(name)
+
+    logger.setLevel(logging.DEBUG)
+    logger.handlers = [PlexHandler()]

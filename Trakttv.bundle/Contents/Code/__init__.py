@@ -24,7 +24,6 @@ from core.cache import CacheManager
 from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
-from core.logging_handler import PlexHandler
 from core.helpers import spawn, get_pref, schedule, get_class_name
 from core.plugin import ART, NAME, ICON, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from core.update_checker import UpdateChecker
@@ -40,7 +39,6 @@ from plex_activity import Activity
 from plex_metadata import Metadata
 from trakt import Trakt
 import hashlib
-import logging
 
 
 log = Logger()
@@ -62,21 +60,10 @@ class Main(object):
         SyncManager,
     ]
 
-    loggers_enabled = [
-        'plex',
-        'plex_activity',
-        'plex_metadata',
-        'plugin',
-        'pyemitter',
-        'requests',
-        'trakt'
-    ]
-
     def __init__(self):
         Header.show(self)
         Main.update_config()
 
-        self.init_logging()
         self.init_trakt()
         self.init()
 
@@ -98,16 +85,6 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
-
-    @classmethod
-    def init_logging(cls):
-        logging.basicConfig(level=logging.DEBUG)
-
-        for name in cls.loggers_enabled:
-            logger = logging.getLogger(name)
-
-            logger.setLevel(logging.DEBUG)
-            logger.handlers = [PlexHandler()]
 
     @staticmethod
     def init_trakt():
