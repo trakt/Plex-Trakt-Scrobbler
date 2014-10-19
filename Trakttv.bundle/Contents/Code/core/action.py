@@ -2,6 +2,9 @@ from core.helpers import try_convert
 
 from plex.objects.library.metadata.episode import Episode
 from plex_metadata import Guid
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class PlexHelper(object):
@@ -60,3 +63,5 @@ class ActionHelper(object):
             values['tmdb_id'] = try_convert(guid.sid, int)
         elif guid.agent == 'thetvdb':
             values['tvdb_id'] = try_convert(guid.sid, int)
+        else:
+            log.warn('Unknown GUID agent "%s"', guid.agent)
