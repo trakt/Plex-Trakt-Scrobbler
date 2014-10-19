@@ -1,12 +1,16 @@
 import hashlib
+import logging
 import struct
+
+log = logging.getLogger(__name__)
 
 
 class Packer(object):
     key_code = {
-        'thetvdb': 1,
-        'imdb'   : 2,
-        'tvrage' : 3
+        'thetvdb'    : 1,
+        'imdb'       : 2,
+        'tvrage'     : 3,
+        'themoviedb' : 4
     }
 
     @classmethod
@@ -28,7 +32,7 @@ class Packer(object):
             '_': 'show',
 
             'k': [
-                (cls.key_code.get(key), value)
+                (cls.to_key_code(key), value)
                 for (key, value) in movie.keys
             ],
 
@@ -62,7 +66,7 @@ class Packer(object):
             '_': 'show',
 
             'k': [
-                (cls.key_code.get(key), value)
+                (cls.to_key_code(key), value)
                 for (key, value) in show.keys
             ],
 
@@ -103,6 +107,15 @@ class Packer(object):
 
         # Calculate item hash
         result['@'] = cls.hash(result)
+
+        return result
+
+    @classmethod
+    def to_key_code(cls, key):
+        result = cls.key_code.get(key)
+
+        if result is None:
+            log.warn('Unable to find key code for "%s"', key)
 
         return result
 
