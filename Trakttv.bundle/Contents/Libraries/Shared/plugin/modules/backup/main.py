@@ -171,8 +171,12 @@ class BackupRunner(object):
     def pack(store, include):
         result = {}
 
-        for key, value in store.items():
-            result[key] = Packer.pack(value, include)
+        for (agent, sid), value in store.items():
+            # Replace with agent code
+            agent = Packer.to_agent_code(agent)
+
+            # Pack item into dictionary
+            result[(agent, sid)] = Packer.pack(value, include)
 
         return result
 
