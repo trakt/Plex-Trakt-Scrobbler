@@ -1,7 +1,10 @@
 from plex_activity.core.helpers import str_format
 from plex_activity.sources.s_logging.parsers.base import Parser, LOG_PATTERN, REQUEST_HEADER_PATTERN
 
+import logging
 import re
+
+log = logging.getLogger(__name__)
 
 PLAYING_HEADER_PATTERN = str_format(REQUEST_HEADER_PATTERN, method="GET", path="/:/(?P<type>timeline|progress)/?(?:\?(?P<query>.*?))?\s")
 PLAYING_HEADER_REGEX = re.compile(PLAYING_HEADER_PATTERN, re.IGNORECASE)
@@ -11,7 +14,6 @@ CLIENT_REGEX = re.compile(str_format(LOG_PATTERN, message=r'Client \[(?P<machine
 
 NOW_USER_REGEX = re.compile(str_format(LOG_PATTERN, message=r'\[Now\] User is (?P<user_name>.+) \(ID: (?P<user_id>\d+)\)'), re.IGNORECASE)
 NOW_CLIENT_REGEX = re.compile(str_format(LOG_PATTERN, message=r'\[Now\] Device is (?P<product>.+?) \((?P<client>.+)\)\.'), re.IGNORECASE)
-
 
 
 class NowPlayingParser(Parser):
@@ -52,6 +54,9 @@ class NowPlayingParser(Parser):
         else:
             log.warn('Unknown activity type "%s"', activity_type)
             return True
+
+        if match is None:
+            match = {}
 
         # Extend match with query info
         self.query(match, header_match.group('query'))
@@ -97,8 +102,9 @@ class NowPlayingParser(Parser):
 
     def progress(self):
         data = self.read_parameters()
+
         if not data:
-            return None
+            return {}
 
         # Translate parameters into timeline-style form
         return {

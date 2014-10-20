@@ -27,7 +27,7 @@ class Library(object):
         return result
 
     @classmethod
-    def episodes(cls, key, show=None):
+    def episodes(cls, key, show=None, flat=True):
         result = {}
 
         container = Plex['library/metadata'].all_leaves(key)
@@ -44,8 +44,14 @@ class Library(object):
             if season is None or not episodes:
                 continue
 
+            if not flat and season not in result:
+                result[season] = {}
+
             for episode in episodes:
-                result[season, episode] = item
+                if flat:
+                    result[season, episode] = item
+                else:
+                    result[season][episode] = item
 
         return result
 
