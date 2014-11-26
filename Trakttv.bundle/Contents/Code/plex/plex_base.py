@@ -19,8 +19,6 @@ class PlexBase(object):
 
         if os.environ.get('PLEXTOKEN'):
             headers['X-Plex-Token'] = os.environ['PLEXTOKEN']
-        else:
-            log.warn('Invalid token (X-Plex-Token: %r), unable to send authentication header', os.environ.get('PLEXTOKEN'))
 
         response = request(
             cls.base_url + path,

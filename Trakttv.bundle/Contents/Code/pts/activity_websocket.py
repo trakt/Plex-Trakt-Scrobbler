@@ -43,8 +43,6 @@ class WebSocketActivity(ActivityMethod):
         # Set authentication token (if one is available)
         if os.environ.get('PLEXTOKEN'):
             params['X-Plex-Token'] = os.environ['PLEXTOKEN']
-        else:
-            log.warn('Invalid token (X-Plex-Token: %r), unable to send authentication parameter', os.environ.get('PLEXTOKEN'))
 
         # Append parameters to uri
         if params:
