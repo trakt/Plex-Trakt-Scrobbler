@@ -1,4 +1,9 @@
+from core.logger import Logger
 from core.network import request
+
+import os
+
+log = Logger('plex.plex_base')
 
 
 class PlexBase(object):
@@ -9,6 +14,13 @@ class PlexBase(object):
                 retry=True, timeout=3, max_retries=3, retry_sleep=2, **kwargs):
         if not path.startswith('/'):
             path = '/' + path
+
+        headers = {}
+
+        if os.environ.get('PLEXTOKEN'):
+            headers['X-Plex-Token'] = os.environ['PLEXTOKEN']
+        else:
+            log.warn('Invalid token (X-Plex-Token: %r), unable to send authentication header', os.environ.get('PLEXTOKEN'))
 
         response = request(
             cls.base_url + path,
@@ -21,6 +33,7 @@ class PlexBase(object):
             max_retries=max_retries,
             retry_sleep=retry_sleep,
 
+            headers=headers,
             **kwargs
         )
 

@@ -3,8 +3,10 @@ from core.helpers import try_convert, all
 from core.logger import Logger
 from pts.activity import ActivityMethod, Activity
 
-import websocket
+from urllib import urlencode
+import os
 import time
+import websocket
 
 log = Logger('pts.activity_websocket')
 
@@ -35,9 +37,21 @@ class WebSocketActivity(ActivityMethod):
         self.reconnects = 0
 
     def connect(self):
-        self.ws = websocket.create_connection('ws://127.0.0.1:32400/:/websockets/notifications')
-        
-        log.info('Connected to notifications websocket')
+        uri = 'ws://127.0.0.1:32400/:/websockets/notifications'
+        params = {}
+
+        # Set authentication token (if one is available)
+        if os.environ.get('PLEXTOKEN'):
+            params['X-Plex-Token'] = os.environ['PLEXTOKEN']
+        else:
+            log.warn('Invalid token (X-Plex-Token: %r), unable to send authentication parameter', os.environ.get('PLEXTOKEN'))
+
+        # Append parameters to uri
+        if params:
+            uri += '?' + urlencode(params)
+
+        # Create websocket connection
+        self.ws = websocket.create_connection(uri)
 
     def run(self):
         self.connect()

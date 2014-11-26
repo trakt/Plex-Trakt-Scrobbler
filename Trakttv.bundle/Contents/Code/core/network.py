@@ -14,7 +14,7 @@ cache = Cache('network')
 
 
 def request(url, response_type='text', data=None, data_type='application/octet-stream', retry=False,
-            timeout=None, max_retries=3, retry_sleep=2, method=None, cache_id=None, **kwargs):
+            timeout=None, max_retries=3, retry_sleep=2, method=None, cache_id=None, headers=None, **kwargs):
     """Send an HTTP Request
 
     :param url: Request url
@@ -73,6 +73,10 @@ def request(url, response_type='text', data=None, data_type='application/octet-s
             req.add_header('Content-Type', 'application/json')
         else:
             req.add_header('Content-Type', data_type)
+
+    # Set request headers
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
 
     # (Python 2.5 urlopen doesn't support timeouts)
     if timeout and not PY25:
