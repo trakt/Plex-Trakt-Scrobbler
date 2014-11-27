@@ -1,9 +1,6 @@
-from core.logger import Logger
 from core.network import request
 
 import os
-
-log = Logger('plex.plex_base')
 
 
 class PlexBase(object):
