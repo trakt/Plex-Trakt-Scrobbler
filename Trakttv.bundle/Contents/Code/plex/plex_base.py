@@ -1,5 +1,7 @@
 from core.network import request
 
+import os
+
 
 class PlexBase(object):
     base_url = 'http://127.0.0.1:32400'
@@ -9,6 +11,11 @@ class PlexBase(object):
                 retry=True, timeout=3, max_retries=3, retry_sleep=2, **kwargs):
         if not path.startswith('/'):
             path = '/' + path
+
+        headers = {}
+
+        if os.environ.get('PLEXTOKEN'):
+            headers['X-Plex-Token'] = os.environ['PLEXTOKEN']
 
         response = request(
             cls.base_url + path,
@@ -21,6 +28,7 @@ class PlexBase(object):
             max_retries=max_retries,
             retry_sleep=retry_sleep,
 
+            headers=headers,
             **kwargs
         )
 
