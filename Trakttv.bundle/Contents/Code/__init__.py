@@ -68,6 +68,7 @@ class Main(object):
         Main.update_config()
 
         self.init_trakt()
+        self.init_plex()
         self.init()
 
         ModuleManager.initialize()
@@ -88,6 +89,12 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
+
+    @staticmethod
+    def init_plex():
+        Plex.configuration.defaults.authentication(
+            os.environ.get('PLEXTOKEN')
+        )
 
     @staticmethod
     def init_trakt():
