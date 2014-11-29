@@ -1,3 +1,4 @@
+from plex.lib.six.moves import xrange
 from plex_activity.sources import Logging, WebSocket
 
 from pyemitter import Emitter
