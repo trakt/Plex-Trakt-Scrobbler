@@ -40,6 +40,8 @@ from plex_activity import Activity
 from plex_metadata import Metadata
 from trakt import Trakt
 import hashlib
+import logging
+import os
 
 
 log = Logger()
@@ -163,6 +165,9 @@ class Main(object):
         return True
 
     def start(self):
+        # Check for authentication token
+        Log.Info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
+
         # Validate username/password
         spawn(self.validate_auth)
 
