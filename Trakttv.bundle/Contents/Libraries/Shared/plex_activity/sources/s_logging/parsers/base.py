@@ -1,9 +1,9 @@
+from plex.lib.six.moves import urllib_parse as urlparse
 from plex_activity.core.helpers import str_format
 
 from pyemitter import Emitter
 import logging
 import re
-import urlparse
 
 log = logging.getLogger(__name__)
 

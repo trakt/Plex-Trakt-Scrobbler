@@ -40,6 +40,8 @@ from plex_activity import Activity
 from plex_metadata import Metadata
 from trakt import Trakt
 import hashlib
+import logging
+import os
 
 
 log = Logger()
@@ -66,6 +68,7 @@ class Main(object):
         Main.update_config()
 
         self.init_trakt()
+        self.init_plex()
         self.init()
 
         ModuleManager.initialize()
@@ -86,6 +89,12 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
+
+    @staticmethod
+    def init_plex():
+        Plex.configuration.defaults.authentication(
+            os.environ.get('PLEXTOKEN')
+        )
 
     @staticmethod
     def init_trakt():
@@ -163,6 +172,9 @@ class Main(object):
         return True
 
     def start(self):
+        # Check for authentication token
+        Log.Info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
+
         # Validate username/password
         spawn(self.validate_auth)
 

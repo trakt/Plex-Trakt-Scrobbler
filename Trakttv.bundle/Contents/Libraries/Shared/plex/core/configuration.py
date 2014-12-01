@@ -12,6 +12,9 @@ class ConfigurationManager(object):
     def defaults(self):
         return self.stack[0]
 
+    def authentication(self, token):
+        return Configuration(self).authentication(token)
+
     def cache(self, **definitions):
         return Configuration(self).cache(**definitions)
 
@@ -39,6 +42,11 @@ class Configuration(object):
         self.manager = manager
 
         self.data = {}
+
+    def authentication(self, token):
+        self.data['authentication.token'] = token
+
+        return self
 
     def cache(self, **definitions):
         for key, value in definitions.items():
