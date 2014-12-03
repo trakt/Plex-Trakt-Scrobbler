@@ -30,22 +30,31 @@ class Task(object):
         if not self.started:
             return False
 
+        # Wait for the task to finish
         if not self.complete:
+            # Wait for lock
             self.lock.acquire()
 
-        if self.exception:
-            raise self.exception
+            # Release it again
+            self.lock.release()
+
+        if self.exception or not self.complete:
+            return None
 
         return self.result
 
     def run(self):
+        # Wait for lock
+        self.lock.acquire()
+
+        # Ensure task hasn't already been started
         if self.started:
             return
 
-        self.lock.acquire()
         self.started = True
 
         try:
+            # Call task
             self.result = self.target(*self.args, **self.kwargs)
         except CancelException, e:
             self.exception = e
@@ -57,6 +66,8 @@ class Task(object):
             log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
                 self.target, type(e), e, traceback.format_exc()
             ))
+        finally:
+            # Release lock
+            self.complete = True
+            self.lock.release()
 
-        self.complete = True
-        self.lock.release()
