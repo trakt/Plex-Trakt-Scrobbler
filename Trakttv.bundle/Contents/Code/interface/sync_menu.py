@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
+from core.helpers import timestamp, pad_title, plural, get_filter, normalize
 from core.localization import localization
 from core.logger import Logger
 from sync.sync_manager import SyncManager
@@ -35,7 +35,7 @@ def SyncMenu(refresh=None):
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
             key=Callback(Push, section=section.key),
-            title=pad_title('Push "' + section.title + '" to trakt'),
+            title=pad_title('Push "' + normalize(section.title) + '" to trakt'),
             summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
         ))
@@ -69,7 +69,7 @@ def create_active_item(oc):
     progress = format_percentage(task.statistics.progress)
 
     # Title
-    title = '%s - Status' % handler.title
+    title = '%s - Status' % normalize(handler.title)
 
     if progress:
         title += ' (%s)' % progress
@@ -89,7 +89,7 @@ def create_active_item(oc):
 
     oc.add(DirectoryObject(
         key=Callback(Cancel),
-        title=pad_title('%s - Cancel' % handler.title)
+        title=pad_title('%s - Cancel' % normalize(handler.title))
     ))
 
 
