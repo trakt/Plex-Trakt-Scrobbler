@@ -49,6 +49,7 @@ class Task(object):
 
         # Ensure task hasn't already been started
         if self.started:
+            self.lock.release()
             return
 
         self.started = True
