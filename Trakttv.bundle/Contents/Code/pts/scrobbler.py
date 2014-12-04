@@ -1,9 +1,8 @@
 from core.action import ActionHelper
-from core.helpers import str_pad, get_filter, get_pref, normalize, any, try_convert
+from core.helpers import str_pad, get_filter, get_pref, flatten, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
 
-from plex_metadata import Metadata
 from trakt import Trakt
 import ipaddress
 import math
@@ -286,7 +285,7 @@ class ScrobblerMethod(Method):
             if value:
                 value = value.strip()
 
-            value = normalize(value)
+            value = flatten(value)
 
         # Fetch filter
         f_allow, f_deny = get_filter(key, normalize_values=normalize_values)

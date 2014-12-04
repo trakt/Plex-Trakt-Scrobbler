@@ -309,7 +309,7 @@ def get_filter(key, normalize_values=True):
 
         # Normalize values (if enabled)
         if normalize_values:
-            value = normalize(value)
+            value = flatten(value)
 
         # Append value to list
         if not inverted:
@@ -329,7 +329,11 @@ def normalize(text):
         text = unicodedata.normalize('NFKD', text)
 
     # Ensure text is ASCII, ignore unknown characters
-    text = text.encode('ascii', 'ignore')
+    return text.encode('ascii', 'ignore')
+
+
+def flatten(text):
+    text = normalize(text)
 
     # Remove special characters
     text = re.sub('[^A-Za-z0-9\s]+', '', text)
