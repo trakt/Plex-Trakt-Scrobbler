@@ -330,6 +330,6 @@ class Push(Base):
         if kwargs.get('section') is None:
             # Update the status for each section
             for (_, k, _) in self.plex.sections():
-                self.update_status(True, start_time=self.start_time, section=k)
+                self.update_status(success, start_time=self.start_time, section=k)
 
         return success
