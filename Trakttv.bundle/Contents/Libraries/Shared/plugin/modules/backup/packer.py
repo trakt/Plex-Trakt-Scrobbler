@@ -7,10 +7,10 @@ log = logging.getLogger(__name__)
 
 class Packer(object):
     agent_codes = {
-        'thetvdb'    : 1,
+        'tvdb'    : 1,
         'imdb'       : 2,
         'tvrage'     : 3,
-        'themoviedb' : 4
+        'tmdb' : 4
     }
 
     @classmethod
@@ -48,7 +48,7 @@ class Packer(object):
         # Ratings
         if not include or 'r' in include:
             # ['r'] = (rating, timestamp)
-            result['r'] = struct.pack('fI', movie.rating.advanced, movie.rating.timestamp) if movie.rating else None
+            result['r'] = struct.pack('fI', movie.rating.value, movie.rating.timestamp) if movie.rating else None
 
         # Watched
         if not include or 'w' in include:
@@ -88,11 +88,11 @@ class Packer(object):
         # Ratings
         if not include or 'r' in include:
             # ['r'] = (rating, timestamp)
-            result['r'] = struct.pack('fI', show.rating.advanced, show.rating.timestamp) if show.rating else None
+            result['r'] = struct.pack('fI', show.rating.value, show.rating.timestamp) if show.rating else None
 
             # ['z']['r'] = (se, ep, rating, timestamp)
             result['z']['r'] = [
-                struct.pack('HHfI', se, ep, episode.rating.advanced, episode.rating.timestamp)
+                struct.pack('HHfI', se, ep, episode.rating.value, episode.rating.timestamp)
                 for (se, ep), episode in show.episodes.items()
                 if episode.rating is not None
             ]
