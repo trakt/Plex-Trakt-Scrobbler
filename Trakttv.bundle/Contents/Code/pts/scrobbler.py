@@ -71,13 +71,13 @@ class ScrobblerMethod(Method):
                 ws.paused_since = Datetime.Now()
                 return None
 
-            if state == 'playing' and not ws.active:
+        elif state == 'playing':
+            if not ws.active:
                 log.info(status_message('Sending watch status for %s'))
                 ws.active = True
                 return 'start'
 
-        elif state == 'playing':
-            if ws.progress >= 100 and ws.active:
+            elif ws.progress >= 100:
                 log.info(status_message('Media finished, cancelling watching status for %s'))
                 ws.active = False
                 return 'stop'
