@@ -82,7 +82,7 @@ class Packer(object):
             # ['z']['c'] = (se, ep, timestamp)
             result['z']['c'] = [
                 struct.pack('HHI', se, ep, 0)
-                for (se, ep), episode in show.episodes.items()
+                for (se, ep), episode in show.episodes()
                 if episode.is_collected
             ]
 
@@ -94,7 +94,7 @@ class Packer(object):
             # ['z']['r'] = (se, ep, rating, timestamp)
             result['z']['r'] = [
                 struct.pack('HHfI', se, ep, episode.rating.value, cls.to_unix_timestamp(episode.rating.timestamp))
-                for (se, ep), episode in show.episodes.items()
+                for (se, ep), episode in show.episodes()
                 if episode.rating is not None
             ]
 
@@ -102,7 +102,7 @@ class Packer(object):
         if not include or 'w' in include:
             result['z']['w'] = [
                 struct.pack('HH', se, ep)
-                for (se, ep), episode in show.episodes.items()
+                for (se, ep), episode in show.episodes()
                 if episode.is_watched
             ]
 
