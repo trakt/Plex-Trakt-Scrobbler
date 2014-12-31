@@ -47,7 +47,6 @@ class ScrobbleInterface(Interface):
             **kwargs
         )
 
-
     @application
     @authenticated
     def pause(self, movie=None, show=None, episode=None, progress=0, **kwargs):

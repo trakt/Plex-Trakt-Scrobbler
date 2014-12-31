@@ -84,7 +84,7 @@ class Show(Media):
         return show
 
     def __repr__(self):
-        return '<Show "%s" (%s)>' % (self.title, self.year)
+        return '<Show %r (%s)>' % (self.title, self.year)
 
 
 class Season(Media):
@@ -160,7 +160,7 @@ class Movie(Video):
         return movie
 
     def __repr__(self):
-        return '<Movie "%s" (%s)>' % (self.title, self.year)
+        return '<Movie %r (%s)>' % (self.title, self.year)
 
 
 class Rating(object):

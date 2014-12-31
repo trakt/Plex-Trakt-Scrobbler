@@ -1,5 +1,3 @@
-from trakt.helpers import setdefault
-
 from requests import Request
 import json
 
@@ -75,6 +73,14 @@ class TraktRequest(object):
         if self.configuration['oauth.token']:
             # OAuth
             headers['Authorization'] = 'Bearer %s' % self.configuration['oauth.token']
+
+        # User-Agent
+        if self.configuration['app.name'] and self.configuration['app.version']:
+            headers['User-Agent'] = '%s (%s)' % (self.configuration['app.name'], self.configuration['app.version'])
+        elif self.configuration['app.name']:
+            headers['User-Agent'] = self.configuration['app.name']
+        else:
+            headers['User-Agent'] = 'trakt.py (%s)' % self.client.version
 
         return headers
 

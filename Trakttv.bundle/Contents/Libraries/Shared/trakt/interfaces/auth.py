@@ -1,4 +1,3 @@
-from trakt.helpers import build_url
 from trakt.interfaces.base import Interface
 
 

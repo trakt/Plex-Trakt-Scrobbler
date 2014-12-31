@@ -1,12 +1,12 @@
-from datetime import datetime
+import arrow
 
 
 def to_datetime(value):
     if value is None:
         return None
 
-    # Remove time-zone info from datetime string
-    value = value[:value.rfind('+')]
+    # Parse ISO8601 datetime
+    dt = arrow.get(value)
 
-    # Parse into datetime object
-    return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f')
+    # Return python datetime object
+    return dt.datetime
