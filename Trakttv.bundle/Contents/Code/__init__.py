@@ -102,14 +102,14 @@ class Main(object):
 
         # Client
         Trakt.configuration.defaults.client(
-            id='34bafd9835fac458c20d1ee2e627338146f663f1d9ce86a833a9da8fc44a5961'
+            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
         )
 
         # Application
         Trakt.configuration.defaults.app(
+            name='trakt (for Plex)',
             version=PLUGIN_VERSION
         )
-
 
     @classmethod
     def update_config(cls, valid=None):
