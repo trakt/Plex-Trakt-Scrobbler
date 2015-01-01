@@ -139,7 +139,7 @@ class Main(object):
             return False
 
         # Authentication
-        if Dict['trakt.token'] is None:
+        if not Dict['trakt.token']:
             # Authenticate (no token has previously been stored)
             Dict['trakt.token'] = Trakt['auth'].login(
                 Prefs['username'],
@@ -155,7 +155,7 @@ class Main(object):
         )
 
         # TODO actually test trakt.tv authentication
-        success = Dict['trakt.token'] is not None
+        success = bool(Dict['trakt.token'])
 
         if not success:
             # status - False = invalid credentials, None = request failed
