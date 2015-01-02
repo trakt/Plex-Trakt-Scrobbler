@@ -1,3 +1,4 @@
+import calendar
 import hashlib
 import logging
 import struct
@@ -7,10 +8,10 @@ log = logging.getLogger(__name__)
 
 class Packer(object):
     agent_codes = {
-        'thetvdb'    : 1,
+        'tvdb'    : 1,
         'imdb'       : 2,
         'tvrage'     : 3,
-        'themoviedb' : 4
+        'tmdb' : 4
     }
 
     @classmethod
@@ -37,7 +38,7 @@ class Packer(object):
             ],
 
             't': movie.title,
-            'y': struct.pack('H', movie.year),
+            'y': struct.pack('H', movie.year) if movie.year else None,
         }
 
         # Collected
@@ -48,7 +49,7 @@ class Packer(object):
         # Ratings
         if not include or 'r' in include:
             # ['r'] = (rating, timestamp)
-            result['r'] = struct.pack('fI', movie.rating.advanced, movie.rating.timestamp) if movie.rating else None
+            result['r'] = struct.pack('fI', movie.rating.value, cls.to_unix_timestamp(movie.rating.timestamp)) if movie.rating else None
 
         # Watched
         if not include or 'w' in include:
@@ -71,7 +72,7 @@ class Packer(object):
             ],
 
             't': show.title,
-            'y': struct.pack('H', show.year),
+            'y': struct.pack('H', show.year) if show.year else None,
 
             'z': {}
         }
@@ -81,19 +82,19 @@ class Packer(object):
             # ['z']['c'] = (se, ep, timestamp)
             result['z']['c'] = [
                 struct.pack('HHI', se, ep, 0)
-                for (se, ep), episode in show.episodes.items()
+                for (se, ep), episode in show.episodes()
                 if episode.is_collected
             ]
 
         # Ratings
         if not include or 'r' in include:
             # ['r'] = (rating, timestamp)
-            result['r'] = struct.pack('fI', show.rating.advanced, show.rating.timestamp) if show.rating else None
+            result['r'] = struct.pack('fI', show.rating.value, cls.to_unix_timestamp(show.rating.timestamp)) if show.rating else None
 
             # ['z']['r'] = (se, ep, rating, timestamp)
             result['z']['r'] = [
-                struct.pack('HHfI', se, ep, episode.rating.advanced, episode.rating.timestamp)
-                for (se, ep), episode in show.episodes.items()
+                struct.pack('HHfI', se, ep, episode.rating.value, cls.to_unix_timestamp(episode.rating.timestamp))
+                for (se, ep), episode in show.episodes()
                 if episode.rating is not None
             ]
 
@@ -101,7 +102,7 @@ class Packer(object):
         if not include or 'w' in include:
             result['z']['w'] = [
                 struct.pack('HH', se, ep)
-                for (se, ep), episode in show.episodes.items()
+                for (se, ep), episode in show.episodes()
                 if episode.is_watched
             ]
 
@@ -126,3 +127,7 @@ class Packer(object):
         m.update(repr(item))
 
         return m.hexdigest()
+
+    @staticmethod
+    def to_unix_timestamp(dt):
+        return calendar.timegm(dt.utctimetuple())

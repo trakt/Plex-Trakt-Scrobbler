@@ -2,18 +2,20 @@ DEFAULT_TYPES = ['movie', 'show', 'season', 'episode']
 
 DEFAULT_GUID_MAP = {
     # Multi
-    'mcm':              ('thetvdb', r'MCM_TV_A_(.*)'),
+    'mcm':              ('tvdb', r'MCM_TV_A_(.*)'),
 
     # Movie
+    'standalone':       'tmdb',
+    'themoviedb':       'tmdb',
     'xbmcnfo':          'imdb',
-    'standalone':       'themoviedb',
 
     # TV
-    'abstvdb':          'thetvdb',
-    'thetvdbdvdorder':  'thetvdb',
+    'abstvdb':          'tvdb',
+    'thetvdb':          'tvdb',
+    'thetvdbdvdorder':  'tvdb',
     'xbmcnfotv':        [
         ('imdb', r'(tt\d+)'),
-        'thetvdb'
+        'tvdb'
     ],
 }
 

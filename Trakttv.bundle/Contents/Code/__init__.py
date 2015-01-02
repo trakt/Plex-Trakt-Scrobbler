@@ -98,24 +98,15 @@ class Main(object):
 
     @staticmethod
     def init_trakt():
-        def get_credentials():
-            password_hash = hashlib.sha1(Prefs['password'])
+        # Client
+        Trakt.configuration.defaults.client(
+            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
+        )
 
-            return (
-                Prefs['username'],
-                password_hash.hexdigest()
-            )
-
-        Trakt.configure(
-            # Application
-            api_key='ba5aa61249c02dc5406232da20f6e768f3c82b28',
-
-            # Version
-            plugin_version=PLUGIN_VERSION,
-            media_center_version=Plex.version(),
-
-            # Account
-            credentials=get_credentials
+        # Application
+        Trakt.configuration.defaults.app(
+            name='trakt (for Plex)',
+            version=PLUGIN_VERSION
         )
 
     @classmethod
@@ -138,14 +129,31 @@ class Main(object):
         # TODO EventManager.fire('preferences.updated', preferences)
 
     @classmethod
-    def validate_auth(cls, retry_interval=30):
+    def authenticate(cls, retry_interval=30):
         if not Prefs['username'] or not Prefs['password']:
             log.warn('Authentication failed, username or password field empty')
 
             cls.update_config(False)
             return False
 
-        success = Trakt['account'].test()
+        # Authentication
+        if not Dict['trakt.token']:
+            # Authenticate (no token has previously been stored)
+            Dict['trakt.token'] = Trakt['auth'].login(
+                Prefs['username'],
+                Prefs['password']
+            )
+
+            Dict.Save()
+
+        # Update trakt client configuration
+        Trakt.configuration.defaults.auth(
+            Prefs['username'],
+            Dict['trakt.token']
+        )
+
+        # TODO actually test trakt.tv authentication
+        success = bool(Dict['trakt.token'])
 
         if not success:
             # status - False = invalid credentials, None = request failed
@@ -161,7 +169,7 @@ class Main(object):
                     retry_interval = 60 * 30
 
                 log.warn('Unable to verify account details, will try again in %s seconds', retry_interval)
-                schedule(cls.validate_auth, retry_interval, retry_interval)
+                schedule(cls.authenticate, retry_interval, retry_interval)
 
             Main.update_config(False)
             return False
@@ -176,7 +184,7 @@ class Main(object):
         Log.Info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
 
         # Validate username/password
-        spawn(self.validate_auth)
+        spawn(self.authenticate)
 
         # Start modules
         names = []
@@ -207,7 +215,7 @@ def Start():
 def ValidatePrefs():
     last_activity_mode = get_pref('activity_mode')
 
-    if Main.validate_auth():
+    if Main.authenticate():
         message = MessageContainer(
             "Success",
             "Authentication successful"

@@ -61,82 +61,76 @@ class ScrobblerMethod(Method):
         if state not in [ws.cur_state, 'buffering']:
             ws.cur_state = state
 
-            if state == 'stopped' and ws.watching:
+            if state == 'stopped' and ws.active:
                 log.info(status_message('%s stopped, watching status cancelled'))
-                ws.watching = False
-                return 'cancelwatching'
+                ws.active = False
+                return 'stop'
 
             if state == 'paused' and not ws.paused_since:
                 log.info(status_message("%s just paused, waiting 15s before cancelling the watching status"))
-
                 ws.paused_since = Datetime.Now()
                 return None
 
-            if state == 'playing' and not ws.watching:
-                log.info(status_message('Sending watch status for %s'))
-                ws.watching = True
-                return 'watching'
-
         elif state == 'playing':
-            # scrobble item
-            if not ws.scrobbled and ws.progress >= get_pref('scrobble_percentage'):
-                log.info(status_message('Scrobbling %s'))
-                return 'scrobble'
+            if not ws.active:
+                log.info(status_message('Sending watch status for %s'))
+                ws.active = True
+                return 'start'
 
-            # update every 10 min if media hasn't finished
-            elif ws.progress < 100 and (ws.last_updated + Datetime.Delta(minutes=10)) < Datetime.Now():
-                log.info(status_message('Updating watch status for %s'))
-                ws.watching = True
-                return 'watching'
-
-            # cancel watching status on items at 100% progress
-            elif ws.progress >= 100 and ws.watching:
+            elif ws.progress >= 100:
                 log.info(status_message('Media finished, cancelling watching status for %s'))
-                ws.watching = False
-                return 'cancelwatching'
+                ws.active = False
+                return 'stop'
 
         return None
 
     @classmethod
-    def get_request_parameters(cls, ws):
-        values = {}
+    def build_request(cls, ws):
+        request = {}
 
         if not ws.type:
             return None
 
+        # Build metadata item (for identification)
         if ws.type == 'show':
-            if not ws.identifier:
-                log.warn('Unable to retrieve episode identifier')
-                return None
+            request = cls.build_show(ws)
+        elif ws.type == 'movie':
+            request = cls.build_movie(ws)
 
-            season, episodes = ws.identifier
+        # Set progress
+        request['progress'] = ws.progress
 
-            if ws.cur_episode >= len(episodes):
-                log.warn('Unable to find episode at index %s, available episodes: %s', ws.cur_episode, ws.metadata['episodes'])
-                return None
+        return request
 
-            values.update({
+    @classmethod
+    def build_show(cls, ws):
+        season, episodes = ws.identifier
+
+        if ws.cur_episode >= len(episodes):
+            log.warn('Unable to find episode at index %s, available episodes: %s', ws.cur_episode, ws.metadata['episodes'])
+            return None
+
+        return {
+            'show': ActionHelper.set_identifier({
+                'title': ws.title,
+                'year': ws.metadata.year
+            }, ws.guid),
+            'episode': {
+                'title': ws.metadata.title,
+
                 'season': season,
-                'episode': episodes[ws.cur_episode],
+                'number': episodes[ws.cur_episode]
+            }
+        }
 
-                # Scale duration to number of episodes
-                'duration': ws.metadata.duration / len(episodes)
-            })
-        else:
-            values['duration'] = ws.metadata.duration
-
-        # Add TVDB/TMDB identifier
-        ActionHelper.set_identifier(values, ws.guid)
-
-        values.update({
-            'progress': ws.progress,
-            'title': ws.title
-        })
-
-        if ws.metadata.year is not None:
-            values['year'] = ws.metadata.year
-
-        return values
+    @classmethod
+    def build_movie(cls, ws):
+        return {
+            'movie': ActionHelper.set_identifier({
+                'title': ws.title,
+                'year': ws.metadata.year,
+            }, ws.guid)
+        }
 
     @classmethod
     def handle_state(cls, ws, state):
@@ -161,31 +155,23 @@ class ScrobblerMethod(Method):
         return False
 
     @classmethod
-    def handle_action(cls, ws, media, action, state):
+    def handle_action(cls, ws, action):
         # Setup Data to send to trakt
-        parameters = cls.get_request_parameters(ws)
-        if not parameters:
-            log.info('Invalid parameters, unable to continue')
+        request = cls.build_request(ws)
+        if not request:
+            log.info('Unable to build request, ignoring "%s" action', action)
             return False
 
-        log.trace('Sending action "%s/%s": %r', media, action, parameters)
+        log.debug('Sending action "%s": %r', action, request)
 
-        if action in ['watching', 'scrobble']:
-            response = Trakt[media][action](**parameters)
-        else:
-            response = Trakt[media][action]()
+        response = Trakt['scrobble'].action(action, **request)
 
-        if not response or response.get('status') != 'success':
+        if not response or 'action' not in response:
             log.warn('Unable to send scrobbler action')
+        else:
+            log.debug('Response: %s', response)
 
         ws.last_updated = Datetime.Now()
-
-        if action == 'scrobble':
-            ws.scrobbled = True
-
-            # If just scrobbled, force update on next status update to set as watching again
-            ws.last_updated = Datetime.Now() - Datetime.Delta(minutes=20)
-
         ws.save()
 
     @staticmethod

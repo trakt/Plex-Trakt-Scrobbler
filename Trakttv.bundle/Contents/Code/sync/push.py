@@ -1,9 +1,11 @@
 from core.action import ActionHelper
-from core.helpers import all, plural, json_encode
+from core.helpers import all, plural, json_encode, merge
 from core.logger import Logger
 from data.watch_session import WatchSession
 from sync.sync_base import SyncBase
 
+from datetime import datetime
+from plex_metadata import Library
 from trakt import Trakt
 
 
@@ -19,13 +21,13 @@ class Base(SyncBase):
             ws.metadata.rating_key == p_item.rating_key
         )
 
-        for key, session in sessions:
-            if session.watching:
+        for key, ws in sessions:
+            if ws.active:
                 return True
 
         return False
 
-    def watch(self, key, p_items, t_item, include_identifier=True):
+    def watch(self, key, p_items, t_item):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -43,9 +45,15 @@ class Base(SyncBase):
             return True
 
         # TODO should we instead pick the best result, instead of just the first?
-        self.store('watched', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
+        last_viewed_at = datetime.utcfromtimestamp(p_items[0].last_viewed_at)
 
-    def rate(self, key, p_items, t_item, artifact='ratings'):
+        self.store('watched', merge({
+            'watched_at': last_viewed_at.strftime('%Y-%m-%d %H:%M:%S')
+        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+
+        return True
+
+    def rate(self, key, p_items, t_item, artifact='ratings', include_metadata=True):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -54,25 +62,31 @@ class Base(SyncBase):
 
         # Ignore if none of the plex items have a rating attached
         if not p_items:
-            return True
+            return True if artifact else {}
 
         # TODO should this be handled differently when there are multiple ratings?
         p_item = p_items[0]
 
         # Ignore if rating is already on trakt
-        if t_item and t_item.rating and t_item.rating.advanced == p_item.user_rating:
-            return True
+        if t_item and t_item.rating and t_item.rating.value == p_item.user_rating:
+            return True if artifact else {}
 
-        data = ActionHelper.plex.to_trakt(key, p_item)
+        if include_metadata:
+            data = ActionHelper.plex.to_trakt(key, p_item)
+        else:
+            data = {}
 
         data.update({
             'rating': p_item.user_rating
         })
 
-        self.store(artifact, data)
-        return True
+        if artifact:
+            self.store(artifact, data)
+            return True
 
-    def collect(self, key, p_items, t_item, include_identifier=True):
+        return data
+
+    def collect(self, key, p_items, t_item):
         if type(p_items) is not list:
             p_items = [p_items]
 
@@ -80,62 +94,102 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        self.store('collected', ActionHelper.plex.to_trakt(key, p_items[0], include_identifier))
+        added_at = datetime.utcfromtimestamp(p_items[0].added_at)
+
+        self.store('collected', merge({
+            'collected_at': added_at.strftime('%Y-%m-%d %H:%M:%S')
+        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+
         return True
 
-    @staticmethod
-    def log_artifact(action, label, count, level='info'):
-        message = '(%s) %s %s item%s' % (
-            action, label, count,
-            plural(count)
-        )
+    def add(self, path, **kwargs):
+        log.debug('[%s] Adding items: %s', path, kwargs)
 
-        if level == 'info':
-            return log.info(message)
-        elif level == 'warn':
-            return log.warn(message)
-
-        raise ValueError('Unknown level specified')
-
-    def send(self, action, **kwargs):
-        # TODO maybe this can be handled in trakt.py somehow?
-        path = action[:action.rfind('/')]
-        action = action[action.rfind('/') + 1:]
-
-        response = Trakt[path][action](**kwargs)
-
-        if response is None:
-            # Request failed (rejected unmatched media, etc..)
+        if not kwargs.get('movies') and not kwargs.get('shows'):
+            # Empty request
             return
 
-        # Log successful items
-        if 'rated' in response:
-            rated = response.get('rated')
-            unrated = response.get('unrated')
+        response = Trakt[path].add(kwargs)
 
-            log.info(
-                '(%s) Rated %s item%s and un-rated %s item%s',
-                action,
-                rated, plural(rated),
-                unrated, plural(unrated)
-            )
-        elif 'message' in response:
-            log.info('(%s) %s', action, response['message'])
-        else:
-            self.log_artifact(action, 'Inserted', response.get('inserted'))
-
-        # Log skipped items, if there were any
-        skipped = response.get('skipped', 0)
-
-        if skipped > 0:
-            self.log_artifact(action, 'Skipped', skipped, level='warn')
-
-    def send_artifact(self, action, key, artifact):
-        items = self.artifacts.get(artifact)
-        if not items:
+        if not response:
+            log.warn('[%s] Request failed', path)
             return
 
-        return self.send(action, **{key: items})
+        self.log_response(path, response)
+
+    def remove(self, path, **kwargs):
+        log.debug('[%s] Removing items: %s', path, kwargs)
+
+        if not kwargs.get('movies') and not kwargs.get('shows'):
+            # Empty request
+            return
+
+        response = Trakt[path].remove(kwargs)
+
+        if not response:
+            log.warn('[%s] Request failed', path)
+            return
+
+        self.log_response(path, response)
+
+    def log_response(self, path, response):
+        log.debug('[%s] Response: %r', path, response)
+
+        # Print "not_found" items (if any)
+        not_found = response.get('not_found', {})
+
+        for media, items in not_found.items():
+            if media in ['seasons', 'episodes']:
+                # Print missing seasons
+                for show in items:
+                    if not show.get('seasons'):
+                        # Print show that is missing
+                        log.warn('[%s](%s) Unable to find %r', path, media, show.get('title'))
+                        continue
+
+                    for season in show['seasons']:
+                        if not season.get('episodes'):
+                            # Print season that is missing
+                            log.warn('[%s](%s) Unable to find %r S%02d', path, media, show.get('title'), season.get('number'))
+                            continue
+
+                        # Print season episodes that are missing
+                        log.warn('[%s](%s) Unable to find %r S%02d %s', path, media, show.get('title'), season.get('number'), ', '.join([
+                            'E%02d' % episode.get('number')
+                            for episode in season.get('episodes')
+                        ]))
+            elif media == 'movies':
+                # Print missing movies
+                for item in items:
+                    log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
+            else:
+                # Print missing items
+                for item in items:
+                    log.warn('[%s](%s) Unable to find %r', path, media, item)
+
+        # Print "deleted" items
+        deleted = response.get('deleted', {})
+
+        if deleted.get('movies'):
+            log.info('[%s] Deleted %s movie(s)', path, deleted['movies'])
+        elif deleted.get('episodes'):
+            log.info('[%s] Deleted %s episode(s)', path, deleted['episodes'])
+
+        # Print "added" items
+        added = response.get('added', {})
+
+        if added.get('movies'):
+            log.info('[%s] Added %s movie(s)', path, added['movies'])
+        elif added.get('episodes'):
+            log.info('[%s] Added %s episode(s)', path, added['episodes'])
+
+        # Print "existing" items
+        existing = response.get('existing', {})
+
+        if existing.get('movies'):
+            log.info('[%s] Ignored %s existing movie(s)', path, existing['movies'])
+        elif existing.get('episodes'):
+            log.info('[%s] Ignored %s existing episode(s)', path, existing['episodes'])
 
 
 class Episode(Base):
@@ -159,18 +213,43 @@ class Episode(Base):
         return True
 
     def run_watched(self, key, p_episode, t_episode):
-        return self.watch(key, p_episode, t_episode, include_identifier=False)
+        return self.watch(key, p_episode, t_episode)
 
     def run_ratings(self, key, p_episode, t_episode):
-        return self.parent.rate(key, p_episode, t_episode, 'episode_ratings')
+        return self.rate(key, p_episode, t_episode)
 
     def run_collected(self, key, p_episode, t_episode):
-        return self.collect(key, p_episode, t_episode, include_identifier=False)
+        return self.collect(key, p_episode, t_episode)
+
+
+class Season(Base):
+    key = 'season'
+    auto_run = False
+    children = [Episode]
+
+    def run(self, p_seasons, t_seasons, artifacts=None):
+        self.reset(artifacts)
+
+        if p_seasons is None:
+            return False
+
+        for key, p_season in p_seasons.items():
+            t_season = t_seasons.get(key)
+
+            self.child('episode').run(
+                p_episodes=p_season,
+                t_episodes=t_season.episodes if t_season else {},
+                artifacts=artifacts
+            )
+
+            self.store_episodes('collected', {'number': key})
+            self.store_episodes('watched', {'number': key})
+            self.store_episodes('ratings', {'number': key})
 
 
 class Show(Base):
     key = 'show'
-    children = [Episode]
+    children = [Season]
 
     def run(self, section=None, artifacts=None):
         self.reset(artifacts)
@@ -211,16 +290,22 @@ class Show(Base):
             self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show)
 
             for p_show in p_show:
-                self.child('episode').run(
-                    p_episodes=self.plex.episodes(p_show.rating_key, p_show),
-                    t_episodes=t_show.episodes if t_show else {},
+                self.child('season').run(
+                    p_seasons=Library.episodes(p_show.rating_key, p_show, flat=False),
+                    t_seasons=t_show.seasons if t_show else {},
                     artifacts=artifacts
                 )
 
                 show = ActionHelper.plex.to_trakt(key, p_show)
 
-                self.store_episodes('collected', show)
-                self.store_episodes('watched', show)
+                self.store_seasons('collected', show)
+                self.store_seasons('watched', show)
+
+                self.store_seasons('ratings', merge(
+                    # Include show rating
+                    self.rate(key, [p_show], t_show, artifact='', include_metadata=False),
+                    show
+                ))
 
         self.emit('finished')
         self.check_stopping()
@@ -228,28 +313,16 @@ class Show(Base):
         #
         # Push changes to trakt
         #
-        for show in self.retrieve('collected'):
-            self.send('show/episode/library', **show)
+        self.add('sync/collection', shows=self.retrieve('collected'))
+        self.add('sync/history', shows=self.retrieve('watched'))
+        self.add('sync/ratings', shows=self.retrieve('ratings'))
 
-        for show in self.retrieve('watched'):
-            self.send('show/episode/seen', **show)
-
-        self.send_artifact('rate/shows', 'shows', 'ratings')
-        self.send_artifact('rate/episodes', 'episodes', 'episode_ratings')
-
-        for show in self.retrieve('missing.shows'):
-            self.send('show/unlibrary', **show)
-
-        for show in self.retrieve('missing.episodes'):
-            self.send('show/episode/unlibrary', **show)
+        self.remove('sync/collection', shows=self.retrieve('missing.shows'))
 
         self.save('last_artifacts', json_encode(self.artifacts))
 
         log.info('Finished pushing shows to trakt')
         return True
-
-    def run_ratings(self, key, p_shows, t_show):
-        return self.rate(key, p_shows, t_show)
 
 
 class Movie(Base):
@@ -299,10 +372,11 @@ class Movie(Base):
         #
         # Push changes to trakt
         #
-        self.send_artifact('movie/seen', 'movies', 'watched')
-        self.send_artifact('rate/movies', 'movies', 'ratings')
-        self.send_artifact('movie/library', 'movies', 'collected')
-        self.send_artifact('movie/unlibrary', 'movies', 'missing.movies')
+        self.add('sync/collection', movies=self.retrieve('collected'))
+        self.add('sync/history', movies=self.retrieve('watched'))
+        self.add('sync/ratings', movies=self.retrieve('ratings'))
+
+        self.remove('sync/collection', movies=self.retrieve('missing.movies'))
 
         self.save('last_artifacts', json_encode(self.artifacts))
 

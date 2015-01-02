@@ -31,7 +31,7 @@ class ActionManager(object):
             log.debug('"Instant Actions" not enabled, ignoring')
             return
 
-        cls.pending.put(('seen', info))
+        cls.pending.put((Trakt['sync/history'].add, info))
 
         log.debug('"seen" action queued: %s', info)
 
@@ -41,7 +41,7 @@ class ActionManager(object):
             log.debug('"Instant Actions" not enabled, ignoring')
             return
 
-        cls.pending.put(('unseen', info))
+        cls.pending.put((Trakt['sync/history'].remove, info))
 
         log.debug('"unseen" action queued: %s', info)
 
@@ -60,12 +60,28 @@ class ActionManager(object):
                 log.warn('Unable to send action - %s', ex)
 
     @classmethod
-    def send(cls, action, info):
+    def send(cls, func, info):
+        request = cls.build(info)
+
+        if request is None:
+            log.warn("Couldn't build request, unable to send the action")
+            return
+
+        response = func(request)
+
+        if response is None:
+            # Request failed (rejected unmatched media, etc..)
+            return
+
+        log.debug('response: %r', response)
+
+    @classmethod
+    def build(cls, info):
         account_key = try_convert(info.get('account_key'), int)
         rating_key = info.get('rating_key')
 
         if account_key is None or rating_key is None:
-            log.warn('Invalid "%s" action format', action)
+            log.warn('Invalid action format: %s', info)
             return
 
         if account_key != 1:
@@ -75,81 +91,62 @@ class ActionManager(object):
         metadata = Metadata.get(rating_key)
         guid = Guid.parse(metadata.guid)
 
-        path, request = None, None
+        request = {}
 
         if type(metadata) is Movie:
-            path, request = cls.request_movie(metadata, guid)
-
-        if type(metadata) is Season:
-            path, request = cls.request_season(metadata, guid)
-
-        if type(metadata) is Episode:
-            path, request = cls.request_episode(metadata, guid)
-
-        if not path or not request:
+            request = cls.from_movie(metadata, guid)
+        elif type(metadata) is Season:
+            request = cls.from_season(metadata, guid)
+        elif type(metadata) is Episode:
+            request = cls.from_episode(metadata, guid)
+        else:
             log.warn('Unsupported metadata type: %r', metadata)
             return
 
         log.debug('request: %r', request)
 
-        response = Trakt[path][action](**request)
-
-        if response is None:
-            # Request failed (rejected unmatched media, etc..)
-            return
-
-        log.debug('response: %r', response)
+        return request
 
     @classmethod
-    def request_movie(cls, movie, guid):
-        return 'movie', {'movies': [
-            ActionHelper.plex.to_trakt(
-                (guid.agent, guid.sid),
-                movie,
-                guid=guid
-            )
-        ]}
+    def from_movie(cls, movie, guid):
+        return {
+            'movies': [
+                ActionHelper.set_identifier({}, guid)
+            ]
+        }
 
     @classmethod
-    def request_season(cls, season, guid):
-        request = ActionHelper.plex.to_trakt(
-            (guid.agent, guid.sid),
-            season.show,
-            guid=guid,
-            year=season.year
-        )
+    def from_season(cls, season, guid):
+        # Build request
+        show = {
+            'seasons': [
+                {
+                    'number': season.index,
+                    'episodes': ActionHelper.trakt.episodes(season.children())
+                }
+            ]
+        }
 
-        request['episodes'] = []
-
-        for episode in season.children():
-            request['episodes'].extend(cls.from_episode(episode))
-
-        return 'show/episode', request
-
-    @classmethod
-    def request_episode(cls, episode, guid):
-        request = ActionHelper.plex.to_trakt(
-            (guid.agent, guid.sid),
-            episode.show,
-            guid=guid,
-            year=episode.year
-        )
-
-        request['episodes'] = cls.from_episode(episode)
-
-        return 'show/episode', request
+        return {
+            'shows': [
+                ActionHelper.set_identifier(show, guid)
+            ]
+        }
 
     @classmethod
-    def from_episode(cls, episode):
-        result = []
+    def from_episode(cls, episode, guid):
+        # Build request
+        show = {
+            'seasons': [
+                {
+                    'number': episode.season.index,
+                    'episodes': ActionHelper.trakt.episodes([episode])
+                }
+            ]
+        }
 
-        season_num, episodes = Matcher.process(episode)
-
-        for episode_num in episodes:
-            result.append(ActionHelper.plex.to_trakt(
-                (season_num, episode_num),
-                episode,
-                include_identifier=False
-            ))
-
-        return result
+        return {
+            'shows': [
+                ActionHelper.set_identifier(show, guid)
+            ]
+        }

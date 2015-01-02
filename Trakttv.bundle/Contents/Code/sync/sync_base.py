@@ -41,10 +41,6 @@ class PlexInterface(Base):
 
         return Library.all(types, keys, titles)
 
-    @classmethod
-    def episodes(cls, key, parent=None):
-        return Library.episodes(key, parent)
-
 
 class TraktInterface(Base):
     merged_cache = {}
@@ -71,24 +67,24 @@ class TraktInterface(Base):
         items = {}
 
         # Merge watched library
-        if watched and Trakt['user/library/%s' % media].watched(extended=extended, store=items) is None:
-            log.warn('Unable to fetch watched library')
+        if watched and Trakt['sync/watched'].get(media, store=items) is None:
+            log.warn('Unable to fetch watched items')
             return None, None
 
         # Merge ratings
         if ratings:
-            if Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
+            if Trakt['sync/ratings'].get(media, store=items) is None:
                 log.warn('Unable to fetch ratings')
                 return None, None
 
             # Fetch episode ratings (if we are fetching shows)
-            if media == 'shows' and Trakt['user/ratings'].get('episodes', extended=extended, store=items) is None:
+            if media == 'shows' and Trakt['sync/ratings'].get('episodes', store=items) is None:
                 log.warn('Unable to fetch episode ratings')
                 return None, None
 
         # Merge collected library
-        if collected and Trakt['user/library/%s' % media].collection(extended=extended, store=items) is None:
-            log.warn('Unable to fetch collected library')
+        if collected and Trakt['sync/collection'].get(media, store=items) is None:
+            log.warn('Unable to fetch collected items')
             return None, None
 
         # Generate item table with alternative keys
@@ -315,14 +311,23 @@ class SyncBase(Base, Emitter):
 
         self.artifacts[key].append(data)
 
-    def store_episodes(self, key, show, episodes=None, artifact=None):
+    def store_seasons(self, key, show, seasons=None, artifact=None):
+        if seasons is None:
+            seasons = self.child('season').artifacts.get(artifact or key)
+
+        if seasons is None:
+            return
+
+        self.store(key, merge({'seasons': seasons}, show))
+
+    def store_episodes(self, key, season, episodes=None, artifact=None):
         if episodes is None:
             episodes = self.child('episode').artifacts.get(artifact or key)
 
         if episodes is None:
             return
 
-        self.store(key, merge({'episodes': episodes}, show))
+        self.store(key, merge({'episodes': episodes}, season))
 
     # TODO switch to a streamed format (to avoid the MemoryError)
     def save(self, group, data, source=None):
