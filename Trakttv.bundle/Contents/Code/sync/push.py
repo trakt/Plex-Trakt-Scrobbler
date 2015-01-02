@@ -133,11 +133,13 @@ class Base(SyncBase):
         self.log_response(path, response)
 
     def log_response(self, path, response):
+        log.debug('[%s] Response: %r', path, response)
+
         # Print "not_found" items (if any)
         not_found = response.get('not_found', {})
 
         for media, items in not_found.items():
-            if media == 'seasons':
+            if media in ['seasons', 'episodes']:
                 # Print missing seasons
                 for show in items:
                     if not show.get('seasons'):
@@ -156,10 +158,14 @@ class Base(SyncBase):
                             'E%02d' % episode.get('number')
                             for episode in season.get('episodes')
                         ]))
-            else:
+            elif media == 'movies':
                 # Print missing movies
                 for item in items:
                     log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
+            else:
+                # Print missing items
+                for item in items:
+                    log.warn('[%s](%s) Unable to find %r', path, media, item)
 
         # Print "deleted" items
         deleted = response.get('deleted', {})
