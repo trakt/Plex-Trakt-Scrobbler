@@ -137,8 +137,29 @@ class Base(SyncBase):
         not_found = response.get('not_found', {})
 
         for media, items in not_found.items():
-            for item in items:
-                log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
+            if media == 'seasons':
+                # Print missing seasons
+                for show in items:
+                    if not show.get('seasons'):
+                        # Print show that is missing
+                        log.warn('[%s](%s) Unable to find %r', path, media, show.get('title'))
+                        continue
+
+                    for season in show['seasons']:
+                        if not season.get('episodes'):
+                            # Print season that is missing
+                            log.warn('[%s](%s) Unable to find %r S%02d', path, media, show.get('title'), season.get('number'))
+                            continue
+
+                        # Print season episodes that are missing
+                        log.warn('[%s](%s) Unable to find %r S%02d %s', path, media, show.get('title'), season.get('number'), ', '.join([
+                            'E%02d' % episode.get('number')
+                            for episode in season.get('episodes')
+                        ]))
+            else:
+                # Print missing movies
+                for item in items:
+                    log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
 
         # Print "deleted" items
         deleted = response.get('deleted', {})
