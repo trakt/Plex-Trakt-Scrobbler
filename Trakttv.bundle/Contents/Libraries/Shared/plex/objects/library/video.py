@@ -14,6 +14,7 @@ class Video(Directory, SessionMixin):
     view_count = Property('viewCount', type=int)
     view_offset = Property('viewOffset', type=int)
 
+    chapter_source = Property('chapterSource')
     duration = Property(type=int)
 
     @property
