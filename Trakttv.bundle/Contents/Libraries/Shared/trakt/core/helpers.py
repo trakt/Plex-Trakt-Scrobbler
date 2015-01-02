@@ -8,5 +8,8 @@ def to_datetime(value):
     # Parse ISO8601 datetime
     dt = arrow.get(value)
 
-    # Return python datetime object
-    return dt.datetime
+    # Convert to UTC
+    dt = dt.to('UTC')
+
+    # Return naive datetime object
+    return dt.naive

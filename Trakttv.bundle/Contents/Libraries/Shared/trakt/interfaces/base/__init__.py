@@ -59,7 +59,7 @@ class Interface(object):
         if response is None:
             return None
 
-        if response.headers['content-type'] == 'application/json':
+        if response.headers['content-type'].startswith('application/json'):
             # Try parse json response
             try:
                 data = response.json()
