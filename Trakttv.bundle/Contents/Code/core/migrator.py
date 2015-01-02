@@ -128,12 +128,27 @@ class Clean(Migration):
     tasks_lib = [
         (
             'delete_file', [
+                # asio
                 'Shared/asio.py',                 'Shared/asio.pyc',
                 'Shared/asio_base.py',            'Shared/asio_base.pyc',
                 'Shared/asio_posix.py',           'Shared/asio_posix.pyc',
                 'Shared/asio_windows.py',         'Shared/asio_windows.pyc',
-                'Shared/asio_windows_interop.py', 'Shared/asio_windows_interop.pyc'
+                'Shared/asio_windows_interop.py', 'Shared/asio_windows_interop.pyc',
+
+                # trakt
+                'Shared/trakt/interfaces/base/media.py',    'Shared/trakt/interfaces/base/media.pyc',
+                'Shared/trakt/interfaces/account.py',       'Shared/trakt/interfaces/account.pyc',
+                'Shared/trakt/interfaces/rate.py',          'Shared/trakt/interfaces/rate.pyc',
+                'Shared/trakt/request.py',                  'Shared/trakt/request.pyc',
             ], os.path.isfile
+        ),
+        (
+            'delete_directory', [
+                # trakt
+                'Shared/trakt/interfaces/movie',
+                'Shared/trakt/interfaces/show',
+                'Shared/trakt/interfaces/user'
+            ], os.path.isdir
         )
     ]
 
