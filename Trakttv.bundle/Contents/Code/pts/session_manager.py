@@ -37,7 +37,7 @@ class SessionManager(Thread):
             self.check_paused(ws)
 
     def check_paused(self, ws):
-        if ws.cur_state != 'paused' or not ws.paused_since:
+        if not ws or ws.cur_state != 'paused' or not ws.paused_since:
             return
 
         if ws.active and Datetime.Now() > ws.paused_since + Datetime.Delta(seconds=15):
