@@ -162,7 +162,7 @@ class SyncManager(object):
     def run_work(cls):
         # Get work details
         key = cls.current.key
-        kwargs = cls.current.kwargs or {}
+        kwargs = cls.current.kwargs.copy() or {}
         section = kwargs.pop('section', None)
 
         # Find handler

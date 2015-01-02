@@ -20,12 +20,6 @@
         "default": "false"
     },
     {
-        "id": "scrobble_percentage",
-        "type": "text",
-        "label": "Scrobble - Percentage",
-        "default": "80"
-    },
-    {
         "id": "sync_watched",
         "type": "enum",
         "label": "Sync - Watched",

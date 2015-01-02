@@ -19,10 +19,10 @@ class WatchSession(Model):
         self.client = None
 
         # States
+        self.active = False
+
         self.skip = False
         self.filtered = False
-        self.scrobbled = False
-        self.watching = False
 
         # Multi-episode scrobbling
         self.cur_episode = None
@@ -84,8 +84,7 @@ class WatchSession(Model):
         self.user_ = value
 
     def reset(self):
-        self.scrobbled = False
-        self.watching = False
+        self.active = False
 
         self.last_updated = Datetime.FromTimestamp(0)
 

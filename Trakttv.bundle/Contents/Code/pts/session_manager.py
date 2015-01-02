@@ -37,16 +37,16 @@ class SessionManager(Thread):
             self.check_paused(ws)
 
     def check_paused(self, ws):
-        if ws.cur_state != 'paused' or not ws.paused_since:
+        if not ws or ws.cur_state != 'paused' or not ws.paused_since:
             return
 
-        if ws.watching and Datetime.Now() > ws.paused_since + Datetime.Delta(seconds=15):
+        if ws.active and Datetime.Now() > ws.paused_since + Datetime.Delta(seconds=15):
             Log.Debug("%s paused for 15s, watching status cancelled" % ws.title)
-            ws.watching = False
+            ws.active = False
             ws.save()
 
-            if not self.send_action(ws, 'cancelwatching'):
-                Log.Info('Failed to cancel the watching status')
+            if not self.send_action(ws, 'pause'):
+                Log.Info('Failed to send "pause" action for watch session')
 
     def start(self):
         # Cleanup sessions
@@ -63,7 +63,7 @@ class SessionManager(Thread):
         if not ws.type:
             return False
 
-        if ScrobblerMethod.handle_action(ws, ws.type, action, ws.cur_state):
+        if ScrobblerMethod.handle_action(ws, action):
             return False
 
         return True
