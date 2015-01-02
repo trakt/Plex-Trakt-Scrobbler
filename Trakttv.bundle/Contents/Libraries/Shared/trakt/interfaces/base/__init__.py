@@ -1,3 +1,4 @@
+from trakt.core.errors import ERRORS
 from trakt.helpers import setdefault
 from trakt.media_mapper import MediaMapper
 
@@ -58,26 +59,32 @@ class Interface(object):
         if response is None:
             return None
 
-        try:
-            data = response.json()
-        except ValueError:
-            log.warning('request failure (content: %s)', response.content)
-            return None
+        if response.headers['content-type'] == 'application/json':
+            # Try parse json response
+            try:
+                data = response.json()
+            except Exception, e:
+                log.warning('unable to parse JSON response: %s', e)
+                return None
+        else:
+            log.debug('response returned "%s" content, falling back to raw data', response.headers['content-type'])
 
-        # unknown result - no json data returned
-        if data is None:
-            return None
+            # Fallback to raw content
+            data = response.content
 
+        # Check status code, log any errors
         error = False
 
-        # unknown result - no response or server error
-        if response.status_code >= 500:
-            log.warning('request failure (data: %s)', data)
-            error = True
-        elif type(data) is dict and data.get('status') == 'failure':
-            log.warning('request failure (error: "%s")', data.get('error'))
+        if response.status_code < 200 or response.status_code >= 300:
+            # Lookup status code in trakt error definitions
+            name, desc = ERRORS.get(response.status_code, ("Unknown", "Unknown"))
+
+            log.warning('request failed: %s - "%s" (code: %s)', name, desc, response.status_code)
+
+            # Set error flag
             error = True
 
+        # Catch errors, return response data
         if error and catch_errors:
             return False
 
