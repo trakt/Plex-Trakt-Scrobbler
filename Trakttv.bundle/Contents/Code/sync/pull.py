@@ -228,7 +228,7 @@ class Show(Base):
 
                 # Create 'episodes' list
                 if 'episodes' not in i_season:
-                    i_season['episodes'] = {}
+                    i_season['episodes'] = []
 
                 for ek, t_episode in t_season.episodes.items():
                     if not self.is_missing(t_episode):
