@@ -167,7 +167,7 @@ class ScrobblerMethod(Method):
         response = Trakt['scrobble'].action(action, **request)
 
         if not response or 'action' not in response:
-            log.warn('Unable to send scrobbler action: %s', response)
+            log.warn('Unable to send scrobbler action')
         else:
             log.debug('Response: %s', response)
 
