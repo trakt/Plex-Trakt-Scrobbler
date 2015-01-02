@@ -98,8 +98,6 @@ class Main(object):
 
     @staticmethod
     def init_trakt():
-        Trakt.base_url = 'http://api.v2.trakt.tv'
-
         # Client
         Trakt.configuration.defaults.client(
             id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
