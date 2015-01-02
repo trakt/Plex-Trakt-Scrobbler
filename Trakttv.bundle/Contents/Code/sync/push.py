@@ -112,7 +112,7 @@ class Base(SyncBase):
         response = Trakt[path].add(kwargs)
 
         if not response:
-            log.warn('[%s] Request failed')
+            log.warn('[%s] Request failed', path)
             return
 
         self.log_response(path, response)
@@ -127,7 +127,7 @@ class Base(SyncBase):
         response = Trakt[path].remove(kwargs)
 
         if not response:
-            log.warn('[%s] Request failed')
+            log.warn('[%s] Request failed', path)
             return
 
         self.log_response(path, response)
