@@ -38,7 +38,7 @@ class Packer(object):
             ],
 
             't': movie.title,
-            'y': struct.pack('H', movie.year),
+            'y': struct.pack('H', movie.year) if movie.year else None,
         }
 
         # Collected
@@ -72,7 +72,7 @@ class Packer(object):
             ],
 
             't': show.title,
-            'y': struct.pack('H', show.year),
+            'y': struct.pack('H', show.year) if show.year else None,
 
             'z': {}
         }
