@@ -32,9 +32,15 @@ class MediaMapper(object):
     def movie(self, media, item, **kwargs):
         pk, keys = self.get_ids(media, item['movie'])
 
+        if pk is None:
+            # Item has no keys
+            return None
+
         if pk not in self.store:
+            # Create new item
             self.store[pk] = self.create(media, item, keys, **kwargs)
         else:
+            # Update existing item
             self.store[pk].update(item, **kwargs)
 
         return self.store[pk]
@@ -47,9 +53,15 @@ class MediaMapper(object):
 
         pk, keys = self.get_ids(media, i_show)
 
+        if pk is None:
+            # Item has no keys
+            return None
+
         if pk not in self.store:
+            # Create new item
             self.store[pk] = self.create(media, i_show, keys, **kwargs)
         else:
+            # Update existing item
             self.store[pk].update(i_show, **kwargs)
 
         show = self.store[pk]
@@ -108,7 +120,7 @@ class MediaMapper(object):
     @staticmethod
     def get_ids(media, item):
         if not item:
-            return None
+            return None, []
 
         ids = item.get('ids', {})
 

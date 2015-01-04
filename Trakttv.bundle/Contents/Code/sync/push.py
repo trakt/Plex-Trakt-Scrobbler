@@ -44,12 +44,17 @@ class Base(SyncBase):
             log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
             return True
 
-        # TODO should we instead pick the best result, instead of just the first?
-        last_viewed_at = datetime.utcfromtimestamp(p_items[0].last_viewed_at)
+        # Build item which can be sent to trakt
+        item = ActionHelper.plex.to_trakt(key, p_items[0])
 
-        self.store('watched', merge({
-            'watched_at': last_viewed_at.strftime('%Y-%m-%d %H:%M:%S')
-        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+        # Set "watched_at" parameter (if available)
+        watched_at = self.get_datetime(p_items[0], 'last_viewed_at')
+
+        if watched_at:
+            item['watched_at'] = watched_at
+
+        # Store item in "watched" collection
+        self.store('watched', item)
 
         return True
 
@@ -94,13 +99,36 @@ class Base(SyncBase):
         if t_item and t_item.is_collected:
             return True
 
-        added_at = datetime.utcfromtimestamp(p_items[0].added_at)
+        # Build item which can be sent to trakt
+        item = ActionHelper.plex.to_trakt(key, p_items[0])
 
-        self.store('collected', merge({
-            'collected_at': added_at.strftime('%Y-%m-%d %H:%M:%S')
-        }, ActionHelper.plex.to_trakt(key, p_items[0])))
+        # Set "watched_at" parameter (if available)
+        collected_at = self.get_datetime(p_items[0], 'added_at')
+
+        if collected_at:
+            item['collected_at'] = collected_at
+
+        # Store item in "watched" collection
+        self.store('collected', item)
 
         return True
+
+    @staticmethod
+    def get_datetime(p_item, key):
+        value = getattr(p_item, key, None)
+
+        if not value:
+            return None
+
+        try:
+            # Construct datetime from UTC Timestamp
+            dt = datetime.utcfromtimestamp(value)
+
+            # Return formatted datetime for trakt.tv
+            return dt.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception, ex:
+            log.warn('Unable to construct datetime from timestamp: %s (%s: %r)', ex, key, value)
+            return None
 
     def add(self, path, **kwargs):
         log.debug('[%s] Adding items: %s', path, kwargs)

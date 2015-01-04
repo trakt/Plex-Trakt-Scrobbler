@@ -333,6 +333,10 @@ def normalize(text):
 
 
 def flatten(text):
+    if text is None:
+        return None
+
+    # Normalize `text` to ascii
     text = normalize(text)
 
     # Remove special characters
