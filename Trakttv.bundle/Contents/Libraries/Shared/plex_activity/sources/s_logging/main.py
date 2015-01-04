@@ -14,6 +14,9 @@ import time
 log = logging.getLogger(__name__)
 
 PATH_HINTS = {
+    'Darwin': [
+        lambda: os.path.join(os.getenv('HOME'), 'Library/Logs/Plex Media Server.log')
+    ],
     'Linux': [
         '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
     ],
