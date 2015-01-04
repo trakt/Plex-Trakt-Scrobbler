@@ -101,7 +101,10 @@ class Interface(object):
         mapper = MediaMapper(store)
 
         for item in items:
-            mapper.process(media, item, **kwargs)
+            result = mapper.process(media, item, **kwargs)
+
+            if result is None:
+                log.warn('Unable to map item: %s', item)
 
         return store
 
