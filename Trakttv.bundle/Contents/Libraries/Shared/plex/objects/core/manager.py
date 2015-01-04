@@ -54,7 +54,11 @@ class ObjectManager(object):
     @classmethod
     def load(cls):
         for path, name in cls.discover():
-            mod = __import__(name, fromlist=['*'])
+            try:
+                mod = __import__(name, fromlist=['*'])
+            except Exception, ex:
+                log.warn('Unable to import "%s" - %s', name, ex)
+                continue
 
             # Get classes in module
             classes = [
