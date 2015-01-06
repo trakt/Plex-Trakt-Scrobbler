@@ -10,7 +10,7 @@ class AuthInterface(Interface):
             'password': password
         })
 
-        data = self.get_data(response, catch_errors=False)
+        data = self.get_data(response)
 
         if not data:
             return None

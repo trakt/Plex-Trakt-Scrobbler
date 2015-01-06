@@ -34,7 +34,7 @@ class ScrobbleInterface(Interface):
             data=data
         )
 
-        return self.get_data(response, catch_errors=False)
+        return self.get_data(response)
 
     @application
     @authenticated

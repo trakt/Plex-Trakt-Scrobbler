@@ -55,7 +55,7 @@ class Interface(object):
         return self.client.http.configure(self.path)
 
     @staticmethod
-    def get_data(response, catch_errors=True):
+    def get_data(response):
         if response is None:
             return None
 
@@ -84,9 +84,9 @@ class Interface(object):
             # Set error flag
             error = True
 
-        # Catch errors, return response data
-        if error and catch_errors:
-            return False
+        # Return `None` if we encountered an error, return response data
+        if error:
+            return None
 
         return data
 

@@ -28,7 +28,7 @@ class OAuthInterface(Interface):
             'grant_type': grant_type
         })
 
-        data = self.get_data(response, catch_errors=False)
+        data = self.get_data(response)
 
         if not data:
             return None
