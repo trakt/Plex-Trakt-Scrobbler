@@ -119,7 +119,7 @@ class WatchSession(Model):
         return True
 
     def process_actions(self):
-        log.debug('send_actions() started')
+        log.debug('process_actions() thread - started')
 
         while not self.deleted:
             priority, action, request = self.action_queue.get()
@@ -154,6 +154,8 @@ class WatchSession(Model):
             # Update action history
             self.actions_sent.append(action)
             self.actions_performed.append(performed)
+
+        log.debug('process_actions() thread - finished')
 
     def delete(self):
         super(WatchSession, self).delete()
