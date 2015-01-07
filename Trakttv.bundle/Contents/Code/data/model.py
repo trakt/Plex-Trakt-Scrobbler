@@ -6,6 +6,8 @@ import os
 
 log = Logger('data.model')
 
+cache = {}
+
 
 class Model(object):
     group = None
@@ -17,6 +19,13 @@ class Model(object):
         if not self.group:
             raise ValueError()
 
+        # Save to memory cache
+        if self.group not in cache:
+            cache[self.group] = {}
+
+        cache[self.group][self.key] = self
+
+        # Save to disk
         if not os.path.exists(self.group_path()):
             os.makedirs(self.group_path())
 
@@ -49,6 +58,11 @@ class Model(object):
         if not cls.group:
             raise ValueError()
 
+        # Try retrieve from memory cache
+        if cls.group in cache and key in cache[cls.group]:
+            return cache[cls.group][key]
+
+        # Otherwise, try retrieve from disk
         if not os.path.exists(cls.group_path()):
             os.makedirs(cls.group_path())
 
@@ -57,24 +71,39 @@ class Model(object):
         if not Data.Exists(path):
             return None
 
-        # Try load data from disk
+        # Load data from disk
         try:
             data = Data.Load(path)
         except Exception, ex:
             log.warn('Unable to load "%s" (%s)', path, ex)
             return None
 
-        # Try decode data with jsonpickle
+        # Decode data with jsonpickle
+        item = None
+
         try:
-            return jsonpickle.decode(data)
+            item = jsonpickle.decode(data)
         except Exception, ex:
             log.warn('Unable to decode "%s" (%s) - len(data): %s', path, ex, len(data) if data else None)
             return None
+
+        # Cache item in memory
+        if cls.group not in cache:
+            cache[cls.group] = {}
+
+        cache[cls.group][key] = item
+
+        return item
 
     def delete(self):
         if not self.group:
             raise ValueError()
 
+        # Delete from memory cache
+        if self.group in cache and self.key in cache[self.group]:
+            del cache[self.group][self.key]
+
+        # Delete from disk
         if not os.path.exists(self.group_path()):
             os.makedirs(self.group_path())
 
