@@ -166,15 +166,10 @@ class ScrobblerMethod(Method):
             log.info('Unable to build request, ignoring "%s" action', action)
             return False
 
-        log.debug('Sending action "%s": %r', action, request)
+        # Queue action to be sent
+        ws.queue(action, request)
 
-        response = Trakt['scrobble'].action(action, **request)
-
-        if not response or 'action' not in response:
-            log.warn('Unable to send scrobbler action')
-        else:
-            log.debug('Response: %s', response)
-
+        # Update watch session
         ws.last_updated = Datetime.Now()
         ws.save()
 

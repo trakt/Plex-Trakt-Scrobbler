@@ -1,8 +1,14 @@
-from core.helpers import build_repr
+from core.helpers import build_repr, spawn
+from core.logger import Logger
 from data.model import Model
 
 from jsonpickle.unpickler import ClassRegistry
 from plex_metadata import Matcher
+from Queue import PriorityQueue
+from threading import Thread
+from trakt import Trakt
+
+log = Logger('pts.scrobbler')
 
 
 class WatchSession(Model):
@@ -23,6 +29,14 @@ class WatchSession(Model):
 
         self.skip = False
         self.filtered = False
+        self.deleted = False
+
+        # Requests/Actions
+        self.action_queue = PriorityQueue()
+        self.action_thread = None
+
+        self.actions_sent = []
+        self.actions_performed = []
 
         # Multi-episode scrobbling
         self.cur_episode = None
@@ -87,6 +101,65 @@ class WatchSession(Model):
         self.active = False
 
         self.last_updated = Datetime.FromTimestamp(0)
+
+    def queue(self, action, request, priority=3):
+        if priority == 0:
+            log.info('Maximum retries exceeded for "%s" action', action)
+            return False
+
+        # Store in queue
+        self.action_queue.put((priority, action, request))
+
+        log.debug('Queued "%s" action (priority: %s)', action, priority)
+
+        # Ensure action thread has started
+        if not self.action_thread:
+            self.action_thread = spawn(self.process_actions)
+
+        return True
+
+    def process_actions(self):
+        log.debug('send_actions() started')
+
+        while not self.deleted:
+            priority, action, request = self.action_queue.get()
+
+            log.debug('Processing "%s" action (priority: %s)', action, priority)
+
+            # Ensure we don't send duplicate actions
+            if self.actions_sent and self.actions_sent[-1] == action:
+                log.info('Ignoring duplicate "%s" action', action)
+                continue
+
+            # Only send a "start" action if we haven't scrobbled yet
+            if action == 'start' and 'scrobble' in self.actions_performed:
+                log.info('Ignoring "%s" action, session already scrobbled', action)
+                continue
+
+            # Send action to trakt.tv
+            response = Trakt['scrobble'].action(action, **request)
+
+            performed = response.get('action') if response else None
+
+            if not performed:
+                log.warn('Unable to send "%s" action', action)
+
+                # Retry request
+                self.queue(action, request, priority - 1)
+
+                continue
+
+            log.debug('Performed "%s" action on trakt.tv', performed)
+
+            # Update action history
+            self.actions_sent.append(action)
+            self.actions_performed.append(performed)
+
+    def delete(self):
+        super(WatchSession, self).delete()
+
+        # Set `deleted` flag
+        self.deleted = True
 
     @staticmethod
     def from_session(session, metadata, guid, state):
