@@ -50,6 +50,7 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         item = Plex['status'].sessions().get(session_key)
         if not item:
+            log.warn('Unable to find session with key "%s"', session_key)
             return None
 
         # Metadata
