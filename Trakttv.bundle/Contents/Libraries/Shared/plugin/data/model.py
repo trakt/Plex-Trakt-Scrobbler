@@ -1,12 +1,30 @@
 from plugin.core.environment import Environment
-from core.logger import Logger
+from plugin.core.io import FileIO
 
 import jsonpickle
+import logging
 import os
 
-log = Logger('data.model')
+log = logging.getLogger(__name__)
 
 cache = {}
+
+
+class Property(object):
+    def __init__(self, value_or_func=None):
+        # Convert raw values to callable functions
+        if not hasattr(value_or_func, '__call__'):
+            value_or_func = lambda: value_or_func
+
+        self.func = value_or_func
+
+    @property
+    def value(self):
+        try:
+            return self.func()
+        except Exception, ex:
+            log.error('Property - unable to resolve value (func: %r) - %s', func, ex)
+            return None
 
 
 class Model(object):
@@ -14,6 +32,14 @@ class Model(object):
 
     def __init__(self, key):
         self.key = key
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls, *args, **kwargs)
+
+        # Set default values
+        cls.set_defaults(obj)
+
+        return obj
 
     def save(self):
         if not self.group:
@@ -29,7 +55,7 @@ class Model(object):
         if not os.path.exists(self.group_path()):
             os.makedirs(self.group_path())
 
-        Data.Save(self.item_path(self.key), jsonpickle.encode(self))
+        FileIO.write(self.item_path(self.key), jsonpickle.encode(self))
 
     @classmethod
     def all(cls, filter=None):
@@ -68,23 +94,21 @@ class Model(object):
 
         path = cls.item_path(key)
 
-        if not Data.Exists(path):
+        if not FileIO.exists(path):
             return None
 
         # Load data from disk
         try:
-            data = Data.Load(path)
+            data = FileIO.read(path)
         except Exception, ex:
             log.warn('Unable to load "%s" (%s)', path, ex)
             return None
 
         # Decode data with jsonpickle
-        item = None
+        item = cls.decode(data)
 
-        try:
-            item = jsonpickle.decode(data)
-        except Exception, ex:
-            log.warn('Unable to decode "%s" (%s) - len(data): %s', path, ex, len(data) if data else None)
+        if item is None:
+            # Unable to decode data
             return None
 
         # Cache item in memory
@@ -94,6 +118,42 @@ class Model(object):
         cache[cls.group][key] = item
 
         return item
+
+    @classmethod
+    def decode(cls, data):
+        try:
+            # Decode object from data
+            obj = jsonpickle.decode(data)
+        except Exception, ex:
+            log.warn('Unable to decode "%s" (%s) - len(data): %s', path, ex, len(data) if data else None)
+            return None
+
+        # Set default values
+        cls.set_defaults(obj)
+
+        return obj
+
+    @classmethod
+    def set_defaults(cls, obj):
+        # Construct properties
+        for key in vars(cls):
+            prop = getattr(cls, key)
+
+            if type(prop) is not Property:
+                # Not a valid class property
+                continue
+
+            # Get current value
+            value = getattr(obj, key, None)
+
+            if type(value) is not Property:
+                # Value already set
+                continue
+
+            # Set default value
+            setattr(obj, key, prop.value)
+
+        return obj
 
     def delete(self):
         if not self.group:
@@ -109,10 +169,10 @@ class Model(object):
 
         path = self.item_path(self.key)
 
-        if not Data.Exists(path):
+        if not FileIO.exists(path):
             return
 
-        Data.Remove(path)
+        FileIO.delete(path)
 
     @classmethod
     def group_path(cls):

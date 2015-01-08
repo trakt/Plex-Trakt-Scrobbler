@@ -1,18 +1,27 @@
 from core.helpers import build_repr, spawn
 from core.logger import Logger
-from data.model import Model
+from plugin.data.model import Model, Property
 
 from jsonpickle.unpickler import ClassRegistry
 from plex_metadata import Matcher
 from Queue import PriorityQueue
-from threading import Thread
 from trakt import Trakt
+
 
 log = Logger('pts.scrobbler')
 
 
 class WatchSession(Model):
     group = 'WatchSession'
+
+    deleted = Property(False)
+
+    # Requests/Actions
+    action_queue = Property(lambda: PriorityQueue())
+    action_thread = Property(None)
+
+    actions_sent = Property(lambda: [])
+    actions_performed = Property(lambda: [])
 
     def __init__(self, key, metadata, guid, state, session=None):
         super(WatchSession, self).__init__(key)
@@ -29,14 +38,6 @@ class WatchSession(Model):
 
         self.skip = False
         self.filtered = False
-        self.deleted = False
-
-        # Requests/Actions
-        self.action_queue = PriorityQueue()
-        self.action_thread = None
-
-        self.actions_sent = []
-        self.actions_performed = []
 
         # Multi-episode scrobbling
         self.cur_episode = None
