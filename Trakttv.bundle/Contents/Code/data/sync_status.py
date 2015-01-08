@@ -1,5 +1,5 @@
 from core.helpers import build_repr
-from data.model import Model
+from plugin.data.model import Model
 
 from jsonpickle.unpickler import ClassRegistry
 

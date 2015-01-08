@@ -104,6 +104,7 @@ class Clean(Migration):
                 # /data
                 'data/client.py',
                 'data/dict_object.py',
+                'data/model.py',
                 'data/user.py',
 
                 # /pts

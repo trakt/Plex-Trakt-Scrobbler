@@ -97,6 +97,9 @@ class ScrobblerMethod(Method):
         elif ws.type == 'movie':
             request = cls.build_movie(ws)
 
+        if not request:
+            return None
+
         # Set progress
         request['progress'] = ws.progress
 
@@ -107,7 +110,7 @@ class ScrobblerMethod(Method):
         season, episodes = ws.identifier
 
         if ws.cur_episode >= len(episodes):
-            log.warn('Unable to find episode at index %s, available episodes: %s', ws.cur_episode, ws.metadata['episodes'])
+            log.warn('Unable to find episode at index %s, available episodes: %s', ws.cur_episode, episodes)
             return None
 
         return {
@@ -158,19 +161,15 @@ class ScrobblerMethod(Method):
     def handle_action(cls, ws, action):
         # Setup Data to send to trakt
         request = cls.build_request(ws)
+
         if not request:
             log.info('Unable to build request, ignoring "%s" action', action)
             return False
 
-        log.debug('Sending action "%s": %r', action, request)
+        # Queue action to be sent
+        ws.queue(action, request)
 
-        response = Trakt['scrobble'].action(action, **request)
-
-        if not response or 'action' not in response:
-            log.warn('Unable to send scrobbler action')
-        else:
-            log.debug('Response: %s', response)
-
+        # Update watch session
         ws.last_updated = Datetime.Now()
         ws.save()
 
