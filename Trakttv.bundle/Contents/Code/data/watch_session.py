@@ -14,11 +14,11 @@ log = Logger('pts.scrobbler')
 class WatchSession(Model):
     group = 'WatchSession'
 
-    deleted = Property(False)
+    deleted = Property(False, pickle=False)
 
     # Requests/Actions
-    action_queue = Property(lambda: PriorityQueue())
-    action_thread = Property(None)
+    action_queue = Property(lambda: PriorityQueue(), pickle=False)
+    action_thread = Property(None, pickle=False)
 
     actions_sent = Property(lambda: [])
     actions_performed = Property(lambda: [])

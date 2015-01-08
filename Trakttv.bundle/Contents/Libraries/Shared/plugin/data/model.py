@@ -1,5 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.core.io import FileIO
+from plugin.data.cache import DataCache
 
 import jsonpickle
 import logging
@@ -7,15 +8,17 @@ import os
 
 log = logging.getLogger(__name__)
 
-cache = {}
+cache = DataCache()
 
 
 class Property(object):
-    def __init__(self, value_or_func=None):
+    def __init__(self, value_or_func=None, pickle=True):
+        self.pickle = pickle
+
         self.func = None
         self.value_ = None
 
-        # Convert raw values to callable functions
+        # Set relevant attribute from `value_or_func` parameter
         if hasattr(value_or_func, '__call__'):
             self.func = value_or_func
         else:
@@ -52,9 +55,6 @@ class Model(object):
             raise ValueError()
 
         # Save to memory cache
-        if self.group not in cache:
-            cache[self.group] = {}
-
         cache[self.group][self.key] = self
 
         # Save to disk
@@ -91,8 +91,11 @@ class Model(object):
             raise ValueError()
 
         # Try retrieve from memory cache
-        if cls.group in cache and key in cache[cls.group]:
-            return cache[cls.group][key]
+        item = cache[cls.group].get(key)
+
+        if item:
+            # Return `item` from cache
+            return item
 
         # Otherwise, try retrieve from disk
         if not os.path.exists(cls.group_path()):
@@ -118,9 +121,6 @@ class Model(object):
             return None
 
         # Cache item in memory
-        if cls.group not in cache:
-            cache[cls.group] = {}
-
         cache[cls.group][key] = item
 
         return item
@@ -166,8 +166,7 @@ class Model(object):
             raise ValueError()
 
         # Delete from memory cache
-        if self.group in cache and self.key in cache[self.group]:
-            del cache[self.group][self.key]
+        cache[self.group].delete(self.key)
 
         # Delete from disk
         if not os.path.exists(self.group_path()):
@@ -179,6 +178,22 @@ class Model(object):
             return
 
         FileIO.delete(path)
+
+    def __getstate__(self):
+        state = {}
+
+        for key, value in self.__dict__.items():
+            # Try lookup class property for attribute
+            prop = getattr(self.__class__, key, None)
+
+            # Ignore attributes that have been marked at `pickle=False`
+            if prop and not prop.pickle:
+                continue
+
+            # Store attribute in `state`
+            state[key] = value
+
+        return state
 
     @classmethod
     def group_path(cls):
