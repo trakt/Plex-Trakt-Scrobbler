@@ -12,16 +12,22 @@ cache = {}
 
 class Property(object):
     def __init__(self, value_or_func=None):
-        # Convert raw values to callable functions
-        if not hasattr(value_or_func, '__call__'):
-            value_or_func = lambda: value_or_func
+        self.func = None
+        self.value_ = None
 
-        self.func = value_or_func
+        # Convert raw values to callable functions
+        if hasattr(value_or_func, '__call__'):
+            self.func = value_or_func
+        else:
+            self.value_ = value_or_func
 
     @property
     def value(self):
         try:
-            return self.func()
+            if self.func:
+                return self.func()
+
+            return self.value_
         except Exception, ex:
             log.error('Property - unable to resolve value (func: %r) - %s', func, ex)
             return None
