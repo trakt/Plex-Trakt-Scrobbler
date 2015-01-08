@@ -114,7 +114,7 @@ class Model(object):
         item = cls.decode(data)
 
         if item is None:
-            # Unable to decode data
+            log.warn('Unable to decode item at "%s"', path)
             return None
 
         # Cache item in memory
@@ -131,7 +131,7 @@ class Model(object):
             # Decode object from data
             obj = jsonpickle.decode(data)
         except Exception, ex:
-            log.warn('Unable to decode "%s" (%s) - len(data): %s', path, ex, len(data) if data else None)
+            log.warn('Unable to decode data with jsonpickle - %s', ex)
             return None
 
         # Set default values
