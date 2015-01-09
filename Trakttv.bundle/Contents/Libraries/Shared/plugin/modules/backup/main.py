@@ -1,5 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.modules.base import Module
+from plugin.modules.backup.exceptions import PatchException
 from plugin.modules.backup.packer import Packer
 from plugin.modules.backup.revision import Revision
 
@@ -98,6 +99,11 @@ class BackupRunner(object):
         # Compose diff
         latest_patch = latest.patch()
 
+        # Ensure patch was successful
+        if not latest_patch:
+            log.debug('Patching failed, creating a full revision...')
+            return self.store('full', current, include, timestamp)
+
         # Ensure our chain of deltas is less than 20 (to ensure patching is fast)
         if latest_patch.num_deltas > MAX_DELTA_CHAIN:
             log.debug('Reached deltas limit, creating a full revision...')
@@ -184,14 +190,23 @@ class BackupRunner(object):
     def patch(base, delta):
         # Added
         for key, value in delta.get('a', {}).items():
+            if key in base:
+                raise PatchException('Delta lists %r as added, but the item already exists' % key)
+
             base[key] = value
 
         # Changed
         for key, value in delta.get('c', {}).items():
+            if key not in base:
+                raise PatchException('Delta lists %r as changed, but the item doesn\'t exist' % key)
+
             base[key] = value
 
         # Removed
         for key in delta.get('r', []):
+            if key not in base:
+                raise PatchException('Delta lists %r as removed, but the item doesn\'t exist' % key)
+
             del base[key]
 
         return base

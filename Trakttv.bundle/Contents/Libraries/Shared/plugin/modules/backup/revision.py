@@ -1,3 +1,5 @@
+from plugin.modules.backup.exceptions import PatchException
+
 from collections import namedtuple
 from datetime import datetime
 import logging
@@ -88,7 +90,11 @@ class Revision(object):
                 log.warn('Unable to read delta revision')
                 return None
 
-            self.manager.patch(result, dict(r_data))
+            try:
+                self.manager.patch(result, dict(r_data))
+            except PatchException, ex:
+                log.warn('Unable to patch base revision with delta %r - %r', r.timestamp, ex)
+                return None
 
         return PatchResult(result, len(deltas))
 
@@ -100,6 +106,9 @@ class Revision(object):
 
         # Get patched result
         result = self.patch()
+
+        if result is None:
+            return None
 
         # Return just the data
         return result.data
