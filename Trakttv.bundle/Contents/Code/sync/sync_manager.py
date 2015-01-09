@@ -3,6 +3,7 @@ from core.helpers import total_seconds, get_pref
 from core.localization import localization
 from core.logger import Logger
 from data.sync_status import SyncStatus
+from plugin.core.event import Global as EG
 from sync.sync_base import CancelException
 from sync.sync_statistics import SyncStatistics
 from sync.sync_task import SyncTask
@@ -65,6 +66,8 @@ class SyncManager(object):
 
         # Bind activity events
         Activity.on('websocket.scanner.finished', cls.scanner_finished)
+
+        EG['SyncManager.current'].set(lambda: cls.current)
 
         cls.initialized = True
 
@@ -171,12 +174,10 @@ class SyncManager(object):
             log.warn('Unknown handler "%s"' % key)
             return False
 
-        sid = uuid.uuid4()
-
-        log.debug('Processing work with sid "%s" (handler: %r, kwargs: %r)' % (sid, key, kwargs))
+        log.debug('Processing work with sid "%s" (handler: %r, kwargs: %r)' % (cls.current.sid, key, kwargs))
 
         # Create "http" cache for this task
-        http_cache = CacheManager.open('http.%s' % sid)
+        http_cache = CacheManager.open('http.%s' % cls.current.sid)
 
         success = False
 
@@ -201,7 +202,7 @@ class SyncManager(object):
         )
 
         # Discard HTTP cache
-        CacheManager.delete('http.%s' % sid)
+        CacheManager.delete('http.%s' % cls.current.sid)
 
         # Sync "matcher" cache (back to disk)
         CacheManager.get('matcher').sync()
