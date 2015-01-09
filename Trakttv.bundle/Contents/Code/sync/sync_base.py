@@ -1,6 +1,7 @@
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
+from plugin.core.event import Global as EG
 from plugin.modules.manager import ModuleManager
 
 from datetime import datetime
@@ -14,10 +15,15 @@ log = Logger('sync.sync_base')
 
 
 class Base(object):
-    @classmethod
-    def get_cache_id(cls):
-        # TODO return EventManager.fire('sync.get_cache_id', single=True)
-        pass
+    @staticmethod
+    def get_sid():
+        current = EG['SyncManager.current'](single=True)
+
+        if not current:
+            log.warn('Unable to retrieve current sync task')
+            return None
+
+        return current.sid
 
 
 class PlexInterface(Base):
@@ -50,7 +56,7 @@ class TraktInterface(Base):
         cached = cls.merged_cache.get(media)
 
         # Check if the cached library is valid
-        if cached and cached['cache_id'] == cls.get_cache_id():
+        if cached and cached['sid'] == cls.get_sid():
             items, table = cached['result']
 
             log.debug(
@@ -103,11 +109,10 @@ class TraktInterface(Base):
             media, len(table), len(items), total_seconds(elapsed)
         )
 
-        # TODO Cache for future calls
-        # cls.merged_cache[media] = {
-        #     'cache_id': cls.get_cache_id(),
-        #     'result': (items, table)
-        # }
+        cls.merged_cache[media] = {
+            'sid': cls.get_sid(),
+            'result': (items, table)
+        }
 
         # TODO Run asynchronously?
         ModuleManager['backup'].run(media, items)
