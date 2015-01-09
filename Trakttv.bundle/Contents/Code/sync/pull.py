@@ -23,7 +23,12 @@ class Base(SyncBase):
 
     @classmethod
     def is_missing(cls, t_item):
-        return not getattr(t_item, 'is_local', False)
+        is_local = getattr(t_item, 'is_local', False)
+
+        if not hasattr(t_item, 'is_collected'):
+            return not is_local
+
+        return getattr(t_item, 'is_collected') and not is_local
 
     def watch(self, p_items, t_item):
         if type(p_items) is not list:
@@ -217,6 +222,10 @@ class Show(Base):
                 show['seasons'] = []
 
             for sk, t_season in t_show.seasons.items():
+                # Ignore season if there are no collected episodes on trakt
+                if all([not e.is_collected for e in t_season.episodes.values()]):
+                    continue
+
                 i_season = {'number': sk}
 
                 if self.is_missing(t_season):
