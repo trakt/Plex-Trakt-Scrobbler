@@ -136,8 +136,18 @@ class Main(object):
             cls.update_config(False)
             return False
 
+        # Clear authentication details if username has changed
+        if Dict['trakt.token'] and Dict['trakt.username'] != Prefs['username']:
+            # Reset authentication details
+            Dict['trakt.username'] = None
+            Dict['trakt.token'] = None
+
+            log.info('Authentication cleared, username was changed')
+
         # Authentication
         if not Dict['trakt.token']:
+            Dict['trakt.username'] = Prefs['username']
+
             # Authenticate (no token has previously been stored)
             Dict['trakt.token'] = Trakt['auth'].login(
                 Prefs['username'],
@@ -148,7 +158,7 @@ class Main(object):
 
         # Update trakt client configuration
         Trakt.configuration.defaults.auth(
-            Prefs['username'],
+            Dict['trakt.username'],
             Dict['trakt.token']
         )
 
