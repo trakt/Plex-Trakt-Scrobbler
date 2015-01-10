@@ -35,7 +35,7 @@ def SyncMenu(refresh=None):
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
             key=Callback(Push, section=section.key),
-            title=pad_title('Push "' + normalize(section.title) + '" to trakt'),
+            title=pad_title('Push "%s" to trakt' % section.title),
             summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
         ))
