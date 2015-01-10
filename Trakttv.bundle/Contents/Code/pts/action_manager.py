@@ -109,10 +109,15 @@ class ActionManager(object):
 
     @classmethod
     def from_movie(cls, movie, guid):
+        # Set identifier
+        movie = ActionHelper.set_identifier({}, guid)
+
+        if not movie:
+            # Couldn't find a valid identifier
+            return None
+
         return {
-            'movies': [
-                ActionHelper.set_identifier({}, guid)
-            ]
+            'movies': [movie]
         }
 
     @classmethod
@@ -127,10 +132,15 @@ class ActionManager(object):
             ]
         }
 
+        # Set identifier
+        show = ActionHelper.set_identifier(show, guid)
+
+        if not show:
+            # Couldn't find a valid identifier
+            return None
+
         return {
-            'shows': [
-                ActionHelper.set_identifier(show, guid)
-            ]
+            'shows': [show]
         }
 
     @classmethod
@@ -145,8 +155,13 @@ class ActionManager(object):
             ]
         }
 
+        # Set identifier
+        show = ActionHelper.set_identifier(show, guid)
+
+        if not show:
+            # Couldn't find a valid identifier
+            return None
+
         return {
-            'shows': [
-                ActionHelper.set_identifier(show, guid)
-            ]
+            'shows': [show]
         }

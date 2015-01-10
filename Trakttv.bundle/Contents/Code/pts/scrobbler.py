@@ -117,7 +117,7 @@ class ScrobblerMethod(Method):
             'show': ActionHelper.set_identifier({
                 'title': ws.title,
                 'year': ws.metadata.year
-            }, ws.guid),
+            }, ws.guid, strict=False),
             'episode': {
                 'title': ws.metadata.title,
 
@@ -132,7 +132,7 @@ class ScrobblerMethod(Method):
             'movie': ActionHelper.set_identifier({
                 'title': ws.title,
                 'year': ws.metadata.year,
-            }, ws.guid)
+            }, ws.guid, strict=False)
         }
 
     @classmethod

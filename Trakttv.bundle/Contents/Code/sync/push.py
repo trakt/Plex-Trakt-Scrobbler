@@ -47,6 +47,10 @@ class Base(SyncBase):
         # Build item which can be sent to trakt
         item = ActionHelper.plex.to_trakt(key, p_items[0])
 
+        if not item:
+            log.warn('watch() - Ignored for unmatched media "%s" [%s]', p_items[0].title, key)
+            return True
+
         # Set "watched_at" parameter (if available)
         watched_at = self.get_datetime(p_items[0], 'last_viewed_at')
 
@@ -78,6 +82,10 @@ class Base(SyncBase):
 
         if include_metadata:
             data = ActionHelper.plex.to_trakt(key, p_item)
+
+            if not data:
+                log.warn('rate() - Ignored for unmatched media "%s" [%s]', p_item.title, key)
+                return True if artifact else {}
         else:
             data = {}
 
@@ -101,6 +109,10 @@ class Base(SyncBase):
 
         # Build item which can be sent to trakt
         item = ActionHelper.plex.to_trakt(key, p_items[0])
+
+        if not item:
+            log.warn('collect() - Ignored for unmatched media "%s" [%s]', p_items[0].title, key)
+            return True
 
         # Set "watched_at" parameter (if available)
         collected_at = self.get_datetime(p_items[0], 'added_at')
@@ -318,14 +330,20 @@ class Show(Base):
             self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show)
 
             for p_show in p_show:
+                show = ActionHelper.plex.to_trakt(key, p_show)
+
+                if not show:
+                    log.warn('Ignored unmatched show "%s" [%s]', p_show.title if p_show else None, key)
+                    continue
+
+                # Run season task
                 self.child('season').run(
                     p_seasons=Library.episodes(p_show.rating_key, p_show, flat=False),
                     t_seasons=t_show.seasons if t_show else {},
                     artifacts=artifacts
                 )
 
-                show = ActionHelper.plex.to_trakt(key, p_show)
-
+                # Store season artifacts
                 self.store_seasons('collected', show)
                 self.store_seasons('watched', show)
 
