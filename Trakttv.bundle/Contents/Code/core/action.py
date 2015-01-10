@@ -1,12 +1,12 @@
 from core.helpers import try_convert
+from core.logger import Logger
 
 from plex.objects.library.metadata.episode import Episode
 from plex.objects.library.metadata.movie import Movie
 from plex.objects.library.metadata.show import Show
 from plex_metadata import Guid, Matcher
-import logging
 
-log = logging.getLogger(__name__)
+log = Logger('core.action')
 
 
 class PlexHelper(object):
@@ -17,9 +17,8 @@ class PlexHelper(object):
 
         return p_item
 
-    # TODO [trakt-v2] how are title/year identifiers defined?
     @classmethod
-    def to_trakt(cls, key, p_item, guid=None, year=None):
+    def to_trakt(cls, key, p_item, guid=None, year=None, strict=True):
         data = {}
 
         if type(p_item) is Episode:
@@ -38,7 +37,7 @@ class PlexHelper(object):
                 data['year'] = p_item.year
 
             # Set identifier on movie/show objects
-            ActionHelper.set_identifier(data, guid or p_root.guid)
+            return ActionHelper.set_identifier(data, guid or p_root.guid, strict=strict)
 
         return data
 
@@ -64,9 +63,9 @@ class ActionHelper(object):
     trakt = TraktHelper
 
     @classmethod
-    def set_identifier(cls, data, guid):
+    def set_identifier(cls, data, guid, strict=True):
         if not guid:
-            return
+            return None
 
         if type(guid) is str:
             # Parse raw guid
@@ -83,7 +82,10 @@ class ActionHelper(object):
             ids['tmdb'] = try_convert(guid.sid, int)
         elif guid.agent == 'tvdb':
             ids['tvdb'] = try_convert(guid.sid, int)
+        elif not strict:
+            log.info('Unknown Guid agent: "%s"', guid.agent)
         else:
-            log.warn('Unknown GUID agent "%s"', guid.agent)
+            log.info('Unknown Guid agent: "%s" [strict]', guid.agent)
+            return None
 
         return data

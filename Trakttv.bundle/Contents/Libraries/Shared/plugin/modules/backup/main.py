@@ -191,21 +191,21 @@ class BackupRunner(object):
         # Added
         for key, value in delta.get('a', {}).items():
             if key in base:
-                raise PatchException('Delta lists %r as added, but the item already exists' % key)
+                raise PatchException('Delta lists %r as added, but the item already exists' % (key, ))
 
             base[key] = value
 
         # Changed
         for key, value in delta.get('c', {}).items():
             if key not in base:
-                raise PatchException('Delta lists %r as changed, but the item doesn\'t exist' % key)
+                raise PatchException('Delta lists %r as changed, but the item doesn\'t exist' % (key, ))
 
             base[key] = value
 
         # Removed
         for key in delta.get('r', []):
             if key not in base:
-                raise PatchException('Delta lists %r as removed, but the item doesn\'t exist' % key)
+                raise PatchException('Delta lists %r as removed, but the item doesn\'t exist' % (key, ))
 
             del base[key]
 

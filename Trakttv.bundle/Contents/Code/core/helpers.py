@@ -152,7 +152,8 @@ def str_pad(s, length, align='left', pad_char=' ', trim=False):
     if not s:
         return s
 
-    s = str(s)
+    if not isinstance(s, (str, unicode)):
+        s = str(s)
 
     if len(s) == length:
         return s
