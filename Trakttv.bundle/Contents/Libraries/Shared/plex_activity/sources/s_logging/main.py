@@ -18,6 +18,10 @@ PATH_HINTS = {
         lambda: os.path.join(os.getenv('HOME'), 'Library/Logs/Plex Media Server.log')
     ],
     'Linux': [
+        # QNAP TS-219P
+        '/share/HDA_DATA/.qpkg/PlexMediaServer/Library/Plex Media Server/Logs/Plex Media Server.log',
+
+        # Ubuntu 12.04
         '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
     ],
     'Windows': [
