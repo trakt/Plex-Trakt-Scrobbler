@@ -1,3 +1,4 @@
+from plex.lib.six import add_metaclass
 from plex.lib.six.moves import xrange
 from plex_activity.sources import Logging, WebSocket
 
@@ -7,6 +8,16 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class ActivityMeta(type):
+    def __getitem__(self, key):
+        for (weight, source) in self.registered:
+            if source.name == key:
+                return source
+
+        return None
+
+
+@add_metaclass(ActivityMeta)
 class Activity(Emitter):
     registered = []
 
@@ -39,6 +50,13 @@ class Activity(Emitter):
         instance.start()
 
         self.enabled.append(instance)
+
+    def __getitem__(self, key):
+        for (weight, source) in self.registered:
+            if source.name == key:
+                return source
+
+        return None
 
     @classmethod
     def get_available(cls, sources):
