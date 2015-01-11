@@ -73,11 +73,6 @@ class Main(object):
 
         ModuleManager.initialize()
 
-        Metadata.configure(
-            cache=CacheManager.get('metadata'),
-            client=Plex.client
-        )
-
     def init(self):
         names = []
 
@@ -92,8 +87,21 @@ class Main(object):
 
     @staticmethod
     def init_plex():
+        # plex.py
         Plex.configuration.defaults.authentication(
             os.environ.get('PLEXTOKEN')
+        )
+
+        # plex.activity.py
+        path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+        path = os.path.abspath(path)
+
+        Activity['logging'].add_hint(path)
+
+        # plex.metadata.py
+        Metadata.configure(
+            cache=CacheManager.get('metadata'),
+            client=Plex.client
         )
 
     @staticmethod
