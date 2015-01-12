@@ -84,5 +84,5 @@ logging.basicConfig(level=logging.DEBUG)
 for name in LOGGERS:
     logger = logging.getLogger(name)
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(TRACE)
     logger.handlers = [PlexHandler()]
