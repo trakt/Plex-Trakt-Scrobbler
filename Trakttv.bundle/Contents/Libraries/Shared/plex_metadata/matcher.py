@@ -17,7 +17,7 @@ class Matcher(object):
         try:
             from caper import Caper
             return Caper()
-        except ImportError, ex:
+        except ImportError as ex:
             log.info('Caper not available - "%s"', ex)
             return None
 

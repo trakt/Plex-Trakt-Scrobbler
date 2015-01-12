@@ -64,6 +64,12 @@ class Library(object):
 
         # Parse guid
         guid = Guid.parse(item.guid)
+
+        if not guid:
+            # Missing guid
+            return False
+
+        # Build key
         key = (guid.agent, guid.sid)
 
         # Map item into table
