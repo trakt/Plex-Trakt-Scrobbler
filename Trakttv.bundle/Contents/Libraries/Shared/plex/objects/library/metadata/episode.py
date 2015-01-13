@@ -28,6 +28,7 @@ class Episode(Video, Metadata, RateMixin, ScrobbleMixin):
 
             'title':        'grandparentTitle',
 
+            'art':          'grandparentArt',
             'theme':        'grandparentTheme',
             'thumb':        'grandparentThumb'
         }

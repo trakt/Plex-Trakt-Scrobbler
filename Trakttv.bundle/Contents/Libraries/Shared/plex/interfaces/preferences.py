@@ -13,7 +13,7 @@ class PreferencesInterface(Interface):
             })
         })
 
-        if id is None:
+        if container is None or id is None:
             return container
 
         for setting in container:
