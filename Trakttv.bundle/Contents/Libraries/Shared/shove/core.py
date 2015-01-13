@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 '''shove core.'''
 
-from operator import methodcaller
-from collections import MutableMapping
+from shove._imports import cache_backend, store_backend
 
+from collections import MutableMapping
+from concurrent.futures import ThreadPoolExecutor
+from operator import methodcaller
 from stuf import exhaustmap
 from stuf.iterable import xpartmap
-from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
-from shove._imports import cache_backend, store_backend
 
 __all__ = 'Shove MultiShove'.split()
 
@@ -23,10 +24,12 @@ class Shove(MutableMapping):
         self.store = store_backend(store, **kw)
         # load cache backend
         self.cache = cache_backend(cache, **kw)
-        # buffer for lazier writing
-        self._buffer = dict()
         # setting for syncing frequency
         self._sync = kw.get('sync', 2)
+        
+        # buffer for lazier writing
+        self._buffer = dict()
+        self._buffer_lock = Lock()
 
     def __getitem__(self, key):
         try:
@@ -38,10 +41,12 @@ class Shove(MutableMapping):
             return value
 
     def __setitem__(self, key, value):
-        self.cache[key] = self._buffer[key] = value
+        with self._buffer_lock:
+            self.cache[key] = self._buffer[key] = value
+        
         # when buffer reaches self._limit, write buffer to store
         if len(self._buffer) >= self._sync:
-            self.sync()
+            self.sync(blocking=False)
 
     def __delitem__(self, key):
         self.sync()
@@ -74,10 +79,19 @@ class Shove(MutableMapping):
 
         self.store = self.cache = self._buffer = None
 
-    def sync(self):
+    def sync(self, blocking=True):
         '''Writes buffer to store.'''
-        self.store.update(self._buffer)
-        self._buffer.clear()
+        
+        try:
+            if not self._buffer_lock.acquire(blocking):
+                return False
+
+            self.store.update(self._buffer)
+            self._buffer.clear()
+        finally:
+            self._buffer_lock.release()
+        
+        return True
 
     def clear(self):
         self.cache.clear()
