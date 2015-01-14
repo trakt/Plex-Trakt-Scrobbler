@@ -48,7 +48,7 @@ import itertools
 #
 
 try:
-    ORIGINAL_DIR = os.path.abspath(os.getcwd())
+    ORIGINAL_DIR = os.path.abspath(os.getcwdu())
 except OSError:
     ORIGINAL_DIR = None
 
