@@ -20,9 +20,10 @@ __all__ = [
 class SyncInterface(Interface):
     path = 'sync'
 
-    def last_activities(self):
+    def last_activities(self, **kwargs):
         return self.get_data(
-            self.http.get('lastactivities')
+            self.http.get('last_activities'),
+            **kwargs
         )
 
     def playback(self):

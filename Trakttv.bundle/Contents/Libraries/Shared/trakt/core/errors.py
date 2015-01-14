@@ -5,8 +5,10 @@ ERRORS = {
     404: ("Not Found",              "method exists, but no record found"),
     405: ("Method Not Found",       "method doesn't exist"),
     409: ("Conflict",               "resource already created"),
-    422: ("Unprocessable Entity",   "validation errors"),
-    429: ("Rate Limit Exceeded",    ""),
-    500: ("Server Error",           ""),
+    422: ("Unprocessable Entity",   "validation error"),
+    429: ("Rate Limit Exceeded",    "rate limit exceeded"),
+    500: ("Server Error",           "server error"),
+    502: ("Bad Gateway",            "server unavailable"),
     503: ("Service Unavailable",    "server overloaded"),
+    504: ("Gateway Timeout",        "server timeout")
 }
