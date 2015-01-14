@@ -17,6 +17,10 @@ PATH_HINTS = {
     'Darwin': [
         lambda: os.path.join(os.getenv('HOME'), 'Library/Logs/Plex Media Server.log')
     ],
+    'FreeBSD': [
+        # FreeNAS 9.3
+        '/usr/pbi/plexmediaserver-amd64/plexdata/Plex Media Server/Logs/Plex Media Server.log',
+    ],
     'Linux': [
         # QNAP TS-219P
         '/share/HDA_DATA/.qpkg/PlexMediaServer/Library/Plex Media Server/Logs/Plex Media Server.log',
