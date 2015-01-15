@@ -3,6 +3,7 @@ from core.logger import Logger
 
 from threading import Lock
 import sys
+import trakt
 import traceback
 
 log = Logger('core.task')
@@ -63,6 +64,10 @@ class Task(object):
             self.exception = sys.exc_info()
 
             log.debug('Task cancelled')
+        except trakt.RequestError, e:
+            self.exception = sys.exc_info()
+
+            log.warn('trakt.tv request failed: %s', e)
         except Exception, e:
             self.exception = sys.exc_info()
 

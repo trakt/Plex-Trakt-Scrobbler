@@ -23,8 +23,10 @@ class Synchronize(SyncBase):
         self.check_stopping()
 
         if not pull.run():
-            log.warn("Pull handler failed")
-            self.update_status(False)
+            log.warn('Pull handler failed')
+            status = pull.get_status()
+
+            self.update_status(False, exceptions=status.exceptions)
             return False
 
         # Store missing media discovery artifacts
@@ -35,7 +37,9 @@ class Synchronize(SyncBase):
 
         if not push.run(artifacts=self.artifacts):
             log.warn('Push handler failed')
-            self.update_status(False)
+            status = push.get_status()
+
+            self.update_status(False, exceptions=status.exceptions)
             return False
 
         self.update_status(True)
