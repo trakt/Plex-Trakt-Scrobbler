@@ -133,7 +133,12 @@ def get_task_status(key, section=None):
         result.append('was successful')
     elif status.previous_timestamp:
         # Only add 'failed' fragment if there was actually a previous run
-        result.append('failed')
+        message = 'failed'
+
+        if status.error:
+            message += ' (%s)' % status.error
+
+        result.append(message)
 
     if len(result):
         return ', '.join(result) + '.'

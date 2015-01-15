@@ -5,7 +5,7 @@ class Get(Interface):
     flags = {}
 
     @authenticated
-    def get(self, media, store=None, params=None):
+    def get(self, media, store=None, params=None, **kwargs):
         r_params = [media]
 
         if params:
@@ -15,7 +15,7 @@ class Get(Interface):
             params=r_params
         )
 
-        items = self.get_data(response)
+        items = self.get_data(response, **kwargs)
 
         if type(items) is not list:
             return None
@@ -26,36 +26,38 @@ class Get(Interface):
         )
 
     @authenticated
-    def shows(self, store=None):
+    def shows(self, store=None, **kwargs):
         return self.get(
             'shows',
-            store
+            store,
+            **kwargs
         )
 
     @authenticated
-    def movies(self, store=None):
+    def movies(self, store=None, **kwargs):
         return self.get(
             'movies',
-            store
+            store,
+            **kwargs
         )
 
 
 class Add(Interface):
     @authenticated
-    def add(self, items):
+    def add(self, items, **kwargs):
         response = self.http.post(
             data=items
         )
 
-        return self.get_data(response)
+        return self.get_data(response, **kwargs)
 
 
 class Remove(Interface):
     @authenticated
-    def remove(self, items):
+    def remove(self, items, **kwargs):
         response = self.http.post(
             'remove',
             data=items
         )
 
-        return self.get_data(response)
+        return self.get_data(response, **kwargs)

@@ -6,13 +6,13 @@ class SyncRatingsInterface(Get, Add, Remove):
     path = 'sync/ratings'
 
     @authenticated
-    def get(self, media, store=None, rating=None):
+    def get(self, media, store=None, rating=None, **kwargs):
         parameters = []
 
         if rating is not None:
             parameters.append(rating)
 
-        return super(SyncRatingsInterface, self).get(media, store, parameters)
+        return super(SyncRatingsInterface, self).get(media, store, parameters, **kwargs)
 
     #
     # Shortcut methods
