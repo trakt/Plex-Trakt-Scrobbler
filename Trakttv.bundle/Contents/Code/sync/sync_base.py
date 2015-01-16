@@ -341,7 +341,7 @@ class SyncBase(Base, Emitter):
         if seasons is None:
             seasons = self.child('season').artifacts.get(artifact or key)
 
-        if seasons is None:
+        if not show or not seasons:
             return
 
         self.store(key, merge({'seasons': seasons}, show))

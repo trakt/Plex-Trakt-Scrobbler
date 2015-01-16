@@ -318,23 +318,35 @@ class Show(Base):
 
         self.emit('started', len(p_shows))
 
-        for x, (key, p_show) in enumerate(p_shows.items()):
+        for x, (key, p_shows) in enumerate(p_shows.items()):
             self.check_stopping()
             self.emit('progress', x + 1)
 
             t_show = t_shows_table.get(key)
 
-            log.debug('Processing "%s" [%s]', p_show[0].title if p_show else None, key)
+            log.debug('Processing "%s" [%s]', p_shows[0].title if p_shows else None, key)
 
             # TODO check result
-            self.trigger(enabled_funcs, key=key, p_shows=p_show, t_show=t_show)
+            self.trigger(enabled_funcs, key=key, p_shows=p_shows, t_show=t_show)
 
-            for p_show in p_show:
-                show = ActionHelper.plex.to_trakt(key, p_show)
+            show = None
+            show_artifacts = {
+                'collected': [],
+                'watched': [],
+                'ratings': []
+            }
 
+            for p_show in p_shows:
                 if not show:
-                    log.warn('Ignored unmatched show "%s" [%s]', p_show.title if p_show else None, key)
-                    continue
+                    # Build data from plex show
+                    data = ActionHelper.plex.to_trakt(key, p_show)
+
+                    if data:
+                        # Valid show, use data
+                        show = data
+                    else:
+                        log.warn('Ignored unmatched show "%s" [%s]', p_show.title if p_show else None, key)
+                        continue
 
                 # Run season task
                 self.child('season').run(
@@ -344,14 +356,42 @@ class Show(Base):
                 )
 
                 # Store season artifacts
-                self.store_seasons('collected', show)
-                self.store_seasons('watched', show)
+                show_artifacts['collected'].append(
+                    self.child('season').artifacts.pop('collected', [])
+                )
 
-                self.store_seasons('ratings', merge(
-                    # Include show rating
-                    self.rate(key, [p_show], t_show, artifact='', include_metadata=False),
-                    show
-                ))
+                show_artifacts['watched'].append(
+                    self.child('season').artifacts.pop('watched', [])
+                )
+
+                show_artifacts['ratings'].append(
+                    self.child('season').artifacts.pop('ratings', [])
+                )
+
+            if not show:
+                log.warn('Unable to retrieve show details, ignoring "%s" [%s]', p_show.title if p_show else None, key)
+                continue
+
+            # Merge show artifacts
+            for k, v in show_artifacts.items():
+                result = []
+
+                for seasons in v:
+                    result = self.merge_artifacts(result, seasons)
+
+                show_artifacts[k] = result
+
+            # Store merged artifacts
+            self.store_seasons('collected', show, seasons=show_artifacts.get('collected'))
+            self.store_seasons('watched', show, seasons=show_artifacts.get('watched'))
+
+            show_rating = self.rate(key, p_shows, t_show, artifact='', include_metadata=False)
+
+            self.store_seasons('ratings', merge(
+                # Include show rating
+                show_rating,
+                show
+            ), seasons=show_artifacts.get('ratings'))
 
         self.emit('finished')
         self.check_stopping()
@@ -369,6 +409,53 @@ class Show(Base):
 
         log.info('Finished pushing shows to trakt')
         return True
+
+    @classmethod
+    def merge_artifacts(cls, a, b, mode='seasons'):
+        log.debug('merge_artifacts(%r, %r, %r)', a, b, mode)
+
+        result = []
+
+        for x in a:
+            log.debug('x: %r, type(x): %r', x, type(x))
+
+        for x in b:
+            log.debug('x: %r, type(x): %r', x, type(x))
+
+        # Build 'number'-maps from lists
+        a = dict([(x.get('number'), x) for x in a])
+        b = dict([(x.get('number'), x) for x in b])
+
+        # Build key sets
+        a_keys = set(a.keys())
+        b_keys = set(b.keys())
+
+        # Insert items that don't conflict
+        for key in a_keys - b_keys:
+            result.append(a[key])
+
+        for key in b_keys - a_keys:
+            result.append(b[key])
+
+        # Resolve conflicts
+        for key in a_keys & b_keys:
+            a_item = a[key]
+            b_item = b[key]
+
+            if mode == 'seasons':
+                # Merge episodes
+                episodes = cls.merge_artifacts(a_item['episodes'], b_item['episodes'], mode='episodes')
+
+                # Use the item from `a` and merged episodes list
+                item = a_item
+                item['episodes'] = episodes
+            else:
+                # Use the item from `a`
+                item = a_item
+
+            result.append(item)
+
+        return result
 
 
 class Movie(Base):
