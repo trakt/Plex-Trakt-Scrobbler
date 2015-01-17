@@ -412,15 +412,7 @@ class Show(Base):
 
     @classmethod
     def merge_artifacts(cls, a, b, mode='seasons'):
-        log.debug('merge_artifacts(%r, %r, %r)', a, b, mode)
-
         result = []
-
-        for x in a:
-            log.debug('x: %r, type(x): %r', x, type(x))
-
-        for x in b:
-            log.debug('x: %r, type(x): %r', x, type(x))
 
         # Build 'number'-maps from lists
         a = dict([(x.get('number'), x) for x in a])
