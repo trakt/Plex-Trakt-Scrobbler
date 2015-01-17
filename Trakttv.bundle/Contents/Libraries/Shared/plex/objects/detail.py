@@ -15,9 +15,11 @@ class Detail(Container):
     platform_version = Property('platformVersion')
 
     multiuser = Property(type=bool)
+    start_state = Property('startState')
     sync = Property(type=bool)
 
     silverlight = Property('silverlightInstalled', bool)
+    soundflower = Property('soundflowerInstalled', bool)
     flash = Property('flashInstalled', bool)
     webkit = Property(type=bool)
 

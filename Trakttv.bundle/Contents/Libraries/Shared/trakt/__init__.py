@@ -1,5 +1,16 @@
+from trakt.core.errors import ERRORS
+from trakt.core.exceptions import RequestError, ClientError, ServerError
 from trakt.client import TraktClient, __version__
 from trakt.helpers import has_attribute
+
+
+__all__ = [
+    'Trakt',
+    'RequestError',
+    'ClientError',
+    'ServerError',
+    'ERRORS'
+]
 
 
 class TraktMeta(type):

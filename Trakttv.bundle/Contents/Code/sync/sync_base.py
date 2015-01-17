@@ -52,7 +52,7 @@ class TraktInterface(Base):
     merged_cache = {}
 
     @classmethod
-    def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
+    def merged(cls, media, watched=True, ratings=False, collected=False, exceptions=True):
         cached = cls.merged_cache.get(media)
 
         # Check if the cached library is valid
@@ -72,24 +72,29 @@ class TraktInterface(Base):
         # Merge data
         items = {}
 
+        params = {
+            'store': items,
+            'exceptions': exceptions
+        }
+
         # Merge watched library
-        if watched and Trakt['sync/watched'].get(media, store=items) is None:
+        if watched and Trakt['sync/watched'].get(media, **params) is None:
             log.warn('Unable to fetch watched items')
             return None, None
 
         # Merge ratings
         if ratings:
-            if Trakt['sync/ratings'].get(media, store=items) is None:
+            if Trakt['sync/ratings'].get(media, **params) is None:
                 log.warn('Unable to fetch ratings')
                 return None, None
 
             # Fetch episode ratings (if we are fetching shows)
-            if media == 'shows' and Trakt['sync/ratings'].get('episodes', store=items) is None:
+            if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
                 log.warn('Unable to fetch episode ratings')
                 return None, None
 
         # Merge collected library
-        if collected and Trakt['sync/collection'].get(media, store=items) is None:
+        if collected and Trakt['sync/collection'].get(media, **params) is None:
             log.warn('Unable to fetch collected items')
             return None, None
 
@@ -161,13 +166,17 @@ class SyncBase(Base, Emitter):
         self.reset(kwargs.get('artifacts'))
 
         # Trigger handlers and return if there was an error
-        if not all(self.trigger(None, *args, **kwargs)):
+        exceptions, results = self.trigger(None, *args, **kwargs)
+
+        if not all(results):
             self.update_status(False)
             return False
 
         # Trigger children and return if there was an error
-        if not all(self.trigger_children(*args, **kwargs)):
-            self.update_status(False)
+        exceptions, results = self.trigger_children(*args, **kwargs)
+
+        if not all(results):
+            self.update_status(False, exceptions=exceptions)
             return False
 
         self.update_status(True)
@@ -228,12 +237,11 @@ class SyncBase(Base, Emitter):
             if child.auto_run
         ]
 
-
         return self.trigger_run(children, single, *args, **kwargs)
 
     def trigger_run(self, funcs, single, *args, **kwargs):
         if not funcs:
-            return []
+            return [], []
 
         if self.threaded:
             tasks = []
@@ -245,40 +253,53 @@ class SyncBase(Base, Emitter):
                 task.spawn('sync.%s.%s' % (self.key, name))
 
             # Wait until everything is complete
+            exceptions = []
             results = []
 
             for task in tasks:
                 task.wait()
+
                 results.append(task.result)
 
-            return results
+                if task.exception:
+                    _, exception, _ = task.exception
+
+                    exceptions.append(exception)
+
+            return exceptions, results
 
         # Run each task and collect results
         results = [func(*args, **kwargs) for (_, func) in funcs]
 
         if not single:
-            return results
+            return [], results
 
-        return results[0]
+        return None, results[0]
 
     #
     # Status / Progress
     #
 
-    def update_status(self, success, end_time=None, start_time=None, section=None):
+    def update_status(self, success, end_time=None, start_time=None, section=None, exceptions=None):
         if end_time is None:
             end_time = datetime.utcnow()
 
         # Update task status
         status = self.get_status(section)
-        status.update(success, start_time or self.start_time, end_time)
+        status.update(
+            success,
+            start_time or self.start_time,
+            end_time,
+            exceptions
+        )
 
         log.info(
-            'Task "%s" finished - success: %s, start: %s, elapsed: %s',
+            'Task "%s" finished - success: %s, start: %s, elapsed: %s, exceptions: %r',
             status.key,
             status.previous_success,
             status.previous_timestamp,
-            status.previous_elapsed
+            status.previous_elapsed,
+            exceptions
         )
 
     def get_status(self, section=None):
@@ -320,7 +341,7 @@ class SyncBase(Base, Emitter):
         if seasons is None:
             seasons = self.child('season').artifacts.get(artifact or key)
 
-        if seasons is None:
+        if not show or not seasons:
             return
 
         self.store(key, merge({'seasons': seasons}, show))
