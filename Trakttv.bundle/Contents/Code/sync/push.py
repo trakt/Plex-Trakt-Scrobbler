@@ -77,7 +77,7 @@ class Base(SyncBase):
         p_item = p_items[0]
 
         # Ignore if rating is already on trakt
-        if t_item and t_item.rating and t_item.rating.value == p_item.user_rating:
+        if t_item and t_item.rating and int(t_item.rating.value) == int(p_item.user_rating):
             return True if artifact else {}
 
         if include_metadata:
@@ -90,7 +90,7 @@ class Base(SyncBase):
             data = {}
 
         data.update({
-            'rating': p_item.user_rating
+            'rating': int(p_item.user_rating)
         })
 
         if artifact:
