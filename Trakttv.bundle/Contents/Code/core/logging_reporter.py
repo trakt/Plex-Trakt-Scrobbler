@@ -15,22 +15,22 @@ params = {
     'exclude_paths': [
         'com.plexapp.plugins.trakttv'
     ],
-    'release': version
+
+    'release': version,
+    'tags': {
+        # Plugin
+        'plugin.version': version,
+        'plugin.branch': PLUGIN_VERSION_BRANCH,
+
+        # System
+        'os.system': platform.system(),
+        'os.release': platform.release(),
+        'os.version': platform.version()
+    }
 }
 
 # Build client
 RAVEN = Client(**params)
-
-RAVEN.tags_context({
-    # Plugin
-    'plugin.version': version,
-    'plugin.branch': PLUGIN_VERSION_BRANCH,
-
-    # System
-    'os.system': platform.system(),
-    'os.release': platform.release(),
-    'os.version': platform.version()
-})
 
 # Setup logging
 RAVEN_HANDLER = SentryHandler(RAVEN, level=logging.WARNING)

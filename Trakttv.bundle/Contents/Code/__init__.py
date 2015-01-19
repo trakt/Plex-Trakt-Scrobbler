@@ -100,7 +100,7 @@ class Main(object):
         # Update client
         RAVEN.name = server.machine_identifier
 
-        RAVEN.tags_context({
+        RAVEN.tags.update({
             'server.machine_identifier': server.machine_identifier,
             'server.version': server.version
         })
