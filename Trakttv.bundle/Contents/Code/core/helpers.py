@@ -1,3 +1,4 @@
+import hashlib
 import inspect
 import re
 import sys
@@ -348,3 +349,11 @@ def flatten(text):
 
     # Convert to lower-case
     return text.lower()
+
+
+def md5(value):
+    # Generate MD5 hash of key
+    m = hashlib.md5()
+    m.update(value)
+
+    return m.hexdigest()

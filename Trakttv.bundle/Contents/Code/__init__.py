@@ -25,7 +25,7 @@ from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
 from core.logging_reporter import RAVEN
-from core.helpers import spawn, get_pref, schedule, get_class_name
+from core.helpers import spawn, get_pref, schedule, get_class_name, md5
 from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
@@ -97,11 +97,10 @@ class Main(object):
         if not server:
             return
 
-        # Update client
-        RAVEN.name = server.machine_identifier
+        # Set client name to a hash of `machine_identifier`
+        RAVEN.name = md5(server.machine_identifier)
 
         RAVEN.tags.update({
-            'server.machine_identifier': server.machine_identifier,
             'server.version': server.version
         })
 
