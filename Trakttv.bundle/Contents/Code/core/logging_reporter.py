@@ -15,6 +15,10 @@ params = {
     'exclude_paths': [
         'com.plexapp.plugins.trakttv'
     ],
+    'processors': [
+        'raven.processors.RemoveStackLocalsProcessor',
+        'plugin.raven.processors.RelativePathProcessor'
+    ],
 
     'release': version,
     'tags': {
