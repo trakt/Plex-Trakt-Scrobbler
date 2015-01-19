@@ -33,4 +33,4 @@ params = {
 RAVEN = Client(**params)
 
 # Setup logging
-RAVEN_HANDLER = SentryHandler(RAVEN, level=logging.WARNING)
+RAVEN_HANDLER = SentryHandler(RAVEN, level=logging.ERROR)

@@ -42,7 +42,7 @@ class Migration(object):
 
     def get_preferences(self):
         if not os.path.exists(self.preferences_path):
-            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return {}
 
         data = Core.storage.load(self.preferences_path)
@@ -52,7 +52,7 @@ class Migration(object):
 
     def set_preferences(self, changes):
         if not os.path.exists(self.preferences_path):
-            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return False
 
         data = Core.storage.load(self.preferences_path)
@@ -170,7 +170,7 @@ class Clean(Migration):
                 conditions = [conditions]
 
             if not hasattr(self, action):
-                log.warn('Unknown migration action "%s"', action)
+                log.error('Unknown migration action "%s"', action)
                 continue
 
             m = getattr(self, action)
@@ -191,7 +191,7 @@ class ForceLegacy(Migration):
 
     def upgrade(self):
         if not os.path.exists(self.preferences_path):
-            log.warn('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return
 
         preferences = self.get_preferences()

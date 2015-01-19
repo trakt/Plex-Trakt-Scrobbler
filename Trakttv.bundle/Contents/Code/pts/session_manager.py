@@ -21,9 +21,8 @@ class SessionManager(Thread):
         while self.active:
             try:
                 self.check_sessions()
-            except Exception, ex:
-                trace = traceback.format_exc()
-                Log.Warn('Exception from SessionManager (%s): %s' % (ex, trace))
+            except Exception:
+                log.error('Exception raised in session manager', exc_info=True)
 
             time.sleep(5)
 

@@ -68,12 +68,10 @@ class Task(object):
             self.exception = sys.exc_info()
 
             log.warn('trakt.tv request failed: %s', e)
-        except Exception, e:
+        except Exception:
             self.exception = sys.exc_info()
 
-            log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
-                self.target, type(e), e, traceback.format_tb(self.exception[2])
-            ))
+            log.error('Exception raised in triggered function: %s' % self.target, exc_info=True)
         finally:
             # Release lock
             self.complete = True
