@@ -139,7 +139,7 @@ class Base(SyncBase):
             # Return formatted datetime for trakt.tv
             return dt.strftime('%Y-%m-%dT%H:%M:%S') + '.000-00:00'
         except Exception, ex:
-            log.warn('Unable to construct datetime from timestamp: %s (%s: %r)', ex, key, value)
+            log.error('Unable to construct datetime from timestamp: %s (%s: %r)', ex, key, value)
             return None
 
     def add(self, path, **kwargs):

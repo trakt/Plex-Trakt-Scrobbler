@@ -171,7 +171,7 @@ class SyncManager(object):
         # Find handler
         handler = cls.handlers.get(key)
         if not handler:
-            log.warn('Unknown handler "%s"' % key)
+            log.error('Unknown handler "%s"' % key)
             return False
 
         log.debug('Processing work with sid "%s" (handler: %r, kwargs: %r)' % (cls.current.sid, key, kwargs))
@@ -186,13 +186,12 @@ class SyncManager(object):
                 success = handler.run(section=section, **kwargs)
         except CancelException, e:
             handler.update_status(False)
+
             log.info('Task "%s" was cancelled', key)
-        except Exception, e:
+        except Exception:
             handler.update_status(False)
 
-            log.warn('Exception raised in handler for "%s" (%s) %s: %s' % (
-                key, type(e), e, traceback.format_exc()
-            ))
+            log.error('Exception raised in handler for "%s"' % key, exc_info=True)
 
         log.debug(
             'Cache Statistics - len(http): %s, len(matcher): %s, len(metadata): %s',

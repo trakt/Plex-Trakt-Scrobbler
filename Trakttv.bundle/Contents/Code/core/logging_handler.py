@@ -1,3 +1,5 @@
+from core.logging_reporter import RAVEN_HANDLER
+
 import logging
 
 LOGGERS = [
@@ -6,6 +8,7 @@ LOGGERS = [
     'plex_metadata',
     'plugin',
     'pyemitter',
+    'raven',
     'requests',
     'trakt'
 ]
@@ -23,9 +26,13 @@ class PlexHandler(logging.StreamHandler):
     }
 
     level_map = {
-        'plex'    : 'libraries',
-        'requests': 'libraries',
-        'trakt'   : 'libraries'
+        'plex':             'libraries',
+        'plex_activity':    'libraries',
+        'plex_metadata':    'libraries',
+
+        'raven':            'libraries',
+        'requests':         'libraries',
+        'trakt':            'libraries'
     }
 
     def emit(self, record):
@@ -85,4 +92,4 @@ for name in LOGGERS:
     logger = logging.getLogger(name)
 
     logger.setLevel(TRACE)
-    logger.handlers = [PlexHandler()]
+    logger.handlers = [PlexHandler(), RAVEN_HANDLER]

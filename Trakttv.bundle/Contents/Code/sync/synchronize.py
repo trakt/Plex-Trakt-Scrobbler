@@ -16,7 +16,7 @@ class Synchronize(SyncBase):
         pull = self.manager.handlers.get('pull')
 
         if not push or not pull:
-            log.warn("Sync handlers haven't initialized properly, unable to synchronize")
+            log.error("Sync handlers haven't initialized properly, unable to synchronize")
             self.update_status(False)
             return False
 

@@ -24,7 +24,8 @@ from core.cache import CacheManager
 from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
-from core.helpers import spawn, get_pref, schedule, get_class_name
+from core.logging_reporter import RAVEN
+from core.helpers import spawn, get_pref, schedule, get_class_name, md5
 from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
@@ -73,6 +74,9 @@ class Main(object):
 
         ModuleManager.initialize()
 
+        # Initialize sentry error reporting
+        self.init_raven()
+
     def init(self):
         names = []
 
@@ -84,6 +88,21 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
+
+    @classmethod
+    def init_raven(cls):
+        # Retrieve server details
+        server = Plex.detail()
+
+        if not server:
+            return
+
+        # Set client name to a hash of `machine_identifier`
+        RAVEN.name = md5(server.machine_identifier)
+
+        RAVEN.tags.update({
+            'server.version': server.version
+        })
 
     @staticmethod
     def init_plex():
