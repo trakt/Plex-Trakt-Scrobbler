@@ -2,6 +2,7 @@ from plex.lib.six import string_types
 from plex.lib.six.moves.urllib_parse import urlparse
 
 from functools import wraps
+from StringIO import StringIO
 import logging
 
 try:
@@ -36,12 +37,65 @@ class Interface(object):
         if response.status_code < 200 or response.status_code >= 300:
             return None
 
-        root = ET.fromstring(response.content)
+        try:
+            root = ET.fromstring(response.content)
+        except SyntaxError, ex:
+            log.error('Unable to parse XML response: %s', ex, exc_info=True, extra={
+                'data': {
+                    'snippet': self.__error_snippet(response, ex)
+                }
+            })
+
+            return None
+        except Exception, ex:
+            log.error('Unable to parse XML response: %s', ex, exc_info=True)
+
+            return None
 
         url = urlparse(response.url)
         path = url.path
 
         return self.__construct(self.client, path, root, schema)
+
+    @staticmethod
+    def __error_snippet(response, ex):
+        # Retrieve the error line
+        position = getattr(ex, 'position', None)
+
+        if not position or len(position) != 2:
+            return None
+
+        n_line, n_column = position
+        snippet = None
+
+        # Create StringIO stream
+        stream = StringIO(response.content)
+
+        # Iterate over `content` to find `n_line`
+        for x, l in enumerate(stream):
+            if x < n_line - 1:
+                continue
+
+            # Line found
+            snippet = l
+            break
+
+        # Close the stream
+        stream.close()
+
+        if not snippet:
+            # Couldn't find the line
+            return None
+
+        # Find an attribute value containing `n_column`
+        start = snippet.find('"', n_column)
+        end = snippet.find('"', start + 1)
+
+        # Trim `snippet` (if attribute value was found)
+        if start >= 0 and end >= 0:
+            return snippet[start:end + 1]
+
+        return snippet
 
     @classmethod
     def __construct(cls, client, path, node, schema):
