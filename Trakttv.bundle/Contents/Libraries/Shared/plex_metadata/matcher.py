@@ -39,6 +39,9 @@ class Matcher(object):
             # Parse file_name with Caper
             result = self.caper.parse(file_name)
 
+            if not result:
+                return None
+
             chain = result.chains[0] if result.chains else None
 
             # Get best identifier match from result
