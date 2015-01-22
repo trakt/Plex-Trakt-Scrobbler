@@ -46,6 +46,23 @@ class Task(object):
 
         return self.result
 
+    def target_name(self):
+        if self.target is None:
+            return None
+
+        func_name = getattr(self.target, '__name__', None)
+
+        kls = getattr(self.target, 'im_class', None)
+        kls_name = getattr(kls, '__name__', None) if kls else None
+
+        if kls_name and func_name:
+            return '%s.%s()' % (kls_name, func_name)
+
+        if func_name:
+            return '%s()' % func_name
+
+        return None
+
     def run(self):
         # Wait for lock
         self.lock.acquire()
@@ -68,10 +85,10 @@ class Task(object):
             self.exception = sys.exc_info()
 
             log.warn('trakt.tv request failed: %s', e)
-        except Exception:
+        except Exception, ex:
             self.exception = sys.exc_info()
 
-            log.error('Exception raised in triggered function: %s' % self.target, exc_info=True)
+            log.error('Exception raised in triggered function %r: %s', self.target_name(), ex, exc_info=True)
         finally:
             # Release lock
             self.complete = True

@@ -188,10 +188,10 @@ class SyncManager(object):
             handler.update_status(False)
 
             log.info('Task "%s" was cancelled', key)
-        except Exception:
+        except Exception, ex:
             handler.update_status(False)
 
-            log.error('Exception raised in handler for "%s"' % key, exc_info=True)
+            log.error('Exception raised in handler for %r: %s', key, ex, exc_info=True)
 
         log.debug(
             'Cache Statistics - len(http): %s, len(matcher): %s, len(metadata): %s',
