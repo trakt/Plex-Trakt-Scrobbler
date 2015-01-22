@@ -1,6 +1,7 @@
 from core.action import ActionHelper
 from core.helpers import try_convert
 from core.logger import Logger
+from data.watch_session import WatchSession
 
 from plex.objects.library.metadata.episode import Episode
 from plex.objects.library.metadata.movie import Movie
@@ -65,6 +66,8 @@ class ActionManager(object):
 
         if request is None:
             log.warn("Couldn't build request, unable to send the action")
+
+        if not request:
             return
 
         response = func(request)
@@ -82,11 +85,15 @@ class ActionManager(object):
 
         if account_key is None or rating_key is None:
             log.warn('Invalid action format: %s', info)
-            return
+            return None
 
         if account_key != 1:
             log.debug('Ignoring action from shared account')
-            return
+            return None
+
+        if WatchSession.is_active(rating_key):
+            log.debug('Ignoring action, item is currently being watched')
+            return False
 
         metadata = Metadata.get(rating_key)
         guid = Guid.parse(metadata.guid)
@@ -101,7 +108,7 @@ class ActionManager(object):
             request = cls.from_episode(metadata, guid)
         else:
             log.warn('Unsupported metadata type: %r', metadata)
-            return
+            return None
 
         log.debug('request: %r', request)
 
