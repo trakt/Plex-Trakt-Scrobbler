@@ -164,6 +164,25 @@ class WatchSession(Model):
         # Set `deleted` flag
         self.deleted = True
 
+    @classmethod
+    def is_active(cls, rating_key):
+        if not rating_key:
+            return False
+
+        # Ensure `rating_key` is a string
+        rating_key = str(rating_key)
+
+        sessions = cls.all(lambda ws:
+            ws.metadata and
+            ws.metadata.rating_key == rating_key
+        )
+
+        for key, ws in sessions:
+            if ws.active:
+                return True
+
+        return False
+
     @staticmethod
     def from_session(session, metadata, guid, state):
         return WatchSession(

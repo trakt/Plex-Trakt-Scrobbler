@@ -59,7 +59,12 @@ class BackupRunner(object):
             directory = os.path.basename(root)
 
             for filename in files:
-                result.append(Revision.parse(self, directory, filename))
+                revision = Revision.parse(self, directory, filename)
+
+                if not revision:
+                    continue
+
+                result.append(revision)
 
         # Sort backup history
         self.history = sorted(result, key=lambda x: x.timestamp, reverse=True)
@@ -138,6 +143,10 @@ class BackupRunner(object):
     @staticmethod
     def delta_savings(current, delta):
         current_size = len(current)
+
+        if not current_size:
+            return 0
+
         delta_size = sum([len(x) for x in delta.values()])
 
         return 1 - (float(delta_size) / current_size)

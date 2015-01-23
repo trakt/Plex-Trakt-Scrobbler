@@ -36,8 +36,8 @@ class Method(object):
         # Wrap run method to catch any exceptions
         try:
             self.run()
-        except Exception:
-            log.error('Exception raised in "%s" method' % self.name, exc_info=True)
+        except Exception, ex:
+            log.error('Exception raised in %r method: %s', self.name, ex, exc_info=True)
 
     def run(self):
         raise NotImplementedError()

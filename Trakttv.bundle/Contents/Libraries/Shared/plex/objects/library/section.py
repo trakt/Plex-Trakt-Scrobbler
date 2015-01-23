@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.objects.core.base import Property
 from plex.objects.directory import Directory
 
@@ -22,8 +23,8 @@ class Section(Directory):
     def all(self):
         response = self.http.get('all')
 
-        return self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
+        return self.parse(response, idict({
+            'MediaContainer': ('MediaContainer', idict({
                 'Directory': {
                     'artist':    'Artist',
                     'show':     'Show'
@@ -31,5 +32,5 @@ class Section(Directory):
                 'Video': {
                     'movie':    'Movie'
                 }
-            })
-        })
+            }))
+        }))

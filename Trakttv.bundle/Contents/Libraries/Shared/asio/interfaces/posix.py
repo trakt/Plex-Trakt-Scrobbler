@@ -68,11 +68,14 @@ class PosixInterface(Interface):
             return fcntl.fcntl(fp.fd, F_GETPATH, '\0' * 1024).rstrip('\0')
 
         # Use /proc/self/fd if available
-        if os.path.lexists("/proc/self/fd/%s" % fp.fd):
+        if os.path.lexists("/proc/self/fd/"):
             return os.readlink("/proc/self/fd/%s" % fp.fd)
 
         # Fallback to /dev/fd
-        return os.readlink("/dev/fd/%s" % fp.fd)
+        if os.path.lexists("/dev/fd/"):
+            return os.readlink("/dev/fd/%s" % fp.fd)
+
+        raise NotImplementedError('Environment not supported (fdescfs not mounted?)')
 
     @classmethod
     def seek(cls, fp, offset, origin):

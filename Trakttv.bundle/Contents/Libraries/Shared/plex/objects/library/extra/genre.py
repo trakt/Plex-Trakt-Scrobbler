@@ -9,7 +9,7 @@ class Genre(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Genre'):
+        for genre in cls.helpers.findall(node, 'Genre'):
             _, obj = Genre.construct(client, genre, child=True)
 
             items.append(obj)

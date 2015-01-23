@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.interfaces.core.base import Interface
 
 
@@ -7,55 +8,55 @@ class LibraryMetadataInterface(Interface):
     def all_leaves(self, key):
         response = self.http.get(key, 'allLeaves')
 
-        return self.parse(response, {
+        return self.parse(response, idict({
             'MediaContainer': {
                 '_': 'viewGroup',
 
-                'episode': ('ShowLeavesContainer', {
+                'episode': ('ShowLeavesContainer', idict({
                     'Video': {
                         'episode': 'Episode'
                     }
-                }),
+                })),
 
-                'track': ('ArtistLeavesContainer', {
+                'track': ('ArtistLeavesContainer', idict({
                     'Track': 'Track'
-                })
+                }))
             }
-        })
+        }))
 
     def children(self, key):
         response = self.http.get(key, 'children')
 
-        return self.parse(response, {
+        return self.parse(response, idict({
             'MediaContainer': {
                 '_': 'viewGroup',
 
                 # ---------------------------------------
                 # Music
                 # ---------------------------------------
-                'album': ('ArtistChildrenContainer', {
+                'album': ('ArtistChildrenContainer', idict({
                     'Directory': {
                         'album': 'Album'
                     }
-                }),
+                })),
 
-                'track': ('AlbumChildrenContainer', {
+                'track': ('AlbumChildrenContainer', idict({
                     'Track': 'Track'
-                }),
+                })),
 
                 # ---------------------------------------
                 # TV
                 # ---------------------------------------
-                'season': ('ShowChildrenContainer', {
+                'season': ('ShowChildrenContainer', idict({
                     'Directory': {
                         'season': 'Season'
                     }
-                }),
+                })),
 
-                'episode': ('SeasonChildrenContainer', {
+                'episode': ('SeasonChildrenContainer', idict({
                     'Video': {
                         'episode': 'Episode'
                     }
-                })
+                }))
             }
-        })
+        }))

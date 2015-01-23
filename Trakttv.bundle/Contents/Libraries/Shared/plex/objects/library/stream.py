@@ -40,7 +40,7 @@ class Stream(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Stream'):
+        for genre in cls.helpers.findall(node, 'Stream'):
             _, obj = Stream.construct(client, genre, child=True)
 
             items.append(obj)

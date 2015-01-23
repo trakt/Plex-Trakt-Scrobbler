@@ -15,18 +15,6 @@ log = Logger('sync.push')
 class Base(SyncBase):
     task = 'push'
 
-    def is_watching(self, p_item):
-        sessions = WatchSession.all(lambda ws:
-            ws.metadata and
-            ws.metadata.rating_key == p_item.rating_key
-        )
-
-        for key, ws in sessions:
-            if ws.active:
-                return True
-
-        return False
-
     def watch(self, key, p_items, t_item):
         if type(p_items) is not list:
             p_items = [p_items]
@@ -40,7 +28,7 @@ class Base(SyncBase):
             return True
 
         # Ignore if we are currently watching this item
-        if self.is_watching(p_items[0]):
+        if WatchSession.is_active(p_items[0].rating_key):
             log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
             return True
 

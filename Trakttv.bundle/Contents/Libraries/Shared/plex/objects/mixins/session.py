@@ -19,14 +19,14 @@ class Session(Descriptor):
     player = Property(resolver=lambda: Session.construct_player)
     transcode_session = Property(resolver=lambda: Session.construct_transcode_session)
 
-    @staticmethod
-    def construct_user(client, node):
-        return User.construct(client, node.find('User'), child=True)
+    @classmethod
+    def construct_user(cls, client, node):
+        return User.construct(client, cls.helpers.find(node, 'User'), child=True)
 
-    @staticmethod
-    def construct_player(client, node):
-        return Player.construct(client, node.find('Player'), child=True)
+    @classmethod
+    def construct_player(cls, client, node):
+        return Player.construct(client, cls.helpers.find(node, 'Player'), child=True)
 
-    @staticmethod
-    def construct_transcode_session(client, node):
-        return TranscodeSession.construct(client, node.find('TranscodeSession'), child=True)
+    @classmethod
+    def construct_transcode_session(cls, client, node):
+        return TranscodeSession.construct(client, cls.helpers.find(node, 'TranscodeSession'), child=True)

@@ -124,8 +124,8 @@ class Matcher(object):
                     matches = pattern.execute(fragment_pattern, value)
 
                     if matches:
-                        for match in matches:
-                            update_dict(result, match.groupdict())
+                        for match in pattern.process(matches):
+                            update_dict(result, match)
                     else:
                         success = False
                         break

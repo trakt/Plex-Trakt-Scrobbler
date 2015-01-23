@@ -86,9 +86,15 @@ class Logging(Source):
 
     def read_line(self):
         if not self.file:
-            self.file = ASIO.open(self.get_path(), opener=False)
+            path = self.get_path()
+            if not path:
+                raise Exception('Unable to find the location of "Plex Media Server.log"')
+
+            # Open file
+            self.file = ASIO.open(path, opener=False)
             self.file.seek(self.file.get_size(), SEEK_ORIGIN_CURRENT)
 
+            # Create buffered reader
             self.reader = BufferedReader(self.file)
 
             self.path = self.file.get_path()
@@ -132,11 +138,27 @@ class Logging(Source):
         if not self.file:
             return
 
-        self.reader.close()
-        self.reader = None
+        try:
+            # Close the buffered reader
+            self.reader.close()
+        except Exception, ex:
+            log.error('reader.close() - raised exception: %s', ex, exc_info=True)
+        finally:
+            self.reader = None
 
-        self.file.close()
-        self.file = None
+        try:
+            # Close the file handle
+            self.file.close()
+        except OSError, ex:
+            if ex.errno == 9:
+                # Bad file descriptor, already closed?
+                log.warn('file.close() - ignoring raised exception: %s (already closed)', ex)
+            else:
+                log.error('file.close() - raised exception: %s', ex, exc_info=True)
+        except Exception, ex:
+            log.error('file.close() - raised exception: %s', ex, exc_info=True)
+        finally:
+            self.file = None
 
     @classmethod
     def get_path(cls):
@@ -148,7 +170,7 @@ class Logging(Source):
         log.debug('hints: %r', hints)
 
         if not hints:
-            log.warn('Unable to find any hints for "%s", operating system not supported', platform.system())
+            log.error('Unable to find any hints for "%s", operating system not supported', platform.system())
             return None
 
         for hint in hints:
@@ -158,7 +180,15 @@ class Logging(Source):
                 cls.path = hint
                 break
 
-        log.debug('path = "%s"' % cls.path)
+        if cls.path:
+            log.debug('Using the path: %r', cls.path)
+        else:
+            log.error('Unable to find a valid path for "Plex Media Server.log"', extra={
+                'data': {
+                    'hints': hints
+                }
+            })
+
         return cls.path
 
     @classmethod

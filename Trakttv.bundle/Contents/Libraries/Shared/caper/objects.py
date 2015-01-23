@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from logr import Logr
 
 from caper.helpers import is_list_type
 from caper.compat import basestring
@@ -157,10 +158,11 @@ class CaptureMatch(object):
 
 
 class CaperPattern(object):
-    def __init__(self, patterns, method='match', include_separators=False):
+    def __init__(self, patterns, method='match', transform=None, include_separators=False):
         self.patterns = patterns
 
         self.method = method
+        self.transform = transform
         self.include_separators = include_separators
 
     def compile(self):
@@ -176,7 +178,11 @@ class CaperPattern(object):
                     pattern = pattern[0]
 
             # Compile the pattern
-            self.patterns.append(re.compile(pattern, re.IGNORECASE))
+            try:
+                self.patterns.append(re.compile(pattern, re.IGNORECASE))
+            except Exception as ex:
+                Logr.error('Unable to compile pattern "%s"', pattern)
+                raise ex
 
         return len(patterns)
 
@@ -188,6 +194,17 @@ class CaperPattern(object):
             return list(fragment_pattern.finditer(value))
 
         raise ValueError('Unknown pattern method "%s"' % self.method)
+
+    def process(self, matches):
+        matches = [match.groupdict() for match in matches]
+
+        if self.transform:
+            try:
+                return self.transform(matches)
+            except Exception as ex:
+                Logr.warn('Exception raised while transforming matches: %s', ex)
+
+        return matches
 
     def __getitem__(self, index):
         return self.patterns[index]

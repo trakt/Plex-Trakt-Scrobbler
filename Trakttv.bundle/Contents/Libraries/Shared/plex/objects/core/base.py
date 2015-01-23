@@ -9,6 +9,8 @@ log = logging.getLogger(__name__)
 
 
 class Property(object):
+    helpers = Interface.helpers
+
     def __init__(self, name=None, type=None, resolver=None):
         self.name = name
         self.type = type
@@ -21,8 +23,8 @@ class Property(object):
         return self.value_node(key, node, keys_used)
 
     def value_node(self, key, node, keys_used):
-        value = node.get(key)
-        keys_used.append(key)
+        value = self.helpers.get(node, key)
+        keys_used.append(key.lower())
 
         if value is None:
             return None
@@ -50,7 +52,7 @@ class Property(object):
         try:
             keys, value = func(client, node)
 
-            keys_used.extend(keys)
+            keys_used.extend([k.lower() for k in keys])
             return value
         except Exception as ex:
             log.warn('Exception in value function (%s): %s - %s', func, ex, traceback.format_exc())
@@ -96,7 +98,7 @@ class Descriptor(Interface):
         if node is None:
             return [], None
 
-        keys_available = node.keys()
+        keys_available = [k.lower() for k in node.keys()]
         keys_used = []
 
         if attribute_map is None:
@@ -105,7 +107,7 @@ class Descriptor(Interface):
         require_map = attribute_map.get('*') != '*'
 
         # Determine path from object "key"
-        key = node.get('key')
+        key = cls.helpers.get(node, 'key')
 
         if key is not None:
             path = key[:key.rfind('/')]

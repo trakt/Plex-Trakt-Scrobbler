@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.interfaces.core.base import Interface
 
 
@@ -7,13 +8,13 @@ class StatusInterface(Interface):
     def sessions(self):
         response = self.http.get('sessions')
 
-        return self.parse(response, {
-            'MediaContainer': ('SessionContainer', {
+        return self.parse(response, idict({
+            'MediaContainer': ('SessionContainer', idict({
                 'Track': 'Track',
 
                 'Video': {
                     'episode':  'Episode',
                     'movie':    'Movie'
                 }
-            })
-        })
+            }))
+        }))

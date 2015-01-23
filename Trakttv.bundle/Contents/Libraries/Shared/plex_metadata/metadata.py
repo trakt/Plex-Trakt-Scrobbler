@@ -71,8 +71,14 @@ class Metadata(object):
     #
 
     def fetch(self, key):
+        # Request metadata from server
         container = Plex['library'].metadata(key)
 
+        if not container:
+            log.warn('Metadata request for item "%s" failed', key)
+            return None
+
+        # Cast to `list` (resolve iterators)
         items = list(container)
 
         if not items:

@@ -7,4 +7,4 @@ class Country(Descriptor):
 
     @classmethod
     def from_node(cls, client, node):
-        return cls.construct(client, node.find('Country'), child=True)
+        return cls.construct(client, cls.helpers.find(node, 'Country'), child=True)
