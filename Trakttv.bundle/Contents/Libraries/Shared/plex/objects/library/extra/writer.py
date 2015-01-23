@@ -9,7 +9,7 @@ class Writer(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Writer'):
+        for genre in cls.helpers.findall(node, 'Writer'):
             _, obj = Writer.construct(client, genre, child=True)
 
             items.append(obj)

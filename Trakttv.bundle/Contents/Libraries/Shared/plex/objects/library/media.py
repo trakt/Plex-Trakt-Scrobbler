@@ -25,4 +25,4 @@ class Media(Descriptor):
 
     @classmethod
     def from_node(cls, client, node):
-        return cls.construct(client, node.find('Media'), child=True)
+        return cls.construct(client, cls.helpers.find(node, 'Media'), child=True)

@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.interfaces.core.base import Interface
 
 
@@ -7,11 +8,11 @@ class PreferencesInterface(Interface):
     def get(self, id=None):
         response = self.http.get()
 
-        container = self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
+        container = self.parse(response, idict({
+            'MediaContainer': ('MediaContainer', idict({
                 'Setting': 'Setting'
-            })
-        })
+            }))
+        }))
 
         if container is None or id is None:
             return container

@@ -18,7 +18,7 @@ class Part(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Part'):
+        for genre in cls.helpers.findall(node, 'Part'):
             _, obj = Part.construct(client, genre, child=True)
 
             items.append(obj)

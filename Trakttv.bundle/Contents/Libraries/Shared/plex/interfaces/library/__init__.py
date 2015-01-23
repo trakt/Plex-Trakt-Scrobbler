@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.interfaces.core.base import Interface
 
 
@@ -7,8 +8,8 @@ class LibraryInterface(Interface):
     def metadata(self, rating_key):
         response = self.http.get('metadata', rating_key)
 
-        return self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
+        return self.parse(response, idict({
+            'MediaContainer': ('MediaContainer', idict({
                 'Directory': {
                     'album':    'Album',
                     'season':   'Season',
@@ -18,8 +19,8 @@ class LibraryInterface(Interface):
                     'episode':  'Episode',
                     'movie':    'Movie'
                 }
-            })
-        })
+            }))
+        }))
 
     def on_deck(self):
         raise NotImplementedError()
@@ -27,8 +28,8 @@ class LibraryInterface(Interface):
     def recently_added(self):
         response = self.http.get('recentlyAdded')
 
-        return self.parse(response, {
-            'MediaContainer': ('MediaContainer', {
+        return self.parse(response, idict({
+            'MediaContainer': ('MediaContainer', idict({
                 'Directory': {
                     'album':    'Album',
                     'season':   'Season'
@@ -36,19 +37,19 @@ class LibraryInterface(Interface):
                 'Video': {
                     'movie':    'Movie'
                 }
-            })
-        })
+            }))
+        }))
 
     def sections(self):
         response = self.http.get('sections')
 
-        return self.parse(response, {
-            'MediaContainer': ('SectionContainer', {
-                'Directory': ('Section', {
+        return self.parse(response, idict({
+            'MediaContainer': ('SectionContainer', idict({
+                'Directory': ('Section', idict({
                     'Location': 'Location'
-                })
-            })
-        })
+                }))
+            }))
+        }))
 
     #
     # Item actions

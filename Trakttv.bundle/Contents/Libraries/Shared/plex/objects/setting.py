@@ -17,23 +17,23 @@ class Setting(Descriptor):
     hidden = Property(type=[int, bool])
     advanced = Property(type=[int, bool])
 
-    @staticmethod
-    def parse_value(client, node):
-        type = node.get('type')
-        value = node.get('value')
+    @classmethod
+    def parse_value(cls, client, node):
+        type = cls.helpers.get(node, 'type')
+        value = cls.helpers.get(node, 'value')
 
         return ['value'], Setting.convert(type, value)
 
-    @staticmethod
-    def parse_default(client, node):
-        type = node.get('type')
-        default = node.get('default')
+    @classmethod
+    def parse_default(cls, client, node):
+        type = cls.helpers.get(node, 'type')
+        default = cls.helpers.get(node, 'default')
 
         return ['default'], Setting.convert(type, default)
 
-    @staticmethod
-    def parse_options(client, node):
-        value = node.get('enumValues')
+    @classmethod
+    def parse_options(cls, client, node):
+        value = cls.helpers.get(node, 'enumValues')
 
         if not value:
             return [], None

@@ -1,3 +1,4 @@
+from plex.core.idict import idict
 from plex.interfaces.core.base import Interface
 
 
@@ -5,11 +6,11 @@ class RootInterface(Interface):
     def detail(self):
         response = self.http.get()
 
-        return self.parse(response, {
-            'MediaContainer': ('Detail', {
+        return self.parse(response, idict({
+            'MediaContainer': ('Detail', idict({
                 'Directory': 'Directory'
-            })
-        })
+            }))
+        }))
 
     def version(self):
         detail = self.detail()
@@ -22,11 +23,11 @@ class RootInterface(Interface):
     def clients(self):
         response = self.http.get('clients')
 
-        return self.parse(response, {
-            'MediaContainer': ('ClientContainer', {
+        return self.parse(response, idict({
+            'MediaContainer': ('ClientContainer', idict({
                 'Server': 'Client'
-            })
-        })
+            }))
+        }))
 
     def players(self):
         pass
@@ -34,8 +35,8 @@ class RootInterface(Interface):
     def servers(self):
         response = self.http.get('servers')
 
-        return self.parse(response, {
-            'MediaContainer': ('Container', {
+        return self.parse(response, idict({
+            'MediaContainer': ('Container', idict({
                 'Server': 'Server'
-            })
-        })
+            }))
+        }))

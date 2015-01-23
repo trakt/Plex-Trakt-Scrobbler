@@ -12,7 +12,7 @@ class Role(Descriptor):
     def from_node(cls, client, node):
         items = []
 
-        for genre in node.findall('Role'):
+        for genre in cls.helpers.findall(node, 'Role'):
             _, obj = Role.construct(client, genre, child=True)
 
             items.append(obj)

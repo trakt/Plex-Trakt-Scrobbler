@@ -5,15 +5,45 @@ from functools import wraps
 from StringIO import StringIO
 import logging
 
+# Import available parser
+PARSER = None
+
 try:
-    from lxml import etree as ET
+    from lxml import etree
+    PARSER = 'etree.HTMLParser'
 except ImportError:
-    from xml.etree import ElementTree as ET
+    from xml.etree import ElementTree as etree
+    PARSER = 'etree.XMLParser'
 
 log = logging.getLogger(__name__)
 
 
+class Helpers(object):
+    @staticmethod
+    def get(node, attr):
+        if PARSER == 'etree.HTMLParser':
+            return node.get(attr.lower())
+
+        return node.get(attr)
+
+    @staticmethod
+    def find(node, tag):
+        if PARSER == 'etree.HTMLParser':
+            return node.find(tag.lower())
+
+        return node.find(tag)
+
+    @staticmethod
+    def findall(node, tag):
+        if PARSER == 'etree.HTMLParser':
+            return node.findall(tag.lower())
+
+        return node.findall(tag)
+
+
 class Interface(object):
+    helpers = Helpers
+
     path = None
     object_map = {}
 
@@ -38,7 +68,7 @@ class Interface(object):
             return None
 
         try:
-            root = ET.fromstring(response.content)
+            root = self.__parse_xml(response.content)
         except SyntaxError, ex:
             log.error('Unable to parse XML response: %s', ex, exc_info=True, extra={
                 'data': {
@@ -56,6 +86,22 @@ class Interface(object):
         path = url.path
 
         return self.__construct(self.client, path, root, schema)
+
+    @staticmethod
+    def __parse_xml(content):
+        if PARSER == 'etree.HTMLParser':
+            html = etree.fromstring(content, parser=etree.HTMLParser())
+            assert html.tag == 'html'
+
+            bodies = [e for e in html if e.tag == 'body']
+            assert len(bodies) == 1
+
+            body = bodies[0]
+            assert len(body) == 1
+
+            return body[0]
+
+        return etree.fromstring(content)
 
     @staticmethod
     def __error_snippet(response, ex):
@@ -102,13 +148,14 @@ class Interface(object):
         if not schema:
             return None
 
+        # Try retrieve schema for `tag`
         item = schema.get(node.tag)
 
         if item is None:
             raise ValueError('Unknown node with tag "%s"' % node.tag)
 
         if type(item) is dict:
-            value = node.get(item.get('_', 'type'))
+            value = cls.helpers.get(node, item.get('_', 'type'))
 
             if value is None:
                 return None
