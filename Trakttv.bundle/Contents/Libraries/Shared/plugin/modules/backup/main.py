@@ -143,6 +143,10 @@ class BackupRunner(object):
     @staticmethod
     def delta_savings(current, delta):
         current_size = len(current)
+
+        if not current_size:
+            return 0
+
         delta_size = sum([len(x) for x in delta.values()])
 
         return 1 - (float(delta_size) / current_size)
