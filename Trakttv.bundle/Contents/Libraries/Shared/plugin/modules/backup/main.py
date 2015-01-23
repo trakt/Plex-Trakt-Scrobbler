@@ -59,7 +59,12 @@ class BackupRunner(object):
             directory = os.path.basename(root)
 
             for filename in files:
-                result.append(Revision.parse(self, directory, filename))
+                revision = Revision.parse(self, directory, filename)
+
+                if not revision:
+                    continue
+
+                result.append(revision)
 
         # Sort backup history
         self.history = sorted(result, key=lambda x: x.timestamp, reverse=True)
