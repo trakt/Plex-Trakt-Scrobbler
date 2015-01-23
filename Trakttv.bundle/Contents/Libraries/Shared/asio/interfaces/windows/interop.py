@@ -213,10 +213,6 @@ class WindowsInterop(object):
             buf_size
         )
 
-        error = GetLastError()
-        if result == 0:
-            print Exception('%s (%s)' % (FormatError(error), error))
-
         return cls.clean_buffer_value(buf)
 
     @classmethod
