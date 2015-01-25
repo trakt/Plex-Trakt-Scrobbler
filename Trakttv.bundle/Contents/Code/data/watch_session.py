@@ -5,6 +5,7 @@ from plugin.data.model import Model, Property
 from jsonpickle.unpickler import ClassRegistry
 from plex_metadata import Matcher
 from Queue import PriorityQueue
+from threading import Lock
 from trakt import Trakt
 
 
@@ -17,6 +18,9 @@ class WatchSession(Model):
     deleted = Property(False, pickle=False)
 
     # Requests/Actions
+    action_manager = Property(None, pickle=False)
+    action_queued = Property(lambda: Lock(), pickle=False)
+
     action_queue = Property(lambda: PriorityQueue(), pickle=False)
     action_thread = Property(None, pickle=False)
 
@@ -123,6 +127,9 @@ class WatchSession(Model):
         log.debug('process_actions() thread - started')
 
         while not self.deleted:
+            self.action_queued.acquire()
+
+            # Wait for an action
             priority, action, request = self.action_queue.get()
 
             log.debug('Processing "%s" action (priority: %s)', action, priority)
@@ -137,32 +144,50 @@ class WatchSession(Model):
                 log.info('Ignoring "%s" action, session already scrobbled', action)
                 continue
 
-            # Send action to trakt.tv
-            response = Trakt['scrobble'].action(action, **request)
+            # Queue action with `ActionManager`
+            self.action_manager.queue_scrobble(
+                self.metadata.rating_key,
+                action, request,
 
-            performed = response.get('action') if response else None
-
-            if not performed:
-                log.warn('Unable to send "%s" action', action)
-
-                # Retry request
-                self.queue(action, request, priority - 1)
-
-                continue
-
-            log.debug('Performed "%s" action on trakt.tv', performed)
+                callback=self.on_action_response
+            )
 
             # Update action history
             self.actions_sent.append(action)
-            self.actions_performed.append(performed)
 
         log.debug('process_actions() thread - finished')
+
+    def on_action_response(self, response, priority, item):
+        # Get request details
+        kwargs = item.get('kwargs', {})
+        action = kwargs.get('action')
+
+        # Check if response failed
+        if not response:
+            log.warn('Unable to send "%s" action', action)
+
+            # Request failed, release the lock
+            self.action_queued.release()
+            return
+
+        # Get response details
+        performed = response.get('action')
+
+        log.debug('Performed "%s" action on trakt.tv', performed)
+        self.actions_performed.append(performed)
+
+        # Action performed, release the lock (so another action can be sent)
+        self.action_queued.release()
 
     def delete(self):
         super(WatchSession, self).delete()
 
         # Set `deleted` flag
         self.deleted = True
+
+    @classmethod
+    def configure(cls, action_manager):
+        cls.action_manager = action_manager
 
     @classmethod
     def is_active(cls, rating_key):

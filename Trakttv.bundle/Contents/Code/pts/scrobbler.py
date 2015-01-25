@@ -3,7 +3,6 @@ from core.helpers import str_pad, get_filter, get_pref, flatten, any
 from core.logger import Logger
 from core.method_manager import Method, Manager
 
-from trakt import Trakt
 import ipaddress
 import math
 
