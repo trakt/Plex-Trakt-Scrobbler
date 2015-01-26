@@ -235,7 +235,7 @@ class Main(object):
 
     def start(self):
         # Check for authentication token
-        Log.Info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
+        log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
 
         # Validate username/password
         spawn(self.authenticate)

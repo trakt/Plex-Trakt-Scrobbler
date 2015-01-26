@@ -1,9 +1,12 @@
+from core.logger import Logger
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 
 from threading import Timer
 import json
 import random
 import requests
+
+log = Logger('core.update_checker')
 
 
 class UpdateChecker(object):
@@ -57,7 +60,7 @@ class UpdateChecker(object):
 
     def run(self, first_run=False):
         if Dict['developer']:
-            Log.Info('Developer mode enabled, update checker disabled')
+            log.info('Developer mode enabled, update checker disabled')
             return
 
         response = self.request(first_run)
@@ -79,7 +82,7 @@ class UpdateChecker(object):
         self.schedule_next()
 
     def process_response(self, first_run, response):
-        log_func = Log.Debug if first_run else Log.Info
+        log_func = log.debug if first_run else log.info
 
         if response.get('update_error'):
             self.reset()
@@ -89,9 +92,9 @@ class UpdateChecker(object):
 
             # Only log the warning on the first result, no need to spam with warnings
             if first_run:
-                Log.Info(message)
+                log.info(message)
             else:
-                Log.Debug(message)
+                log.debug(message)
         elif response.get('update_available'):
             self.update_available = True
             self.update_detail = response['update_available']
@@ -109,4 +112,4 @@ class UpdateChecker(object):
         self.timer = Timer(interval, self.run)
         self.timer.start()
 
-        Log.Debug("Next update check scheduled to happen in %s seconds" % interval)
+        log.debug("Next update check scheduled to happen in %s seconds" % interval)

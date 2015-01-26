@@ -6,7 +6,6 @@ from jsonpickle.unpickler import ClassRegistry
 from plex_metadata import Matcher
 from Queue import PriorityQueue
 from threading import Lock
-from trakt import Trakt
 import Queue
 
 
