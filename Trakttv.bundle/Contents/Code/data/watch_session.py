@@ -7,6 +7,7 @@ from plex_metadata import Matcher
 from Queue import PriorityQueue
 from threading import Lock
 from trakt import Trakt
+import Queue
 
 
 log = Logger('pts.scrobbler')
@@ -130,7 +131,11 @@ class WatchSession(Model):
             self.action_queued.acquire()
 
             # Wait for an action
-            priority, action, request = self.action_queue.get()
+            try:
+                priority, action, request = self.action_queue.get(timeout=30)
+            except Queue.Empty:
+                self.action_queued.release()
+                continue
 
             log.debug('Processing "%s" action (priority: %s)', action, priority)
 
