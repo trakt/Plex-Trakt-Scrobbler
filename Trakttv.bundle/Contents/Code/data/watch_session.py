@@ -137,11 +137,15 @@ class WatchSession(Model):
             # Ensure we don't send duplicate actions
             if self.actions_sent and self.actions_sent[-1] == action:
                 log.info('Ignoring duplicate "%s" action', action)
+
+                self.action_queued.release()
                 continue
 
             # Only send a "start" action if we haven't scrobbled yet
             if action == 'start' and 'scrobble' in self.actions_performed:
                 log.info('Ignoring "%s" action, session already scrobbled', action)
+
+                self.action_queued.release()
                 continue
 
             # Queue action with `ActionManager`
