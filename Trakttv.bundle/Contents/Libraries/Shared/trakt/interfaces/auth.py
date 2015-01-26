@@ -4,13 +4,13 @@ from trakt.interfaces.base import Interface
 class AuthInterface(Interface):
     path = 'auth'
 
-    def login(self, login, password):
+    def login(self, login, password, **kwargs):
         response = self.http.post('login', data={
             'login': login,
             'password': password
         })
 
-        data = self.get_data(response)
+        data = self.get_data(response, **kwargs)
 
         if not data:
             return None
