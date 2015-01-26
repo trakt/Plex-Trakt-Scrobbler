@@ -40,12 +40,12 @@ class SessionManager(Thread):
             return
 
         if ws.active and Datetime.Now() > ws.paused_since + Datetime.Delta(seconds=15):
-            Log.Debug("%s paused for 15s, watching status cancelled" % ws.title)
+            log.debug("%s paused for 15s, watching status cancelled" % ws.title)
             ws.active = False
             ws.save()
 
             if not self.send_action(ws, 'pause'):
-                Log.Info('Failed to send "pause" action for watch session')
+                log.info('Failed to send "pause" action for watch session')
 
     def start(self):
         # Cleanup sessions
@@ -96,4 +96,4 @@ class SessionManager(Thread):
                 ws.update_required = True
                 ws.save()
 
-        Log.Debug('Finished cleaning up')
+        log.debug('Finished cleaning up')

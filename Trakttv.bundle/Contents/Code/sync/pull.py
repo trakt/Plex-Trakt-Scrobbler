@@ -208,7 +208,7 @@ class Show(Base):
             if all([not e.is_collected for (_, e) in t_show.episodes()]):
                 continue
 
-            show = t_show.to_info()
+            show = t_show.to_identifier()
 
             if self.is_missing(t_show):
                 # Entire show is missing
@@ -326,7 +326,7 @@ class Movie(Base):
         for key, t_movie in t_collection_missing.items():
             log.debug('Unable to find "%s" [%s] in plex', t_movie.title, key)
 
-            self.store('missing.movies', t_movie.to_info())
+            self.store('missing.movies', t_movie.to_identifier())
 
         log.info('Discovered %s missing movie(s)', len(self.retrieve('missing.movies')))
 

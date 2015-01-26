@@ -4,7 +4,6 @@ from core.logger import Logger
 from threading import Lock
 import sys
 import trakt
-import traceback
 
 log = Logger('core.task')
 
@@ -26,7 +25,11 @@ class Task(object):
         self.started = False
         self.lock = Lock()
 
+        self.name = None
+
     def spawn(self, name):
+        self.name = name
+
         spawn(self.run, thread_name=name)
 
     def wait(self):
@@ -45,23 +48,6 @@ class Task(object):
             return None
 
         return self.result
-
-    def target_name(self):
-        if self.target is None:
-            return None
-
-        func_name = getattr(self.target, '__name__', None)
-
-        kls = getattr(self.target, 'im_class', None)
-        kls_name = getattr(kls, '__name__', None) if kls else None
-
-        if kls_name and func_name:
-            return '%s.%s()' % (kls_name, func_name)
-
-        if func_name:
-            return '%s()' % func_name
-
-        return None
 
     def run(self):
         # Wait for lock
@@ -88,7 +74,7 @@ class Task(object):
         except Exception, ex:
             self.exception = sys.exc_info()
 
-            log.error('Exception raised in triggered function %r: %s', self.target_name(), ex, exc_info=True)
+            log.error('Exception raised in triggered function %r: %s', self.name, ex, exc_info=True)
         finally:
             # Release lock
             self.complete = True

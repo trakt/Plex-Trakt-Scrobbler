@@ -1,3 +1,5 @@
+from core.logger import Logger
+
 import hashlib
 import inspect
 import re
@@ -6,6 +8,8 @@ import threading
 import traceback
 import time
 import unicodedata
+
+log = Logger('core.helpers')
 
 
 PY25 = sys.version_info[0] == 2 and sys.version_info[1] == 5
@@ -54,7 +58,7 @@ def json_import():
     try:
         import simplejson as json
 
-        Log.Info("Using 'simplejson' module for JSON serialization")
+        log.info("Using 'simplejson' module for JSON serialization")
         return json, 'json'
     except ImportError:
         pass
@@ -63,7 +67,7 @@ def json_import():
     try:
         import json
 
-        Log.Info("Using 'json' module for JSON serialization")
+        log.info("Using 'json' module for JSON serialization")
         return json, 'json'
     except ImportError:
         pass
@@ -72,10 +76,10 @@ def json_import():
     try:
         import demjson
 
-        Log.Info("Using 'demjson' module for JSON serialization")
+        log.info("Using 'demjson' module for JSON serialization")
         return demjson, 'demjson'
     except ImportError:
-        Log.Warn("Unable to find json module for serialization")
+        log.warn("Unable to find json module for serialization")
         raise Exception("Unable to find json module for serialization")
 
 # Import json serialization module
@@ -232,12 +236,12 @@ def spawn(func, *args, **kwargs):
         try:
             func(*args, **kwargs)
         except Exception, ex:
-            Log.Error('Thread "%s" raised an exception: %s - %s', thread_name, ex, traceback.format_exc())
+            log.error('Thread "%s" raised an exception: %s - %s', thread_name, ex, traceback.format_exc())
 
     thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
     thread.start()
 
-    Log.Debug("Spawned thread with name '%s'" % thread_name)
+    log.debug("Spawned thread with name '%s'" % thread_name)
     return thread
 
 

@@ -4,6 +4,7 @@ from trakt.core.request import TraktRequest
 import logging
 import requests
 import socket
+import time
 
 log = logging.getLogger(__name__)
 
@@ -21,8 +22,13 @@ class HttpClient(object):
         return self
 
     def request(self, method, path=None, params=None, data=None, **kwargs):
+        # retrieve configuration
         ctx = self.configuration.pop()
 
+        retry = self.client.configuration.get('http.retry', False)
+        max_retries = self.client.configuration.get('http.max_retries', 3)
+
+        # build request
         if ctx.base_path and path:
             path = ctx.base_path + '/' + path
         elif ctx.base_path:
@@ -40,18 +46,32 @@ class HttpClient(object):
 
         prepared = request.prepare()
 
-        # TODO retrying requests on 502, 503 errors?
-        try:
-            return self.session.send(prepared)
-        except socket.gaierror, e:
-            code, _ = e
+        # retrying requests on errors >= 500
+        response = None
 
-            if code != 8:
-                raise e
+        for i in range(max_retries + 1):
+            if i > 0 :
+                log.warn('Retry # %s', i)
 
-            log.warn('Encountered socket.gaierror (code: 8)')
+            try:
+                response = self.session.send(prepared)
+            except socket.gaierror, e:
+                code, _ = e
 
-            return self._rebuild().send(prepared)
+                if code != 8:
+                    raise e
+
+                log.warn('Encountered socket.gaierror (code: 8)')
+
+                response = self._rebuild().send(prepared)
+
+            if not retry or response.status_code < 500:
+                break
+
+            log.warn('Continue retry since status is %s', response.status_code)
+            time.sleep(5)
+
+        return response
 
     def get(self, path=None, params=None, data=None, **kwargs):
         return self.request('GET', path, params, data, **kwargs)
