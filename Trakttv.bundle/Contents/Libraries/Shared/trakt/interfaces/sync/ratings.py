@@ -19,17 +19,17 @@ class SyncRatingsInterface(Get, Add, Remove):
     #
 
     @authenticated
-    def shows(self, store=None, rating=None):
-        return self.get('shows', store, rating,)
+    def shows(self, store=None, rating=None, **kwargs):
+        return self.get('shows', store, rating, **kwargs)
 
     @authenticated
-    def seasons(self, store=None, rating=None):
-        return self.get('seasons', store, rating,)
+    def seasons(self, store=None, rating=None, **kwargs):
+        return self.get('seasons', store, rating, **kwargs)
 
     @authenticated
-    def episodes(self, store=None, rating=None):
-        return self.get('episodes', store, rating)
+    def episodes(self, store=None, rating=None, **kwargs):
+        return self.get('episodes', store, rating, **kwargs)
 
     @authenticated
-    def movies(self, store=None, rating=None):
-        return self.get('movies', store, rating)
+    def movies(self, store=None, rating=None, **kwargs):
+        return self.get('movies', store, rating, **kwargs)
