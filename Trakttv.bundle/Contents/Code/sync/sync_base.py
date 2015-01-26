@@ -365,5 +365,7 @@ class SyncBase(Base, Emitter):
         try:
             log.debug('Saving artifacts to "%s.json"', name)
             Data.Save(name + '.json', repr(data))
-        except MemoryError:
-            log.error('Unable to save artifacts, out of memory')
+        except MemoryError, ex:
+            log.error('Unable to save artifacts: %s', ex, exc_info=True)
+        except OSError, ex:
+            log.error('Unable to save artifacts: %s', ex, exc_info=True)
