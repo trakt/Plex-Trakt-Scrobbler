@@ -141,11 +141,12 @@ class ActionManager(object):
         history = cls.history.get(key, {'performed': [], 'sent': []})
 
         if performed == 'start':
+            if history['performed'] or history['sent']:
+                log.debug('History for "%s" reset, new session started', key)
+
             # Reset history
             history['performed'] = []
             history['sent'] = []
-
-            log.debug('History for "%s" reset, new session started', key)
 
         # Update history
         if performed:
@@ -181,6 +182,8 @@ class ActionManager(object):
         kwargs = item.get('kwargs', {})
 
         performed, response = func(**kwargs)
+
+        log.debug('send - performed: %r, response: %r', performed, response)
 
         if response is None:
             # Request failed, retry the request
@@ -233,8 +236,6 @@ class ActionManager(object):
         if not response:
             return None, response
 
-        log.debug('send_event - response: %r', response)
-
         if action == 'add':
             # Translate "add" -> "scrobble"
             action = 'scrobble'
@@ -250,8 +251,6 @@ class ActionManager(object):
 
         if not response:
             return None, response
-
-        log.debug('send_scrobble - response: %r', response)
 
         return response.get('action'), response
 
@@ -272,8 +271,6 @@ class ActionManager(object):
 
     @classmethod
     def valid_action(cls, item, history):
-        log.debug('valid(%r, %r)', item, history)
-
         # Retrieve request details
         kwargs = item.get('kwargs', {})
         action = kwargs.get('action')
@@ -287,11 +284,11 @@ class ActionManager(object):
         sent = history.get('sent', [])
 
         if sent and sent[-1] == action:
-            log.debug('Ignoring duplicate "%s" action', action)
+            log.info('Ignoring duplicate "%s" action (history: %s)', action, history)
             return False
 
         if action in ['add', 'stop'] and cls.is_scrobbled(performed):
-            log.debug('Item already scrobbled, ignoring "%s" action', action)
+            log.info('Item already scrobbled, ignoring "%s" action (history: %s)', action, history)
             return False
 
         return True
