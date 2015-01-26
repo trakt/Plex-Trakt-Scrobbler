@@ -310,7 +310,7 @@ class ActionManager(object):
             log.debug('Ignoring action from shared account')
             return None
 
-        if WatchSession.is_active(rating_key):
+        if WatchSession.is_active(rating_key, lambda ws: not ws.update_required):
             log.debug('Ignoring action, item is currently being watched')
             return False
 

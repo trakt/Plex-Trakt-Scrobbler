@@ -190,7 +190,7 @@ class WatchSession(Model):
         cls.action_manager = action_manager
 
     @classmethod
-    def is_active(cls, rating_key):
+    def is_active(cls, rating_key, f_validate=None):
         if not rating_key:
             return False
 
@@ -203,6 +203,9 @@ class WatchSession(Model):
         )
 
         for key, ws in sessions:
+            if f_validate and not f_validate(ws):
+                continue
+
             if ws.active:
                 return True
 
