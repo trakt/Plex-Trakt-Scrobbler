@@ -39,7 +39,7 @@ from sync.sync_manager import SyncManager
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
-from trakt import Trakt
+from trakt import Trakt, ClientError
 import hashlib
 import logging
 import os
@@ -172,14 +172,31 @@ class Main(object):
             log.info('Authentication cleared, username was changed')
 
         # Authentication
-        if not Dict['trakt.token']:
-            Dict['trakt.username'] = Prefs['username']
+        retry = False
 
-            # Authenticate (no token has previously been stored)
-            Dict['trakt.token'] = Trakt['auth'].login(
-                Prefs['username'],
-                Prefs['password']
-            )
+        if not Dict['trakt.token']:
+            # Authenticate with trakt.tv (no token has previously been stored)
+            with Trakt.configuration.http(retry=True):
+                try:
+                    Dict['trakt.token'] = Trakt['auth'].login(
+                        Prefs['username'],
+                        Prefs['password'],
+                        exceptions=True
+                    )
+
+                    Dict['trakt.username'] = Prefs['username']
+                except ClientError, ex:
+                    log.warn('Authentication failed: %s', ex, exc_info=True)
+                    Dict['trakt.token'] = None
+
+                    # Client error (invalid username or password), don't retry the request
+                    retry = False
+                except Exception, ex:
+                    log.error('Authentication failed: %s', ex, exc_info=True)
+                    Dict['trakt.token'] = None
+
+                    # Server error, retry the request
+                    retry = True
 
             Dict.Save()
 
@@ -194,9 +211,7 @@ class Main(object):
 
         if not success:
             # status - False = invalid credentials, None = request failed
-            if success is False:
-                log.warn('Authentication failed, username or password is incorrect')
-            else:
+            if retry:
                 # Increase retry interval each time to a maximum of 30 minutes
                 if retry_interval < 60 * 30:
                     retry_interval = int(retry_interval * 1.3)
@@ -205,8 +220,10 @@ class Main(object):
                 if retry_interval > 60 * 30:
                     retry_interval = 60 * 30
 
-                log.warn('Unable to verify account details, will try again in %s seconds', retry_interval)
+                log.warn('Unable to authentication with trakt.tv, will try again in %s seconds', retry_interval)
                 schedule(cls.authenticate, retry_interval, retry_interval)
+            else:
+                log.warn('Authentication failed, username or password is incorrect')
 
             Main.update_config(False)
             return False
