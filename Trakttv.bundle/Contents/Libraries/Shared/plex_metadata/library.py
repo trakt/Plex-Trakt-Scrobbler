@@ -4,6 +4,10 @@ from plex_metadata.guid import Guid
 from plex_metadata.matcher import Default as Matcher
 from plex_metadata.metadata import Default as Metadata
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class Library(object):
     @classmethod
@@ -66,7 +70,7 @@ class Library(object):
         guid = Guid.parse(item.guid)
 
         if not guid:
-            # Missing guid
+            log.warn('Unable to map item "%s" - invalid/missing "guid" property', item.rating_key)
             return False
 
         # Build key
