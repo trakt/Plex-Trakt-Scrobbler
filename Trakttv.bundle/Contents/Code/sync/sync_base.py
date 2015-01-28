@@ -1,3 +1,4 @@
+from core.cache import CacheManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
@@ -172,8 +173,16 @@ class SyncBase(Base, Emitter):
             self.update_status(False)
             return False
 
-        # Trigger children and return if there was an error
-        exceptions, results = self.trigger_children(*args, **kwargs)
+        # Create "http" cache for this task
+        cache_key = 'http.%s.%s' % (self.get_sid(), self.key)
+        cache = CacheManager.open(cache_key)
+
+        with Plex.configuration.cache(http=cache):
+            # Trigger children and return if there was an error
+            exceptions, results = self.trigger_children(*args, **kwargs)
+
+        # Discard HTTP cache
+        CacheManager.delete(cache_key)
 
         if not all(results):
             self.update_status(False, exceptions=exceptions)
