@@ -67,6 +67,10 @@ class Library(object):
     def item_map(cls, table, item):
         metadata = Metadata.get(item.rating_key)
 
+        if not metadata:
+            log.warn('Unable to map item "%s" - unable to retrieve metadata', item.rating_key)
+            return False
+
         # Update with extended information
         item.guid = metadata.guid
 
