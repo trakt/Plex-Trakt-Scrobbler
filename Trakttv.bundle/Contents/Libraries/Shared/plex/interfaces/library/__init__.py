@@ -12,6 +12,8 @@ class LibraryInterface(Interface):
             'MediaContainer': ('MediaContainer', idict({
                 'Directory': {
                     'album':    'Album',
+                    'artist':   'Artist',
+
                     'season':   'Season',
                     'show':     'Show'
                 },
