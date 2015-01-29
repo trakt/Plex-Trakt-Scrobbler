@@ -18,6 +18,10 @@ class Library(object):
         result = {}
 
         for section in sections:
+            if section.agent == "com.plexapp.agents.none":
+                # Exclude sections that don't have an agent
+                continue
+
             if section.type not in result:
                 result[section.type] = {}
 
