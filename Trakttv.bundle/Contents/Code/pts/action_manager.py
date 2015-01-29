@@ -175,7 +175,7 @@ class ActionManager(object):
         # Check action against history
         history = cls.history.get(item['key'], {})
 
-        if not cls.valid_action(item, history):
+        if not cls.valid_request(item, history):
             return False
 
         # Execute request
@@ -270,7 +270,7 @@ class ActionManager(object):
         return False
 
     @classmethod
-    def valid_action(cls, item, history):
+    def valid_request(cls, item, history):
         # Retrieve request details
         kwargs = item.get('kwargs', {})
         action = kwargs.get('action')
@@ -279,6 +279,10 @@ class ActionManager(object):
             log.warn('Missing "action" parameter in request')
             return False
 
+        return cls.valid_action(action, history)
+
+    @classmethod
+    def valid_action(cls, action, history):
         # Retrieve history details
         performed = history.get('performed', [])
         sent = history.get('sent', [])

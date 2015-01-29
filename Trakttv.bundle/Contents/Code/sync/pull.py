@@ -1,10 +1,10 @@
-from core.helpers import plural, all, json_encode, get_pref
+from core.helpers import all, get_pref
 from core.logger import Logger
+from pts.action_manager import ActionManager
 from sync.sync_base import SyncBase
 
 from plex import Plex
 from plex_metadata import Library
-from datetime import datetime
 
 
 log = Logger('sync.pull')
@@ -42,9 +42,14 @@ class Base(SyncBase):
             if p_item.seen:
                 continue
 
+            # Scrobble item
             Plex['library'].scrobble(p_item.rating_key)
 
+            # Mark item as added in `pts.action_manager`
+            ActionManager.update_history(p_item.rating_key, 'add', 'add')
+
         return True
+
 
     def rate(self, p_items, t_item):
         if type(p_items) is not list:
