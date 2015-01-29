@@ -176,14 +176,10 @@ class SyncManager(object):
 
         log.debug('Processing work with sid "%s" (handler: %r, kwargs: %r)' % (cls.current.sid, key, kwargs))
 
-        # Create "http" cache for this task
-        http_cache = CacheManager.open('http.%s' % cls.current.sid)
-
         success = False
 
         try:
-            with Plex.configuration.cache(http=http_cache):
-                success = handler.run(section=section, **kwargs)
+            success = handler.run(section=section, **kwargs)
         except CancelException, e:
             handler.update_status(False)
 
@@ -194,14 +190,10 @@ class SyncManager(object):
             log.error('Exception raised in handler for %r: %s', key, ex, exc_info=True)
 
         log.debug(
-            'Cache Statistics - len(http): %s, len(matcher): %s, len(metadata): %s',
-            len(http_cache),
+            'Cache Statistics - len(matcher): %s, len(metadata): %s',
             len(CacheManager.get('matcher')),
             len(CacheManager.get('metadata'))
         )
-
-        # Discard HTTP cache
-        CacheManager.delete('http.%s' % cls.current.sid)
 
         # Sync "matcher" cache (back to disk)
         CacheManager.get('matcher').sync()

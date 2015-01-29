@@ -1,3 +1,4 @@
+from plex.core.context import ContextStack
 from plex.core.helpers import synchronized
 from plex.request import PlexRequest
 
@@ -14,8 +15,8 @@ class HttpClient(object):
     def __init__(self, client):
         self.client = client
 
+        self.configuration = ContextStack()
         self.session = requests.Session()
-        self.c_path = None
 
         # Private
         self._lock = Condition()
@@ -24,23 +25,27 @@ class HttpClient(object):
     def cache(self):
         return self.client.configuration.get('cache.http')
 
+    def configure(self, path=None):
+        self.configuration.push(base_path=path)
+        return self
+
     def request(self, method, path=None, params=None, query=None, data=None, credentials=None, **kwargs):
+        # retrieve configuration
+        ctx = self.configuration.pop()
+
         if path is not None and type(path) is not str:
             # Convert `path` to string (excluding NoneType)
             path = str(path)
 
-        if self.c_path and path:
+        if ctx.base_path and path:
             # Prepend `base_path` to relative `path`s
             if not path.startswith('/'):
-                path = self.c_path + '/' + path
+                path = ctx.base_path + '/' + path
 
-        elif self.c_path:
-            path = self.c_path
+        elif ctx.base_path:
+            path = ctx.base_path
         elif not path:
             path = ''
-
-        # reset request configuration
-        self.reset()
 
         request = PlexRequest(
             self.client,
@@ -93,14 +98,6 @@ class HttpClient(object):
     def delete(self, path=None, params=None, query=None, data=None, **kwargs):
         return self.request('DELETE', path, params, query, data, **kwargs)
 
-    def configure(self, path=None):
-        self.c_path = path
-        return self
-
-    def reset(self):
-        self.c_path = None
-        return self
-
     def _rebuild(self):
         log.info('Rebuilding session and connection pools...')
 
@@ -145,4 +142,4 @@ class HttpClient(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.reset()
+        pass

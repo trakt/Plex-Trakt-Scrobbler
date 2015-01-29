@@ -130,13 +130,20 @@ class Clean(Migration):
         (
             'delete_file', [
                 # asio
-                'Shared/asio.py',                 'Shared/asio.pyc',
-                'Shared/asio_base.py',            'Shared/asio_base.pyc',
-                'Shared/asio_posix.py',           'Shared/asio_posix.pyc',
-                'Shared/asio_windows.py',         'Shared/asio_windows.pyc',
-                'Shared/asio_windows_interop.py', 'Shared/asio_windows_interop.pyc',
+                'Shared/asio.py',                           'Shared/asio.pyc',
+                'Shared/asio_base.py',                      'Shared/asio_base.pyc',
+                'Shared/asio_posix.py',                     'Shared/asio_posix.pyc',
+                'Shared/asio_windows.py',                   'Shared/asio_windows.pyc',
+                'Shared/asio_windows_interop.py',           'Shared/asio_windows_interop.pyc',
 
-                # trakt
+                # plex
+                'Shared/plex/core/compat.py',               'Shared/plex/core/compat.pyc',
+                'Shared/plex/core/event.py',                'Shared/plex/core/event.pyc',
+
+                # plex.metadata.py
+                'Shared/plex_metadata/core/cache.py',       'Shared/plex_metadata/core/cache.pyc',
+
+                # trakt.py
                 'Shared/trakt/interfaces/base/media.py',    'Shared/trakt/interfaces/base/media.pyc',
                 'Shared/trakt/interfaces/account.py',       'Shared/trakt/interfaces/account.pyc',
                 'Shared/trakt/interfaces/rate.py',          'Shared/trakt/interfaces/rate.pyc',
@@ -145,7 +152,7 @@ class Clean(Migration):
         ),
         (
             'delete_directory', [
-                # trakt
+                # trakt.py
                 'Shared/trakt/interfaces/movie',
                 'Shared/trakt/interfaces/show',
                 'Shared/trakt/interfaces/user'

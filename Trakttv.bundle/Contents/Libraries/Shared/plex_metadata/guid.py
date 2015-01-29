@@ -60,7 +60,7 @@ class Guid(object):
         if sid_pattern:
             if not match:
                 log.warn('Failed to match "%s" against sid_pattern for "%s" agent', guid.sid, guid.agent)
-                return None, None
+                return None
 
             # Update with new sid
             guid.sid = ''.join(match.groups())

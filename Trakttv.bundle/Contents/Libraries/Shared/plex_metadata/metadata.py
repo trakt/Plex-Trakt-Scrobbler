@@ -34,17 +34,43 @@ class Metadata(object):
 
     @synchronized
     def get(self, key):
-        # Try retrieve item from cache (if it exists)
-        value = self._cache_get(key)
+        try:
+            # Try retrieve item from cache (if it exists)
+            value = self._cache_get(key)
+        except Exception, ex:
+            log.warn('Unable to retrieve item "%s" from cache - %s', key, ex, exc_info=True)
+            value = None
 
         if value is None:
             # Item not available in cache / no cache enabled
-            value = self.fetch(key)
-
-            # Store in cache
-            self._cache_store(key, value)
+            value = self.refresh(key)
 
         return value
+
+    @synchronized
+    def invalidate(self, key):
+        try:
+            # Invalidate item in cache
+            self._cache_invalidate(key)
+        except Exception, ex:
+            log.warn('Unable to invalidate item "%s" from cache - %s', key, ex, exc_info=True)
+
+    @synchronized
+    def refresh(self, key):
+        # Item not available in cache / no cache enabled
+        value = self.fetch(key)
+
+        try:
+            # Store in cache
+            self._cache_store(key, value)
+        except Exception, ex:
+            log.warn('Unable to store item "%s" in cache - %s', key, ex, exc_info=True)
+
+        return value
+
+    #
+    # Cache methods
+    #
 
     def _cache_get(self, key):
         if self.cache is None:
@@ -55,13 +81,27 @@ class Metadata(object):
         if value is None:
             return None
 
+        # Validate item
+        if not value.guid:
+            self._cache_invalidate(key)
+            return None
+
         # Update `client` attribute
         value.client = self.client
 
         return value
 
+    def _cache_invalidate(self, key):
+        if self.cache is None:
+            return
+
+        del self.cache[key]
+
     def _cache_store(self, key, value):
         if self.cache is None:
+            return
+
+        if not value or not value.guid:
             return
 
         self.cache[key] = value

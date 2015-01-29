@@ -1,7 +1,8 @@
 from core.action import ActionHelper
-from core.helpers import all, plural, json_encode, merge
+from core.helpers import all, json_encode, merge
 from core.logger import Logger
 from data.watch_session import WatchSession
+from pts.action_manager import ActionManager
 from sync.sync_base import SyncBase
 
 from datetime import datetime
@@ -38,6 +39,16 @@ class Base(SyncBase):
         if not item:
             log.warn('watch() - Ignored for unmatched media "%s" [%s]', p_items[0].title, key)
             return True
+
+        # Check action against history
+        history = ActionManager.history.get(p_items[0].rating_key, {})
+
+        if not ActionManager.valid_action('add', history):
+            log.debug('watch() - Invalid action for "%s" [%s] (already scrobbled or duplicate action)', p_items[0].title, key)
+            return True
+
+        # Mark item as added in `pts.action_manager`
+        ActionManager.update_history(p_items[0].rating_key, 'add', 'add')
 
         # Set "watched_at" parameter (if available)
         watched_at = self.get_datetime(p_items[0], 'last_viewed_at')
