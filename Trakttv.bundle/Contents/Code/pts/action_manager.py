@@ -23,7 +23,7 @@ MAX_RETRIES = 3
 
 class ActionManager(object):
     pending = PriorityQueue()
-    history = ExpiringDict(25, 180)
+    history = ExpiringDict(100000, 600)
 
     thread = None
 
