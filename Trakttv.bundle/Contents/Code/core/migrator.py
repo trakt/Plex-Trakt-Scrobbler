@@ -95,6 +95,7 @@ class Clean(Migration):
         (
             'delete_file', [
                 # /core
+                'core/environment.py',
                 'core/eventing.py',
                 'core/model.py',
                 'core/network.py',
@@ -113,7 +114,10 @@ class Clean(Migration):
                 'pts/activity_websocket.py',
 
                 # /sync
+                'sync/base.py',
+                'sync/legacy.py',
                 'sync/manager.py',
+                'sync/task.py',
 
                 # /
                 'sync.py'
@@ -130,24 +134,26 @@ class Clean(Migration):
         (
             'delete_file', [
                 # asio
-                'Shared/asio.py',                           'Shared/asio.pyc',
-                'Shared/asio_base.py',                      'Shared/asio_base.pyc',
-                'Shared/asio_posix.py',                     'Shared/asio_posix.pyc',
-                'Shared/asio_windows.py',                   'Shared/asio_windows.pyc',
-                'Shared/asio_windows_interop.py',           'Shared/asio_windows_interop.pyc',
+                'Shared/asio.py',
+                'Shared/asio_base.py',
+                'Shared/asio_posix.py',
+                'Shared/asio_windows.py',
+                'Shared/asio_windows_interop.py',
 
                 # plex
-                'Shared/plex/core/compat.py',               'Shared/plex/core/compat.pyc',
-                'Shared/plex/core/event.py',                'Shared/plex/core/event.pyc',
+                'Shared/plex/core/compat.py',
+                'Shared/plex/core/event.py',
+                'Shared/plex/interfaces/library.py',
 
                 # plex.metadata.py
-                'Shared/plex_metadata/core/cache.py',       'Shared/plex_metadata/core/cache.pyc',
+                'Shared/plex_metadata/core/cache.py',
 
                 # trakt.py
-                'Shared/trakt/interfaces/base/media.py',    'Shared/trakt/interfaces/base/media.pyc',
-                'Shared/trakt/interfaces/account.py',       'Shared/trakt/interfaces/account.pyc',
-                'Shared/trakt/interfaces/rate.py',          'Shared/trakt/interfaces/rate.pyc',
-                'Shared/trakt/request.py',                  'Shared/trakt/request.pyc',
+                'Shared/trakt/interfaces/base/media.py',
+                'Shared/trakt/interfaces/account.py',
+                'Shared/trakt/interfaces/rate.py',
+                'Shared/trakt/interfaces/sync/base.py',
+                'Shared/trakt/request.py'
             ], os.path.isfile
         ),
         (
@@ -186,8 +192,13 @@ class Clean(Migration):
                 path = os.path.join(base_path, path)
                 path = os.path.abspath(path)
 
+                # Remove file
                 if m(path, conditions):
                     log.info('(%s) %s: "%s"', name, action, path)
+
+                # Remove .pyc files as-well
+                if path.endswith('.py') and m(path + 'c', conditions):
+                    log.info('(%s) %s: "%s"', name, action, path + 'c')
 
 
 class ForceLegacy(Migration):
