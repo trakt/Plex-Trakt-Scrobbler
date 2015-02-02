@@ -43,17 +43,6 @@ class ConfigurationProcessor(object):
     def scrobble(self, value):
         return value and self.preferences['valid']
 
-    def scrobble_percentage(self, value):
-        value = try_convert(value, int)
-
-        if value is None:
-            return None
-
-        if 0 <= value <= 100:
-            return value
-
-        return None
-
     def sync_run_library(self, value):
         return value and self.preferences['valid']
 
@@ -72,7 +61,6 @@ class Configuration(object):
         'activity_mode',
         'matcher',
         'scrobble',
-        'scrobble_percentage',
         'sync_run_library',
         'sync_collection',
         'sync_ratings',
@@ -84,7 +72,6 @@ class Configuration(object):
     }
 
     defaults = {
-        'scrobble_percentage': 80
     }
 
     processor = ConfigurationProcessor()

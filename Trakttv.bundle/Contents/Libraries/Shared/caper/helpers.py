@@ -18,7 +18,6 @@ import sys
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
-
 def is_list_type(obj, element_type):
     if not type(obj) is list:
         return False

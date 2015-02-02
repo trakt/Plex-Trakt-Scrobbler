@@ -1,3 +1,4 @@
+from trakt.core.helpers import to_datetime
 from trakt.helpers import update_attributes
 
 
@@ -25,12 +26,22 @@ class Video(Media):
     def __init__(self, keys=None):
         super(Video, self).__init__(keys)
 
+        self.collected_at = None
+        self.plays = None
+
         self.is_watched = None
         self.is_collected = None
 
     def update(self, info=None, is_watched=None, is_collected=None):
         super(Video, self).update(info)
 
+        update_attributes(self, info, [
+            'plays'
+        ])
+
+        self.collected_at = to_datetime(info.get('collected_at'))
+
+        # Set flags
         if is_watched is not None:
             self.is_watched = is_watched
 
@@ -44,21 +55,40 @@ class Show(Media):
 
         self.title = None
         self.year = None
-        self.tvdb_id = None
 
-        self.episodes = {}
+        self.seasons = {}
 
-    def to_info(self):
+    def episodes(self):
+        for sk, season in self.seasons.iteritems():
+            # Yield each episode in season
+            for ek, episode in season.episodes.iteritems():
+                yield (sk, ek), episode
+
+    def to_identifier(self):
         return {
-            'tvdb_id': self.tvdb_id,
+            'ids': dict(self.keys),
             'title': self.title,
             'year': self.year
         }
 
+    def to_info(self):
+        result = self.to_identifier()
+
+        result['seasons'] = [
+            season.to_info()
+            for season in self.seasons.values()
+        ]
+
+        if self.rating:
+            result['rating'] = self.rating.value
+            result['rated_at'] = self.rating.timestamp
+
+        return result
+
     def update(self, info=None, **kwargs):
         super(Show, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year', 'tvdb_id'])
+        update_attributes(self, info, ['title', 'year'])
 
     @classmethod
     def create(cls, keys, info=None, **kwargs):
@@ -68,20 +98,70 @@ class Show(Media):
         return show
 
     def __repr__(self):
-        return '<Show "%s" (%s)>' % (self.title, self.year)
+        return '<Show %r (%s)>' % (self.title, self.year)
+
+
+class Season(Media):
+    def __init__(self, number):
+        super(Season, self).__init__([number])
+
+        self.episodes = {}
+
+    def to_identifier(self):
+        return {
+            'number': self.pk,
+            'episodes': [
+                episode.to_info()
+                for episode in self.episodes.values()
+            ]
+        }
+
+    def to_info(self):
+        result = self.to_identifier()
+
+        if self.rating:
+            result['rating'] = self.rating.value
+            result['rated_at'] = self.rating.timestamp
+
+        return result
+
+    @classmethod
+    def create(cls, number, info=None, **kwargs):
+        season = cls(number)
+        season.update(info, **kwargs)
+
+        return season
+
+    def __repr__(self):
+        return '<Season S%02d>' % self.pk
 
 
 class Episode(Video):
-    def __init__(self, pk):
-        super(Episode, self).__init__([pk])
+    def __init__(self, number):
+        super(Episode, self).__init__([number])
+
+    def to_identifier(self):
+        return {
+            'number': self.pk
+        }
 
     def to_info(self):
-        season, episode = self.pk
+        result = self.to_identifier()
 
-        return {
-            'season': season,
-            'episode': episode
-        }
+        # add ids as well since trakt adds ids to the episodes as well
+        result.update({
+            'watched': 1 if self.is_watched else 0,
+            'collected': 1 if self.is_collected else 0,
+            'plays': self.plays,
+            'collected_at': self.collected_at,
+            'ids': {}
+        })
+
+        if self.rating:
+            result['rating'] = self.rating.value
+            result['rated_at'] = self.rating.timestamp
+
+        return result
 
     @classmethod
     def create(cls, pk, info=None, **kwargs):
@@ -91,7 +171,7 @@ class Episode(Video):
         return episode
 
     def __repr__(self):
-        return '<Episode S%02dE%02d>' % self.pk
+        return '<Episode E%02d>' % self.pk
 
 
 class Movie(Video):
@@ -100,22 +180,34 @@ class Movie(Video):
 
         self.title = None
         self.year = None
-        self.imdb_id = None
 
-        self.is_watched = None
-        self.is_collected = None
+    def to_identifier(self):
+        return {
+            'ids': dict(self.keys),
+            'title': self.title,
+            'year': self.year
+        }
 
     def to_info(self):
-        return {
-            'title': self.title,
-            'year': self.year,
-            'imdb_id': self.imdb_id
-        }
+        result = self.to_identifier()
+
+        result.update({
+            'watched': 1 if self.is_watched else 0,
+            'collected': 1 if self.is_collected else 0,
+            'plays': self.plays,
+            'collected_at': self.collected_at
+        })
+
+        if self.rating:
+            result['rating'] = self.rating.value
+            result['rated_at'] = self.rating.timestamp
+
+        return result
 
     def update(self, info=None, **kwargs):
         super(Movie, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year', 'imdb_id'])
+        update_attributes(self, info['movie'], ['title', 'year'])
 
     @classmethod
     def create(cls, keys, info, **kwargs):
@@ -125,14 +217,12 @@ class Movie(Video):
         return movie
 
     def __repr__(self):
-        return '<Movie "%s" (%s)>' % (self.title, self.year)
+        return '<Movie %r (%s)>' % (self.title, self.year)
 
 
 class Rating(object):
     def __init__(self):
-        self.basic = None
-        self.advanced = None
-
+        self.value = None
         self.timestamp = None
 
     @classmethod
@@ -141,14 +231,12 @@ class Rating(object):
             return
 
         r = cls()
-        r.basic = info.get('rating')
-        r.advanced = info.get('rating_advanced')
-
-        r.timestamp = info.get('inserted')
+        r.value = info.get('rating')
+        r.timestamp = to_datetime(info.get('rated_at'))
         return r
 
     def __repr__(self):
-        return '<Rating %s (%s/10)>' % (self.basic, self.advanced)
+        return '<Rating %s/10 (%s)>' % (self.value, self.timestamp)
 
     def __str__(self):
         return self.__repr__()

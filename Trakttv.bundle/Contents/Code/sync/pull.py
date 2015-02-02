@@ -1,8 +1,10 @@
-from core.helpers import plural, all, json_encode, get_pref
+from core.helpers import all, get_pref
 from core.logger import Logger
-from plex.plex_media_server import PlexMediaServer
+from pts.action_manager import ActionManager
 from sync.sync_base import SyncBase
-from datetime import datetime
+
+from plex import Plex
+from plex_metadata import Library
 
 
 log = Logger('sync.pull')
@@ -11,13 +13,22 @@ log = Logger('sync.pull')
 class Base(SyncBase):
     task = 'pull'
 
-    @staticmethod
-    def get_missing(t_items, is_collected=True):
+    @classmethod
+    def get_missing(cls, t_items, is_collected=True):
         return dict([
             (t_item.pk, t_item) for t_item in t_items.itervalues()
             if (not is_collected or t_item.is_collected) and
-                not getattr(t_item, 'is_local', False)
+               cls.is_missing(t_item)
         ])
+
+    @classmethod
+    def is_missing(cls, t_item):
+        is_local = getattr(t_item, 'is_local', False)
+
+        if not hasattr(t_item, 'is_collected'):
+            return not is_local
+
+        return getattr(t_item, 'is_collected') and not is_local
 
     def watch(self, p_items, t_item):
         if type(p_items) is not list:
@@ -31,9 +42,14 @@ class Base(SyncBase):
             if p_item.seen:
                 continue
 
-            PlexMediaServer.scrobble(p_item.rating_key)
+            # Scrobble item
+            Plex['library'].scrobble(p_item.rating_key)
+
+            # Mark item as added in `pts.action_manager`
+            ActionManager.update_history(p_item.rating_key, 'add', 'add')
 
         return True
+
 
     def rate(self, p_items, t_item):
         if type(p_items) is not list:
@@ -42,7 +58,7 @@ class Base(SyncBase):
         if t_item.rating is None:
             return True
 
-        t_rating = t_item.rating.advanced
+        t_rating = t_item.rating.value
 
         for p_item in p_items:
             # Ignore already rated episodes
@@ -50,7 +66,7 @@ class Base(SyncBase):
                 continue
 
             if p_item.user_rating is None or self.rate_conflict(p_item, t_item):
-                PlexMediaServer.rate(p_item.rating_key, t_rating)
+                Plex['library'].rate(p_item.rating_key, t_rating)
 
         return True
 
@@ -67,15 +83,13 @@ class Base(SyncBase):
             return True
 
         if resolution == 'latest':
-            t_timestamp = datetime.utcfromtimestamp(t_item.rating.timestamp)
-
             # If trakt rating was created after the last sync, update plex rating
-            if t_timestamp > status.last_success:
+            if t_item.rating.timestamp > status.last_success:
                 return True
 
         log.info(
             'Conflict when updating rating for item %s (plex: %s, trakt: %s), trakt rating will be changed on next push.',
-            p_item.rating_key, p_item.user_rating, t_item.rating.advanced
+            p_item.rating_key, p_item.user_rating, t_item.rating.value
         )
 
         return False
@@ -95,6 +109,7 @@ class Episode(Base):
             if key is None or key not in p_episodes:
                 continue
 
+            # Mark episode as 'local'
             t_episode.is_local = True
 
             # TODO check result
@@ -109,9 +124,31 @@ class Episode(Base):
         return self.rate(p_episode, t_episode)
 
 
+class Season(Base):
+    key = 'season'
+    auto_run = False
+    children = [Episode]
+
+    def run(self, p_seasons, t_seasons):
+        if p_seasons is None:
+            return False
+
+        for key, p_season in p_seasons.items():
+            t_season = t_seasons.get(key)
+
+            if t_season:
+                # Mark season as 'local'
+                t_season.is_local = True
+
+            self.child('episode').run(
+                p_episodes=p_season,
+                t_episodes=t_season.episodes if t_season else {}
+            )
+
+
 class Show(Base):
     key = 'show'
-    children = [Episode]
+    children = [Season]
 
     def run(self, section=None):
         self.check_stopping()
@@ -132,13 +169,13 @@ class Show(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(t_shows_table))
+        self.emit('started', len(t_shows_table))
 
         for x, (key, t_show) in enumerate(t_shows_table.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
-            if key is None or key not in p_shows or not t_show.episodes:
+            if key is None or key not in p_shows or not t_show.seasons:
                 continue
 
             log.debug('Processing "%s" [%s]', t_show.title, key)
@@ -150,12 +187,12 @@ class Show(Base):
 
             # Run through each matched show and run episode functions
             for p_show in p_shows[key]:
-                self.child('episode').run(
-                    p_episodes=self.plex.episodes(p_show.rating_key, p_show),
-                    t_episodes=t_show.episodes
+                self.child('season').run(
+                    p_seasons=Library.episodes(p_show.rating_key, p_show, flat=False),
+                    t_seasons=t_show.seasons if t_show else {}
                 )
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         # Trigger plex missing show/episode discovery
@@ -171,42 +208,65 @@ class Show(Base):
 
         log.info('Searching for shows/episodes that are missing from plex')
 
-        # Find collected shows that are missing from Plex
-        t_collection_missing = self.get_missing(t_shows, is_collected=False)
-
-        # Discover entire shows missing
-        num_shows = 0
-        for key, t_show in t_collection_missing.items():
-            # Ignore show if there are no collected episodes on trakt
-            if all([not e.is_collected for (_, e) in t_show.episodes.items()]):
-                continue
-
-            self.store('missing.shows', t_show.to_info())
-            num_shows = num_shows + 1
-
-        # Discover episodes missing
-        num_episodes = 0
         for key, t_show in t_shows.items():
-            if t_show.pk in t_collection_missing:
+            # Ignore show if there are no collected episodes on trakt
+            if all([not e.is_collected for (_, e) in t_show.episodes()]):
                 continue
 
-            t_episodes_missing = self.get_missing(t_show.episodes)
+            show = t_show.to_identifier()
 
-            if not t_episodes_missing:
+            if self.is_missing(t_show):
+                # Entire show is missing
+                log.debug('Unable to find "%s" [%s] in plex', t_show.title, key)
+
+                self.store('missing.shows', show)
                 continue
 
-            self.store_episodes(
-                'missing.episodes', t_show.to_info(),
-                episodes=[x.to_info() for x in t_episodes_missing.itervalues()]
-            )
+            # Create 'seasons' list
+            if 'seasons' not in show:
+                show['seasons'] = []
 
-            num_episodes = num_episodes + len(t_episodes_missing)
+            for sk, t_season in t_show.seasons.items():
+                # Ignore season if there are no collected episodes on trakt
+                if all([not e.is_collected for e in t_season.episodes.values()]):
+                    continue
 
-        log.info(
-            'Found %s show%s and %s episode%s missing from plex',
-            num_shows, plural(num_shows),
-            num_episodes, plural(num_episodes)
-        )
+                i_season = {'number': sk}
+
+                if self.is_missing(t_season):
+                    # Entire season is missing
+                    log.debug('Unable to find S%02d of "%s" [%s] in plex', sk, t_show.title, key)
+
+                    show['seasons'].append(i_season)
+                    continue
+
+                # Create 'episodes' list
+                if 'episodes' not in i_season:
+                    i_season['episodes'] = []
+
+                for ek, t_episode in t_season.episodes.items():
+                    if not self.is_missing(t_episode):
+                        continue
+
+                    log.debug('Unable to find S%02dE%02d of "%s" [%s] in plex', sk, ek, t_show.title, key)
+
+                    # Append episode to season dict
+                    i_season['episodes'].append({'number': ek})
+
+                if not i_season['episodes']:
+                    # Couldn't find any missing episodes in this season
+                    continue
+
+                # Append season to show dict
+                show['seasons'].append(i_season)
+
+            if not show['seasons']:
+                # Couldn't find any missing seasons/episodes
+                continue
+
+            self.store('missing.shows', show)
+
+        log.info('Discovered %s show(s) with missing items', len(self.retrieve('missing.shows')))
 
     def run_ratings(self, p_shows, t_show):
         return self.rate(p_shows, t_show)
@@ -234,11 +294,11 @@ class Movie(Base):
             log.warn('Unable to construct merged library from trakt')
             return False
 
-        self.start(len(t_movies_table))
+        self.emit('started', len(t_movies_table))
 
         for x, (key, t_movie) in enumerate(t_movies_table.items()):
             self.check_stopping()
-            self.progress(x + 1)
+            self.emit('progress', x + 1)
 
             if key is None or key not in p_movies:
                 continue
@@ -249,7 +309,7 @@ class Movie(Base):
             # TODO check result
             self.trigger(enabled_funcs, p_movies=p_movies[key], t_movie=t_movie)
 
-        self.finish()
+        self.emit('finished')
         self.check_stopping()
 
         # Trigger plex missing movie discovery
@@ -268,13 +328,12 @@ class Movie(Base):
         # Find collected movies that are missing from Plex
         t_collection_missing = self.get_missing(t_movies)
 
-        num_movies = 0
         for key, t_movie in t_collection_missing.items():
-            log.debug('Unable to find "%s" [%s] in library', t_movie.title, key)
-            self.store('missing.movies', t_movie.to_info())
-            num_movies = num_movies + 1
+            log.debug('Unable to find "%s" [%s] in plex', t_movie.title, key)
 
-        log.info('Found %s movie%s missing from plex', num_movies, plural(num_movies))
+            self.store('missing.movies', t_movie.to_identifier())
+
+        log.info('Discovered %s missing movie(s)', len(self.retrieve('missing.movies')))
 
     def run_watched(self, p_movies, t_movie):
         return self.watch(p_movies, t_movie)

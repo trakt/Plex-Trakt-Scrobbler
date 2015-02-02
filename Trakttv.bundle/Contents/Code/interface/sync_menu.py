@@ -1,17 +1,21 @@
-from core.helpers import timestamp, pad_title, plural, get_pref, get_filter
+from core.helpers import timestamp, pad_title, plural, get_filter, normalize
 from core.localization import localization
-from plex.plex_media_server import PlexMediaServer
-from sync.manager import SyncManager
+from core.logger import Logger
+from sync.sync_manager import SyncManager
+from plugin.core.constants import PLUGIN_PREFIX
 
-from datetime import datetime
 from ago import human
+from datetime import datetime
+from plex import Plex
 
 L, LF = localization('interface.sync_menu')
+
+log = Logger('interface.sync_menu')
 
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
-@route('/applications/trakttv/sync')
+@route(PLUGIN_PREFIX + '/sync')
 def SyncMenu(refresh=None):
     oc = ObjectContainer(title2=L('sync_menu:title'), no_history=True, no_cache=True)
     all_keys = []
@@ -26,16 +30,16 @@ def SyncMenu(refresh=None):
     ))
 
     f_allow, f_deny = get_filter('filter_sections')
-    sections = PlexMediaServer.get_sections(['show', 'movie'], titles=f_allow)
+    sections = Plex['library'].sections()
 
-    for _, key, title in sections:
+    for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, section=key),
-            title=pad_title('Push "' + title + '" to trakt'),
-            summary=get_task_status('push', key),
+            key=Callback(Push, section=section.key),
+            title=pad_title('Push "%s" to trakt' % section.title),
+            summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
         ))
-        all_keys.append(key)
+        all_keys.append(section.key)
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
@@ -65,7 +69,7 @@ def create_active_item(oc):
     progress = format_percentage(task.statistics.progress)
 
     # Title
-    title = '%s - Status' % handler.title
+    title = '%s - Status' % normalize(handler.title)
 
     if progress:
         title += ' (%s)' % progress
@@ -85,7 +89,7 @@ def create_active_item(oc):
 
     oc.add(DirectoryObject(
         key=Callback(Cancel),
-        title=pad_title('%s - Cancel' % handler.title)
+        title=pad_title('%s - Cancel' % normalize(handler.title))
     ))
 
 
@@ -129,7 +133,12 @@ def get_task_status(key, section=None):
         result.append('was successful')
     elif status.previous_timestamp:
         # Only add 'failed' fragment if there was actually a previous run
-        result.append('failed')
+        message = 'failed'
+
+        if status.error:
+            message += ' (%s)' % status.error
+
+        result.append(message)
 
     if len(result):
         return ', '.join(result) + '.'
@@ -137,7 +146,7 @@ def get_task_status(key, section=None):
     return 'Not run yet.'
 
 
-@route('/applications/trakttv/sync/synchronize')
+@route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize():
     success, message = SyncManager.trigger_synchronize()
 
@@ -151,7 +160,7 @@ def Synchronize():
 
 
 
-@route('/applications/trakttv/sync/push')
+@route(PLUGIN_PREFIX + '/sync/push')
 def Push(section=None):
     success, message = SyncManager.trigger_push(section)
 
@@ -164,7 +173,7 @@ def Push(section=None):
     )
 
 
-@route('/applications/trakttv/sync/pull')
+@route(PLUGIN_PREFIX + '/sync/pull')
 def Pull():
     success, message = SyncManager.trigger_pull()
 
@@ -177,7 +186,7 @@ def Pull():
     )
 
 
-@route('/applications/trakttv/sync/cancel')
+@route(PLUGIN_PREFIX + '/sync/cancel')
 def Cancel():
     if not SyncManager.cancel():
         return MessageContainer(

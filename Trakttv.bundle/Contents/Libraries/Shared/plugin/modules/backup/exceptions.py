@@ -1,0 +1,2 @@
+class PatchException(Exception):
+    pass

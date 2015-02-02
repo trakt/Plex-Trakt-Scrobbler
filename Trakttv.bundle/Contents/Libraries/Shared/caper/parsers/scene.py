@@ -17,6 +17,7 @@ from caper import Matcher
 from caper.objects import CaperPattern
 from caper.parsers.base import Parser
 from caper.result import CaperFragmentNode
+from caper.transformers.roman_numerals import RomanNumerals
 
 
 PATTERN_GROUPS = [
@@ -84,13 +85,23 @@ PATTERN_GROUPS = [
             # Part.1.and.Part.3
             ('^Part$', '(?P<part>\d+)'),
 
+            # Part.IV
+            # Roman Numerals (up to max value of 29)
+            CaperPattern(
+                ('(p(ar)?t|ep(isode)?)', '(?P<part>X{0,2}(IX|IV|V?I{0,3}))'),
+                transform=lambda matches: RomanNumerals.transform(matches, 'part')
+            ),
+
             r'(?P<extra>Special)',
             r'(?P<country>NZ|AU|US|UK)'
         ]),
         (0.8, [
-            # 100 - 1899, 2100 - 9999 (skips 1900 to 2099 - so we don't get years my mistake)
+            # 100 - 1899, 2100 - 9999 (skips 1900 to 2099 - so we don't get years by mistake)
             # TODO - Update this pattern on 31 Dec 2099
-            r'^(?P<season>([1-9])|(1[0-8])|(2[1-9])|([3-9][0-9]))(?P<episode>\d{2})$'
+            (r'^(?P<season>([1-9])|(1[0-8])|(2[1-9])|([3-9][0-9]))(?P<episode>\d{2})$'),
+            
+            # "6 of 10" style numbering
+            (r'^(?P<absolute>\d+)$', r'of', r'\d+')
         ]),
         (0.5, [
             # 100 - 9999
@@ -102,8 +113,13 @@ PATTERN_GROUPS = [
         r'(?P<aspect>FS|WS)',
 
         (r'(?P<resolution>%s)', [
+            '480i',
             '480p',
+            '576i',
+            '576p',
+            '720i',
             '720p',
+            '1080i',
             '1080p'
         ]),
 
@@ -113,6 +129,8 @@ PATTERN_GROUPS = [
 
         (r'(?P<source>%s)', [
             'DVDRiP',
+            'TVRIP',
+            'SDTV',
             # HDTV
             'HDTV',
             'PDTV',
@@ -120,17 +138,25 @@ PATTERN_GROUPS = [
             # WEB
             'WEBRip',
             'WEBDL',
+            'iTunes',
             # BluRay
             'BluRay',
             'B(D|R)Rip',
             # DVD
             'DVDR',
             'DVD9',
-            'DVD5'
+            'DVD5',
+            'HDDVD'
         ]),
 
         # For multi-fragment 'WEB-DL', 'WEB-Rip', etc... matches
         ('(?P<source>WEB)', '(?P<source>DL|Rip)'),
+
+        # For multi-fragment 'HD DVD' tags
+        ('(?P<source>HD)', '(?P<source>DVD)'),
+
+        # For multi-fragment 'Blu Ray' tags
+        ('(?P<source>Blu)', '(?P<source>Ray)'),
 
         #
         # Codec
@@ -140,11 +166,15 @@ PATTERN_GROUPS = [
             'x264',
             'XViD',
             'H264',
-            'AVC'
+            'AVC',
+            'MPEG2'
         ]),
 
         # For multi-fragment 'H 264' tags
         ('(?P<codec>H)', '(?P<codec>264)'),
+
+        # For multi-fragment 'MPEG 2' tags
+        ('(?P<codec>MPEG)', '(?P<codec>2)'),
     ]),
 
     ('dvd', [

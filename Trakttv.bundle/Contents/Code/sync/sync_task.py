@@ -1,8 +1,12 @@
+import uuid
+
+
 class SyncTask(object):
     def __init__(self, key, kwargs):
         self.key = key
         self.kwargs = kwargs
 
+        self.sid = uuid.uuid4()
         self.statistics = SyncTaskStatistics()
 
         self.start_time = None

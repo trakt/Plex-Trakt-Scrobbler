@@ -1,7 +1,9 @@
 from core.helpers import spawn
 from core.logger import Logger
+
 from threading import Lock
-import traceback
+import sys
+import trakt
 
 log = Logger('core.task')
 
@@ -23,7 +25,11 @@ class Task(object):
         self.started = False
         self.lock = Lock()
 
+        self.name = None
+
     def spawn(self, name):
+        self.name = name
+
         spawn(self.run, thread_name=name)
 
     def wait(self):
@@ -58,15 +64,17 @@ class Task(object):
             # Call task
             self.result = self.target(*self.args, **self.kwargs)
         except CancelException, e:
-            self.exception = e
+            self.exception = sys.exc_info()
 
             log.debug('Task cancelled')
-        except Exception, e:
-            self.exception = e
+        except trakt.RequestError, e:
+            self.exception = sys.exc_info()
 
-            log.warn('Exception raised in triggered function %s (%s) %s: %s' % (
-                self.target, type(e), e, traceback.format_exc()
-            ))
+            log.warn('trakt.tv request failed: %s', e)
+        except Exception, ex:
+            self.exception = sys.exc_info()
+
+            log.error('Exception raised in triggered function %r: %s', self.name, ex, exc_info=True)
         finally:
             # Release lock
             self.complete = True

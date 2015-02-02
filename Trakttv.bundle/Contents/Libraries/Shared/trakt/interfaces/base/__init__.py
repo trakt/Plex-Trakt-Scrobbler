@@ -1,4 +1,6 @@
-from trakt.helpers import parse_credentials, setdefault
+from trakt.core.errors import ERRORS
+from trakt.core.exceptions import ServerError, ClientError
+from trakt.helpers import setdefault
 from trakt.media_mapper import MediaMapper
 
 from functools import wraps
@@ -13,27 +15,20 @@ def authenticated(func):
         if args and isinstance(args[0], Interface):
             interface = args[0]
 
-            if 'credentials' not in kwargs:
-                kwargs['credentials'] = interface.client.credentials
-            else:
-                kwargs['credentials'] = parse_credentials(kwargs['credentials'])
-
         return func(*args, **kwargs)
 
     return wrap
 
 
-def media_center(func):
+def application(func):
     @wraps(func)
     def wrap(*args, **kwargs):
         if args and isinstance(args[0], Interface):
             interface = args[0]
 
             setdefault(kwargs, {
-                'plugin_version': interface.client.plugin_version,
-
-                'media_center_version': interface.client.media_center_version,
-                'media_center_date': interface.client.media_center_date
+                'app_version': interface.client.configuration['app.version'],
+                'app_date': interface.client.configuration['app.date']
             }, lambda key, value: value)
 
         return func(*args, **kwargs)
@@ -53,75 +48,60 @@ class Interface(object):
 
         raise ValueError('Unknown action "%s" on %s', name, self)
 
-    def request(self, path, params=None, data=None, credentials=None, **kwargs):
-        return self.client.request(
-            '%s/%s' % (self.path, path),
-            params, data,
-            credentials,
-            **kwargs
-        )
-
-    @authenticated
-    def action(self, action, data=None, credentials=None, **kwargs):
-        if data:
-            # Merge kwargs (extra request parameters)
-            data.update(kwargs)
-
-            # Strip any parameters with 'None' values
-            data = dict([
-                (key, value)
-                for key, value in data.items()
-                if value is not None
-            ])
-
-        if not self.validate_action(action, data):
+    @property
+    def http(self):
+        if not self.client:
             return None
 
-        response = self.request(
-            action, data=data,
-            credentials=credentials
-        )
-
-        return self.get_data(response, catch_errors=False)
-
-    @classmethod
-    def validate_action(cls, action, data):
-        return True
+        return self.client.http.configure(self.path)
 
     @staticmethod
-    def get_data(response, catch_errors=True):
-        # unknown result - no response or server error
-        if response is None or response.status_code >= 500:
+    def get_data(response, exceptions=False, parse=True):
+        if response is None:
             return None
 
-        data = response.json()
+        # Return response, if parse=False
+        if not parse:
+            return response
 
-        # unknown result - no json data returned
-        if data is None:
+        # Parse response, return data
+        if response.headers['content-type'].startswith('application/json'):
+            # Try parse json response
+            try:
+                data = response.json()
+            except Exception, e:
+                log.warning('unable to parse JSON response: %s', e)
+                return None
+        else:
+            log.debug('response returned "%s" content, falling back to raw data', response.headers['content-type'])
+
+            # Fallback to raw content
+            data = response.content
+
+        # Check status code, log any errors
+        error = False
+
+        if response.status_code < 200 or response.status_code >= 300:
+            # Lookup status code in trakt error definitions
+            name, desc = ERRORS.get(response.status_code, ("Unknown", "Unknown"))
+
+            log.warning('request failed: %s - "%s" (code: %s)', name, desc, response.status_code)
+
+            if exceptions:
+                # Raise an exception (including the response for further processing)
+                if response.status_code >= 500:
+                    raise ServerError(response)
+                else:
+                    raise ClientError(response)
+
+            # Set error flag
+            error = True
+
+        # Return `None` if we encountered an error, return response data
+        if error:
             return None
-
-        # invalid result - request failure
-        if type(data) is dict and data.get('status') == 'failure':
-            log.warning('request failure (error: "%s")', data.get('error'))
-
-            if catch_errors:
-                return False
 
         return data
-
-    @staticmethod
-    def data_requirements(data, *args):
-        for keys in args:
-            if type(keys) is not tuple:
-                keys = (keys,)
-
-            values = [data.get(key) for key in keys]
-
-            if all(values):
-                return True
-
-        log.warn("Request %s doesn't match data requirements %s, one group of parameters is required.", data, args)
-        return False
 
     @staticmethod
     def media_mapper(store, media, items, **kwargs):
@@ -134,7 +114,10 @@ class Interface(object):
         mapper = MediaMapper(store)
 
         for item in items:
-            mapper.process(media, item, **kwargs)
+            result = mapper.process(media, item, **kwargs)
+
+            if result is None:
+                log.warn('Unable to map item: %s', item)
 
         return store
 

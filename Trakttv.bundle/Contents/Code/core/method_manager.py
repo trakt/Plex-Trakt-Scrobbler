@@ -1,6 +1,7 @@
 from core.helpers import spawn, plural
 from core.logger import Logger
-from core.plugin import ACTIVITY_MODE
+from plugin.core.constants import ACTIVITY_MODE
+
 import threading
 import traceback
 
@@ -36,7 +37,7 @@ class Method(object):
         try:
             self.run()
         except Exception, ex:
-            log.error(traceback.format_exc())
+            log.error('Exception raised in %r method: %s', self.name, ex, exc_info=True)
 
     def run(self):
         raise NotImplementedError()
@@ -44,6 +45,7 @@ class Method(object):
 
 class Manager(object):
     tag = None
+    log = None
 
     available = []
     enabled = []
@@ -86,6 +88,7 @@ class Manager(object):
             spawn(cls.start, blocking=True)
             return
 
+        cls.log = Logger(cls.tag)
         cls.filter_available()
 
         # Test methods until an available method is found
@@ -96,14 +99,12 @@ class Manager(object):
                 cls.start_method(method)
                 break
             else:
-                log.info("method '%s' not available" % method.name, tag=cls.tag)
+                cls.log.info("method '%s' not available" % method.name)
 
-        log.info(
+        cls.log.info(
             'Finished starting %s method%s: %s',
             len(cls.enabled), plural(cls.enabled),
-            ', '.join([("'%s'" % m.name) for m in cls.enabled]),
-
-            tag=cls.tag
+            ', '.join([("'%s'" % m.name) for m in cls.enabled])
         )
 
     @classmethod

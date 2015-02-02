@@ -1,13 +1,14 @@
-from core.eventing import EventManager
+from core.cache import CacheManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
-from plex.plex_library import PlexLibrary
-from plex.plex_media_server import PlexMediaServer
-from plex.plex_metadata import PlexMetadata
-from plex.plex_objects import PlexEpisode
+from plugin.core.event import Global as EG
+from plugin.modules.manager import ModuleManager
 
 from datetime import datetime
+from plex import Plex
+from plex_metadata import Library
+from pyemitter import Emitter
 from trakt import Trakt
 
 
@@ -15,9 +16,15 @@ log = Logger('sync.sync_base')
 
 
 class Base(object):
-    @classmethod
-    def get_cache_id(cls):
-        return EventManager.fire('sync.get_cache_id', single=True)
+    @staticmethod
+    def get_sid():
+        current = EG['SyncManager.current'](single=True)
+
+        if not current:
+            log.warn('Unable to retrieve current sync task')
+            return None
+
+        return current.sid
 
 
 class PlexInterface(Base):
@@ -27,10 +34,11 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexMediaServer.get_sections(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
+        # Retrieve all sections
+        sections = Plex['library'].sections()
+
+        # Filter sections based on criteria
+        return sections.filter(types, keys, titles)
 
     @classmethod
     def library(cls, types=None, keys=None, titles=None):
@@ -38,61 +46,18 @@ class PlexInterface(Base):
         if titles is None:
             titles, _ = get_filter('filter_sections')
 
-        return PlexLibrary.fetch(
-            types, keys, titles,
-            cache_id=cls.get_cache_id()
-        )
-
-    @classmethod
-    def episodes(cls, key, parent=None):
-        return PlexLibrary.fetch_episodes(key, parent, cache_id=cls.get_cache_id())
-
-    @staticmethod
-    def get_root(p_item):
-        if isinstance(p_item, PlexEpisode):
-            return p_item.parent
-
-        return p_item
-
-    @staticmethod
-    def add_identifier(data, p_item):
-        return PlexMetadata.add_identifier(data, p_item)
-
-    @classmethod
-    def to_trakt(cls, key, p_item, include_identifier=True):
-        data = {}
-
-        # Append episode attributes if this is a PlexEpisode
-        if isinstance(p_item, PlexEpisode):
-            k_season, k_episode = key
-
-            data.update({
-                'season': k_season,
-                'episode': k_episode
-            })
-
-        if include_identifier:
-            p_root = cls.get_root(p_item)
-
-            data['title'] = p_root.title
-
-            if p_root.year:
-                data['year'] = p_root.year
-
-            cls.add_identifier(data, p_root)
-
-        return data
+        return Library.all(types, keys, titles)
 
 
 class TraktInterface(Base):
     merged_cache = {}
 
     @classmethod
-    def merged(cls, media, watched=True, ratings=False, collected=False, extended='min'):
+    def merged(cls, media, watched=True, ratings=False, collected=False, exceptions=True):
         cached = cls.merged_cache.get(media)
 
         # Check if the cached library is valid
-        if cached and cached['cache_id'] == cls.get_cache_id():
+        if cached and cached['sid'] == cls.get_sid():
             items, table = cached['result']
 
             log.debug(
@@ -108,25 +73,30 @@ class TraktInterface(Base):
         # Merge data
         items = {}
 
+        params = {
+            'store': items,
+            'exceptions': exceptions
+        }
+
         # Merge watched library
-        if watched and Trakt['user/library/%s' % media].watched(extended=extended, store=items) is None:
-            log.warn('Unable to fetch watched library')
+        if watched and Trakt['sync/watched'].get(media, **params) is None:
+            log.warn('Unable to fetch watched items')
             return None, None
 
         # Merge ratings
         if ratings:
-            if Trakt['user/ratings'].get(media, extended=extended, store=items) is None:
+            if Trakt['sync/ratings'].get(media, **params) is None:
                 log.warn('Unable to fetch ratings')
                 return None, None
 
             # Fetch episode ratings (if we are fetching shows)
-            if media == 'shows' and Trakt['user/ratings'].get('episodes', extended=extended, store=items) is None:
+            if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
                 log.warn('Unable to fetch episode ratings')
                 return None, None
 
         # Merge collected library
-        if collected and Trakt['user/library/%s' % media].collection(extended=extended, store=items) is None:
-            log.warn('Unable to fetch collected library')
+        if collected and Trakt['sync/collection'].get(media, **params) is None:
+            log.warn('Unable to fetch collected items')
             return None, None
 
         # Generate item table with alternative keys
@@ -145,16 +115,18 @@ class TraktInterface(Base):
             media, len(table), len(items), total_seconds(elapsed)
         )
 
-        # Cache for future calls
         cls.merged_cache[media] = {
-            'cache_id': cls.get_cache_id(),
+            'sid': cls.get_sid(),
             'result': (items, table)
         }
+
+        # TODO Run asynchronously?
+        ModuleManager['backup'].run(media, items)
 
         return items, table
 
 
-class SyncBase(Base):
+class SyncBase(Base, Emitter):
     key = None
     task = None
     title = "Unknown"
@@ -195,13 +167,25 @@ class SyncBase(Base):
         self.reset(kwargs.get('artifacts'))
 
         # Trigger handlers and return if there was an error
-        if not all(self.trigger(None, *args, **kwargs)):
+        exceptions, results = self.trigger(None, *args, **kwargs)
+
+        if not all(results):
             self.update_status(False)
             return False
 
-        # Trigger children and return if there was an error
-        if not all(self.trigger_children(*args, **kwargs)):
-            self.update_status(False)
+        # Create "http" cache for this task
+        cache_key = 'http.%s.%s' % (self.get_sid(), self.key)
+        cache = CacheManager.open(cache_key)
+
+        with Plex.configuration.cache(http=cache):
+            # Trigger children and return if there was an error
+            exceptions, results = self.trigger_children(*args, **kwargs)
+
+        # Discard HTTP cache
+        CacheManager.delete(cache_key)
+
+        if not all(results):
+            self.update_status(False, exceptions=exceptions)
             return False
 
         self.update_status(True)
@@ -262,12 +246,11 @@ class SyncBase(Base):
             if child.auto_run
         ]
 
-
         return self.trigger_run(children, single, *args, **kwargs)
 
     def trigger_run(self, funcs, single, *args, **kwargs):
         if not funcs:
-            return []
+            return [], []
 
         if self.threaded:
             tasks = []
@@ -279,57 +262,53 @@ class SyncBase(Base):
                 task.spawn('sync.%s.%s' % (self.key, name))
 
             # Wait until everything is complete
+            exceptions = []
             results = []
 
             for task in tasks:
                 task.wait()
+
                 results.append(task.result)
 
-            return results
+                if task.exception:
+                    _, exception, _ = task.exception
+
+                    exceptions.append(exception)
+
+            return exceptions, results
 
         # Run each task and collect results
         results = [func(*args, **kwargs) for (_, func) in funcs]
 
         if not single:
-            return results
+            return [], results
 
-        return results[0]
+        return None, results[0]
 
     #
     # Status / Progress
     #
 
-    def start(self, end, start=0):
-        EventManager.fire(
-            'sync.%s.started' % self.get_key(),
-            start=start, end=end
-        )
-
-    def progress(self, value):
-        EventManager.fire(
-            'sync.%s.progress' % self.get_key(),
-            value=value
-        )
-
-    def finish(self):
-        EventManager.fire(
-            'sync.%s.finished' % self.get_key()
-        )
-
-    def update_status(self, success, end_time=None, start_time=None, section=None):
+    def update_status(self, success, end_time=None, start_time=None, section=None, exceptions=None):
         if end_time is None:
             end_time = datetime.utcnow()
 
         # Update task status
         status = self.get_status(section)
-        status.update(success, start_time or self.start_time, end_time)
+        status.update(
+            success,
+            start_time or self.start_time,
+            end_time,
+            exceptions
+        )
 
         log.info(
-            'Task "%s" finished - success: %s, start: %s, elapsed: %s',
+            'Task "%s" finished - success: %s, start: %s, elapsed: %s, exceptions: %r',
             status.key,
             status.previous_success,
             status.previous_timestamp,
-            status.previous_elapsed
+            status.previous_elapsed,
+            exceptions
         )
 
     def get_status(self, section=None):
@@ -367,14 +346,23 @@ class SyncBase(Base):
 
         self.artifacts[key].append(data)
 
-    def store_episodes(self, key, show, episodes=None, artifact=None):
+    def store_seasons(self, key, show, seasons=None, artifact=None):
+        if seasons is None:
+            seasons = self.child('season').artifacts.get(artifact or key)
+
+        if not show or not seasons:
+            return
+
+        self.store(key, merge({'seasons': seasons}, show))
+
+    def store_episodes(self, key, season, episodes=None, artifact=None):
         if episodes is None:
             episodes = self.child('episode').artifacts.get(artifact or key)
 
         if episodes is None:
             return
 
-        self.store(key, merge({'episodes': episodes}, show))
+        self.store(key, merge({'episodes': episodes}, season))
 
     # TODO switch to a streamed format (to avoid the MemoryError)
     def save(self, group, data, source=None):
@@ -386,5 +374,7 @@ class SyncBase(Base):
         try:
             log.debug('Saving artifacts to "%s.json"', name)
             Data.Save(name + '.json', repr(data))
-        except MemoryError:
-            log.warn('Unable to save artifacts, out of memory')
+        except MemoryError, ex:
+            log.error('Unable to save artifacts: %s', ex, exc_info=True)
+        except OSError, ex:
+            log.error('Unable to save artifacts: %s', ex, exc_info=True)
