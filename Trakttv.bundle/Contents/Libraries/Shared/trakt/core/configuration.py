@@ -1,16 +1,14 @@
+from trakt.core.context_collection import ContextCollection
+
+
 class ConfigurationManager(object):
     def __init__(self):
-        self.stack = [
-            Configuration(self)
-        ]
+        self.defaults = Configuration(self)
+        self.stack = ContextCollection([self.defaults])
 
     @property
     def current(self):
         return self.stack[-1]
-
-    @property
-    def defaults(self):
-        return self.stack[0]
 
     def app(self, name=None, version=None, date=None):
         return Configuration(self).app(name, version, date)
@@ -88,7 +86,11 @@ class Configuration(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         item = self.manager.stack.pop()
 
-        assert item == self
+        assert item == self, 'Removed %r from stack, expecting %r' % (item, self)
+
+        # Clear old context lists
+        if len(self.manager.stack) == 1:
+            self.manager.stack.clear()
 
     def __getitem__(self, key):
         return self.data[key]

@@ -5,7 +5,7 @@ from trakt.interfaces.base import InterfaceProxy
 
 import logging
 
-__version__ = '2.0.8'
+__version__ = '2.1.0'
 
 log = logging.getLogger(__name__)
 
@@ -16,9 +16,15 @@ class TraktClient(object):
 
     __interfaces = None
 
-    def __init__(self):
+    def __init__(self, adapter_kwargs=None):
+        # Set parameter defaults
+        if adapter_kwargs is None:
+            adapter_kwargs = {}
+
+        adapter_kwargs.setdefault('max_retries', 3)
+
         # Construct
-        self.http = HttpClient(self)
+        self.http = HttpClient(self, adapter_kwargs)
         self.configuration = ConfigurationManager()
 
         self.__interfaces = construct_map(self)

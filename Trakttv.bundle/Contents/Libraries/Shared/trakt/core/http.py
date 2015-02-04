@@ -1,6 +1,7 @@
-from trakt.core.context import ContextStack
+from trakt.core.context_stack import ContextStack
 from trakt.core.request import TraktRequest
 
+from requests.adapters import HTTPAdapter
 import logging
 import requests
 import socket
@@ -10,11 +11,15 @@ log = logging.getLogger(__name__)
 
 
 class HttpClient(object):
-    def __init__(self, client):
+    def __init__(self, client, adapter_kwargs=None):
         self.client = client
+        self.adapter_kwargs = adapter_kwargs or {}
 
+        # Build client
         self.configuration = ContextStack()
-        self.session = requests.Session()
+        self.session = None
+
+        self._build_session()
 
     def configure(self, path=None):
         self.configuration.push(base_path=path)
@@ -63,7 +68,7 @@ class HttpClient(object):
 
                 log.warn('Encountered socket.gaierror (code: 8)')
 
-                response = self._rebuild().send(prepared)
+                response = self._build_session().send(prepared)
 
             if not retry or response.status_code < 500:
                 break
@@ -82,10 +87,13 @@ class HttpClient(object):
     def delete(self, path=None, params=None, data=None, **kwargs):
         return self.request('DELETE', path, params, data, **kwargs)
 
-    def _rebuild(self):
-        log.info('Rebuilding session and connection pools...')
+    def _build_session(self):
+        if self.session:
+            log.info('Rebuilding session and connection pools...')
 
-        # Rebuild the connection pool (old pool has stale connections)
+        # Build the connection pool
         self.session = requests.Session()
+        self.session.mount('http://', HTTPAdapter(**self.adapter_kwargs))
+        self.session.mount('https://', HTTPAdapter(**self.adapter_kwargs))
 
         return self.session
