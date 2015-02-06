@@ -164,7 +164,7 @@ class Episode(Video):
         result.update({
             'watched': 1 if self.is_watched else 0,
             'collected': 1 if self.is_collected else 0,
-            'plays': self.plays,
+            'plays': self.plays if self.plays is not None else 0,
             'collected_at': to_iso8601(self.collected_at),
             'ids': {}
         })
@@ -210,7 +210,7 @@ class Movie(Video):
         result.update({
             'watched': 1 if self.is_watched else 0,
             'collected': 1 if self.is_collected else 0,
-            'plays': self.plays,
+            'plays': self.plays if self.plays is not None else 0,
             'collected_at': to_iso8601(self.collected_at)
         })
 

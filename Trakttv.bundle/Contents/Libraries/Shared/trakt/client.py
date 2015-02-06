@@ -5,13 +5,13 @@ from trakt.interfaces.base import InterfaceProxy
 
 import logging
 
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 
 log = logging.getLogger(__name__)
 
 
 class TraktClient(object):
-    base_url = 'https://api.trakt.tv'
+    base_url = 'https://api-v2launch.trakt.tv'
     version = __version__
 
     __interfaces = None

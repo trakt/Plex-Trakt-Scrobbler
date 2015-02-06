@@ -1,3 +1,5 @@
+from trakt.core.configuration import DEFAULT_HTTP_RETRY, DEFAULT_HTTP_MAX_RETRIES, DEFAULT_HTTP_TIMEOUT, \
+    DEFAULT_HTTP_RETRY_SLEEP
 from trakt.core.context_stack import ContextStack
 from trakt.core.request import TraktRequest
 
@@ -30,8 +32,10 @@ class HttpClient(object):
         # retrieve configuration
         ctx = self.configuration.pop()
 
-        retry = self.client.configuration.get('http.retry', False)
-        max_retries = self.client.configuration.get('http.max_retries', 3)
+        retry = self.client.configuration.get('http.retry', DEFAULT_HTTP_RETRY)
+        max_retries = self.client.configuration.get('http.max_retries', DEFAULT_HTTP_MAX_RETRIES)
+        retry_sleep = self.client.configuration.get('http.retry_sleep', DEFAULT_HTTP_RETRY_SLEEP)
+        timeout = self.client.configuration.get('http.timeout', DEFAULT_HTTP_TIMEOUT)
 
         # build request
         if ctx.base_path and path:
@@ -59,8 +63,8 @@ class HttpClient(object):
                 log.warn('Retry # %s', i)
 
             try:
-                response = self.session.send(prepared)
-            except socket.gaierror, e:
+                response = self.session.send(prepared, timeout=timeout)
+            except socket.gaierror as e:
                 code, _ = e
 
                 if code != 8:
@@ -68,13 +72,13 @@ class HttpClient(object):
 
                 log.warn('Encountered socket.gaierror (code: 8)')
 
-                response = self._build_session().send(prepared)
+                response = self._build_session().send(prepared, timeout=timeout)
 
             if not retry or response.status_code < 500:
                 break
 
-            log.warn('Continue retry since status is %s', response.status_code)
-            time.sleep(5)
+            log.warn('Continue retry since status is %s, waiting %s seconds', response.status_code, retry_sleep)
+            time.sleep(retry_sleep)
 
         return response
 

@@ -1,5 +1,10 @@
 from trakt.core.context_collection import ContextCollection
 
+DEFAULT_HTTP_RETRY = False
+DEFAULT_HTTP_MAX_RETRIES = 3
+DEFAULT_HTTP_RETRY_SLEEP = 5
+DEFAULT_HTTP_TIMEOUT = (6.05, 24)
+
 
 class ConfigurationManager(object):
     def __init__(self):
@@ -19,8 +24,10 @@ class ConfigurationManager(object):
     def client(self, id=None, secret=None):
         return Configuration(self).client(id, secret)
 
-    def http(self, retry=False, max_retries=3):
-        return Configuration(self).http(retry, max_retries)
+    def http(self, retry=DEFAULT_HTTP_RETRY, max_retries=DEFAULT_HTTP_MAX_RETRIES, retry_sleep=DEFAULT_HTTP_RETRY_SLEEP,
+             timeout=DEFAULT_HTTP_TIMEOUT):
+
+        return Configuration(self).http(retry, max_retries, retry_sleep, timeout)
 
     def oauth(self, token=None):
         return Configuration(self).oauth(token)
@@ -66,9 +73,14 @@ class Configuration(object):
 
         return self
 
-    def http(self, retry=False, max_retries=3):
+    def http(self, retry=DEFAULT_HTTP_RETRY, max_retries=DEFAULT_HTTP_MAX_RETRIES, retry_sleep=DEFAULT_HTTP_RETRY_SLEEP,
+             timeout=DEFAULT_HTTP_TIMEOUT):
+
         self.data['http.retry'] = retry
         self.data['http.max_retries'] = max_retries
+        self.data['http.retry_sleep'] = retry_sleep
+
+        self.data['http.timeout'] = timeout
 
         return self
 
