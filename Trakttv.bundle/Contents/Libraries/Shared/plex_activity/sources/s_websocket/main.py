@@ -1,7 +1,7 @@
 from plex import Plex
+from plex.lib.six.moves.urllib_parse import urlencode
 from plex_activity.sources.base import Source
 
-from urllib import urlencode
 import json
 import logging
 import re

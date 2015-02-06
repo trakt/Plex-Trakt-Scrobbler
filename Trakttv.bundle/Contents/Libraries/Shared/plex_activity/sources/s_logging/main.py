@@ -141,7 +141,7 @@ class Logging(Source):
         try:
             # Close the buffered reader
             self.reader.close()
-        except Exception, ex:
+        except Exception as ex:
             log.error('reader.close() - raised exception: %s', ex, exc_info=True)
         finally:
             self.reader = None
@@ -149,13 +149,13 @@ class Logging(Source):
         try:
             # Close the file handle
             self.file.close()
-        except OSError, ex:
+        except OSError as ex:
             if ex.errno == 9:
                 # Bad file descriptor, already closed?
                 log.warn('file.close() - ignoring raised exception: %s (already closed)', ex)
             else:
                 log.error('file.close() - raised exception: %s', ex, exc_info=True)
-        except Exception, ex:
+        except Exception as ex:
             log.error('file.close() - raised exception: %s', ex, exc_info=True)
         finally:
             self.file = None
