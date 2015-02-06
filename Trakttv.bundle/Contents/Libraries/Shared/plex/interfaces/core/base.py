@@ -1,8 +1,7 @@
-from plex.lib.six import string_types
+from plex.lib.six import string_types, StringIO
 from plex.lib.six.moves.urllib_parse import urlparse
 
 from functools import wraps
-from StringIO import StringIO
 import logging
 
 # Import available parser
@@ -69,7 +68,7 @@ class Interface(object):
 
         try:
             root = self.__parse_xml(response.content)
-        except SyntaxError, ex:
+        except SyntaxError as ex:
             log.error('Unable to parse XML response: %s', ex, exc_info=True, extra={
                 'data': {
                     'snippet': self.__error_snippet(response, ex)
@@ -77,7 +76,7 @@ class Interface(object):
             })
 
             return None
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to parse XML response: %s', ex, exc_info=True)
 
             return None
@@ -115,7 +114,7 @@ class Interface(object):
         snippet = None
 
         # Create StringIO stream
-        stream = StringIO(response.content)
+        stream = StringIO(response.text)
 
         # Iterate over `content` to find `n_line`
         for x, l in enumerate(stream):

@@ -69,7 +69,7 @@ class Interface(object):
             # Try parse json response
             try:
                 data = response.json()
-            except Exception, e:
+            except Exception as e:
                 log.warning('unable to parse JSON response: %s', e)
                 return None
         else:

@@ -1,4 +1,4 @@
-from trakt.core.helpers import to_datetime
+from trakt.core.helpers import from_iso8601, to_iso8601, deprecated
 from trakt.helpers import update_attributes
 
 
@@ -39,7 +39,7 @@ class Video(Media):
             'plays'
         ])
 
-        self.collected_at = to_datetime(info.get('collected_at'))
+        self.collected_at = from_iso8601(info.get('collected_at'))
 
         # Set flags
         if is_watched is not None:
@@ -71,17 +71,21 @@ class Show(Media):
             'year': self.year
         }
 
+    @deprecated('Show.to_info() has been moved to Show.to_dict()')
     def to_info(self):
+        return self.to_dict()
+
+    def to_dict(self):
         result = self.to_identifier()
 
         result['seasons'] = [
-            season.to_info()
+            season.to_dict()
             for season in self.seasons.values()
         ]
 
         if self.rating:
             result['rating'] = self.rating.value
-            result['rated_at'] = self.rating.timestamp
+            result['rated_at'] = to_iso8601(self.rating.timestamp)
 
         return result
 
@@ -111,17 +115,21 @@ class Season(Media):
         return {
             'number': self.pk,
             'episodes': [
-                episode.to_info()
+                episode.to_dict()
                 for episode in self.episodes.values()
             ]
         }
 
+    @deprecated('Season.to_info() has been moved to Season.to_dict()')
     def to_info(self):
+        return self.to_dict()
+
+    def to_dict(self):
         result = self.to_identifier()
 
         if self.rating:
             result['rating'] = self.rating.value
-            result['rated_at'] = self.rating.timestamp
+            result['rated_at'] = to_iso8601(self.rating.timestamp)
 
         return result
 
@@ -145,21 +153,25 @@ class Episode(Video):
             'number': self.pk
         }
 
+    @deprecated('Episode.to_info() has been moved to Episode.to_dict()')
     def to_info(self):
+        return self.to_dict()
+
+    def to_dict(self):
         result = self.to_identifier()
 
         # add ids as well since trakt adds ids to the episodes as well
         result.update({
             'watched': 1 if self.is_watched else 0,
             'collected': 1 if self.is_collected else 0,
-            'plays': self.plays,
-            'collected_at': self.collected_at,
+            'plays': self.plays if self.plays is not None else 0,
+            'collected_at': to_iso8601(self.collected_at),
             'ids': {}
         })
 
         if self.rating:
             result['rating'] = self.rating.value
-            result['rated_at'] = self.rating.timestamp
+            result['rated_at'] = to_iso8601(self.rating.timestamp)
 
         return result
 
@@ -188,19 +200,23 @@ class Movie(Video):
             'year': self.year
         }
 
+    @deprecated('Movie.to_info() has been moved to Movie.to_dict()')
     def to_info(self):
+        return self.to_dict()
+
+    def to_dict(self):
         result = self.to_identifier()
 
         result.update({
             'watched': 1 if self.is_watched else 0,
             'collected': 1 if self.is_collected else 0,
-            'plays': self.plays,
-            'collected_at': self.collected_at
+            'plays': self.plays if self.plays is not None else 0,
+            'collected_at': to_iso8601(self.collected_at)
         })
 
         if self.rating:
             result['rating'] = self.rating.value
-            result['rated_at'] = self.rating.timestamp
+            result['rated_at'] = to_iso8601(self.rating.timestamp)
 
         return result
 
@@ -232,7 +248,7 @@ class Rating(object):
 
         r = cls()
         r.value = info.get('rating')
-        r.timestamp = to_datetime(info.get('rated_at'))
+        r.timestamp = from_iso8601(info.get('rated_at'))
         return r
 
     def __repr__(self):

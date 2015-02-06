@@ -1,6 +1,9 @@
-from trakt.core.context import ContextStack
+from trakt.core.configuration import DEFAULT_HTTP_RETRY, DEFAULT_HTTP_MAX_RETRIES, DEFAULT_HTTP_TIMEOUT, \
+    DEFAULT_HTTP_RETRY_SLEEP
+from trakt.core.context_stack import ContextStack
 from trakt.core.request import TraktRequest
 
+from requests.adapters import HTTPAdapter
 import logging
 import requests
 import socket
@@ -10,11 +13,15 @@ log = logging.getLogger(__name__)
 
 
 class HttpClient(object):
-    def __init__(self, client):
+    def __init__(self, client, adapter_kwargs=None):
         self.client = client
+        self.adapter_kwargs = adapter_kwargs or {}
 
+        # Build client
         self.configuration = ContextStack()
-        self.session = requests.Session()
+        self.session = None
+
+        self._build_session()
 
     def configure(self, path=None):
         self.configuration.push(base_path=path)
@@ -25,8 +32,10 @@ class HttpClient(object):
         # retrieve configuration
         ctx = self.configuration.pop()
 
-        retry = self.client.configuration.get('http.retry', False)
-        max_retries = self.client.configuration.get('http.max_retries', 3)
+        retry = self.client.configuration.get('http.retry', DEFAULT_HTTP_RETRY)
+        max_retries = self.client.configuration.get('http.max_retries', DEFAULT_HTTP_MAX_RETRIES)
+        retry_sleep = self.client.configuration.get('http.retry_sleep', DEFAULT_HTTP_RETRY_SLEEP)
+        timeout = self.client.configuration.get('http.timeout', DEFAULT_HTTP_TIMEOUT)
 
         # build request
         if ctx.base_path and path:
@@ -54,8 +63,8 @@ class HttpClient(object):
                 log.warn('Retry # %s', i)
 
             try:
-                response = self.session.send(prepared)
-            except socket.gaierror, e:
+                response = self.session.send(prepared, timeout=timeout)
+            except socket.gaierror as e:
                 code, _ = e
 
                 if code != 8:
@@ -63,13 +72,13 @@ class HttpClient(object):
 
                 log.warn('Encountered socket.gaierror (code: 8)')
 
-                response = self._rebuild().send(prepared)
+                response = self._build_session().send(prepared, timeout=timeout)
 
             if not retry or response.status_code < 500:
                 break
 
-            log.warn('Continue retry since status is %s', response.status_code)
-            time.sleep(5)
+            log.warn('Continue retry since status is %s, waiting %s seconds', response.status_code, retry_sleep)
+            time.sleep(retry_sleep)
 
         return response
 
@@ -82,10 +91,13 @@ class HttpClient(object):
     def delete(self, path=None, params=None, data=None, **kwargs):
         return self.request('DELETE', path, params, data, **kwargs)
 
-    def _rebuild(self):
-        log.info('Rebuilding session and connection pools...')
+    def _build_session(self):
+        if self.session:
+            log.info('Rebuilding session and connection pools...')
 
-        # Rebuild the connection pool (old pool has stale connections)
+        # Build the connection pool
         self.session = requests.Session()
+        self.session.mount('http://', HTTPAdapter(**self.adapter_kwargs))
+        self.session.mount('https://', HTTPAdapter(**self.adapter_kwargs))
 
         return self.session
