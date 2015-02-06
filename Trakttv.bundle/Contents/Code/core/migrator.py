@@ -148,6 +148,9 @@ class Clean(Migration):
                 # plex.metadata.py
                 'Shared/plex_metadata/core/cache.py',
 
+                # requests
+                'Shared/requests/packages/urllib3/util.py',
+
                 # trakt.py
                 'Shared/trakt/core/context.py',
                 'Shared/trakt/interfaces/base/media.py',
