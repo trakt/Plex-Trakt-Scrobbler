@@ -37,7 +37,7 @@ class Metadata(object):
         try:
             # Try retrieve item from cache (if it exists)
             value = self._cache_get(key)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve item "%s" from cache - %s', key, ex, exc_info=True)
             value = None
 
@@ -52,7 +52,7 @@ class Metadata(object):
         try:
             # Invalidate item in cache
             self._cache_invalidate(key)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to invalidate item "%s" from cache - %s', key, ex, exc_info=True)
 
     @synchronized
@@ -63,7 +63,7 @@ class Metadata(object):
         try:
             # Store in cache
             self._cache_store(key, value)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to store item "%s" in cache - %s', key, ex, exc_info=True)
 
         return value

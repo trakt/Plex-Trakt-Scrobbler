@@ -1,4 +1,5 @@
 from plex import Plex
+from plex.lib import six
 from plex_metadata.core.helpers import try_convert
 
 import hashlib
@@ -54,6 +55,9 @@ class Matcher(object):
         return identifier
 
     def md5(self, value):
+        if isinstance(value, six.text_type):
+            value = value.encode('utf-8')
+
         m = hashlib.md5()
         m.update(value)
 
