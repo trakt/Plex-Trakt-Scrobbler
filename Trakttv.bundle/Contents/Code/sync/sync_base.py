@@ -2,6 +2,7 @@ from core.cache import CacheManager
 from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
+from plugin.core.collections import SynchronizedDictionary
 from plugin.core.event import Global as EG
 from plugin.modules.manager import ModuleManager
 
@@ -146,7 +147,7 @@ class SyncBase(Base, Emitter):
         self.children = dict([(x.key, x(manager, self)) for x in self.children])
 
         self.start_time = None
-        self.artifacts = {}
+        self.artifacts = SynchronizedDictionary()
 
     @classmethod
     def get_key(cls):
@@ -158,7 +159,7 @@ class SyncBase(Base, Emitter):
     def reset(self, artifacts=None):
         self.start_time = datetime.utcnow()
 
-        self.artifacts = artifacts.copy() if artifacts else {}
+        self.artifacts = artifacts.copy() if artifacts else SynchronizedDictionary()
 
         for child in self.children.itervalues():
             child.reset(artifacts)
@@ -341,10 +342,8 @@ class SyncBase(Base, Emitter):
             self.artifacts[key] = data
             return
 
-        if key not in self.artifacts:
-            self.artifacts[key] = []
-
-        self.artifacts[key].append(data)
+        items = self.artifacts.get(key, [], store=True)
+        items.append(data)
 
     def store_seasons(self, key, show, seasons=None, artifact=None):
         if seasons is None:
