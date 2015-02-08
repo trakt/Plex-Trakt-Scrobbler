@@ -56,6 +56,17 @@ class Library(object):
                 result[season] = {}
 
             for episode in episodes:
+                # Retrieve currently stored episode
+                if flat:
+                    current = result.get((season, episode))
+                else:
+                    current = result[season].get(episode)
+
+                # Skip if we already have the item stored
+                if current and current.season.index == season and current.index == episode:
+                    continue
+
+                # Store episode in `result`
                 if flat:
                     result[season, episode] = item
                 else:
