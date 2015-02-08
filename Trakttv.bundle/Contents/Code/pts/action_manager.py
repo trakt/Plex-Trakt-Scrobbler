@@ -61,6 +61,21 @@ class ActionManager(object):
     #
 
     @classmethod
+    def build_key(cls, rating_key, cur_episode=None, identifier=None):
+        if not identifier or len(identifier) != 2:
+            return rating_key
+
+        _, episodes = identifier
+
+        if len(episodes) < 2 or cur_episode >= len(episodes):
+            return rating_key
+
+        return '%s:%s' % (
+            rating_key,
+            cur_episode
+        )
+
+    @classmethod
     def queue_event(cls, action, info, priority=PRIORITY_EVENT, callback=None):
         return cls.queue(
             {
@@ -181,9 +196,11 @@ class ActionManager(object):
         # Execute request
         kwargs = item.get('kwargs', {})
 
+        log.debug('[%s] Sending action (kwargs: %r)', item['key'], kwargs)
+
         performed, response = func(**kwargs)
 
-        log.debug('send - performed: %r, response: %r', performed, response)
+        log.debug('[%s] Action sent (performed: %r, response: %r)', item['key'], performed, response)
 
         if response is None:
             # Request failed, retry the request
