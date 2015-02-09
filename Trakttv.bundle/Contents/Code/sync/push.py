@@ -404,7 +404,7 @@ class Show(Base):
 
         self.remove('sync/collection', shows=self.retrieve('missing.shows'))
 
-        self.save('last_artifacts', json_encode(self.artifacts))
+        self.save('last_artifacts', json_encode(self.artifacts.store))
 
         log.info('Finished pushing shows to trakt')
         return True
@@ -502,7 +502,7 @@ class Movie(Base):
 
         self.remove('sync/collection', movies=self.retrieve('missing.movies'))
 
-        self.save('last_artifacts', json_encode(self.artifacts))
+        self.save('last_artifacts', json_encode(self.artifacts.store))
 
         log.info('Finished pushing movies to trakt')
         return True

@@ -110,9 +110,17 @@ class MediaMapper(object):
         season_num = i_episode.get('season')
         episode_num = i_episode.get('number')
 
+        # Build `show`
         show = self.show('shows', item['show'])
+
+        if show is None:
+            # Unable to create show
+            return None
+
+        # Build `season`
         season = self.show_season(show, season_num, **kwargs)
 
+        # Build `episode`
         episode = self.show_episode(season, episode_num, item, **kwargs)
 
         return episode

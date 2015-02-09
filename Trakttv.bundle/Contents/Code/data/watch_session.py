@@ -107,6 +107,12 @@ class WatchSession(Model):
 
         self.last_updated = Datetime.FromTimestamp(0)
 
+        # Reset action queue + history
+        self.action_queue = PriorityQueue()
+
+        self.actions_performed = []
+        self.actions_sent = []
+
     def queue(self, action, request, priority=3):
         if priority == 0:
             log.info('Maximum retries exceeded for "%s" action', action)
@@ -152,10 +158,17 @@ class WatchSession(Model):
                 self.action_queued.release()
                 continue
 
+            # Build action key
+            action_key = self.action_manager.build_key(
+                self.metadata.rating_key,
+                self.cur_episode,
+                self.identifier
+            )
+
             # Queue action with `ActionManager`
             self.action_manager.queue_scrobble(
-                self.metadata.rating_key,
-                action, request,
+                action_key, action,
+                request,
 
                 callback=self.on_action_response
             )

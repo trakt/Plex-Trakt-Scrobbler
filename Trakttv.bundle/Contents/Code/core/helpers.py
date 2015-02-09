@@ -5,7 +5,6 @@ import inspect
 import re
 import sys
 import threading
-import traceback
 import time
 import unicodedata
 
@@ -236,7 +235,7 @@ def spawn(func, *args, **kwargs):
         try:
             func(*args, **kwargs)
         except Exception, ex:
-            log.error('Thread "%s" raised an exception: %s - %s', thread_name, ex, traceback.format_exc())
+            log.error('Thread "%s" raised an exception: %s', thread_name, ex, exc_info=True)
 
     thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
     thread.start()
