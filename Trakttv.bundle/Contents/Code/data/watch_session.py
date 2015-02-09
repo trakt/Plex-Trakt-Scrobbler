@@ -159,11 +159,16 @@ class WatchSession(Model):
                 continue
 
             # Build action key
-            action_key = self.action_manager.build_key(
-                self.metadata.rating_key,
-                self.cur_episode,
-                self.identifier
-            )
+            if self.type == 'show':
+                action_key = self.action_manager.build_key(
+                    self.metadata.rating_key,
+                    self.cur_episode,
+                    self.identifier
+                )
+            else:
+                action_key = self.action_manager.build_key(
+                    self.metadata.rating_key,
+                )
 
             # Queue action with `ActionManager`
             self.action_manager.queue_scrobble(
