@@ -28,7 +28,9 @@ class LoggingScrobbler(ScrobblerMethod):
             log.warn('Unable to enable logging')
 
         # Test if logging is enabled
-        if not Plex[':/prefs'].get('logDebug').value:
+        log_debug = Plex[':/prefs'].get('logDebug')
+
+        if log_debug and not log_debug.value:
             log.warn('Debug logging not enabled, unable to use logging activity method.')
             return False
 
