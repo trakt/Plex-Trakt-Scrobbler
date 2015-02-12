@@ -14,7 +14,6 @@ Environment.setup(Core)
 # ------------------------------------------------
 import core
 import data
-import pts
 import sync
 import interface
 # ------------------------------------------------
@@ -31,17 +30,12 @@ from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.modules.manager import ModuleManager
-from pts.action_manager import ActionManager
-from pts.scrobbler import Scrobbler
-from pts.session_manager import SessionManager
 from sync.sync_manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
 from trakt import Trakt, ClientError
-import hashlib
-import logging
 import os
 
 
@@ -54,11 +48,6 @@ class Main(object):
 
         # core
         UpdateChecker(),
-
-        # pts
-        ActionManager,
-        Scrobbler,
-        SessionManager(),
 
         # sync
         SyncManager,

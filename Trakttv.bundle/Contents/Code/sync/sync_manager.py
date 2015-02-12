@@ -16,9 +16,7 @@ from plex import Plex
 from plex_activity import Activity
 import gc
 import threading
-import traceback
 import time
-import uuid
 
 L, LF = localization('sync.manager')
 log = Logger('sync.manager')

@@ -1,8 +1,6 @@
 from core.action import ActionHelper
 from core.helpers import all, json_encode, merge
 from core.logger import Logger
-from data.watch_session import WatchSession
-from pts.action_manager import ActionManager
 from sync.sync_base import SyncBase
 
 from datetime import datetime
@@ -29,9 +27,9 @@ class Base(SyncBase):
             return True
 
         # Ignore if we are currently watching this item
-        if WatchSession.is_active(p_items[0].rating_key):
-            log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
-            return True
+        # TODO if WatchSession.is_active(p_items[0].rating_key):
+        #    log.trace('[P #%s] ignored - item is currently being watched', p_items[0].rating_key)
+        #    return True
 
         # Build item which can be sent to trakt
         item = ActionHelper.plex.to_trakt(key, p_items[0])
@@ -41,14 +39,14 @@ class Base(SyncBase):
             return True
 
         # Check action against history
-        history = ActionManager.history.get(p_items[0].rating_key, {})
+        # TODO history = ActionManager.history.get(p_items[0].rating_key, {})
 
-        if not ActionManager.valid_action('add', history):
-            log.debug('watch() - Invalid action for "%s" [%s] (already scrobbled or duplicate action)', p_items[0].title, key)
-            return True
+        # TODO if not ActionManager.valid_action('add', history):
+        #    log.debug('watch() - Invalid action for "%s" [%s] (already scrobbled or duplicate action)', p_items[0].title, key)
+        #    return True
 
         # Mark item as added in `pts.action_manager`
-        ActionManager.update_history(p_items[0].rating_key, 'add', 'add')
+        # TODO ActionManager.update_history(p_items[0].rating_key, 'add', 'add')
 
         # Set "watched_at" parameter (if available)
         watched_at = self.get_datetime(p_items[0], 'last_viewed_at')
