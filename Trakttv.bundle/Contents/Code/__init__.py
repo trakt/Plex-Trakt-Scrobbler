@@ -18,6 +18,11 @@ import sync
 import interface
 # ------------------------------------------------
 
+# Check "pysqlite2" availability, log any errors
+try:
+    from pysqlite2 import dbapi2
+except Exception, ex:
+    Log.Error('Unable to import "pysqlite2": %s', ex)
 
 from core.cache import CacheManager
 from core.configuration import Configuration
@@ -29,7 +34,9 @@ from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.managers import ActionManager
 from plugin.modules.manager import ModuleManager
+from plugin.scrobbler import Scrobbler
 from sync.sync_manager import SyncManager
 
 from plex import Plex
@@ -51,6 +58,10 @@ class Main(object):
 
         # sync
         SyncManager,
+
+        # plugin
+        ActionManager,
+        Scrobbler
     ]
 
     def __init__(self):
