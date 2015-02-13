@@ -35,7 +35,7 @@ from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.managers import ActionManager
-from plugin.modules.manager import ModuleManager
+from plugin.modules.core.manager import ModuleManager
 from plugin.scrobbler import Scrobbler
 from sync.sync_manager import SyncManager
 

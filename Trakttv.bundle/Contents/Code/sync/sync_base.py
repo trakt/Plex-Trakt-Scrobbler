@@ -4,7 +4,7 @@ from core.logger import Logger
 from core.task import Task, CancelException
 from plugin.core.collections import SynchronizedDictionary
 from plugin.core.event import Global as EG
-from plugin.modules.manager import ModuleManager
+from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
 from plex import Plex
