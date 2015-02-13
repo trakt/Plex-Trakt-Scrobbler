@@ -10,7 +10,7 @@ class Session(Model):
     class Meta:
         database = db
 
-    account = ForeignKeyField(Account, 'sessions')
+    account = ForeignKeyField(Account, 'sessions', null=True)
     client = ForeignKeyField(Client, 'sessions', to_field='machine_identifier', null=True)
     user = ForeignKeyField(User, 'sessions', to_field='id', null=True)
 

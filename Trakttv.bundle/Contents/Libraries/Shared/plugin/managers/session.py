@@ -29,11 +29,14 @@ class Base(Manager):
     account = None
 
     @classmethod
-    def get_account(cls):
-        if cls.account is None:
-            cls.account = AccountManager.get(Account.username == 'test')
+    def get_account(cls, client, user):
+        if client and client.account_id:
+            return client.account_id
 
-        return cls.account
+        if user and user.account_id:
+            return user.account_id
+
+        return None
 
     @classmethod
     def get_metadata(cls, rating_key):
@@ -67,7 +70,6 @@ class WebSocket(Base):
             Session.session_key == session_key,
 
             on_create={
-                'account': cls.get_account(),
                 'session_key': session_key
             }
         )
@@ -101,8 +103,11 @@ class WebSocket(Base):
             log.warn('Unable to retrieve guid/metadata for session %r', session_key)
             return result
 
-        # Store in `result`
+        # Store client + user in `result`
         result['client'] = ClientManager.from_session(p_item.session, fetch=True)
         result['user'] = UserManager.from_session(p_item.session, fetch=True)
+
+        # Pick account from `client` or `user` objects
+        result['account'] = cls.get_account(result['client'], result['user'])
 
         return result

@@ -1,3 +1,4 @@
+from plugin.models import Account
 from plugin.models.core import db
 
 from peewee import *
@@ -6,6 +7,8 @@ from peewee import *
 class Client(Model):
     class Meta:
         database = db
+
+    account = ForeignKeyField(Account, 'clients', null=True)
 
     # Identification
     machine_identifier = CharField(unique=True)
@@ -26,3 +29,7 @@ class Client(Model):
     protocol = CharField(null=True)
     protocol_capabilities = CharField(null=True)
     protocol_version = CharField(null=True)
+
+    @property
+    def account_id(self):
+        return self._data.get('account')
