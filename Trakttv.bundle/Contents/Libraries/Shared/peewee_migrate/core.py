@@ -11,8 +11,7 @@ from .utils import exec_in
 from peewee import * # noqa
 
 
-LOGGER = logging.getLogger()
-LOGGER.addHandler(logging.StreamHandler())
+LOGGER = logging.getLogger(__name__)
 MIGRATE_TEMPLATE = op.join(
     op.abspath(op.dirname(__file__)),
     'migration.tmpl'
@@ -32,8 +31,6 @@ class Router(object):
     proxy = Proxy()
 
     def __init__(self, migrate_dir, **options):
-
-        LOGGER.setLevel(options.get('LOGGING', 'WARNING'))
 
         if not op.exists(migrate_dir):
             LOGGER.warn('Migration directory: %s does not exists.', migrate_dir)
