@@ -34,6 +34,7 @@ from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.helpers.thread import module_start
 from plugin.managers import ActionManager
 from plugin.modules.core.manager import ModuleManager
 from plugin.scrobbler import Scrobbler
@@ -239,6 +240,9 @@ class Main(object):
 
         # Validate username/password
         spawn(self.authenticate)
+
+        # Start new-style modules
+        module_start()
 
         # Start modules
         names = []
