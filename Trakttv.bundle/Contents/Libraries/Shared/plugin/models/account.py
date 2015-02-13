@@ -9,3 +9,5 @@ class Account(Model):
 
     username = CharField(primary_key=True)
     password = CharField()
+
+    token = CharField(null=True)
