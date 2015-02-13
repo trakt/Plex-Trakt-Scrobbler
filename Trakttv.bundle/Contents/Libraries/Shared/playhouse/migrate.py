@@ -97,7 +97,7 @@ Adding an index:
 Dropping an index:
 
     # Specify the index name.
-    migrate(migrator.drop_index('story_pub_date_status'))
+    migrate(migrator.drop_index('story', 'story_pub_date_status'))
 """
 from collections import namedtuple
 import functools
@@ -189,11 +189,18 @@ class SchemaMigrator(object):
         field.name = field.db_column = column_name
         field_clause = self.database.compiler().field_definition(field)
         field.null = field_null
-        return Clause(
+        parts = [
             SQL('ALTER TABLE'),
             Entity(table),
             SQL('ADD COLUMN'),
-            field_clause)
+            field_clause]
+        if isinstance(field, ForeignKeyField):
+            parts.extend([
+                SQL('REFERENCES'),
+                Entity(field.rel_model._meta.db_table),
+                EnclosedClause(Entity(field.to_field.db_column))
+            ])
+        return Clause(*parts)
 
     @operation
     def add_column(self, table, column_name, field):
@@ -354,7 +361,7 @@ class MySQLColumn(namedtuple('_Column', _column_attributes)):
         if self.is_pk:
             parts.append(SQL('PRIMARY KEY'))
         if self.extra:
-            parts.append(SQL(extra))
+            parts.append(SQL(self.extra))
         return Clause(*parts)
 
 
@@ -380,6 +387,8 @@ class MySQLMigrator(SchemaMigrator):
     @operation
     def drop_not_null(self, table, column):
         column = self._get_column_definition(table, column)
+        if column.is_pk:
+            raise ValueError('Primary keys can not be null')
         return Clause(
             SQL('ALTER TABLE'),
             Entity(table),
@@ -412,6 +421,7 @@ class SqliteMigrator(SchemaMigrator):
     column_re = re.compile('(.+?)\((.+)\)')
     column_split_re = re.compile(r'(?:[^,(]|\([^)]*\))+')
     column_name_re = re.compile('"?([\w]+)')
+    fk_re = re.compile('FOREIGN KEY\s+\("?([\w]+)"?\)\s+', re.I)
 
     def _get_column_names(self, table):
         res = self.database.execute_sql('select * from "%s" limit 1' % table)
@@ -424,16 +434,22 @@ class SqliteMigrator(SchemaMigrator):
             ['table', table.lower()])
         return res.fetchone()
 
-    def _get_indexes(self, table):
-        return self.database.get_indexes(table)
-
     @operation
     def _update_column(self, table, column_to_update, fn):
+        columns = set(column.name.lower()
+                      for column in self.database.get_columns(table))
+        if column_to_update.lower() not in columns:
+            raise ValueError('Column "%s" does not exist on "%s"' %
+                             (column_to_update, table))
+
         # Get the SQL used to create the given table.
         table, create_table = self._get_create_table(table)
 
         # Get the indexes and SQL to re-create indexes.
-        indexes = self._get_indexes(table)
+        indexes = self.database.get_indexes(table)
+
+        # Find any foreign keys we may need to remove.
+        self.database.get_foreign_keys(table)
 
         # Parse out the `CREATE TABLE` and column list portions of the query.
         raw_create, raw_columns = self.column_re.search(create_table).groups()
@@ -463,6 +479,28 @@ class SqliteMigrator(SchemaMigrator):
                     new_column_names.append(column_name)
                     original_column_names.append(column_name)
 
+        # Create a mapping of original columns to new columns.
+        original_to_new = dict(zip(original_column_names, new_column_names))
+        new_column = original_to_new.get(column_to_update)
+
+        fk_filter_fn = lambda column_def: column_def
+        if not new_column:
+            # Remove any foreign keys associated with this column.
+            fk_filter_fn = lambda column_def: None
+        elif new_column != column_to_update:
+            # Update any foreign keys for this column.
+            fk_filter_fn = lambda column_def: self.fk_re.sub(
+                'FOREIGN KEY ("%s") ' % new_column,
+                column_def)
+
+        cleaned_columns = []
+        for column_def in new_column_defs:
+            match = self.fk_re.match(column_def)
+            if match is not None and match.groups()[0] == column_to_update:
+                column_def = fk_filter_fn(column_def)
+            if column_def:
+                cleaned_columns.append(column_def)
+
         # Update the name of the new CREATE TABLE query.
         temp_table = table + '__tmp__'
         rgx = re.compile('("?)%s("?)' % table, re.I)
@@ -471,7 +509,7 @@ class SqliteMigrator(SchemaMigrator):
             raw_create)
 
         # Create the new table.
-        columns = ', '.join(new_column_defs)
+        columns = ', '.join(cleaned_columns)
         queries = [
             Clause(SQL('DROP TABLE IF EXISTS'), Entity(temp_table)),
             SQL('%s (%s)' % (create.strip(), columns))]
@@ -494,10 +532,12 @@ class SqliteMigrator(SchemaMigrator):
         queries.append(self.rename_table(temp_table, table))
 
         # Re-create indexes.
-        original_to_new = dict(zip(original_column_names, new_column_names))
-        new_column = original_to_new.get(column_to_update)
-
         for index in indexes:
+            # Auto-generated indexes in SQLite will not have associated SQL,
+            # so pass over them.
+            if not index.sql:
+                continue
+
             if column_to_update in index.columns:
                 if new_column:
                     queries.append(

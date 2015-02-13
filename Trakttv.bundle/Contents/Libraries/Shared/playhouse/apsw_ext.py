@@ -20,51 +20,21 @@ import apsw
 from peewee import *
 from peewee import _sqlite_date_part
 from peewee import _sqlite_date_trunc
+from peewee import _sqlite_regexp
 from peewee import BooleanField as _BooleanField
 from peewee import DateField as _DateField
 from peewee import DateTimeField as _DateTimeField
 from peewee import DecimalField as _DecimalField
 from peewee import logger
-from peewee import PY3
+from peewee import savepoint
 from peewee import TimeField as _TimeField
 from peewee import transaction as _transaction
-
-
-class ConnectionWrapper(apsw.Connection):
-    def cursor(self):
-        base_cursor = super(ConnectionWrapper, self).cursor()
-        return CursorProxy(base_cursor)
-
-
-class CursorProxy(object):
-    def __init__(self, cursor_obj):
-        self.cursor_obj = cursor_obj
-        self.implements = set(['description', 'fetchone'])
-
-    def __getattr__(self, attr):
-        if attr in self.implements:
-            return self.__getattribute__(attr)
-        return getattr(self.cursor_obj, attr)
-
-    @property
-    def description(self):
-        try:
-            return self.cursor_obj.getdescription()
-        except apsw.ExecutionCompleteError:
-            return []
-
-    if PY3:
-        def fetchone(self):
-            try:
-                return next(self.cursor_obj)
-            except StopIteration:
-                pass
-    else:
-        def fetchone(self):
-            try:
-                return self.cursor_obj.next()
-            except StopIteration:
-                pass
+from playhouse.sqlite_ext import SqliteExtDatabase
+from playhouse.sqlite_ext import VirtualCharField
+from playhouse.sqlite_ext import VirtualField
+from playhouse.sqlite_ext import VirtualFloatField
+from playhouse.sqlite_ext import VirtualIntegerField
+from playhouse.sqlite_ext import VirtualModel
 
 
 class transaction(_transaction):
@@ -76,7 +46,35 @@ class transaction(_transaction):
         self.db.begin(self.lock_type)
 
 
-class APSWDatabase(SqliteDatabase):
+class _execute_wrapper(object):
+    def __init__(self, database, cursor, sql, params, wrap=False):
+        self.database = database
+        self.cursor = cursor
+        self.sql = sql
+        self.params = params
+        self.wrap = wrap
+
+    def __enter__(self):
+        if self.wrap:
+            self.cursor.execute('begin;')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type and self.wrap:
+            if self.database.get_autocommit() and self.database.autorollback:
+                self.cursor.execute('rollback;')
+            error_result = self.database.sql_error_handler(
+                exc_val,
+                self.sql,
+                self.params,
+                self.wrap)
+            if not error_result:
+                return False
+        elif self.wrap:
+            self.cursor.execute('commit;')
+
+
+class APSWDatabase(SqliteExtDatabase):
     def __init__(self, database, timeout=None, **kwargs):
         self.timeout = timeout
         self._modules = {}
@@ -89,34 +87,51 @@ class APSWDatabase(SqliteDatabase):
         del(self._modules[mod_name])
 
     def _connect(self, database, **kwargs):
-        conn = ConnectionWrapper(database, **kwargs)
+        conn = apsw.Connection(database, **kwargs)
         if self.timeout is not None:
             conn.setbusytimeout(self.timeout)
         conn.createscalarfunction('date_part', _sqlite_date_part, 2)
         conn.createscalarfunction('date_trunc', _sqlite_date_trunc, 2)
+        conn.createscalarfunction('regexp', _sqlite_regexp, 2)
+        self._load_aggregates(conn)
+        self._load_collations(conn)
+        self._load_functions(conn)
+        self._load_modules(conn)
+        return conn
+
+    def _load_modules(self, conn):
         for mod_name, mod_inst in self._modules.items():
             conn.createmodule(mod_name, mod_inst)
         return conn
+
+    def _load_aggregates(self, conn):
+        for name, (klass, num_params) in self._aggregates.items():
+            def make_aggregate():
+                instance = klass()
+                return (instance, instance.step, instance.finalize)
+            conn.createaggregatefunction(name, make_aggregate)
+
+    def _load_collations(self, conn):
+        for name, fn in self._collations.items():
+            conn.createcollation(name, fn)
+
+    def _load_functions(self, conn):
+        for name, (fn, num_params) in self._functions.items():
+            conn.createscalarfunction(name, fn, num_params)
 
     def _execute_sql(self, cursor, sql, params):
         cursor.execute(sql, params or ())
         return cursor
 
     def execute_sql(self, sql, params=None, require_commit=True):
-        cursor = self.get_cursor()
-        wrap_transaction = require_commit and self.get_autocommit()
-        if wrap_transaction:
-            cursor.execute('begin;')
-            try:
-                self._execute_sql(cursor, sql, params)
-            except:
-                cursor.execute('rollback;')
-                raise
-            else:
-                cursor.execute('commit;')
-        else:
-            cursor = self._execute_sql(cursor, sql, params)
         logger.debug((sql, params))
+        with self.exception_wrapper():
+            cursor = self.get_cursor()
+            require_commit = sql.lower().startswith(
+                ('insert', 'delete', 'update'))
+            wrap_transaction = require_commit and self.get_autocommit()
+            with _execute_wrapper(self, cursor, sql, params, wrap_transaction):
+                self._execute_sql(cursor, sql, params)
         return cursor
 
     def last_insert_id(self, cursor, model):
@@ -136,6 +151,9 @@ class APSWDatabase(SqliteDatabase):
 
     def transaction(self, lock_type='deferred'):
         return transaction(self, lock_type)
+
+    def savepoint(self, sid=None):
+        return savepoint(self, sid)
 
 
 def nh(s, v):

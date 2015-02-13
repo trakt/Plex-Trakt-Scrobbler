@@ -1,10 +1,10 @@
-import unittest
-
 from peewee import *
 from playhouse.gfk import *
+from playhouse.tests.base import database_initializer
+from playhouse.tests.base import ModelTestCase
 
 
-db = SqliteDatabase(':memory:')
+db = database_initializer.get_in_memory_database()
 
 class BaseModel(Model):
     class Meta:
@@ -41,7 +41,9 @@ class Dessert(BaseModel):
 
 
 
-class GFKTestCase(unittest.TestCase):
+class GFKTestCase(ModelTestCase):
+    requires = [Tag, Appetizer, Entree, Dessert]
+
     data = {
         Appetizer: (
             ('wings', ('fried', 'spicy')),
@@ -59,17 +61,6 @@ class GFKTestCase(unittest.TestCase):
             ('churro', ('fried', 'sweet')),
         )
     }
-    def setUp(self):
-        Tag.create_table(True)
-        Appetizer.create_table(True)
-        Entree.create_table(True)
-        Dessert.create_table(True)
-
-    def tearDown(self):
-        Tag.drop_table()
-        Appetizer.drop_table()
-        Entree.drop_table()
-        Dessert.drop_table()
 
     def create(self):
         for model, foods in self.data.items():

@@ -1,11 +1,10 @@
-import unittest
-
 from peewee import *
 from playhouse.db_url import connect
 from playhouse.sqlite_ext import SqliteExtDatabase
+from playhouse.tests.base import PeeweeTestCase
 
 
-class TestDBURL(unittest.TestCase):
+class TestDBURL(PeeweeTestCase):
     def test_db_url(self):
         db = connect('sqlite:///:memory:')
         self.assertTrue(isinstance(db, SqliteDatabase))

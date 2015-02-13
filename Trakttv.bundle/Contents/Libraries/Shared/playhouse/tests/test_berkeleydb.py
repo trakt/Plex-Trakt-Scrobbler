@@ -1,13 +1,11 @@
 import os
-import shutil
-import unittest
 
 from peewee import IntegrityError
-from peewee import sort_models_topologically
 from playhouse.berkeleydb import *
+from playhouse.tests.base import database_initializer
+from playhouse.tests.base import ModelTestCase
 
-DATABASE_FILE = 'tmp.bdb.db'
-database = BerkeleyDatabase(DATABASE_FILE)
+database = database_initializer.get_database('berkeleydb')
 
 class BaseModel(Model):
     class Meta:
@@ -21,26 +19,12 @@ class Message(BaseModel):
     body = TextField()
 
 
-MODELS = [
-    Person,
-    Message,
-]
-CREATE = sort_models_topologically(MODELS)
-DROP = reversed(CREATE)
-
-
-class TestBerkeleyDatabase(unittest.TestCase):
-    def setUp(self):
-        with database.transaction():
-            for model_class in DROP:
-                model_class.drop_table(True)
-            for model_class in CREATE:
-                model_class.create_table(True)
+class TestBerkeleyDatabase(ModelTestCase):
+    requires = [Person, Message]
 
     def tearDown(self):
+        super(TestBerkeleyDatabase, self).tearDown()
         database.close()
-        os.unlink(DATABASE_FILE)
-        shutil.rmtree('%s-journal' % DATABASE_FILE)
 
     def test_storage_retrieval(self):
         pc = Person.create(name='charlie')

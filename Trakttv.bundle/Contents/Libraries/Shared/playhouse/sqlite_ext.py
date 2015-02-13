@@ -33,13 +33,17 @@ best_docs = Document.match('some phrase')
 """
 import inspect
 import math
-import sqlite3
 import struct
 
 from peewee import *
 from peewee import Expression
 from peewee import QueryCompiler
 from peewee import transaction
+
+try:
+    import sqlite3
+except ImportError:
+    from pysqlite2 import dbapi2 as sqlite3
 
 
 FTS_VER = sqlite3.sqlite_version_info[:3] >= (3, 7, 4) and 'FTS4' or 'FTS3'
@@ -60,8 +64,8 @@ class SqliteQueryCompiler(QueryCompiler):
 
         if issubclass(model_class, VirtualModel):
             statement = 'CREATE VIRTUAL TABLE'
-            # If we are using a special extension, need to insert that after the
-            # table name node.
+            # If we are using a special extension, need to insert that after
+            # the table name node.
             clause.nodes.insert(2, SQL('USING %s' % model_class._extension))
         else:
             statement = 'CREATE TABLE'
@@ -170,16 +174,26 @@ class FTSModel(VirtualModel):
                 .where(cls.match(term))
                 .order_by(SQL(alias).desc()))
 
-class _MockFieldMixin(object):
+class _VirtualFieldMixin(object):
+    """
+    Field mixin to support virtual table attributes that may not correspond
+    to actual columns in the database.
+    """
     def add_to_class(self, model_class, name):
-        super(_MockFieldMixin, self).add_to_class(model_class, name)
+        super(_VirtualFieldMixin, self).add_to_class(model_class, name)
         del model_class._meta.fields[self.name]
         del model_class._meta.columns[self.db_column]
 
-class _MockIntegerField(_MockFieldMixin, IntegerField):
+class VirtualField(_VirtualFieldMixin, BareField):
     pass
 
-class _MockCharField(_MockFieldMixin, CharField):
+class VirtualIntegerField(_VirtualFieldMixin, IntegerField):
+    pass
+
+class VirtualCharField(_VirtualFieldMixin, CharField):
+    pass
+
+class VirtualFloatField(_VirtualFieldMixin, FloatField):
     pass
 
 def ClosureTable(model_class, foreign_key=None):
@@ -191,6 +205,49 @@ def ClosureTable(model_class, foreign_key=None):
                 break
         else:
             raise ValueError('Unable to find self-referential foreign key.')
+    primary_key = model_class._meta.primary_key
+
+    class BaseClosureTable(VirtualModel):
+        _extension = 'transitive_closure'
+
+        depth = VirtualIntegerField()
+        id = VirtualIntegerField()
+        idcolumn = VirtualIntegerField()
+        parentcolumn = VirtualIntegerField()
+        root = VirtualIntegerField()
+        tablename = VirtualCharField()
+
+        @classmethod
+        def descendants(cls, node, depth=None, include_node=False):
+            query = (model_class
+                     .select(model_class, cls.depth.alias('depth'))
+                     .join(cls, on=(primary_key == cls.id))
+                     .where(cls.root == node))
+            if depth is not None:
+                query = query.where(cls.depth == depth)
+            elif not include_node:
+                query = query.where(cls.depth > 0)
+            return query
+
+        @classmethod
+        def ancestors(cls, node, depth=None, include_node=False):
+            query = (model_class
+                     .select(model_class, cls.depth.alias('depth'))
+                     .join(cls, on=(primary_key == cls.root))
+                     .where(cls.id == node))
+            if depth:
+                query = query.where(cls.depth == depth)
+            elif not include_node:
+                query = query.where(cls.depth > 0)
+            return query
+
+        @classmethod
+        def siblings(cls, node, include_node=False):
+            fk_value = node._data.get(foreign_key.name)
+            query = model_class.select().where(foreign_key == fk_value)
+            if not include_node:
+                query = query.where(primary_key != node)
+            return query
 
     class Meta:
         database = model_class._meta.database
@@ -200,17 +257,8 @@ def ClosureTable(model_class, foreign_key=None):
             'parentcolumn': foreign_key.db_column}
         primary_key = False
 
-    attrs = {
-        '_extension': 'transitive_closure',
-        'depth': _MockIntegerField(),
-        'id': _MockIntegerField(),
-        'idcolumn': _MockIntegerField(),
-        'parentcolumn': _MockIntegerField(),
-        'root': _MockIntegerField(),
-        'tablename': _MockCharField(),
-        'Meta': Meta}
     name = '%sClosure' % model_class.__name__
-    return type(name, (VirtualModel,), attrs)
+    return type(name, (BaseClosureTable,), {'Meta': Meta})
 
 
 class SqliteExtDatabase(SqliteDatabase):
@@ -235,12 +283,9 @@ class SqliteExtDatabase(SqliteDatabase):
 
     def _connect(self, database, **kwargs):
         conn = super(SqliteExtDatabase, self)._connect(database, **kwargs)
-        for name, (klass, num_params) in self._aggregates.items():
-            conn.create_aggregate(name, num_params, klass)
-        for name, fn in self._collations.items():
-            conn.create_collation(name, fn)
-        for name, (fn, num_params) in self._functions.items():
-            conn.create_function(name, num_params, fn)
+        self._load_aggregates(conn)
+        self._load_collations(conn)
+        self._load_functions(conn)
         if self._row_factory:
             conn.row_factory = self._row_factory
         if self._extensions:
@@ -249,15 +294,26 @@ class SqliteExtDatabase(SqliteDatabase):
                 conn.load_extension(extension)
         return conn
 
-    def _argc(self, fn):
-        return len(inspect.getargspec(fn).args)
+    def _load_aggregates(self, conn):
+        for name, (klass, num_params) in self._aggregates.items():
+            conn.create_aggregate(name, num_params, klass)
 
-    def register_aggregate(self, klass, num_params, name=None):
+    def _load_collations(self, conn):
+        for name, fn in self._collations.items():
+            conn.create_collation(name, fn)
+
+    def _load_functions(self, conn):
+        for name, (fn, num_params) in self._functions.items():
+            conn.create_function(name, num_params, fn)
+
+    def register_aggregate(self, klass, name=None, num_params=-1):
         self._aggregates[name or klass.__name__.lower()] = (klass, num_params)
+        if not self.is_closed():
+            self._load_aggregates(self.get_conn())
 
-    def aggregate(self, num_params, name=None):
+    def aggregate(self, name=None, num_params=-1):
         def decorator(klass):
-            self.register_aggregate(klass, num_params, name)
+            self.register_aggregate(klass, name, num_params)
             return klass
         return decorator
 
@@ -268,6 +324,8 @@ class SqliteExtDatabase(SqliteDatabase):
             return Clause(*expressions)
         fn.collation = _collation
         self._collations[name] = fn
+        if not self.is_closed():
+            self._load_collations(self.get_conn())
 
     def collation(self, name=None):
         def decorator(fn):
@@ -275,12 +333,12 @@ class SqliteExtDatabase(SqliteDatabase):
             return fn
         return decorator
 
-    def register_function(self, fn, name=None, num_params=None):
-        if num_params is None:
-            num_params = self._argc(fn)
+    def register_function(self, fn, name=None, num_params=-1):
         self._functions[name or fn.__name__] = (fn, num_params)
+        if not self.is_closed():
+            self._load_functions(self.get_conn())
 
-    def func(self, name=None, num_params=None):
+    def func(self, name=None, num_params=-1):
         def decorator(fn):
             self.register_function(fn, name, num_params)
             return fn
@@ -325,17 +383,8 @@ class granular_transaction(transaction):
         self.conn = self.db.get_conn()
         self.lock_type = lock_type
 
-    def __enter__(self):
-        self._orig_isolation = self.conn.isolation_level
-        self.conn.isolation_level = self.lock_type
-        return super(granular_transaction, self).__enter__()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            super(granular_transaction, self).__exit__(
-                exc_type, exc_val, exc_tb)
-        finally:
-            self.conn.isolation_level = self._orig_isolation
+    def _begin(self):
+        self.db.begin(self.lock_type)
 
 
 OP_MATCH = 'match'
@@ -358,13 +407,13 @@ def find_best_search_field(model_class):
     return model_class._meta.get_fields()[-1]
 
 def _parse_match_info(buf):
-    # see http://sqlite.org/fts3.html#matchinfo
-    bufsize = len(buf) # length in bytes
+    # See http://sqlite.org/fts3.html#matchinfo
+    bufsize = len(buf)  # Length in bytes.
     return [struct.unpack('@I', buf[i:i+4])[0] for i in range(0, bufsize, 4)]
 
 # Ranking implementation, which parse matchinfo.
 def rank(raw_match_info):
-    # handle match_info called w/default args 'pcx' - based on the example rank
+    # Handle match_info called w/default args 'pcx' - based on the example rank
     # function http://sqlite.org/fts3.html#appendix_a
     match_info = _parse_match_info(raw_match_info)
     score = 0.0

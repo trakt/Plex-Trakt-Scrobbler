@@ -1,6 +1,5 @@
 import os
 import re
-import unittest
 
 from peewee import *
 from peewee import create_model_tables
@@ -8,28 +7,28 @@ from peewee import drop_model_tables
 from peewee import mysql
 from peewee import print_
 from playhouse.reflection import *
+from playhouse.tests.base import database_initializer
+from playhouse.tests.base import PeeweeTestCase
 
 
-TEST_VERBOSITY = int(os.environ.get('PEEWEE_TEST_VERBOSITY') or 1)
+sqlite_db = database_initializer.get_database('sqlite')
+DATABASES = [sqlite_db]
 
-# test databases
-sqlite_db = SqliteDatabase('tmp.db')
 if mysql:
-    mysql_db = MySQLDatabase('peewee_test')
-else:
-    mysql_db = None
+    DATABASES.append(database_initializer.get_database('mysql'))
+
 try:
     import psycopg2
-    postgres_db = PostgresqlDatabase('peewee_test')
+    DATABASES.append(database_initializer.get_database('postgres'))
 except ImportError:
-    postgres_db = None
+    pass
 
 class BaseModel(Model):
     class Meta:
         database = sqlite_db
 
 class ColTypes(BaseModel):
-    f1 = BigIntegerField()
+    f1 = BigIntegerField(index=True)
     f2 = BlobField()
     f3 = BooleanField()
     f4 = CharField(max_length=50)
@@ -38,10 +37,16 @@ class ColTypes(BaseModel):
     f7 = DecimalField()
     f8 = DoubleField()
     f9 = FloatField()
-    f10 = IntegerField()
+    f10 = IntegerField(unique=True)
     f11 = PrimaryKeyField()
     f12 = TextField()
     f13 = TimeField()
+
+    class Meta:
+        indexes = (
+            (('f10', 'f11'), True),
+            (('f11', 'f12', 'f13'), False),
+        )
 
 class Nullable(BaseModel):
     nullable_cf = CharField(null=True)
@@ -62,11 +67,9 @@ class Category(BaseModel):
     name = CharField(max_length=10)
     parent = ForeignKeyField('self', null=True)
 
-
-DATABASES = (
-    (sqlite_db, 'sqlite'),
-    (mysql_db, 'mysql'),
-    (postgres_db, 'postgres'))
+class Nugget(BaseModel):
+    category_id = ForeignKeyField(Category, db_column='category_id')
+    category = CharField()
 
 MODELS = (
     ColTypes,
@@ -74,12 +77,14 @@ MODELS = (
     RelModel,
     FKPK,
     Underscores,
-    Category)
+    Category,
+    Nugget)
 
-class TestReflection(unittest.TestCase):
+class TestReflection(PeeweeTestCase):
     def setUp(self):
-        if os.path.exists('tmp.db'):
-            os.unlink('tmp.db')
+        super(TestReflection, self).setUp()
+        if os.path.exists(sqlite_db.database):
+            os.unlink(sqlite_db.database)
         sqlite_db.connect()
 
         for model in MODELS:
@@ -100,6 +105,7 @@ class TestReflection(unittest.TestCase):
             'category',
             'coltypes',
             'fkpk',
+            'nugget',
             'nullable',
             'relmodel',
             'underscores'])
@@ -134,6 +140,31 @@ class TestReflection(unittest.TestCase):
                          models['coltypes'])
         self.assertEqual(relmodel.col_types_nullable.rel_model,
                          models['coltypes'])
+
+    def test_generate_models_indexes(self):
+        introspector = self.get_introspector()
+        self.assertEqual(introspector.generate_models(), {})
+
+        for model in MODELS:
+            model.create_table()
+
+        models = introspector.generate_models()
+
+        self.assertEqual(models['fkpk']._meta.indexes, [])
+        self.assertEqual(models['relmodel']._meta.indexes, [])
+        self.assertEqual(models['category']._meta.indexes, [])
+
+        col_types = models['coltypes']
+        indexed = set(['f1'])
+        unique = set(['f10'])
+        for field in col_types._meta.get_fields():
+            self.assertEqual(field.index, field.name in indexed)
+            self.assertEqual(field.unique, field.name in unique)
+        indexes = col_types._meta.indexes
+        self.assertEqual(sorted(indexes), [
+            (['f10', 'f11'], True),
+            (['f11', 'f12', 'f13'], False),
+        ])
 
     def test_table_subset(self):
         for model in MODELS:
@@ -216,18 +247,18 @@ class TestReflection(unittest.TestCase):
 
     def generative_test(fn):
         def inner(self):
-            for database, identifier in DATABASES:
-                if database:
+            for database in DATABASES:
+                try:
                     introspector = Introspector.from_database(database)
                     self.create_tables(database)
                     fn(self, introspector)
-                elif TEST_VERBOSITY > 0:
-                    print_('Skipping %s, driver not found' % identifier)
+                finally:
+                    drop_model_tables(MODELS)
         return inner
 
     @generative_test
     def test_col_types(self, introspector):
-        columns, primary_keys, foreign_keys, model_names =\
+        columns, primary_keys, foreign_keys, model_names, indexes =\
                 introspector.introspect()
 
         expected = (
@@ -248,6 +279,9 @@ class TestReflection(unittest.TestCase):
             ('relmodel', (
                 ('col_types_id', ForeignKeyField, False),
                 ('col_types_nullable_id', ForeignKeyField, True))),
+            ('nugget', (
+                ('category_id', ForeignKeyField, False),
+                ('category', CharField, False))),
             ('nullable', (
                 ('nullable_cf', CharField, True),
                 ('nullable_if', IntegerField, True))),
@@ -273,7 +307,7 @@ class TestReflection(unittest.TestCase):
 
     @generative_test
     def test_foreign_keys(self, introspector):
-        columns, primary_keys, foreign_keys, model_names =\
+        columns, primary_keys, foreign_keys, model_names, indexes =\
                 introspector.introspect()
 
         self.assertEqual(foreign_keys['coltypes'], [])
@@ -301,7 +335,7 @@ class TestReflection(unittest.TestCase):
 
     @generative_test
     def test_table_names(self, introspector):
-        columns, primary_keys, foreign_keys, model_names =\
+        columns, primary_keys, foreign_keys, model_names, indexes =\
                 introspector.introspect()
 
         names = (
@@ -314,7 +348,7 @@ class TestReflection(unittest.TestCase):
 
     @generative_test
     def test_column_meta(self, introspector):
-        columns, primary_keys, foreign_keys, model_names =\
+        columns, primary_keys, foreign_keys, model_names, indexes =\
                 introspector.introspect()
 
         rel_model = columns['relmodel']
@@ -330,6 +364,7 @@ class TestReflection(unittest.TestCase):
         self.assertEqual(col_types_nullable_id.get_field_parameters(), {
             'db_column': "'col_types_nullable_id'",
             'null': True,
+            'related_name': "'coltypes_col_types_nullable_set'",
             'rel_model': 'Coltypes',
             'to_field': "'f11'",
         })
@@ -351,20 +386,32 @@ class TestReflection(unittest.TestCase):
             'to_field': "'id'",
         })
 
+        nugget = columns['nugget']
+        category_fk = nugget['category_id']
+        self.assertEqual(category_fk.name, 'category_id')
+        self.assertEqual(category_fk.get_field_parameters(), {
+            'to_field': "'id'",
+            'rel_model': 'Category',
+            'db_column': "'category_id'",
+        })
+
+        category = nugget['category']
+        self.assertEqual(category.name, 'category')
+
     @generative_test
     def test_get_field(self, introspector):
-        columns, primary_keys, foreign_keys, model_names =\
+        columns, primary_keys, foreign_keys, model_names, indexes =\
                 introspector.introspect()
 
         expected = (
             ('coltypes', (
-                ('f1', 'f1 = BigIntegerField()'),
+                ('f1', 'f1 = BigIntegerField(index=True)'),
                 #('f2', 'f2 = BlobField()'),
                 ('f4', 'f4 = CharField()'),
                 ('f5', 'f5 = DateField()'),
                 ('f6', 'f6 = DateTimeField()'),
                 ('f7', 'f7 = DecimalField()'),
-                ('f10', 'f10 = IntegerField()'),
+                ('f10', 'f10 = IntegerField(unique=True)'),
                 ('f11', 'f11 = PrimaryKeyField()'),
                 ('f12', 'f12 = TextField()'),
                 ('f13', 'f13 = TimeField()'),
@@ -379,13 +426,21 @@ class TestReflection(unittest.TestCase):
                  'db_column=\'col_types_id\', primary_key=True, '
                  'rel_model=Coltypes, to_field=\'f11\')'),
             )),
+            ('nugget', (
+                ('category_id', 'category_id = ForeignKeyField('
+                 'db_column=\'category_id\', rel_model=Category, '
+                 'to_field=\'id\')'),
+                ('category', 'category = CharField()'),
+            )),
             ('relmodel', (
                 ('col_types_id', 'col_types = ForeignKeyField('
                  'db_column=\'col_types_id\', rel_model=Coltypes, '
                  'to_field=\'f11\')'),
                 ('col_types_nullable_id', 'col_types_nullable = '
                  'ForeignKeyField(db_column=\'col_types_nullable_id\', '
-                 'null=True, rel_model=Coltypes, to_field=\'f11\')'),
+                 'null=True, rel_model=Coltypes, '
+                 'related_name=\'coltypes_col_types_nullable_set\', '
+                 'to_field=\'f11\')'),
             )),
             ('underscores', (
                 ('_id', '_id = PrimaryKeyField()'),

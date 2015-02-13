@@ -1,13 +1,13 @@
 import datetime
 import os
-import unittest
 
 from peewee import *
-from peewee import create_model_tables
-from peewee import drop_model_tables
 from peewee import print_
 from playhouse.migrate import *
 from playhouse.test_utils import count_queries
+from playhouse.tests.base import database_initializer
+from playhouse.tests.base import PeeweeTestCase
+from playhouse.tests.base import skip_if
 
 try:
     from psycopg2cffi import compat
@@ -27,11 +27,18 @@ except ImportError:
         import pymysql as mysql
     except ImportError:
         mysql = None
-mysql = None
+
+if mysql:
+    mysql_db = database_initializer.get_database('mysql')
+else:
+    mysql_db = None
+
+if psycopg2:
+    pg_db = database_initializer.get_database('postgres')
+else:
+    pg_db = None
 
 sqlite_db = SqliteDatabase(':memory:')
-
-TEST_VERBOSITY = int(os.environ.get('PEEWEE_TEST_VERBOSITY') or 1)
 
 class Tag(Model):
     tag = CharField()
@@ -43,6 +50,10 @@ class Person(Model):
 
 class User(Model):
     id = CharField(primary_key=True, max_length=20)
+    password = CharField(default='secret')
+
+    class Meta:
+        db_table = 'users'
 
 class Page(Model):
     name = TextField(unique=True, null=True)
@@ -80,16 +91,23 @@ class BaseMigrationTestCase(object):
     ]
 
     def setUp(self):
+        super(BaseMigrationTestCase, self).setUp()
         for model_class in MODELS:
             model_class._meta.database = self.database
 
-        drop_model_tables(MODELS, fail_silently=True)
-        create_model_tables(MODELS)
+        self.database.drop_tables(MODELS, True)
+        self.database.create_tables(MODELS)
         self.migrator = self.migrator_class(self.database)
 
         if 'newpages' in User._meta.reverse_rel:
             del User._meta.reverse_rel['newpages']
             delattr(User, 'newpages')
+
+    def tearDown(self):
+        super(BaseMigrationTestCase, self).tearDown()
+        for model_class in MODELS:
+            model_class._meta.database = self.database
+        self.database.drop_tables(MODELS, True)
 
     def test_add_column(self):
         # Create some fields with a variety of NULL / default values.
@@ -162,6 +180,17 @@ class BaseMigrationTestCase(object):
 
         column_names = self.get_column_names('person')
         self.assertEqual(column_names, set(['id', 'first_name']))
+
+        User.create(id='charlie', password='12345')
+        User.create(id='huey', password='meow')
+        migrate(self.migrator.drop_column('users', 'password'))
+
+        column_names = self.get_column_names('users')
+        self.assertEqual(column_names, set(['id']))
+        data = [row for row in User.select(User.id).order_by(User.id).tuples()]
+        self.assertEqual(data, [
+            ('charlie',),
+            ('huey',),])
 
     def test_rename_column(self):
         self._create_people()
@@ -384,6 +413,9 @@ class BaseMigrationTestCase(object):
             delattr(Person, 'newtag_set')
             del Person._meta.reverse_rel['newtag_set']
 
+        # Ensure no foreign keys are present at the beginning of the test.
+        self.assertEqual(self.database.get_foreign_keys('tag'), [])
+
         field = ForeignKeyField(Person, null=True, to_field=Person.id)
         migrate(self.migrator.add_column('tag', 'person_id', field))
 
@@ -403,8 +435,37 @@ class BaseMigrationTestCase(object):
         t2_db = NewTag.get(NewTag.tag == 't2')
         self.assertEqual(t2_db.person, None)
 
+        foreign_keys = self.database.get_foreign_keys('tag')
+        self.assertEqual(len(foreign_keys), 1)
+        foreign_key = foreign_keys[0]
+        self.assertEqual(foreign_key.column, 'person_id')
+        self.assertEqual(foreign_key.dest_column, 'id')
+        self.assertEqual(foreign_key.dest_table, 'person')
 
-class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
+    def test_drop_foreign_key(self):
+        migrate(self.migrator.drop_column('page', 'user_id'))
+        columns = self.database.get_columns('page')
+        self.assertEqual(
+            sorted(column.name for column in columns),
+            ['id', 'name'])
+        self.assertEqual(self.database.get_foreign_keys('page'), [])
+
+    def test_rename_foreign_key(self):
+        migrate(self.migrator.rename_column('page', 'user_id', 'huey_id'))
+        columns = self.database.get_columns('page')
+        self.assertEqual(
+            sorted(column.name for column in columns),
+            ['huey_id', 'id', 'name'])
+
+        foreign_keys = self.database.get_foreign_keys('page')
+        self.assertEqual(len(foreign_keys), 1)
+        foreign_key = foreign_keys[0]
+        self.assertEqual(foreign_key.column, 'huey_id')
+        self.assertEqual(foreign_key.dest_column, 'id')
+        self.assertEqual(foreign_key.dest_table, 'users')
+
+
+class SqliteMigrationTestCase(BaseMigrationTestCase, PeeweeTestCase):
     database = sqlite_db
     migrator_class = SqliteMigrator
 
@@ -412,6 +473,17 @@ class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
         super(SqliteMigrationTestCase, self).setUp()
         IndexModel.drop_table(True)
         IndexModel.create_table()
+
+    def test_valid_column_required(self):
+        self.assertRaises(
+            ValueError,
+            migrate,
+            self.migrator.drop_column('page', 'column_does_not_exist'))
+
+        self.assertRaises(
+            ValueError,
+            migrate,
+            self.migrator.rename_column('page', 'xx', 'yy'))
 
     def test_table_case_insensitive(self):
         migrate(self.migrator.drop_column('PaGe', 'name'))
@@ -424,7 +496,7 @@ class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
         self.assertEqual(column_names, set(['id', 'user_id', 'testing']))
 
         migrate(self.migrator.drop_column('indeXmOdel', 'first_name'))
-        indexes = self.migrator._get_indexes('indexmodel')
+        indexes = self.migrator.database.get_indexes('indexmodel')
         self.assertEqual(len(indexes), 1)
         self.assertEqual(indexes[0].name, 'indexmodel_data')
 
@@ -437,6 +509,9 @@ class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
 
         queries = [log.msg for log in qc.get_queries()]
         self.assertEqual(queries, [
+            # Get all the columns.
+            ('PRAGMA table_info("indexmodel")', None),
+
             # Get the table definition.
             ('select name, sql from sqlite_master '
              'where type=? and LOWER(name)=?',
@@ -449,6 +524,9 @@ class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
             ('PRAGMA index_list("indexmodel")', None),
             ('PRAGMA index_info("indexmodel_data")', None),
             ('PRAGMA index_info("indexmodel_first_name_last_name")', None),
+
+            # Get foreign keys.
+            ('PRAGMA foreign_key_list("indexmodel")', None),
 
             # Drop any temporary table, if it exists.
             ('DROP TABLE IF EXISTS "indexmodel__tmp__"', []),
@@ -480,24 +558,17 @@ class SqliteMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
         ])
 
 
-if psycopg2:
-    pg_db = PostgresqlDatabase('peewee_test')
+@skip_if(lambda: psycopg2 is None)
+class PostgresqlMigrationTestCase(BaseMigrationTestCase, PeeweeTestCase):
+    database = pg_db
+    migrator_class = PostgresqlMigrator
 
-    class PostgresqlMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
-        database = pg_db
-        migrator_class = PostgresqlMigrator
-elif TEST_VERBOSITY > 0:
-    print_('Skipping postgres migrations, driver not found.')
 
-if mysql:
-    mysql_db = MySQLDatabase('peewee_test')
+@skip_if(lambda: mysql is None)
+class MySQLMigrationTestCase(BaseMigrationTestCase, PeeweeTestCase):
+    database = mysql_db
+    migrator_class = MySQLMigrator
 
-    class MySQLMigrationTestCase(BaseMigrationTestCase, unittest.TestCase):
-        database = mysql_db
-        migrator_class = MySQLMigrator
-
-        # MySQL does not raise an exception when adding a not null constraint
-        # to a column that contains NULL values.
-        _exception_add_not_null = False
-elif TEST_VERBOSITY > 0:
-    print_('Skipping mysql migrations, driver not found.')
+    # MySQL does not raise an exception when adding a not null constraint
+    # to a column that contains NULL values.
+    _exception_add_not_null = False
