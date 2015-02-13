@@ -1,4 +1,4 @@
-from plugin.models import Account, ActionHistory, ActionQueue, Client, Session, User
+from plugin.models import *
 
 from peewee import *
 
@@ -10,5 +10,9 @@ def migrate(migrator, database):
     ActionQueue.create_table()
 
     Session.create_table()
+
     Client.create_table()
+    ClientRule.create_table()
+
     User.create_table()
+    UserRule.create_table()

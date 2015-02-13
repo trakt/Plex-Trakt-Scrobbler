@@ -1,6 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.thread import module
-from plugin.models import Account
+from plugin.models import Account, ClientRule, UserRule
 from plugin.models.core import db_path, migrations_path
 
 from peewee_migrate.core import Router
@@ -35,10 +35,18 @@ class Migrations(object):
             return
 
         try:
-            Account.create(
+            # Create `Account`
+            account = Account.create(
                 username=username,
                 password=password,
                 token=token
             )
         except peewee.IntegrityError, ex:
             log.info('Unable to migrate existing account: %s', ex, exc_info=True)
+            return False
+
+        # Create default rules
+        ClientRule.create(account=account)
+        UserRule.create(account=account)
+
+        return True
