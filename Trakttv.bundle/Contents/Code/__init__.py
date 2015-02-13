@@ -5,7 +5,7 @@
 from plugin.core.environment import Environment
 
 # Configure environment
-Environment.setup(Core)
+Environment.setup(Core, Dict, Prefs)
 # ------------------------------------------------
 
 # ------------------------------------------------

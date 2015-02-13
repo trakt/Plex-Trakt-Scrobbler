@@ -29,8 +29,12 @@ class PathEnvironment(object):
 
 
 class Environment(object):
+    dict = None
     path = None
+    prefs = None
 
     @classmethod
-    def setup(cls, core):
+    def setup(cls, core, dict, prefs):
         cls.path = PathEnvironment(core)
+        cls.dict = dict
+        cls.prefs = prefs
