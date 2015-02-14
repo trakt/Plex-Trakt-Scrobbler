@@ -1,6 +1,6 @@
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.core.base import Manager
-from plugin.models import User
+from plugin.models import User, UserRule
 
 import logging
 
@@ -30,7 +30,26 @@ class UserManager(Manager):
 
     @classmethod
     def to_dict(cls, user, fetch=False):
-        return {
+        result = {
             'name': user.title,
             'thumb': user.thumb
         }
+
+        if not fetch:
+            # Return simple update
+            return result
+
+        # Find matching `UserRule`
+        query = UserRule.select().where((
+            (UserRule.name == user.title) |
+            (UserRule.name == None)
+        ))
+
+        rules = list(query.execute())
+
+        if len(rules) != 1:
+            return result
+
+        result['account'] = rules[0].account_id
+
+        return result

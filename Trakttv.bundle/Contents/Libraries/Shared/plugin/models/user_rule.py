@@ -11,3 +11,7 @@ class UserRule(Model):
     account = ForeignKeyField(Account, 'user_rules')
 
     name = CharField(null=True)
+
+    @property
+    def account_id(self):
+        return self._data['account']

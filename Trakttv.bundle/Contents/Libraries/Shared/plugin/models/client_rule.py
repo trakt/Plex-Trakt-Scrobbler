@@ -14,3 +14,7 @@ class ClientRule(Model):
     name = CharField(null=True)
 
     address = CharField(null=True)
+
+    @property
+    def account_id(self):
+        return self._data['account']
