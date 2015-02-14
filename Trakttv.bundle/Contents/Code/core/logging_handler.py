@@ -28,8 +28,7 @@ class PlexHandler(logging.StreamHandler):
     }
 
     level_map = {
-        'peewee':           'libraries',
-        'peewee_migrate':   'libraries',
+        'peewee_migrate':   'peewee',
 
         'plex':             'libraries',
         'plex_activity':    'libraries',
