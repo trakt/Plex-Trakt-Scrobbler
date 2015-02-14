@@ -14,6 +14,7 @@ class ActionQueue(Model):
     session = ForeignKeyField(Session, 'action_queue', null=True)
 
     event = CharField()
+    request = BlobField()
 
     queued_at = DateTimeField()
 

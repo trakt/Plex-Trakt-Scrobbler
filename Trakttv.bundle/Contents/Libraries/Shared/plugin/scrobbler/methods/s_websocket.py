@@ -4,6 +4,7 @@ from plugin.managers.session import SessionManager
 
 from plex import Plex
 from plex_activity import Activity
+import json
 import logging
 
 log = logging.getLogger(__name__)
@@ -20,7 +21,9 @@ class WebSocket(Base):
         event = ActionManager.decide(session)
         log.debug('event: %r', event)
 
-        ActionManager.queue(session, event)
+        request = self.build_request(session)
+
+        ActionManager.queue(event, request, session)
 
     @classmethod
     def test(cls):

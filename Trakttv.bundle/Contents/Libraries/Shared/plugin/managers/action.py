@@ -4,6 +4,8 @@ from plugin.models import db, ActionHistory, ActionQueue
 
 from datetime import datetime
 from threading import Thread
+from trakt import Trakt
+import json
 import logging
 import peewee
 import time
@@ -20,19 +22,24 @@ class ActionManager(Manager):
     #
 
     @classmethod
-    def queue(cls, session, event):
+    def queue(cls, event, request, session=None, account=None):
         if event is None:
             return None
 
         obj = None
 
+        if request is not None:
+            request = json.dumps(request)
+
         # Try queue the event
         try:
             obj = ActionQueue.create(
-                account=session.account_id,
+                account=session.account_id if session else account,
                 session=session,
 
                 event=event,
+                request=request,
+
                 queued_at=datetime.utcnow()
             )
             log.debug('Queued %r event for %r', event, session)
@@ -65,9 +72,29 @@ class ActionManager(Manager):
                 time.sleep(5)
                 continue
 
-            log.debug('Sending action %r', action.event)
+            interface, method = action.event.split('/')
 
-            # TODO actually send the trakt.tv action
+            log.debug('Sending action %r (interface: %r, method: %r)', action.event, interface, method)
+
+            result = None
+
+            if action.request:
+                request = str(action.request)
+
+                try:
+                    request = json.loads(request)
+
+                    log.debug('request: %r', request)
+
+                    result = Trakt[interface][method](**request)
+                except Exception, ex:
+                    log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
+
+            if interface == 'scrobble':
+                performed = result.get('action')
+            else:
+                log.warn('result: %r', result)
+                performed = None
 
             # Store action in history
             ActionHistory.create(
@@ -75,7 +102,7 @@ class ActionManager(Manager):
                 session=action.session_id,
 
                 event=action.event,
-                performed=action.event,  # TODO this should be from the response returned
+                performed=performed,
 
                 queued_at=action.queued_at,
                 sent_at=datetime.utcnow()
@@ -117,47 +144,47 @@ class ActionManager(Manager):
 
     @classmethod
     def decide_playing(cls, session, history, last, queue):
-        if last == 'start':
+        if last == 'scrobble/start':
             # Already sent a "start" action
             return None
 
-        if 'start' in queue:
+        if 'scrobble/start' in queue:
             # "start" action already queued
             return None
 
-        return 'start'
+        return 'scrobble/start'
 
     @classmethod
     def decide_paused(cls, session, history, last, queue):
-        if last == 'pause':
+        if last == 'scrobble/pause':
             # Already sent a "pause" action
             return None
 
-        if last != 'start':
+        if last != 'scrobble/start':
             # Haven't sent a "start" action yet, nothing to pause
             return None
 
-        if 'pause' in queue:
+        if 'scrobble/pause' in queue:
             # "pause" action already queued
             return None
 
-        return 'pause'
+        return 'scrobble/pause'
 
     @classmethod
     def decide_stopped(cls, session, history, last, queue):
-        if last == 'stop':
+        if last == 'scrobble/stop':
             # Already sent a "stop" action
             return None
 
-        if last not in ['start', 'pause']:
+        if last not in ['scrobble/start', 'scrobble/pause']:
             # Previous action wasn't a "start" or "pause" event
             return None
 
-        if 'stop' in queue:
+        if 'scrobble/stop' in queue:
             # "stop" action already queued
             return None
 
-        return 'stop'
+        return 'scrobble/stop'
 
     #
     # Misc
