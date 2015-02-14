@@ -62,8 +62,7 @@ class ActionManager(Manager):
             try:
                 action = ActionQueue.get()
             except Exception, ex:
-                log.debug('Waiting 15 seconds before checking the queue again...')
-                time.sleep(15)
+                time.sleep(5)
                 continue
 
             log.debug('Sending action %r', action.event)
@@ -89,8 +88,6 @@ class ActionManager(Manager):
             ).execute()
 
             log.debug('Action %r sent, moved action to history', action.event)
-
-            log.debug('Waiting 5 seconds before sending the next action...')
             time.sleep(5)
 
     #
