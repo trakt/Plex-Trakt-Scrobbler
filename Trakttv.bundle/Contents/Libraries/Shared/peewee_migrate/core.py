@@ -8,7 +8,8 @@ from playhouse.migrate import SchemaMigrator
 import datetime as dt
 from .utils import exec_in
 
-from peewee import * # noqa
+from peewee import SqliteDatabase, MySQLDatabase, PostgresqlDatabase, Proxy, Model, CharField
+from playhouse.apsw_ext import DateTimeField
 
 
 LOGGER = logging.getLogger(__name__)
@@ -111,8 +112,8 @@ class Router(object):
                     logging.info('Migrated %s', name)
 
         except Exception as exc:
+            LOGGER.error(exc, exc_info=True)
             self.db.rollback()
-            LOGGER.error(exc)
 
     def create(self, name):
         """ Create a migration. """
