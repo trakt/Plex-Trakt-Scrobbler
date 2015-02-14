@@ -6,7 +6,7 @@ import os
 
 log = logging.getLogger(__name__)
 
-db_path = os.path.abspath(os.path.join(Environment.path.plugin_data, 'plugin.db'))
+db_path = os.path.abspath(Environment.path.plugin_database)
 migrations_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
 
 # Connect to database

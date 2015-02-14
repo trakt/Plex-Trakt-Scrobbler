@@ -22,6 +22,10 @@ class PathEnvironment(object):
         return os.path.join(self.plugin_support, 'Data', PLUGIN_IDENTIFIER)
 
     @property
+    def plugin_database(self):
+        return os.path.join(self.plugin_support, 'Databases', '%s.db' % PLUGIN_IDENTIFIER)
+
+    @property
     def plugin_support(self):
         base_path = self.code[:self.code.index(os.path.sep + 'Plug-ins')]
 
