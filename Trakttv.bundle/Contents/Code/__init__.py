@@ -18,13 +18,13 @@ import sync
 import interface
 # ------------------------------------------------
 
-# Check "pysqlite2" availability, log any errors
+# Check "apsw" availability, log any errors
 try:
-    from pysqlite2 import dbapi2 as sqlite3
+    import apsw
 
-    Log.Debug('sqlite3.sqlite_version_info: %r', sqlite3.sqlite_version_info)
+    Log.Debug('apsw: %r, sqlite: %r', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
 except Exception, ex:
-    Log.Error('Unable to import "pysqlite2": %s', ex)
+    Log.Error('Unable to import "apsw": %s', ex)
 
 from core.cache import CacheManager
 from core.configuration import Configuration

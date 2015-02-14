@@ -1,6 +1,6 @@
 from plugin.core.environment import Environment
 
-from peewee import SqliteDatabase
+from playhouse.apsw_ext import APSWDatabase
 import logging
 import os
 
@@ -10,4 +10,4 @@ db_path = os.path.abspath(os.path.join(Environment.path.plugin_data, 'plugin.db'
 migrations_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
 
 # Connect to database
-db = SqliteDatabase(db_path, threadlocals=True)
+db = APSWDatabase(db_path, journal_mode='WAL')
