@@ -43,10 +43,21 @@ from peewee import transaction
 try:
     import sqlite3
 except ImportError:
-    from pysqlite2 import dbapi2 as sqlite3
+    try:
+        from pysqlite2 import dbapi2 as sqlite3
+    except ImportError:
+        sqlite3 = None
+
+try:
+    import apsw
+except ImportError:
+    apsw = None
 
 
-FTS_VER = sqlite3.sqlite_version_info[:3] >= (3, 7, 4) and 'FTS4' or 'FTS3'
+if sqlite3:
+    FTS_VER = 'FTS4' if sqlite3.sqlite_version_info[:3] >= (3, 7, 4) else 'FTS3'
+elif apsw:
+    FTS_VER = 'FTS4' if apsw.SQLITE_VERSION_NUMBER >= 3007004 else 'FTS3'
 
 
 class PrimaryKeyAutoIncrementField(PrimaryKeyField):
