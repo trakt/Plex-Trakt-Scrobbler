@@ -1,7 +1,7 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.thread import module
 from plugin.models import Account, ClientRule, UserRule
-from plugin.models.core import db_path, migrations_path
+from plugin.models.core import db, db_path, migrations_path
 
 from peewee_migrate.core import Router
 import logging
@@ -17,8 +17,12 @@ class Migrations(object):
         log.debug('db_path: %r', db_path)
         log.debug('migrations_path: %r', migrations_path)
 
+        # Connect to database, enable WAL
+        db.connect()
+        db.execute_sql('PRAGMA journal_mode=WAL;')
+
         # Run migrations
-        router = Router(migrations_path, DATABASE='sqlite:///%s' % db_path)
+        router = Router(migrations_path, DATABASE=db)
         router.run()
 
         # Migrate from plugin settings
@@ -41,8 +45,8 @@ class Migrations(object):
                 password=password,
                 token=token
             )
-        except peewee.IntegrityError, ex:
-            log.info('Unable to migrate existing account: %s', ex, exc_info=True)
+        except Exception, ex:
+            log.info('Unable to migrate existing account (already migrated): %s', ex, exc_info=True)
             return False
 
         # Create default rules

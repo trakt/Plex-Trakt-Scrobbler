@@ -7,6 +7,7 @@ from peewee import *
 class UserRule(Model):
     class Meta:
         database = db
+        primary_key = CompositeKey('name')
 
     account = ForeignKeyField(Account, 'user_rules')
 

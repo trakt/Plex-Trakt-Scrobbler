@@ -7,7 +7,7 @@ class Account(Model):
     class Meta:
         database = db
 
-    username = CharField()
+    username = CharField(unique=True)
     password = CharField()
 
     token = CharField(null=True)

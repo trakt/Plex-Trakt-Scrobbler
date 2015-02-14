@@ -20,7 +20,9 @@ import interface
 
 # Check "pysqlite2" availability, log any errors
 try:
-    from pysqlite2 import dbapi2
+    from pysqlite2 import dbapi2 as sqlite3
+
+    Log.Debug('sqlite3.sqlite_version_info: %r', sqlite3.sqlite_version_info)
 except Exception, ex:
     Log.Error('Unable to import "pysqlite2": %s', ex)
 
