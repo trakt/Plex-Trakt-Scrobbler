@@ -1,7 +1,7 @@
 from plugin.models import Account
 from plugin.models.core import db
 
-from peewee import *
+from playhouse.apsw_ext import *
 
 
 class Client(Model):

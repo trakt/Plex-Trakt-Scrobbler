@@ -1,6 +1,6 @@
 from plugin.models.core import db
 
-from peewee import *
+from playhouse.apsw_ext import *
 
 
 class Account(Model):

@@ -2,7 +2,7 @@ from plugin.models.core import db
 from plugin.models.account import Account
 from plugin.models.session import Session
 
-from peewee import *
+from playhouse.apsw_ext import *
 
 
 class ActionQueue(Model):

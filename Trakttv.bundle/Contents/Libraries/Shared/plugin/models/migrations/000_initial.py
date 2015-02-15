@@ -1,6 +1,6 @@
 from plugin.models import *
 
-from peewee import *
+from playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):

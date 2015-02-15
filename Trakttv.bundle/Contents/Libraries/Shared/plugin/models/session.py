@@ -3,7 +3,7 @@ from plugin.models.account import Account
 from plugin.models.client import Client
 from plugin.models.user import User
 
-from peewee import *
+from playhouse.apsw_ext import *
 
 
 class Session(Model):
