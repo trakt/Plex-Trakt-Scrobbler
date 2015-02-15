@@ -1,8 +1,8 @@
 from plugin.core.helpers.variable import merge, to_tuple
 from plugin.models import db
 
+import apsw
 import logging
-import peewee
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class Manager(object):
             fetch = True
 
             log.debug('Created %s', name)
-        except peewee.IntegrityError:
+        except apsw.ConstraintError:
             obj = cls.get(*query)
 
             log.debug('Retrieved %s', name)

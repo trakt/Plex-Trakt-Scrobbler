@@ -37,9 +37,7 @@ from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.core.helpers.thread import module_start
-from plugin.managers import ActionManager
 from plugin.modules.core.manager import ModuleManager
-from plugin.scrobbler import Scrobbler
 from sync.sync_manager import SyncManager
 
 from plex import Plex
@@ -60,11 +58,7 @@ class Main(object):
         UpdateChecker(),
 
         # sync
-        SyncManager,
-
-        # plugin
-        ActionManager,
-        Scrobbler
+        SyncManager
     ]
 
     def __init__(self):

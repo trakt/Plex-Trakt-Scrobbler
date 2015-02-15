@@ -4,6 +4,7 @@ from plugin.models import Account, ClientRule, UserRule
 from plugin.models.core import db, db_path, migrations_path
 
 from peewee_migrate.core import Router
+import apsw
 import logging
 import peewee
 
@@ -45,7 +46,7 @@ class Migrations(object):
                 password=password,
                 token=token
             )
-        except Exception, ex:
+        except apsw.ConstraintError, ex:
             log.info('Unable to migrate existing account (already migrated): %s', ex, exc_info=True)
             return False
 

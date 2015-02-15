@@ -1,7 +1,8 @@
-from plugin.modules.core.importer import import_modules
-
 from threading import Thread
 import logging
+import os
+
+from plugin.core.importer import import_modules
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,24 @@ def module_register(kls, **kwargs):
 
 def module_start():
     # Import modules
-    import_modules()
+    plugin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    log.debug('plugin_dir: %r', plugin_dir)
+
+    import_modules(os.path.join(plugin_dir, 'managers'), exclude=[
+        '__init__.py',
+        'core'
+    ])
+
+    import_modules(os.path.join(plugin_dir, 'modules'), exclude=[
+        '__init__.py',
+        'backup',
+        'core'
+    ])
+
+    import_modules(os.path.join(plugin_dir, 'scrobbler'), exclude=[
+        '__init__.py',
+        'methods'
+    ])
 
     # Start modules
     modules = sorted(MODULES.items(), key=lambda item: item[1]['priority'])

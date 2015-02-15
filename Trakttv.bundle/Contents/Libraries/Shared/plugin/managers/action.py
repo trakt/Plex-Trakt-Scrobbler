@@ -1,18 +1,20 @@
-from plugin.core.helpers.variable import merge
+from plugin.core.helpers.thread import module
 from plugin.managers.core.base import Manager
 from plugin.models import db, ActionHistory, ActionQueue
 
 from datetime import datetime
 from threading import Thread
 from trakt import Trakt
+import apsw
 import json
 import logging
-import peewee
 import time
+import traceback
 
 log = logging.getLogger(__name__)
 
 
+@module(start=True, blocking=True)
 class ActionManager(Manager):
     _process_enabled = True
     _process_thread = None
@@ -43,7 +45,7 @@ class ActionManager(Manager):
                 queued_at=datetime.utcnow()
             )
             log.debug('Queued %r event for %r', event, session)
-        except peewee.IntegrityError:
+        except apsw.ConstraintError:
             log.warn('Unable to queue event %r for %r', event, session)
 
         # Ensure process thread is started
