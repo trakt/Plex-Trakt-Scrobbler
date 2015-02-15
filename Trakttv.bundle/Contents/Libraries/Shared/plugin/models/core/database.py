@@ -10,4 +10,4 @@ db_path = os.path.abspath(Environment.path.plugin_database)
 migrations_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'migrations'))
 
 # Connect to database
-db = APSWDatabase(db_path, journal_mode='WAL')
+db = APSWDatabase(db_path, autorollback=True, journal_mode='WAL')
