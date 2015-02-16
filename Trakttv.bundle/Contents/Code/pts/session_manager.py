@@ -80,7 +80,9 @@ class SessionManager(Thread):
             delete = False
 
             # Destroy invalid sessions
-            if not ws.last_updated or type(ws.last_updated) is not datetime:
+            if ws is None:
+                delete = True
+            elif not ws.last_updated or type(ws.last_updated) is not datetime:
                 delete = True
             elif total_seconds(datetime.now() - ws.last_updated) / 60 / 60 > 24:
                 # Destroy sessions last updated over 24 hours ago
