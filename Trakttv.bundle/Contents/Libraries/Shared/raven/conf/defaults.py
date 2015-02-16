@@ -11,7 +11,8 @@ from __future__ import absolute_import
 
 import os
 import os.path
-import socket
+
+from raven.utils import gethostname
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), os.pardir))
 
@@ -26,7 +27,7 @@ CLIENT = 'raven.contrib.django.DjangoClient'
 # Not all environments have access to socket module, for example Google App Engine
 # Need to check to see if the socket module has ``gethostname``, if it doesn't we
 # will set it to None and require it passed in to ``Client`` on initializtion.
-NAME = socket.gethostname() if hasattr(socket, 'gethostname') else None
+NAME = gethostname()
 
 # Superuser key -- will be used if set, otherwise defers to
 # SECRET_KEY and PUBLIC_KEY
