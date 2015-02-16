@@ -2,6 +2,7 @@ from plex import Plex
 from plex.core.helpers import synchronized
 from plex_activity import Activity
 from plex_metadata.core.defaults import DEFAULT_TYPES
+from plex_metadata.core.helpers import urlparse
 
 from threading import Condition
 import logging
@@ -82,7 +83,7 @@ class Metadata(object):
             return None
 
         # Validate item
-        if not value.guid:
+        if not self._valid(value.guid):
             self._cache_invalidate(key)
             return None
 
@@ -101,10 +102,22 @@ class Metadata(object):
         if self.cache is None:
             return
 
-        if not value or not value.guid:
+        if not value or not self._valid(value.guid):
             return
 
         self.cache[key] = value
+
+    @staticmethod
+    def _valid(guid):
+        if not guid:
+            return False
+
+        agent, uri = urlparse(guid)
+
+        if agent in ['local', 'none']:
+            return False
+
+        return True
 
     #
     # Event handlers
