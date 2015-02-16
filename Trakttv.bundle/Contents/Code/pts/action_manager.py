@@ -1,5 +1,5 @@
 from core.action import ActionHelper
-from core.helpers import try_convert
+from core.helpers import try_convert, get_filter
 from core.logger import Logger
 from data.watch_session import WatchSession
 
@@ -200,8 +200,6 @@ class ActionManager(object):
 
         performed, response = func(**kwargs)
 
-        log.debug('[%s] Action sent (performed: %r, response: %r)', item['key'], performed, response)
-
         if response is None:
             # Request failed, retry the request
             queued = cls.queue(
@@ -216,6 +214,8 @@ class ActionManager(object):
 
         # Store action in history
         if performed:
+            log.debug('[%s] Action sent (performed: %r, response: %r)', item['key'], performed, response)
+
             cls.update_history(item['key'], performed, kwargs.get('action'))
 
         # Fire callback (if one exists)
@@ -336,6 +336,14 @@ class ActionManager(object):
             return False
 
         metadata = Metadata.get(rating_key)
+        section = metadata.section.title.lower()
+
+        f_allow, _ = get_filter('filter_sections')
+
+        if f_allow is not None and section not in f_allow:
+            log.debug('Ignoring action, section has been filtered')
+            return False
+
         guid = Guid.parse(metadata.guid)
 
         request = {}
