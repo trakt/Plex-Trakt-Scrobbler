@@ -53,6 +53,13 @@ class ActionManager(Manager):
 
         return obj
 
+    @classmethod
+    def delete(cls, session_id, event):
+        ActionQueue.delete().where(
+            ActionQueue.session == session_id,
+            ActionQueue.event == event
+        ).execute()
+
     #
     # Process
     #
@@ -61,11 +68,11 @@ class ActionManager(Manager):
         if cls._process_thread is not None:
             return
 
-        cls._process_thread = Thread(target=cls.process)
+        cls._process_thread = Thread(target=cls.run)
         cls._process_thread.start()
 
     @classmethod
-    def process(cls):
+    def run(cls):
         while cls._process_enabled:
             # Retrieve one action from the queue
             try:
@@ -74,50 +81,72 @@ class ActionManager(Manager):
                 time.sleep(5)
                 continue
 
-            interface, method = action.event.split('/')
+            performed = cls.process(action)
 
-            log.debug('Sending action %r (interface: %r, method: %r)', action.event, interface, method)
-
-            result = None
-
-            if action.request:
-                request = str(action.request)
-
-                try:
-                    request = json.loads(request)
-
-                    log.debug('request: %r', request)
-
-                    result = Trakt[interface][method](**request)
-                except Exception, ex:
-                    log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
-
-            if interface == 'scrobble':
-                performed = result.get('action')
-            else:
-                log.warn('result: %r', result)
-                performed = None
-
-            # Store action in history
-            ActionHistory.create(
-                account=action.account_id,
-                session=action.session_id,
-
-                event=action.event,
-                performed=performed,
-
-                queued_at=action.queued_at,
-                sent_at=datetime.utcnow()
-            )
-
-            # Delete queued action
-            ActionQueue.delete().where(
-                ActionQueue.session == action.session_id,
-                ActionQueue.event == action.event
-            ).execute()
+            cls.resolve(action, performed)
 
             log.debug('Action %r sent, moved action to history', action.event)
             time.sleep(5)
+
+    @classmethod
+    def process(cls, action):
+        if not action.request:
+            return None
+
+        interface, method = action.event.split('/')
+        request = str(action.request)
+
+        log.debug('Sending action %r (account: %r, interface: %r, method: %r)', action.event, action.account, interface, method)
+
+        try:
+            result = cls.send(action, Trakt[interface][method], request)
+        except Exception, ex:
+            log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
+            return None
+
+        if interface == 'scrobble':
+            return result.get('action')
+
+        log.warn('result: %r', result)
+        return None
+
+    @classmethod
+    def send(cls, action, func, request):
+        # Retrieve `Account` for action
+        account = action.account
+
+        if not account:
+            log.info('Missing `account` for action, unable to send')
+            return None
+
+        if not account.token:
+            log.info("Account with username %r hasn't been authenticated yet", account.username)
+
+        # Retrieve request data
+        request = json.loads(request)
+        log.debug('request: %r', request)
+
+        # Send request
+        with Trakt.configuration.auth(account.username, account.token):
+            return func(**request)
+
+    @classmethod
+    def resolve(cls, action, performed):
+        # Store action in history
+        ActionHistory.create(
+            account=action.account_id,
+            session=action.session_id,
+
+            event=action.event,
+            performed=performed,
+
+            queued_at=action.queued_at,
+            sent_at=datetime.utcnow()
+        )
+
+        # Delete queued action
+        cls.delete(action.session_id, action.event)
+
 
     #
     # Decide
@@ -130,8 +159,6 @@ class ActionManager(Manager):
         last = history[-1] if history else None
 
         queue = cls.get_events(session.action_queue)
-
-        log.debug('session: %r, history: %r, queue: %r', session, list(history), list(queue))
 
         # Handle session state
         func = getattr(cls, 'decide_%s' % session.state, None)

@@ -16,13 +16,17 @@ class WebSocket(Base):
 
     def on_playing(self, info):
         session = SessionManager.from_websocket(info)
-        log.debug('session: %r', session)
 
+        # Check if we need to send an event
         event = ActionManager.decide(session)
-        log.debug('event: %r', event)
 
+        if event is None:
+            return
+
+        # Build request for the event
         request = self.build_request(session)
 
+        # Queue request to be sent
         ActionManager.queue(event, request, session)
 
     @classmethod

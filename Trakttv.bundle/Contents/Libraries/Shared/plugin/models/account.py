@@ -11,3 +11,13 @@ class Account(Model):
     password = CharField()
 
     token = CharField(null=True)
+
+    @property
+    def authenticated(self):
+        return self.token is not None
+
+    def __repr__(self):
+        return '<Account username: %r, authenticated: %r>' % (
+            self.username,
+            self.authenticated
+        )

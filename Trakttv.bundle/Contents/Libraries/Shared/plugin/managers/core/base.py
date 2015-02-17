@@ -19,12 +19,8 @@ class Manager(object):
         try:
             obj = cls.create(**on_create)
             fetch = True
-
-            log.debug('Created %s', name)
         except apsw.ConstraintError:
             obj = cls.get(*query)
-
-            log.debug('Retrieved %s', name)
 
         cls.update(obj, cls.to_dict(data, fetch=fetch))
 
@@ -54,9 +50,7 @@ class Manager(object):
             setattr(obj, key, value)
 
         if changed:
-            log.debug('Updated %r object (kwargs: %r)', obj, data)
             obj.save()
-
             return True
 
         return False
