@@ -152,90 +152,9 @@ class Main(object):
         log.info('Preferences updated %s', preferences)
         # TODO EventManager.fire('preferences.updated', preferences)
 
-    @classmethod
-    def authenticate(cls, retry_interval=30):
-        if not Prefs['username'] or not Prefs['password']:
-            log.warn('Authentication failed, username or password field empty')
-
-            cls.update_config(False)
-            return False
-
-        # Clear authentication details if username has changed
-        if Dict['trakt.token'] and Dict['trakt.username'] != Prefs['username']:
-            # Reset authentication details
-            Dict['trakt.username'] = None
-            Dict['trakt.token'] = None
-
-            log.info('Authentication cleared, username was changed')
-
-        # Authentication
-        retry = False
-
-        if not Dict['trakt.token']:
-            # Authenticate with trakt.tv (no token has previously been stored)
-            with Trakt.configuration.http(retry=True):
-                try:
-                    Dict['trakt.token'] = Trakt['auth'].login(
-                        Prefs['username'],
-                        Prefs['password'],
-                        exceptions=True
-                    )
-
-                    Dict['trakt.username'] = Prefs['username']
-                except ClientError, ex:
-                    log.warn('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Client error (invalid username or password), don't retry the request
-                    retry = False
-                except Exception, ex:
-                    log.error('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Server error, retry the request
-                    retry = True
-
-            Dict.Save()
-
-        # Update trakt client configuration
-        Trakt.configuration.defaults.auth(
-            Dict['trakt.username'],
-            Dict['trakt.token']
-        )
-
-        # TODO actually test trakt.tv authentication
-        success = bool(Dict['trakt.token'])
-
-        if not success:
-            # status - False = invalid credentials, None = request failed
-            if retry:
-                # Increase retry interval each time to a maximum of 30 minutes
-                if retry_interval < 60 * 30:
-                    retry_interval = int(retry_interval * 1.3)
-
-                # Ensure we never go over 30 minutes
-                if retry_interval > 60 * 30:
-                    retry_interval = 60 * 30
-
-                log.warn('Unable to authentication with trakt.tv, will try again in %s seconds', retry_interval)
-                schedule(cls.authenticate, retry_interval, retry_interval)
-            else:
-                log.warn('Authentication failed, username or password is incorrect')
-
-            Main.update_config(False)
-            return False
-
-        log.info('Authentication successful')
-
-        Main.update_config(True)
-        return True
-
     def start(self):
         # Check for authentication token
         log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
-
-        # Validate username/password
-        spawn(self.authenticate)
 
         # Start new-style modules
         module_start()
@@ -269,17 +188,6 @@ def Start():
 def ValidatePrefs():
     last_activity_mode = get_pref('activity_mode')
 
-    if Main.authenticate():
-        message = MessageContainer(
-            "Success",
-            "Authentication successful"
-        )
-    else:
-        message = MessageContainer(
-            "Error",
-            "Authentication failed, incorrect username or password"
-        )
-
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
@@ -287,4 +195,7 @@ def ValidatePrefs():
         #  - might need to delay this for a few seconds to avoid this.
         spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
 
-    return message
+    return MessageContainer(
+        "Success",
+        "Success"
+    )
