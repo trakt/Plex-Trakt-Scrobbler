@@ -138,12 +138,12 @@ class WebSocketScrobbler(ScrobblerMethod):
         # otherwise delete the session
         if update_session and not self.update_session(session, view_offset):
             log.debug('Media changed, deleting the session')
-            session.delete()
+            session.delete_instance()
             return None
 
         # Delete session if invalid
         if not self.session_valid(session):
-            session.delete()
+            session.delete_instance()
             return None
 
         if session.skip:
@@ -154,7 +154,7 @@ class WebSocketScrobbler(ScrobblerMethod):
 
             if not self.update_session(session, view_offset):
                 log.debug('Media changed, deleting the session')
-                session.delete()
+                session.delete_instance()
                 return None
 
         return session

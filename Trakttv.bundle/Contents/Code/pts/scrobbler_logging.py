@@ -107,7 +107,7 @@ class LoggingScrobbler(ScrobblerMethod):
         session = WatchSession.load('logging-%s' % info.get('machineIdentifier'))
 
         if session and not self.session_valid(session, info):
-            session.delete()
+            session.delete_instance()
             session = None
             log.debug('Session deleted')
 

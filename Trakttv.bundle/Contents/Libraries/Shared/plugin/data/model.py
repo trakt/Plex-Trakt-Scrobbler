@@ -161,23 +161,27 @@ class Model(object):
 
         return obj
 
-    def delete(self):
-        if not self.group:
+    @classmethod
+    def delete(cls, key):
+        if not cls.group:
             raise ValueError()
 
         # Delete from memory cache
-        cache[self.group].delete(self.key)
+        cache[cls.group].delete(key)
 
         # Delete from disk
-        if not os.path.exists(self.group_path()):
-            os.makedirs(self.group_path())
+        if not os.path.exists(cls.group_path()):
+            os.makedirs(cls.group_path())
 
-        path = self.item_path(self.key)
+        path = cls.item_path(key)
 
         if not FileIO.exists(path):
             return
 
         FileIO.delete(path)
+
+    def delete_instance(self):
+        self.delete(self.key)
 
     def __getstate__(self):
         state = {}
