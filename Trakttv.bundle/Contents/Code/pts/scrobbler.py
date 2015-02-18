@@ -144,7 +144,7 @@ class ScrobblerMethod(Method):
         # If stopped, delete the session
         if state == 'stopped':
             log.debug(ws.title + ' stopped, deleting the session')
-            ws.delete()
+            ws.delete_instance()
             return True
 
         # If paused, queue a session update when playing begins again

@@ -205,8 +205,8 @@ class WatchSession(Model):
         # Action performed, release the lock (so another action can be sent)
         self.action_queued.release()
 
-    def delete(self):
-        super(WatchSession, self).delete()
+    def delete_instance(self):
+        super(WatchSession, self).delete_instance()
 
         # Set `deleted` flag
         self.deleted = True

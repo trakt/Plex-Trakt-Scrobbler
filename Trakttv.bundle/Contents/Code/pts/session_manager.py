@@ -92,7 +92,7 @@ class SessionManager(Thread):
             # Delete session or flag for update
             if delete:
                 log.info('Session %s looks stale or invalid, deleting it now', key)
-                ws.delete()
+                WatchSession.delete(key)
             elif not ws.update_required:
                 log.info('Queueing session %s for update', key)
                 ws.update_required = True
