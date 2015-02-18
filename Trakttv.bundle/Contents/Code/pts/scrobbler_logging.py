@@ -84,6 +84,11 @@ class LoggingScrobbler(ScrobblerMethod):
     def session_valid(self, ws, info):
         if ws.metadata.rating_key != info['ratingKey']:
             log.debug('Invalid Session: Media changed')
+
+            if ws.progress >= 80:
+                log.debug('Media changed, sending a "stop" action')
+                self.handle_action(ws, 'stop')
+
             return False
 
         if ws.skip and info.get('state') == 'stopped':

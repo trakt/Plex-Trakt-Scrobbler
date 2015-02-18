@@ -90,6 +90,11 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         if ws.metadata.rating_key != session.rating_key:
             log.debug('Invalid Session: Media changed')
+
+            if ws.progress >= 80:
+                log.debug('Media changed, sending a "stop" action')
+                self.handle_action(ws, 'stop')
+
             return False
 
         ws.last_view_offset = view_offset
