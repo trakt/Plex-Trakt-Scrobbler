@@ -9,11 +9,13 @@ from __future__ import absolute_import
 
 from raven.utils import six
 import logging
+import socket
+import sys
+
 try:
     import pkg_resources
 except ImportError:
     pkg_resources = None  # NOQA
-import sys
 
 logger = logging.getLogger('raven.errors')
 
@@ -131,6 +133,28 @@ def get_auth_header(protocol, timestamp, client, api_key, api_secret=None, **kwa
         header.append(('sentry_secret', api_secret))
 
     return 'Sentry %s' % ', '.join('%s=%s' % (k, v) for k, v in header)
+
+
+def gethostname():
+    if not hasattr(socket, 'gethostname'):
+        return None
+
+    hostname = socket.gethostname()
+
+    if isinstance(hostname, six.text_type):
+        return hostname
+
+    try:
+        return six.text_type(hostname)
+    except UnicodeError:
+        pass
+
+    try:
+        return hostname.decode('unicode-escape')
+    except UnicodeError:
+        pass
+
+    return None
 
 
 class memoize(object):

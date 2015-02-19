@@ -238,9 +238,18 @@ def spawn(func, *args, **kwargs):
             log.error('Thread "%s" raised an exception: %s', thread_name, ex, exc_info=True)
 
     thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
-    thread.start()
 
-    log.debug("Spawned thread with name '%s'" % thread_name)
+    try:
+        thread.start()
+        log.debug("Spawned thread with name '%s'" % thread_name)
+    except thread.error, ex:
+        log.error('Unable to spawn thread: %s', ex, exc_info=True, extra={
+            'data': {
+                'active_count': threading.active_count()
+            }
+        })
+        return None
+
     return thread
 
 
