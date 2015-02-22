@@ -33,7 +33,14 @@ class SessionManager(Thread):
             return
 
         for key, ws in sessions:
-            self.check_paused(ws)
+            if getattr(ws, 'skip', True):
+                continue
+
+            try:
+                self.check_paused(ws)
+            except AttributeError, ex:
+                log.warn("Unable to determine if session is paused, skipping invalid session - %s", ex, exc_info=True)
+                ws.skip = True
 
     def check_paused(self, ws):
         if not ws or ws.cur_state != 'paused' or not ws.paused_since:
