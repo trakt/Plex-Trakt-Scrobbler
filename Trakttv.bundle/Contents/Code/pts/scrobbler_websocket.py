@@ -81,20 +81,24 @@ class WebSocketScrobbler(ScrobblerMethod):
     def update_session(self, ws, view_offset):
         log.debug('Trying to update the current WatchSession (session key: %s)' % ws.key)
 
-        session = Plex['status'].sessions().get(ws.key)
+        sessions = Plex['status'].sessions()
+
+        if sessions is None:
+            log.warn('Unable to retrieve sessions')
+            return False
+
+        session = sessions.get(ws.key)
+
         if not session:
             log.warn('Session was not found on media server')
+            self.finish(ws)
             return False
 
         log.debug('last item key: %s, current item key: %s' % (ws.metadata.rating_key, session.rating_key))
 
         if ws.metadata.rating_key != session.rating_key:
             log.debug('Invalid Session: Media changed')
-
-            if ws.progress >= 80:
-                log.debug('Media changed, sending a "stop" action')
-                self.handle_action(ws, 'stop')
-
+            self.finish(ws)
             return False
 
         ws.last_view_offset = view_offset
