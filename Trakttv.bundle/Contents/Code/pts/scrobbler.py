@@ -235,6 +235,14 @@ class ScrobblerMethod(Method):
         ws.progress = int(round(total_progress * 100, 0))
         return True
 
+    def finish(self, ws):
+        if ws.progress is None or ws.progress < 80:
+            return False
+
+        log.debug('Session finished, sending a "stop" action')
+        self.handle_action(ws, 'stop')
+        return True
+
     def valid(self, ws):
         filtered = None
 
