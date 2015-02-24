@@ -29,7 +29,7 @@ class UserManager(Manager):
         )
 
     @classmethod
-    def to_dict(cls, user, fetch=False):
+    def to_dict(cls, obj, user, fetch=False):
         result = {
             'name': user.title,
             'thumb': user.thumb

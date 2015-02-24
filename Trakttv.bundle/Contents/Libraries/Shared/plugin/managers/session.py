@@ -1,9 +1,8 @@
-from plugin.managers import AccountManager
+from plugin.core.helpers.variable import to_integer, merge
 from plugin.managers.core.base import Manager
 from plugin.managers.client import ClientManager
 from plugin.managers.user import UserManager
-from plugin.core.helpers.variable import to_integer
-from plugin.models import db, Session, Account
+from plugin.models import Session
 
 from plex import Plex
 from plex_metadata import Metadata, Guid
@@ -75,17 +74,21 @@ class WebSocket(Base):
         )
 
     @classmethod
-    def to_dict(cls, info, fetch=False):
+    def to_dict(cls, obj, info, fetch=False):
+        view_offset = to_integer(info.get('viewOffset'))
+
         result = {
             'rating_key': to_integer(info.get('ratingKey')),
 
             'state': info.get('state'),
-            'view_offset': to_integer(info.get('viewOffset'))
+            'view_offset': view_offset
         }
 
         if not fetch:
             # Return simple update
-            return result
+            return merge(result, {
+                'progress': cls.get_progress(obj.duration, view_offset)
+            })
 
         # Retrieve session
         session_key = to_integer(info.get('sessionKey'))
@@ -107,7 +110,17 @@ class WebSocket(Base):
         result['client'] = ClientManager.from_session(p_item.session, fetch=True)
         result['user'] = UserManager.from_session(p_item.session, fetch=True)
 
-        # Pick account from `client` or `user` objects
-        result['account'] = cls.get_account(result['client'], result['user'])
+        return merge(result, {
+            # Pick account from `client` or `user` objects
+            'account': cls.get_account(result['client'], result['user']),
 
-        return result
+            'duration': p_metadata.duration,
+            'progress': cls.get_progress(p_metadata.duration, view_offset)
+        })
+
+    @classmethod
+    def get_progress(cls, duration, view_offset):
+        if duration is None:
+            return None
+
+        return round((float(view_offset) / duration) * 100, 2)

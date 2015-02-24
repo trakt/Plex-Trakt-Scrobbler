@@ -1,7 +1,5 @@
 from plugin.models import *
 
-from playhouse.apsw_ext import *
-
 
 def migrate(migrator, database):
     Account.create_table()

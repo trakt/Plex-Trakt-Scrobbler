@@ -4,7 +4,6 @@ from plugin.managers.session import SessionManager
 
 from plex import Plex
 from plex_activity import Activity
-import json
 import logging
 
 log = logging.getLogger(__name__)

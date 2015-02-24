@@ -1,6 +1,6 @@
 from plugin.core.helpers.variable import merge
 from plugin.managers.core.base import Manager
-from plugin.models import db, Client
+from plugin.models import Client
 
 from plex import Plex
 import logging
@@ -27,7 +27,7 @@ class ClientManager(Manager):
         )
 
     @classmethod
-    def to_dict(cls, player, fetch=False):
+    def to_dict(cls, obj, player, fetch=False):
         result = {
             'name': player.title,
 

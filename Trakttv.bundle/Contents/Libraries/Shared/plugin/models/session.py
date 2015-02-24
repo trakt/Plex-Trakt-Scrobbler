@@ -18,6 +18,10 @@ class Session(Model):
     session_key = IntegerField(null=True, unique=True)
 
     state = CharField(null=True)
+
+    progress = FloatField(null=True)
+
+    duration = IntegerField(null=True)
     view_offset = IntegerField(null=True)
 
     @property

@@ -1,4 +1,4 @@
-from plugin.core.helpers.variable import merge, to_tuple
+from plugin.core.helpers.variable import to_tuple
 from plugin.models import db
 
 import apsw
@@ -22,7 +22,7 @@ class Manager(object):
         except apsw.ConstraintError:
             obj = cls.get(*query)
 
-        cls.update(obj, cls.to_dict(data, fetch=fetch))
+        cls.update(obj, cls.to_dict(obj, data, fetch=fetch))
 
         return obj
 
@@ -56,5 +56,5 @@ class Manager(object):
         return False
 
     @classmethod
-    def to_dict(cls, obj, fetch=False):
+    def to_dict(cls, obj, data, fetch=False):
         raise NotImplementedError()

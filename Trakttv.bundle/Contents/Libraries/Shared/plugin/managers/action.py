@@ -1,6 +1,6 @@
 from plugin.core.helpers.thread import module
 from plugin.managers.core.base import Manager
-from plugin.models import db, ActionHistory, ActionQueue
+from plugin.models import ActionHistory, ActionQueue
 
 from datetime import datetime
 from threading import Thread
@@ -9,7 +9,6 @@ import apsw
 import json
 import logging
 import time
-import traceback
 
 log = logging.getLogger(__name__)
 

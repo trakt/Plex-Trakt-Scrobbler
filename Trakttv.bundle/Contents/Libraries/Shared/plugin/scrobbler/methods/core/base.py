@@ -1,3 +1,4 @@
+from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
 
 from plex.objects.library.metadata.episode import Episode
@@ -11,13 +12,21 @@ class Base(object):
         metadata = Metadata.get(session.rating_key)
         guid = Guid.parse(metadata.guid)
 
+        result = None
+
         if type(metadata) is Movie:
-            return cls.build_movie(metadata, guid)
+            result = cls.build_movie(metadata, guid)
+        elif type(metadata) is Episode:
+            result = cls.build_episode(metadata, guid)
+        else:
+            return None
 
-        if type(metadata) is Episode:
-            return cls.build_episode(metadata, guid)
+        if not result:
+            return None
 
-        return None
+        return merge(result, {
+            'progress': session.progress
+        })
 
     @staticmethod
     def build_episode(episode, guid):

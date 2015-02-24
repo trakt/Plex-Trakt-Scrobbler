@@ -6,7 +6,6 @@ from plugin.models.core import db, db_path, migrations_path
 from peewee_migrate.core import Router
 import apsw
 import logging
-import peewee
 
 log = logging.getLogger(__name__)
 
