@@ -27,6 +27,8 @@ class WatchSession(Model):
     actions_sent = Property(lambda: [])
     actions_performed = Property(lambda: [])
 
+    rating_key = Property(None)
+
     def __init__(self, key, metadata, guid, rating_key, state, session=None):
         super(WatchSession, self).__init__(key)
 
@@ -226,7 +228,8 @@ class WatchSession(Model):
 
         sessions = cls.all(lambda ws:
             ws.metadata and
-            ws.rating_key == rating_key
+            (ws.rating_key == rating_key or
+             ws.metadata.rating_key == rating_key)
         )
 
         for key, ws in sessions:
