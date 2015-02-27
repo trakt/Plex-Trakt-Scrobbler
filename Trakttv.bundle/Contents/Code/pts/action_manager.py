@@ -336,6 +336,11 @@ class ActionManager(object):
             return False
 
         metadata = Metadata.get(rating_key)
+
+        if not metadata:
+            log.debug('Ignoring action, unable to retrieve metadata')
+            return False
+
         section = metadata.section.title.lower()
 
         f_allow, _ = get_filter('filter_sections')

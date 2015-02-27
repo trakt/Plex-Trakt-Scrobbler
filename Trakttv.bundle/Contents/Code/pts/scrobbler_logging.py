@@ -41,23 +41,14 @@ class LoggingScrobbler(ScrobblerMethod):
             log.warn('Invalid ratingKey provided from activity info')
             return None
 
-        skip = False
-
         # Metadata
-        metadata = None
-
-        try:
-            metadata = Metadata.get(info['ratingKey'])
-        except NotImplementedError, e:
-            # metadata not supported (music, etc..)
-            log.debug('%s, ignoring session' % e.message)
-            skip = True
+        metadata = Metadata.get(info['ratingKey'])
 
         # Guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid) if metadata else None
 
-        ws = WatchSession.from_info(info, metadata, guid)
-        ws.skip = skip
+        ws = WatchSession.from_info(info, metadata, guid, info['ratingKey'])
+        ws.skip = not metadata
 
         # Fetch client by `machineIdentifier`
         ws.client = Plex.clients().get(info['machineIdentifier'])
@@ -82,7 +73,7 @@ class LoggingScrobbler(ScrobblerMethod):
         return ws
 
     def session_valid(self, ws, info):
-        if ws.metadata.rating_key != info['ratingKey']:
+        if ws.rating_key != info['ratingKey']:
             log.debug('Invalid Session: Media changed')
             self.finish(ws)
             return False

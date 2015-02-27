@@ -27,12 +27,13 @@ class WatchSession(Model):
     actions_sent = Property(lambda: [])
     actions_performed = Property(lambda: [])
 
-    def __init__(self, key, metadata, guid, state, session=None):
+    def __init__(self, key, metadata, guid, rating_key, state, session=None):
         super(WatchSession, self).__init__(key)
 
         # Plex
         self.metadata = metadata
         self.guid = guid
+        self.rating_key = rating_key
         self.session = session
 
         self.client = None
@@ -225,7 +226,7 @@ class WatchSession(Model):
 
         sessions = cls.all(lambda ws:
             ws.metadata and
-            ws.metadata.rating_key == rating_key
+            ws.rating_key == rating_key
         )
 
         for key, ws in sessions:
@@ -238,28 +239,28 @@ class WatchSession(Model):
         return False
 
     @staticmethod
-    def from_session(session, metadata, guid, state):
+    def from_session(session, metadata, guid, rating_key, state):
         return WatchSession(
             session.key,
-            metadata, guid, state,
+            metadata, guid, rating_key, state,
 
             session=session
         )
 
     @staticmethod
-    def from_info(info, metadata, guid):
+    def from_info(info, metadata, guid, rating_key):
         if not info:
             return None
 
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
-            metadata, guid,
+            metadata, guid, rating_key,
             info['state']
         )
 
     def __repr__(self):
         return build_repr(self, [
-            'key', 'cur_state', 'progress',
+            'key', 'rating_key', 'cur_state', 'progress',
             'user', 'client'
         ])
 

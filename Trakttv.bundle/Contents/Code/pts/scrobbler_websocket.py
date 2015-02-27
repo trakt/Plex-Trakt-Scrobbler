@@ -46,29 +46,20 @@ class WebSocketScrobbler(ScrobblerMethod):
 
         log.debug('Creating a WatchSession for the current media')
 
-        skip = False
-
         item = Plex['status'].sessions().get(session_key)
         if not item:
             log.warn('Unable to find session with key "%s"', session_key)
             return None
 
         # Metadata
-        metadata = None
-
-        try:
-            metadata = Metadata.get(item.rating_key)
-        except NotImplementedError, e:
-            # metadata not supported (music, etc..)
-            log.debug('%s, ignoring session' % e.message)
-            skip = True
+        metadata = Metadata.get(item.rating_key)
 
         # Guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid) if metadata else None
 
         # Create WatchSession
-        ws = WatchSession.from_session(item.session, metadata, guid, state)
-        ws.skip = skip
+        ws = WatchSession.from_session(item.session, metadata, guid, item.rating_key, state)
+        ws.skip = not metadata
 
         # Fetch client by `machineIdentifier`
         ws.client = Plex.clients().get(item.session.player.machine_identifier)
@@ -94,9 +85,9 @@ class WebSocketScrobbler(ScrobblerMethod):
             self.finish(ws)
             return False
 
-        log.debug('last item key: %s, current item key: %s' % (ws.metadata.rating_key, session.rating_key))
+        log.debug('last item key: %s, current item key: %s' % (ws.rating_key, session.rating_key))
 
-        if ws.metadata.rating_key != session.rating_key:
+        if ws.rating_key != session.rating_key:
             log.debug('Invalid Session: Media changed')
             self.finish(ws)
             return False
