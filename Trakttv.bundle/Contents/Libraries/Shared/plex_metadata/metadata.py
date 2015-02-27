@@ -82,6 +82,10 @@ class Metadata(object):
         if value is None:
             return None
 
+        if not value:
+            # Unsupported media (False)
+            return value
+
         # Validate item
         if not self._valid(value.guid):
             self._cache_invalidate(key)
@@ -102,7 +106,10 @@ class Metadata(object):
         if self.cache is None:
             return
 
-        if not value or not self._valid(value.guid):
+        if value is None:
+            return
+
+        if value and not self._valid(value.guid):
             return
 
         self.cache[key] = value
@@ -144,7 +151,7 @@ class Metadata(object):
         if item.type not in self.types:
             # TODO set flag to ignore future refresh requests
             log.warn('Item %s with type "%s" has been ignored', key, item.type)
-            return None
+            return False
 
         return item
 
