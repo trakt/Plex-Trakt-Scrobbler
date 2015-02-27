@@ -1,6 +1,7 @@
-from plugin.managers import ActionManager
+from plugin.core.helpers.variable import to_integer
+from plugin.managers import ActionManager, SessionManager
+from plugin.scrobbler.core.engine import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
-from plugin.managers.session import SessionManager
 
 from plex import Plex
 from plex_activity import Activity
@@ -13,20 +14,38 @@ class WebSocket(Base):
     def __init__(self):
         Activity.on('websocket.playing', self.on_playing)
 
+        self.engine = SessionEngine()
+
     def on_playing(self, info):
-        session = SessionManager.from_websocket(info)
+        # Create or retrieve existing session
+        session = SessionManager.from_websocket(info, update=False)
 
-        # Check if we need to send an event
-        event = ActionManager.decide(session)
+        actions = self.engine.process(session, self.to_events(info))
 
-        if event is None:
-            return
+        for action, payload in actions:
+            # Build request for the event
+            request = self.build_request(session, rating_key=payload.get('rating_key'))
 
-        # Build request for the event
-        request = self.build_request(session)
+            # Queue request to be sent
+            ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
-        # Queue request to be sent
-        ActionManager.queue(event, request, session)
+        # Update session
+        SessionManager.from_websocket(info, update=True)
+
+
+    @staticmethod
+    def to_events(info):
+        state = info.get('state')
+
+        if not state:
+            log.warn('Event has an invalid state %r', state)
+            return []
+
+        return [
+            (state, {
+                'rating_key': to_integer(info.get('ratingKey'))
+            })
+        ]
 
     @classmethod
     def test(cls):

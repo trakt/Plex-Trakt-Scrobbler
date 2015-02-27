@@ -11,7 +11,7 @@ class Manager(object):
     model = None
 
     @classmethod
-    def get_or_create(cls, data, query, fetch=False, on_create=None):
+    def get_or_create(cls, data, query, fetch=False, update=True, on_create=None):
         query = to_tuple(query)
 
         name = cls.model.__name__
@@ -19,10 +19,12 @@ class Manager(object):
         try:
             obj = cls.create(**on_create)
             fetch = True
+            update = True
         except apsw.ConstraintError:
             obj = cls.get(*query)
 
-        cls.update(obj, cls.to_dict(obj, data, fetch=fetch))
+        if update:
+            cls.update(obj, cls.to_dict(obj, data, fetch=fetch))
 
         return obj
 

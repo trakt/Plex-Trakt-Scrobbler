@@ -8,8 +8,8 @@ from plex_metadata import Metadata, Guid
 
 class Base(object):
     @classmethod
-    def build_request(cls, session):
-        metadata = Metadata.get(session.rating_key)
+    def build_request(cls, session, rating_key=None):
+        metadata = Metadata.get(rating_key or session.rating_key)
         guid = Guid.parse(metadata.guid)
 
         result = None

@@ -56,7 +56,13 @@ def module_start():
 
     import_modules(os.path.join(plugin_dir, 'scrobbler'), exclude=[
         '__init__.py',
+        'core',
+        'handlers',
         'methods'
+    ])
+
+    import_modules(os.path.join(plugin_dir, 'scrobbler', 'handlers'), exclude=[
+        '__init__.py'
     ])
 
     # Start modules

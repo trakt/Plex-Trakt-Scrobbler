@@ -76,16 +76,26 @@ class ActionManager(Manager):
             # Retrieve one action from the queue
             try:
                 action = ActionQueue.get()
+            except ActionQueue.DoesNotExist:
+                time.sleep(5)
+                continue
             except Exception, ex:
+                log.warn('Unable to retrieve action from queue - %s', ex, exc_info=True)
                 time.sleep(5)
                 continue
 
-            performed = cls.process(action)
+            log.debug('Retrieved %r action from queue', action.event)
 
-            cls.resolve(action, performed)
+            try:
+                performed = cls.process(action)
 
-            log.debug('Action %r sent, moved action to history', action.event)
-            time.sleep(5)
+                cls.resolve(action, performed)
+
+                log.debug('Action %r sent, moved action to history', action.event)
+            except Exception, ex:
+                log.warn('Unable to process action %r - %s', action.event, ex, exc_info=True)
+            finally:
+                time.sleep(5)
 
     @classmethod
     def process(cls, action):
@@ -145,82 +155,3 @@ class ActionManager(Manager):
 
         # Delete queued action
         cls.delete(action.session_id, action.event)
-
-
-    #
-    # Decide
-    #
-
-    @classmethod
-    def decide(cls, session):
-        # Retrieve history/queue for session
-        history = cls.get_events(session.action_history)
-        last = history[-1] if history else None
-
-        queue = cls.get_events(session.action_queue)
-
-        # Handle session state
-        func = getattr(cls, 'decide_%s' % session.state, None)
-
-        if not func:
-            # State handler not implemented
-            log.warn('Handler for %r is not available', session.state)
-            return None
-
-        # Run state handlers
-        return func(session, history, last, queue)
-
-    @classmethod
-    def decide_playing(cls, session, history, last, queue):
-        if last == 'scrobble/start':
-            # Already sent a "start" action
-            return None
-
-        if 'scrobble/start' in queue:
-            # "start" action already queued
-            return None
-
-        return 'scrobble/start'
-
-    @classmethod
-    def decide_paused(cls, session, history, last, queue):
-        if last == 'scrobble/pause':
-            # Already sent a "pause" action
-            return None
-
-        if last != 'scrobble/start':
-            # Haven't sent a "start" action yet, nothing to pause
-            return None
-
-        if 'scrobble/pause' in queue:
-            # "pause" action already queued
-            return None
-
-        return 'scrobble/pause'
-
-    @classmethod
-    def decide_stopped(cls, session, history, last, queue):
-        if last == 'scrobble/stop':
-            # Already sent a "stop" action
-            return None
-
-        if last not in ['scrobble/start', 'scrobble/pause']:
-            # Previous action wasn't a "start" or "pause" event
-            return None
-
-        if 'scrobble/stop' in queue:
-            # "stop" action already queued
-            return None
-
-        return 'scrobble/stop'
-
-    #
-    # Misc
-    #
-
-    @classmethod
-    def get_events(cls, items):
-        return [
-            item.event
-            for item in items
-        ]

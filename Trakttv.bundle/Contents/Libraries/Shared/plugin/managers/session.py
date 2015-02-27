@@ -18,8 +18,12 @@ class SessionManager(Manager):
         raise NotImplementedError()
 
     @classmethod
-    def from_websocket(cls, info):
-        return WebSocket.from_websocket(info)
+    def from_websocket(cls, info, fetch=False, update=True):
+        return WebSocket.from_websocket(
+            info,
+            fetch=fetch,
+            update=update
+        )
 
 
 class Base(Manager):
@@ -60,7 +64,7 @@ class Logging(Base):
 
 class WebSocket(Base):
     @classmethod
-    def from_websocket(cls, info):
+    def from_websocket(cls, info, fetch=False, update=True):
         session_key = to_integer(info.get('sessionKey'))
 
         return cls.get_or_create(
@@ -68,8 +72,14 @@ class WebSocket(Base):
 
             Session.session_key == session_key,
 
+            fetch=fetch,
+            update=update,
+
             on_create={
-                'session_key': session_key
+                'rating_key': to_integer(info.get('ratingKey')),
+                'session_key': session_key,
+
+                'state': 'create'
             }
         )
 
@@ -78,9 +88,6 @@ class WebSocket(Base):
         view_offset = to_integer(info.get('viewOffset'))
 
         result = {
-            'rating_key': to_integer(info.get('ratingKey')),
-
-            'state': info.get('state'),
             'view_offset': view_offset
         }
 
