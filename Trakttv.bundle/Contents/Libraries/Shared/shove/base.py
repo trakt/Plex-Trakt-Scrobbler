@@ -129,12 +129,12 @@ class FileBase(Base):
         # creates the store directory
         try:
             makedirs(self._dir)
-        except OSError:
-            raise EnvironmentError(
-                'cache directory "{0}" does not exist and could not be '
-                'created'.format(self._dir)
-            )
+        except OSError as ex:
+            raise EnvironmentError('cache directory %r does not exist and could not be created - %s' % (self._dir, ex))
 
     def _key_to_file(self, key):
+        # ensure `key` is a string
+        key = str(key)
+
         # gives the filesystem path for a key
         return join(self._dir, quote_plus(key))

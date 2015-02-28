@@ -236,7 +236,7 @@ class ScrobblerMethod(Method):
         return True
 
     def finish(self, ws):
-        if ws.progress is None or ws.progress < 80:
+        if ws.progress is None:
             return False
 
         log.debug('Session finished, sending a "stop" action')
@@ -295,7 +295,7 @@ class ScrobblerMethod(Method):
 
         if f_validate(value, f_allow, f_deny):
             log.info('Ignoring item [%s](%s) played by filtered "%s": %s' % (
-                session.metadata.rating_key if session.metadata else None,
+                session.rating_key,
                 session.title,
                 key, repr(f_current())
             ))

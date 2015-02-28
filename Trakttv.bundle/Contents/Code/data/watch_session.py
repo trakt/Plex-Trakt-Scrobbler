@@ -27,12 +27,15 @@ class WatchSession(Model):
     actions_sent = Property(lambda: [])
     actions_performed = Property(lambda: [])
 
-    def __init__(self, key, metadata, guid, state, session=None):
+    rating_key_ = Property(None)
+
+    def __init__(self, key, metadata, guid, rating_key, state, session=None):
         super(WatchSession, self).__init__(key)
 
         # Plex
         self.metadata = metadata
         self.guid = guid
+        self.rating_key = rating_key
         self.session = session
 
         self.client = None
@@ -59,6 +62,44 @@ class WatchSession(Model):
         self.identifier_ = None
         self.user_ = None
 
+    #
+    # Properties
+    #
+
+    @property
+    def identifier(self):
+        if self.metadata is None:
+            return None
+
+        if self.identifier_ is None:
+            self.identifier_ = Matcher.process(self.metadata)
+
+        return self.identifier_
+
+    @property
+    def rating_key(self):
+        if self.rating_key_:
+            return self.rating_key_
+
+        if self.metadata:
+            return self.metadata.rating_key
+
+        return None
+
+    @rating_key.setter
+    def rating_key(self, value):
+        self.rating_key_ = value
+
+    @property
+    def title(self):
+        if not self.metadata:
+            return None
+
+        if self.metadata.type in ['season', 'episode']:
+            return self.metadata.show.title
+
+        return self.metadata.title
+
     @property
     def type(self):
         if not self.metadata or not self.metadata.type:
@@ -72,26 +113,6 @@ class WatchSession(Model):
         return media_type
 
     @property
-    def identifier(self):
-        if self.metadata is None:
-            return None
-
-        if self.identifier_ is None:
-            self.identifier_ = Matcher.process(self.metadata)
-
-        return self.identifier_
-
-    @property
-    def title(self):
-        if not self.metadata:
-            return None
-
-        if self.metadata.type in ['season', 'episode']:
-            return self.metadata.show.title
-
-        return self.metadata.title
-
-    @property
     def user(self):
         if self.session:
             return self.session.user
@@ -101,6 +122,10 @@ class WatchSession(Model):
     @user.setter
     def user(self, value):
         self.user_ = value
+
+    #
+    # Methods
+    #
 
     def reset(self):
         self.active = False
@@ -161,13 +186,13 @@ class WatchSession(Model):
             # Build action key
             if self.type == 'show':
                 action_key = self.action_manager.build_key(
-                    self.metadata.rating_key,
+                    self.rating_key,
                     self.cur_episode,
                     self.identifier
                 )
             else:
                 action_key = self.action_manager.build_key(
-                    self.metadata.rating_key,
+                    self.rating_key,
                 )
 
             # Queue action with `ActionManager`
@@ -225,7 +250,7 @@ class WatchSession(Model):
 
         sessions = cls.all(lambda ws:
             ws.metadata and
-            ws.metadata.rating_key == rating_key
+            ws.rating_key == rating_key
         )
 
         for key, ws in sessions:
@@ -238,28 +263,28 @@ class WatchSession(Model):
         return False
 
     @staticmethod
-    def from_session(session, metadata, guid, state):
+    def from_session(session, metadata, guid, rating_key, state):
         return WatchSession(
             session.key,
-            metadata, guid, state,
+            metadata, guid, rating_key, state,
 
             session=session
         )
 
     @staticmethod
-    def from_info(info, metadata, guid):
+    def from_info(info, metadata, guid, rating_key):
         if not info:
             return None
 
         return WatchSession(
             'logging-%s' % info.get('machineIdentifier'),
-            metadata, guid,
+            metadata, guid, rating_key,
             info['state']
         )
 
     def __repr__(self):
         return build_repr(self, [
-            'key', 'cur_state', 'progress',
+            'key', 'rating_key', 'cur_state', 'progress',
             'user', 'client'
         ])
 

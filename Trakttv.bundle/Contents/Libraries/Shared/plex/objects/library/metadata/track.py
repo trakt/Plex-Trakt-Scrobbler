@@ -13,8 +13,10 @@ class Track(Directory, Metadata, SessionMixin, ScrobbleMixin):
 
     index = Property(type=int)
 
-    duration = Property(type=int)
+    view_count = Property('viewCount', type=int)
     view_offset = Property('viewOffset', type=int)
+
+    duration = Property(type=int)
 
     @staticmethod
     def construct_artist(client, node):
