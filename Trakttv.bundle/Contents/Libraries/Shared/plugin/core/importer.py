@@ -18,10 +18,16 @@ def import_modules(directory, include=None, exclude=None):
         if exclude and name in exclude:
             continue
 
+        path = os.path.join(directory, name)
+
         if name.endswith('.pyc'):
             continue
 
-        if name.endswith('.py'):
+        if os.path.isdir(path):
+            # Ensure `__init__.py` exists in directory
+            if not os.path.exists(os.path.join(path, '__init__.py')):
+                continue
+        elif name.endswith('.py'):
             name, _ = os.path.splitext(name)
 
         name = '.'.join([base_name, name])
