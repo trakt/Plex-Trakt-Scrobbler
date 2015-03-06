@@ -159,11 +159,11 @@ class Show(Base):
             return True
 
         p_shows = self.plex.library('show')
-        self.save('last_library', repr(p_shows), source='plex')
+        self.save('last_library', p_shows, source='plex')
 
         # Fetch library, and only get ratings and collection if enabled
         t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
-        self.save('last_library', repr(t_shows_table), source='trakt')
+        self.save('last_library', t_shows_table, source='trakt')
 
         if t_shows is None:
             log.warn('Unable to construct merged library from trakt')
@@ -284,11 +284,11 @@ class Movie(Base):
             return True
 
         p_movies = self.plex.library('movie')
-        self.save('last_library', repr(p_movies), source='plex')
+        self.save('last_library', p_movies, source='plex')
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
-        self.save('last_library', repr(t_movies_table), source='trakt')
+        self.save('last_library', t_movies_table, source='trakt')
 
         if t_movies is None:
             log.warn('Unable to construct merged library from trakt')
