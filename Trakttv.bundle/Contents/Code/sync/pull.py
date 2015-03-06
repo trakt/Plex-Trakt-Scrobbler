@@ -105,7 +105,7 @@ class Episode(Base):
 
         enabled_funcs = self.get_enabled_functions()
 
-        for key, t_episode in t_episodes.items():
+        for key, t_episode in t_episodes.iteritems():
             if key is None or key not in p_episodes:
                 continue
 
@@ -133,7 +133,7 @@ class Season(Base):
         if p_seasons is None:
             return False
 
-        for key, p_season in p_seasons.items():
+        for key, p_season in p_seasons.iteritems():
             t_season = t_seasons.get(key)
 
             if t_season:
@@ -171,7 +171,7 @@ class Show(Base):
 
         self.emit('started', len(t_shows_table))
 
-        for x, (key, t_show) in enumerate(t_shows_table.items()):
+        for x, (key, t_show) in enumerate(t_shows_table.iteritems()):
             self.check_stopping()
             self.emit('progress', x + 1)
 
@@ -208,7 +208,7 @@ class Show(Base):
 
         log.info('Searching for shows/episodes that are missing from plex')
 
-        for key, t_show in t_shows.items():
+        for key, t_show in t_shows.iteritems():
             # Ignore show if there are no collected episodes on trakt
             if all([not e.is_collected for (_, e) in t_show.episodes()]):
                 continue
@@ -226,7 +226,7 @@ class Show(Base):
             if 'seasons' not in show:
                 show['seasons'] = []
 
-            for sk, t_season in t_show.seasons.items():
+            for sk, t_season in t_show.seasons.iteritems():
                 # Ignore season if there are no collected episodes on trakt
                 if all([not e.is_collected for e in t_season.episodes.values()]):
                     continue
@@ -244,7 +244,7 @@ class Show(Base):
                 if 'episodes' not in i_season:
                     i_season['episodes'] = []
 
-                for ek, t_episode in t_season.episodes.items():
+                for ek, t_episode in t_season.episodes.iteritems():
                     if not self.is_missing(t_episode):
                         continue
 
@@ -296,7 +296,7 @@ class Movie(Base):
 
         self.emit('started', len(t_movies_table))
 
-        for x, (key, t_movie) in enumerate(t_movies_table.items()):
+        for x, (key, t_movie) in enumerate(t_movies_table.iteritems()):
             self.check_stopping()
             self.emit('progress', x + 1)
 
@@ -328,7 +328,7 @@ class Movie(Base):
         # Find collected movies that are missing from Plex
         t_collection_missing = self.get_missing(t_movies)
 
-        for key, t_movie in t_collection_missing.items():
+        for key, t_movie in t_collection_missing.iteritems():
             log.debug('Unable to find "%s" [%s] in plex', t_movie.title, key)
 
             self.store('missing.movies', t_movie.to_identifier())
