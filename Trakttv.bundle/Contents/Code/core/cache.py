@@ -28,7 +28,7 @@ class CacheManager(object):
             return None
 
         # Construct shove
-        shove = Shove(store_uri, cache_uri, optimize=False)
+        shove = Shove(store_uri, cache_uri, max_entries=50, optimize=False)
 
         log.debug('Opened "%s" cache (store: %r, cache: %r)', key, store, cache)
         cls.active[key] = shove
