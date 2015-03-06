@@ -12,25 +12,25 @@ class CacheManager(object):
     active = {}
 
     @classmethod
-    def get(cls, key, persistent=False, store='file', cache='memory'):
+    def get(cls, key, persistent=False, store='file', cache='memlru'):
         if key in cls.active:
             return cls.active[key]
 
         return cls.open(key, persistent, store, cache)
 
     @classmethod
-    def open(cls, key, persistent=False, store='file', cache='memory'):
-        store = cls.store_uri(key, store)
-        cache = cls.cache_uri(key, cache)
+    def open(cls, key, persistent=False, store='file', cache='memlru'):
+        store_uri = cls.store_uri(key, store)
+        cache_uri = cls.cache_uri(key, cache)
 
-        if not store or not cache:
+        if not store_uri or not cache_uri:
             log.warn('Unsupported cache options, unable to load "%s"', key)
             return None
 
         # Construct shove
-        shove = Shove(store, cache, optimize=False)
+        shove = Shove(store_uri, cache_uri, optimize=False)
 
-        log.debug('Opened "%s" cache', key)
+        log.debug('Opened "%s" cache (store: %r, cache: %r)', key, store, cache)
         cls.active[key] = shove
 
         return shove
@@ -90,5 +90,8 @@ class CacheManager(object):
     def cache_uri(cls, key, cache):
         if cache == 'memory':
             return 'memory://'
+
+        if cache == 'memlru':
+            return 'memlru://'
 
         return None
