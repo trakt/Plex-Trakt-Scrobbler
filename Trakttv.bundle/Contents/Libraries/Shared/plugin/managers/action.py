@@ -44,8 +44,8 @@ class ActionManager(Manager):
                 queued_at=datetime.utcnow()
             )
             log.debug('Queued %r event for %r', event, session)
-        except apsw.ConstraintError:
-            log.warn('Unable to queue event %r for %r', event, session)
+        except apsw.ConstraintError, ex:
+            log.warn('Unable to queue event %r for %r: %s', event, session, ex, exc_info=True)
 
         # Ensure process thread is started
         cls.start()

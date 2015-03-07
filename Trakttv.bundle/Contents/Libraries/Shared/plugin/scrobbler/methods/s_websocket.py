@@ -18,7 +18,7 @@ class WebSocket(Base):
 
     def on_playing(self, info):
         # Create or retrieve existing session
-        session = SessionManager.from_websocket(info, update=False)
+        session = SessionManager.get.or_create(info, fetch=True)
 
         actions = self.engine.process(session, self.to_events(info))
 
@@ -30,8 +30,7 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        SessionManager.from_websocket(info, update=True)
-
+        SessionManager.update(session, info)
 
     @staticmethod
     def to_events(info):

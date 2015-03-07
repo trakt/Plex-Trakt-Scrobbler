@@ -27,3 +27,9 @@ class Session(Model):
     @property
     def account_id(self):
         return self._data['account']
+
+    @property
+    def payload(self):
+        return {
+            'rating_key': self.rating_key
+        }

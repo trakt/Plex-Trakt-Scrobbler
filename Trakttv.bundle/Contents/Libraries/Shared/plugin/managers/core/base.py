@@ -2,43 +2,40 @@ from plugin.core.helpers.variable import to_tuple
 from plugin.models import db
 
 import apsw
+import inspect
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class Manager(object):
-    model = None
+class Method(object):
+    def __init__(self, manager, *args, **kwargs):
+        self.manager = manager
 
-    @classmethod
-    def get_or_create(cls, data, query, fetch=False, update=True, on_create=None):
-        query = to_tuple(query)
+    @property
+    def model(self):
+        return self.manager.model
 
-        name = cls.model.__name__
 
-        try:
-            obj = cls.create(**on_create)
-            fetch = True
-            update = True
-        except apsw.ConstraintError:
-            obj = cls.get(*query)
+class Get(Method):
+    def __call__(self, *query):
+        return self.model.get(*query)
 
-        if update:
-            cls.update(obj, cls.to_dict(obj, data, fetch=fetch))
+    def or_create(self, *query, **kwargs):
+        pass
 
-        return obj
 
-    @classmethod
-    def create(cls, **kwargs):
+class Create(Method):
+    def __call__(self, **kwargs):
+        if not self.model:
+            raise Exception('Manager %r has no "model" attribute defined' % self.manager)
+
         with db.transaction():
-            return cls.model.create(**kwargs)
+            return self.model.create(**kwargs)
 
-    @classmethod
-    def get(cls, *query):
-        return cls.model.get(*query)
 
-    @classmethod
-    def update(cls, obj, data):
+class Update(Method):
+    def __call__(self, obj, data):
         changed = False
 
         for key, value in data.items():
@@ -57,6 +54,32 @@ class Manager(object):
 
         return False
 
-    @classmethod
-    def to_dict(cls, obj, data, fetch=False):
-        raise NotImplementedError()
+
+class ManagerMeta(type):
+    def __init__(cls, name, bases, attributes):
+        super(ManagerMeta, cls).__init__(name, bases, attributes)
+
+        if '__metaclass__' in attributes:
+            return
+
+        # Construct manager methods
+        for key in ['get', 'create', 'update']:
+            value = getattr(cls, key)
+
+            if not value or not inspect.isclass(value):
+                continue
+
+            log.debug('Constructing manager method %r for %r', value, cls)
+
+            # Construct method
+            setattr(cls, key, value(cls))
+
+
+class Manager(object):
+    __metaclass__ = ManagerMeta
+
+    create = Create
+    get = Get
+    update = Update
+
+    model = None
