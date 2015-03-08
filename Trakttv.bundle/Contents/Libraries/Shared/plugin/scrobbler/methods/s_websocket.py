@@ -1,5 +1,5 @@
 from plugin.core.helpers.variable import to_integer
-from plugin.managers import ActionManager, SessionManager
+from plugin.managers import ActionManager, WSessionManager
 from plugin.scrobbler.core.engine import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 
@@ -18,7 +18,7 @@ class WebSocket(Base):
 
     def on_playing(self, info):
         # Create or retrieve existing session
-        session = SessionManager.get.or_create(info, fetch=True)
+        session = WSessionManager.get.or_create(info, fetch=True)
 
         actions = self.engine.process(session, self.to_events(info))
 
@@ -30,7 +30,7 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        SessionManager.update(session, info)
+        WSessionManager.update(session, info)
 
     @staticmethod
     def to_events(info):

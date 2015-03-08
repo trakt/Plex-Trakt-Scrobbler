@@ -1,7 +1,7 @@
 import logging
 
 from plugin.scrobbler.methods.core.base import Base
-from plugin.managers.session import SessionManager
+from plugin.managers.session import WSessionManager
 from plex_activity import Activity
 
 
@@ -15,4 +15,4 @@ class Logging(Base):
     def on_playing(self, info):
         log.debug('on_playing(%r)', info)
 
-        session = SessionManager.from_logging(info)
+        session = WSessionManager.from_logging(info)

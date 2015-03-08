@@ -13,11 +13,11 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SessionGet(Get):
+class GetWSession(Get):
     def __call__(self, info):
         session_key = to_integer(info.get('sessionKey'))
 
-        return super(SessionGet, self).__call__(
+        return super(GetWSession, self).__call__(
             Session.session_key == session_key
         )
 
@@ -42,18 +42,15 @@ class SessionGet(Get):
             return self(info)
 
 
-class SessionUpdate(Update):
+class UpdateWSession(Update):
     def __call__(self, obj, info, fetch=False):
         data = self.to_dict(obj, info, fetch)
 
-        log.debug('SessionUpdate(%r, %r, %r)', obj, info, fetch)
-
-        return super(SessionUpdate, self).__call__(
+        return super(UpdateWSession, self).__call__(
             obj, data
         )
 
     def to_dict(self, obj, info, fetch=False):
-        log.debug('SessionUpdate.to_dict - session: %r, info: %r, fetch: %r', obj, info, fetch)
         view_offset = to_integer(info.get('viewOffset'))
 
         result = {
@@ -126,8 +123,8 @@ class SessionUpdate(Update):
         return round((float(view_offset) / duration) * 100, 2)
 
 
-class SessionManager(Manager):
-    get = SessionGet
-    update = SessionUpdate
+class WSessionManager(Manager):
+    get = GetWSession
+    update = UpdateWSession
 
     model = Session
