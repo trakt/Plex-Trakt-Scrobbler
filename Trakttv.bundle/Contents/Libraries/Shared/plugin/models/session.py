@@ -15,7 +15,7 @@ class Session(Model):
     user = ForeignKeyField(User, 'sessions', to_field='id', null=True)
 
     rating_key = IntegerField(null=True)
-    session_key = IntegerField(null=True, unique=True)
+    session_key = TextField(null=True, unique=True)
 
     state = CharField(null=True)
 
