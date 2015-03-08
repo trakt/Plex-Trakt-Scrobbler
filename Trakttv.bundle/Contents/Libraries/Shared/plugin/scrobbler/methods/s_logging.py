@@ -1,4 +1,5 @@
 from plugin.core.helpers.variable import to_integer
+from plugin.managers import ActionManager
 from plugin.scrobbler.core import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 from plugin.managers.session import LSessionManager
@@ -19,13 +20,18 @@ class Logging(Base):
     def on_playing(self, info):
         # Create or retrieve existing session
         session = LSessionManager.get.or_create(info, fetch=True)
-        log.debug('session: %r', session)
 
-        events = self.to_events(info)
-        log.debug('events: %r', events)
+        actions = self.engine.process(session, self.to_events(info))
 
-        actions = self.engine.process(session, events)
-        log.debug('actions: %r', actions)
+        for action, payload in actions:
+            # Build request for the event
+            request = self.build_request(session, rating_key=payload.get('rating_key'))
+
+            # Queue request to be sent
+            ActionManager.queue('/'.join(['scrobble', action]), request, session)
+
+        # Update session
+        LSessionManager.update(session, info)
 
     @staticmethod
     def to_events(info):

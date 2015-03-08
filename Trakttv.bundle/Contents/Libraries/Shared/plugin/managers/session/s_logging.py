@@ -19,7 +19,7 @@ class GetLSession(Get):
             return None
 
         return super(GetLSession, self).__call__(
-            Session.session_key == 'l-%s' % machine_identifier
+            Session.session_key == machine_identifier
         )
 
     def or_create(self, info, fetch=False):
@@ -32,7 +32,7 @@ class GetLSession(Get):
             # Create new session
             obj = self.manager.create(
                 rating_key=to_integer(info.get('ratingKey')),
-                session_key='l-%s' % machine_identifier,
+                session_key=machine_identifier,
 
                 state='create'
             )
