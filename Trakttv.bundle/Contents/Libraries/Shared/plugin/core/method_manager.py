@@ -4,30 +4,39 @@ log = logging.getLogger(__name__)
 
 
 class MethodManager(object):
-    def __init__(self, methods):
+    def __init__(self, methods, single=True):
         self.methods = [
-            (__name__, m) for m in methods
+            (m.__name__, m) for m in methods
         ]
+        self.single = single
 
-    def filter(self):
+    def filter(self, enabled):
         for name, method in self.methods:
+            if enabled is not None and name not in enabled:
+                log.debug('Method %r has been disabled', name)
+                continue
+
             if not hasattr(method, 'test'):
+                log.warn('Method %r is missing a test() method')
                 continue
 
             if not method.test():
-                log.info("method %r is not available" % name)
+                log.info("Method %r is not available" % name)
                 continue
 
             yield method
 
-    def start(self):
+    def start(self, enabled=None):
         started = []
 
-        for method in self.filter():
+        for method in self.filter(enabled):
             obj = method()
 
             # Store reference
             started.append(obj)
+
+            if self.single:
+                break
 
         log.info(
             'Started %s method(s): %s',
