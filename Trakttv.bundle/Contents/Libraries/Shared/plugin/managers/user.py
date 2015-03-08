@@ -10,15 +10,19 @@ log = logging.getLogger(__name__)
 
 class GetUser(Get):
     def __call__(self, user):
+        user = self.manager.parse_user(user)
+
         return super(GetUser, self).__call__(
-            User.id == to_integer(user.id)
+            User.id == to_integer(user['id'])
         )
 
     def or_create(self, user, fetch=False):
+        user = self.manager.parse_user(user)
+
         try:
             # Create new user
             obj = self.manager.create(
-                id=to_integer(user.id)
+                id=to_integer(user['id'])
             )
 
             # Update newly created object
@@ -32,6 +36,7 @@ class GetUser(Get):
 
 class UpdateUser(Update):
     def __call__(self, obj, user, fetch=False):
+        user = self.manager.parse_user(user)
         data = self.to_dict(obj, user, fetch)
 
         return super(UpdateUser, self).__call__(
@@ -39,10 +44,14 @@ class UpdateUser(Update):
         )
 
     def to_dict(self, obj, user, fetch=False):
-        result = {
-            'name': user.title,
-            'thumb': user.thumb
-        }
+        result = {}
+
+        # Fill `result` with available fields
+        if user.get('title'):
+            result['name'] = user['title']
+
+        if user.get('thumb'):
+            result['thumb'] = user['thumb']
 
         if not fetch:
             # Return simple update
@@ -50,7 +59,7 @@ class UpdateUser(Update):
 
         # Find matching `UserRule`
         query = UserRule.select().where((
-            (UserRule.name == user.title) | (UserRule.name == None)
+            (UserRule.name == user['title']) | (UserRule.name == None)
         ))
 
         rules = list(query.execute())
@@ -68,3 +77,15 @@ class UserManager(Manager):
     update = UpdateUser
 
     model = User
+
+    @classmethod
+    def parse_user(cls, user):
+        if type(user) is dict:
+            return user
+
+        # Build user dict from object
+        return {
+            'id': user.id,
+            'title': user.title,
+            'thumb': user.thumb
+        }
