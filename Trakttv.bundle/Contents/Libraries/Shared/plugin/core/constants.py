@@ -12,6 +12,6 @@ PLUGIN_VERSION = ''.join([
 
 ACTIVITY_MODE = {
     'Automatic':            None,
-    'Logging (Legacy)':     ['LoggingActivity', 'LoggingScrobbler'],
-    'WebSocket (PlexPass)': ['WebSocketActivity', 'WebSocketScrobbler']
+    'Logging (Legacy)':     ['Logging'],
+    'WebSocket (PlexPass)': ['WebSocket']
 }
