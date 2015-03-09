@@ -12,12 +12,18 @@ class GetUser(Get):
     def __call__(self, user):
         user = self.manager.parse_user(user)
 
+        if not user:
+            return None
+
         return super(GetUser, self).__call__(
             User.id == to_integer(user['id'])
         )
 
     def or_create(self, user, fetch=False):
         user = self.manager.parse_user(user)
+
+        if not user:
+            return None
 
         try:
             # Create new user
@@ -37,6 +43,10 @@ class GetUser(Get):
 class UpdateUser(Update):
     def __call__(self, obj, user, fetch=False):
         user = self.manager.parse_user(user)
+
+        if not user:
+            return None
+
         data = self.to_dict(obj, user, fetch)
 
         return super(UpdateUser, self).__call__(
@@ -80,12 +90,16 @@ class UserManager(Manager):
 
     @classmethod
     def parse_user(cls, user):
-        if type(user) is dict:
-            return user
+        if type(user) is not dict:
+            # Build user dict from object
+            user = {
+                'id': user.id,
+                'title': user.title,
+                'thumb': user.thumb
+            }
 
-        # Build user dict from object
-        return {
-            'id': user.id,
-            'title': user.title,
-            'thumb': user.thumb
-        }
+        # Validate `user`
+        if not user.get('id'):
+            return None
+
+        return user

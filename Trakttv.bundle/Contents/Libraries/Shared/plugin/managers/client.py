@@ -63,31 +63,33 @@ class UpdateClient(Update):
         # Fetch client details
         client = Plex.clients().get(player['machine_identifier'])
 
-        if not client:
-            log.warn('Unable to find client with machine_identifier %r', player['machine_identifier'])
-            return result
+        if client:
+            # Merge client details from plex API
+            result = merge(result, dict([
+                (key, getattr(client, key)) for key in [
+                    'device_class',
+                    'product',
+                    'version',
 
-        result = merge(result, dict([
-            (key, getattr(client, key)) for key in [
-                'device_class',
-                'product',
-                'version',
+                    'host',
+                    'address',
+                    'port',
 
-                'host',
-                'address',
-                'port',
-
-                'protocol',
-                'protocol_capabilities',
-                'protocol_version'
-            ] if getattr(client, key)
-        ]))
+                    'protocol',
+                    'protocol_capabilities',
+                    'protocol_version'
+                ] if getattr(client, key)
+            ]))
+        else:
+            log.info('Unable to find client with machine_identifier %r', player['machine_identifier'])
 
         # Find matching `ClientRule`
+        address = client['address'] if client else None
+
         query = ClientRule.select().where((
             (ClientRule.machine_identifier == player['machine_identifier']) | (ClientRule.machine_identifier == None) &
             (ClientRule.name == player['title']) | (ClientRule.name == None) &
-            (ClientRule.address == client['address']) | (ClientRule.address == None)
+            (ClientRule.address == address) | (ClientRule.address == None)
         ))
 
         rules = list(query.execute())
