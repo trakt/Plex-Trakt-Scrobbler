@@ -1,10 +1,10 @@
 from plugin.core.helpers.variable import to_integer, merge
-from plugin.managers.core.base import Manager, Get, Update
+from plugin.managers.core.base import Manager, Get
 from plugin.managers.client import ClientManager
+from plugin.managers.session.base import UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
 
-from plex_metadata import Metadata, Guid
 import apsw
 import logging
 
@@ -46,7 +46,7 @@ class GetLSession(Get):
             return self(info)
 
 
-class UpdateLSession(Update):
+class UpdateLSession(UpdateSession):
     def __call__(self, obj, info, fetch=False):
         data = self.to_dict(obj, info, fetch)
 
@@ -94,37 +94,6 @@ class UpdateLSession(Update):
             'duration': p_metadata.duration,
             'progress': self.get_progress(p_metadata.duration, view_offset)
         })
-
-    @staticmethod
-    def get_account(client, user):
-        if client and client.account_id:
-            return client.account_id
-
-        if user and user.account_id:
-            return user.account_id
-
-        return None
-
-    @staticmethod
-    def get_metadata(rating_key):
-        # Retrieve metadata for `rating_key`
-        try:
-            metadata = Metadata.get(rating_key)
-        except NotImplementedError, e:
-            log.debug('%r, ignoring session', e.message)
-            return None, None
-
-        # Parse guid
-        guid = Guid.parse(metadata.guid)
-
-        return metadata, guid
-
-    @staticmethod
-    def get_progress(duration, view_offset):
-        if duration is None:
-            return None
-
-        return round((float(view_offset) / duration) * 100, 2)
 
 
 class LSessionManager(Manager):
