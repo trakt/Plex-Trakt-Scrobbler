@@ -20,7 +20,14 @@ class WebSocket(Base):
         # Create or retrieve existing session
         session = WSessionManager.get.or_create(info, fetch=True)
 
-        actions = self.engine.process(session, self.to_events(info))
+        # Parse `info` to events
+        events = self.to_events(session, info)
+
+        if not events:
+            return
+
+        # Parse `events`
+        actions = self.engine.process(session, events)
 
         for action, payload in actions:
             # Build request for the event
@@ -32,14 +39,20 @@ class WebSocket(Base):
         # Update session
         WSessionManager.update(session, info)
 
-    @staticmethod
-    def to_events(info):
+    @classmethod
+    def to_events(cls, session, info):
+        # Validate `state`
         state = info.get('state')
 
         if not state:
             log.warn('Event has an invalid state %r', state)
             return []
 
+        # Check for session `view_offset` jump
+        if cls.session_jumped(session, info.get('viewOffset')):
+            return []
+
+        # Build event
         return [
             (state, {
                 'rating_key': to_integer(info.get('ratingKey'))

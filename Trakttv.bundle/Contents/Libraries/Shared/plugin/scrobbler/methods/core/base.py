@@ -4,6 +4,9 @@ from plugin.core.identifier import Identifier
 from plex.objects.library.metadata.episode import Episode
 from plex.objects.library.metadata.movie import Movie
 from plex_metadata import Metadata, Guid
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Base(object):
@@ -65,3 +68,16 @@ class Base(object):
                 'ids': ids
             }
         }
+
+    @staticmethod
+    def session_jumped(session, view_offset):
+        view_delta = view_offset - session.view_offset
+
+        jump_offset = session.duration - session.view_offset - view_delta
+        jump_perc = float(view_delta) / session.duration
+
+        if jump_perc >= 0.98 and jump_offset < 1000:
+            log.info('Session jumped: %r -> %r (delta: %r, jump_offset: %r, jump_perc: %r)', session.view_offset, view_offset, view_delta, jump_offset, jump_perc)
+            return True
+
+        return False
