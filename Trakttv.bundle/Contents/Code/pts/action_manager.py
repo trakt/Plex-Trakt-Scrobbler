@@ -200,17 +200,20 @@ class ActionManager(object):
 
         performed, response = func(**kwargs)
 
-        if response is None:
-            # Request failed, retry the request
-            queued = cls.queue(
-                item,
-                priority=priority - 1,
-                callback=callback
-            )
-
-            if queued:
-                # Request is being retried, don't fire callback yet
-                return
+        #
+        # NOTE: disabled request retrying to avoid duplicate scrobbles
+        #
+        # if response is None:
+        #     # Request failed, retry the request
+        #     queued = cls.queue(
+        #         item,
+        #         priority=priority - 1,
+        #         callback=callback
+        #     )
+        #
+        #     if queued:
+        #         # Request is being retried, don't fire callback yet
+        #         return
 
         # Store action in history
         if performed:
