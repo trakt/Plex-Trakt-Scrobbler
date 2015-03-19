@@ -11,7 +11,10 @@ log = logging.getLogger(__name__)
 
 class Matcher(object):
     def __init__(self):
-        self.caper = self._construct_caper()
+        self._caper = self._construct_caper()
+        self._caper_enabled = True
+
+        self._extend_enabled = True
 
     def _construct_caper(self):
         # Caper (optional import)
@@ -26,6 +29,30 @@ class Matcher(object):
     def cache(self):
         return Plex.configuration.get('cache.matcher')
 
+    def set_caper(self, enabled):
+        if self._caper_enabled == enabled:
+            # state hasn't changed
+            return
+
+        # state changed
+        if enabled:
+            self._caper = self._construct_caper()
+        else:
+            self._caper = None
+
+        self._caper_enabled = enabled
+
+        log.info('"caper" feature has been %s', 'enabled' if enabled else 'disabled')
+
+    def set_extend(self, enabled):
+        if self._extend_enabled == enabled:
+            # state hasn't changed
+            return
+
+        self._extend_enabled = enabled
+
+        log.info('"extend" feature has been %s', 'enabled' if enabled else 'disabled')
+
     def parse(self, file_name):
         identifier = None
 
@@ -36,9 +63,9 @@ class Matcher(object):
             identifier = self.cache.get(file_hash)
 
         # Parse new file_name
-        if identifier is None and self.caper:
+        if identifier is None and self._caper:
             # Parse file_name with Caper
-            result = self.caper.parse(file_name)
+            result = self._caper.parse(file_name)
 
             if not result:
                 return None
@@ -82,7 +109,7 @@ class Matcher(object):
         # Find new episodes from identifiers
         c_episodes = [p_episode]
 
-        if episode.media and episode.media.parts:
+        if episode.media and episode.media.parts and self._extend_enabled:
             # Add extended episodes
             c_episodes.extend(self.extend_episode(episode.media.parts, (p_season, p_episode)))
 
@@ -93,7 +120,6 @@ class Matcher(object):
 
         return p_season, c_episodes
 
-    # TODO matcher preference
     def extend_episode(self, parts, p_identifier):
         if not parts:
             return []

@@ -38,7 +38,7 @@ from sync.sync_manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
-from plex_metadata import Metadata
+from plex_metadata import Metadata, Matcher
 from trakt import Trakt, ClientError
 import hashlib
 import logging
@@ -151,6 +151,10 @@ class Main(object):
         # Ensure preferences dictionary is stored
         Dict['preferences'] = preferences
         Dict.Save()
+
+        # Update plex.metadata.py `Matcher` preferences
+        Matcher.set_caper(preferences['matcher'] == 'plex_extended')
+        Matcher.set_extend(preferences['matcher'] == 'plex_extended')
 
         log.info('Preferences updated %s', preferences)
         # TODO EventManager.fire('preferences.updated', preferences)
