@@ -222,9 +222,13 @@ class ScrobblerMethod(Method):
 
             cur_episode = int(math.floor(len(episodes) * total_progress))
 
+            if cur_episode >= len(episodes):
+                # Limit `cur_episode` to `episodes`
+                cur_episode = len(episodes) - 1
+
             # If episode has changed, reset the state to start new session
             if cur_episode != ws.cur_episode and ws.cur_episode is not None:
-                log.info('Session has changed episodes, state has been reset')
+                log.info('Session has changed episodes (%s -> %s), state has been reset', ws.cur_episode, cur_episode)
                 ws.reset()
 
             ws.cur_episode = cur_episode
