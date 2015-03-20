@@ -208,13 +208,13 @@ class WatchSession(Model):
 
         log.debug('process_actions() thread - finished')
 
-    def on_action_response(self, response, priority, item):
+    def on_action_response(self, performed, priority, item):
         # Get request details
         kwargs = item.get('kwargs', {})
         action = kwargs.get('action')
 
         # Check if response failed
-        if not response:
+        if not performed:
             log.warn('Unable to send "%s" action', action)
 
             # Request failed, release the lock
@@ -222,8 +222,6 @@ class WatchSession(Model):
             return
 
         # Get response details
-        performed = response.get('action')
-
         log.debug('Performed "%s" action on trakt.tv', performed)
         self.actions_performed.append(performed)
 
