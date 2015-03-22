@@ -1,9 +1,12 @@
 from trakt.interfaces.base import Interface
 
 from trakt.interfaces.auth import *
+from trakt.interfaces.movies import *
 from trakt.interfaces.oauth import *
 from trakt.interfaces.scrobble import *
+from trakt.interfaces.shows import *
 from trakt.interfaces.sync import *
+from trakt.interfaces.users import *
 
 INTERFACES = [
     # /
@@ -16,9 +19,20 @@ INTERFACES = [
     SyncInterface,
     SyncCollectionInterface,
     SyncHistoryInterface,
+    SyncPlaybackInterface,
     SyncRatingsInterface,
     SyncWatchedInterface,
-    SyncWatchlistInterface
+    SyncWatchlistInterface,
+
+    # /shows/
+    ShowsInterface,
+
+    # /movies/
+    MoviesInterface,
+
+    # /users/
+    UsersInterface,
+    UsersSettingsInterface
 ]
 
 
