@@ -1,4 +1,4 @@
-# Plex Trakt Scrobbler
+# trakt (for Plex)
 
 [![](https://badge.waffle.io/trakt/Plex-Trakt-Scrobbler.png?label=Ready)](http://waffle.io/trakt/Plex-Trakt-Scrobbler)
 
@@ -9,7 +9,7 @@ The default setup will scrobble all media playing from your server to your trakt
 
 ### Unsupported Appstore  
 
-The latest stable version of the plugin is available from the [Unsupported Appstore](http://forums.plexapp.com/index.php/topic/25523-unsupported-appstore/)
+The latest stable version of the plugin is available from the [Unsupported Appstore](https://forums.plex.tv/index.php/topic/151068-)
 
 ### Manual
 
@@ -39,7 +39,5 @@ The latest stable version of the plugin is available from the [Unsupported Appst
 The plugin is still work in progress so there may be bugs.
 
 **Please report all bugs to the issue tracker on this repository [here](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) (please try searching first)** 
-
-Support is also available via IRC at [#trakt-plex](irc://chat.freenode.net/trakt-plex) (on [freenode](http://freenode.net/)).
 
 Code contributions are also welcome. Submit pull requests via GitHub and they will be reviewed and merged in.

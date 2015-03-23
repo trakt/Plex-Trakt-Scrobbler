@@ -3,6 +3,8 @@ from trakt.core.exceptions import RequestError, ClientError, ServerError
 from trakt.client import TraktClient, __version__
 from trakt.helpers import has_attribute
 
+from six import add_metaclass
+
 
 __all__ = [
     'Trakt',
@@ -39,9 +41,8 @@ class TraktMeta(type):
         return self.client[key]
 
 
+@add_metaclass(TraktMeta)
 class Trakt(object):
-    __metaclass__ = TraktMeta
-
     client = None
 
     @classmethod

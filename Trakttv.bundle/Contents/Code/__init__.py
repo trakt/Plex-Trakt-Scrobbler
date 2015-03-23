@@ -39,9 +39,8 @@ from sync.sync_manager import SyncManager
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
+from requests.packages.urllib3.util import Retry
 from trakt import Trakt, ClientError
-import hashlib
-import logging
 import os
 
 
@@ -135,6 +134,10 @@ class Main(object):
             name='trakt (for Plex)',
             version=PLUGIN_VERSION
         )
+
+        # Setup request retrying
+        Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
+        Trakt.http.rebuild()
 
     @classmethod
     def update_config(cls, valid=None):
