@@ -174,6 +174,35 @@ class ActionManager(object):
         cls.history[key] = history
 
     @classmethod
+    def guess_performed(cls, item):
+        # Retrieve request details
+        kwargs = item.get('kwargs', {})
+
+        action = kwargs.get('action')
+        request = kwargs.get('request')
+
+        if not action or not request:
+            log.warn('Missing "action" or "request" parameter in request')
+            return None
+
+        if action in ['add', 'remove', 'start', 'pause']:
+            return action
+
+        if action == 'stop':
+            progress = request.get('progress')
+
+            if progress is None:
+                log.warn('Missing "progress" parameter in request')
+                return None
+
+            if progress < 80:
+                return 'pause'
+            else:
+                return 'scrobble'
+
+        return None
+
+    @classmethod
     def send(cls, priority, item, callback):
         type = item.get('type', None)
 
@@ -215,6 +244,15 @@ class ActionManager(object):
         #         # Request is being retried, don't fire callback yet
         #         return
 
+        # Guess `performed` action if there was a error
+        if not performed:
+            performed = cls.guess_performed(item)
+
+            if performed:
+                log.debug('[%s] Request returned an error, assuming action performed was %r', item['key'], performed)
+            else:
+                log.debug('[%s] Request returned an error, unable to guess performed action', item['key'])
+
         # Store action in history
         if performed:
             log.debug('[%s] Action sent (performed: %r, response: %r)', item['key'], performed, response)
@@ -226,7 +264,7 @@ class ActionManager(object):
             return True
 
         try:
-            callback(response, priority, item)
+            callback(performed, priority, item)
         except Exception, ex:
             log.warn('Exception raised in action callback: %s', ex, exc_info=True)
 

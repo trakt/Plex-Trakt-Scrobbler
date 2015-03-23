@@ -9,9 +9,11 @@ log = logging.getLogger(__name__)
 class Packer(object):
     agent_codes = {
         'tvdb'    : 1,
-        'imdb'       : 2,
-        'tvrage'     : 3,
-        'tmdb' : 4
+        'imdb'    : 2,
+        'tvrage'  : 3,
+        'tmdb'    : 4,
+        'trakt'   : 5,
+        'slug'    : 6
     }
 
     @classmethod
