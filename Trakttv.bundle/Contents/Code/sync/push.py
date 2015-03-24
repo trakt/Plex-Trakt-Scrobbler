@@ -175,7 +175,7 @@ class Base(SyncBase):
         # Print "not_found" items (if any)
         not_found = response.get('not_found', {})
 
-        for media, items in not_found.items():
+        for media, items in not_found.iteritems():
             if media in ['seasons', 'episodes']:
                 # Print missing seasons
                 for show in items:
@@ -241,7 +241,7 @@ class Episode(Base):
 
         enabled_funcs = self.get_enabled_functions()
 
-        for key, p_episode in p_episodes.items():
+        for key, p_episode in p_episodes.iteritems():
             t_episode = t_episodes.get(key)
 
             # TODO check result
@@ -270,7 +270,7 @@ class Season(Base):
         if p_seasons is None:
             return False
 
-        for key, p_season in p_seasons.items():
+        for key, p_season in p_seasons.iteritems():
             t_season = t_seasons.get(key)
 
             self.child('episode').run(
@@ -315,7 +315,7 @@ class Show(Base):
 
         self.emit('started', len(p_shows))
 
-        for x, (key, p_shows) in enumerate(p_shows.items()):
+        for x, (key, p_shows) in enumerate(p_shows.iteritems()):
             self.check_stopping()
             self.emit('progress', x + 1)
 
@@ -370,7 +370,7 @@ class Show(Base):
                 continue
 
             # Merge show artifacts
-            for k, v in show_artifacts.items():
+            for k, v in show_artifacts.iteritems():
                 result = []
 
                 for seasons in v:
@@ -402,7 +402,7 @@ class Show(Base):
 
         self.remove('sync/collection', shows=self.retrieve('missing.shows'))
 
-        self.save('last_artifacts', json_encode(self.artifacts.store))
+        self.save('last_artifacts', self.artifacts.store)
 
         log.info('Finished pushing shows to trakt')
         return True
@@ -477,7 +477,7 @@ class Movie(Base):
 
         self.emit('started', len(p_movies))
 
-        for x, (key, p_movie) in enumerate(p_movies.items()):
+        for x, (key, p_movie) in enumerate(p_movies.iteritems()):
             self.check_stopping()
             self.emit('progress', x + 1)
 
@@ -500,7 +500,7 @@ class Movie(Base):
 
         self.remove('sync/collection', movies=self.retrieve('missing.movies'))
 
-        self.save('last_artifacts', json_encode(self.artifacts.store))
+        self.save('last_artifacts', self.artifacts.store)
 
         log.info('Finished pushing movies to trakt')
         return True

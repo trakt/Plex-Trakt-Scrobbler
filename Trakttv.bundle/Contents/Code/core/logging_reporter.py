@@ -9,7 +9,7 @@ import platform
 version = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 
 params = {
-    'dsn': 'requests+http://a0ab8d1f30f44fa996f7fd19df7a62a0:4b843dcc68fe48fcbbe8875b36fb3bc0@sentry.skipthe.net/1',
+    'dsn': 'requests+http://fb5eb8b4e2b84799b988a0de6a7632fb:f45411a82b8941b0b930d8ff8a59dc95@sentry.skipthe.net/1',
 
     'exclude_paths': [
         'com.plexapp.plugins.trakttv'

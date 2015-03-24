@@ -3,7 +3,9 @@ from core.helpers import all, merge, get_filter, get_pref, total_seconds
 from core.logger import Logger
 from core.task import Task, CancelException
 from plugin.core.collections import SynchronizedDictionary
+from plugin.core.environment import Environment
 from plugin.core.event import Global as EG
+from plugin.core.jsonw import ArtifactEncoder, ArtifactTransformer, json_write
 from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
@@ -11,6 +13,7 @@ from plex import Plex
 from plex_metadata import Library
 from pyemitter import Emitter
 from trakt import Trakt
+import os
 
 
 log = Logger('sync.sync_base')
@@ -370,9 +373,25 @@ class SyncBase(Base, Emitter):
         if source:
             name += '.%s' % source
 
+        # Build `directory`
+        directory = os.path.join(Environment.path.plugin_data, 'Artifacts')
+
+        # Ensure `directory` exists
         try:
-            log.debug('Saving artifacts to "%s.json"', name)
-            Data.Save(name + '.json', repr(data))
+            os.makedirs(directory)
+        except Exception, ex:
+            # Directory already exists
+            pass
+
+        # Build `path`
+        path = os.path.join(directory, '%s.json' % name)
+
+        try:
+            log.debug('Saving artifacts to %r', path)
+
+            # Dump `data` to file as JSON
+            json_write(path, ArtifactTransformer(data), cls=ArtifactEncoder)
+
         except MemoryError, ex:
             log.error('Unable to save artifacts: %s', ex, exc_info=True)
         except OSError, ex:

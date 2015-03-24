@@ -42,7 +42,8 @@ from sync.sync_manager import SyncManager
 
 from plex import Plex
 from plex_activity import Activity
-from plex_metadata import Metadata
+from plex_metadata import Metadata, Matcher
+from requests.packages.urllib3.util import Retry
 from trakt import Trakt, ClientError
 import os
 
@@ -133,6 +134,10 @@ class Main(object):
             version=PLUGIN_VERSION
         )
 
+        # Setup request retrying
+        Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
+        Trakt.http.rebuild()
+
     @classmethod
     def update_config(cls, valid=None):
         preferences = Dict['preferences'] or {}
@@ -148,6 +153,10 @@ class Main(object):
         # Ensure preferences dictionary is stored
         Dict['preferences'] = preferences
         Dict.Save()
+
+        # Update plex.metadata.py `Matcher` preferences
+        Matcher.set_caper(preferences['matcher'] == 'plex_extended')
+        Matcher.set_extend(preferences['matcher'] == 'plex_extended')
 
         log.info('Preferences updated %s', preferences)
         # TODO EventManager.fire('preferences.updated', preferences)

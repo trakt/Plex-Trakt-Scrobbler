@@ -157,6 +157,7 @@ class Clean(Migration):
                 'Shared/trakt/interfaces/account.py',
                 'Shared/trakt/interfaces/rate.py',
                 'Shared/trakt/interfaces/sync/base.py',
+                'Shared/trakt/media_mapper.py',
                 'Shared/trakt/request.py'
             ], os.path.isfile
         ),

@@ -20,7 +20,9 @@ class LibraryInterface(Interface):
                 'Video': {
                     'episode':  'Episode',
                     'movie':    'Movie'
-                }
+                },
+
+                'Track': 'Track'
             }))
         }))
 
