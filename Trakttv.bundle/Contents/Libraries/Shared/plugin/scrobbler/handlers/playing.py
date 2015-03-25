@@ -12,6 +12,9 @@ class PlayingHandler(SessionHandler):
     def process(cls, session, payload):
         if cls.has_media_changed(session, payload):
             yield 'stop', session.payload
+        elif cls.has_finished(session, payload):
+            yield 'stop', payload
+            return
         elif session.state == 'start':
             # Duplicate action, just update the current data
             yield None, payload

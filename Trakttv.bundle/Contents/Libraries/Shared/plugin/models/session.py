@@ -31,5 +31,6 @@ class Session(Model):
     @property
     def payload(self):
         return {
-            'rating_key': self.rating_key
+            'rating_key': self.rating_key,
+            'view_offset': self.view_offset
         }

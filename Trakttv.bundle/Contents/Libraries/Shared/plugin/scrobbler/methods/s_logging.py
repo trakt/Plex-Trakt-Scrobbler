@@ -56,7 +56,8 @@ class Logging(Base):
         # Build event
         return [
             (state, {
-                'rating_key': to_integer(info.get('ratingKey'))
+                'rating_key': to_integer(info.get('ratingKey')),
+                'view_offset': to_integer(info.get('viewOffset'))
             })
         ]
 

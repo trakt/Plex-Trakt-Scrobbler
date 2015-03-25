@@ -11,6 +11,17 @@ class Handler(object):
 
 class SessionHandler(Handler):
     @staticmethod
+    def has_finished(session, payload):
+        if not session or not session.duration:
+            return False
+
+        # Calculate session progress
+        progress = float(payload.get('view_offset')) / session.duration
+
+        # Session is finished when `progress` reaches at least 100%
+        return progress >= 1.0
+
+    @staticmethod
     def has_media_changed(session, payload):
         if not session or not session.rating_key:
             return False
