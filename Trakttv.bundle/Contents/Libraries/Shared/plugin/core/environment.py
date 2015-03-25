@@ -9,6 +9,8 @@ class PathEnvironment(object):
     def __init__(self, core):
         self._core = core
 
+        self._plugin_support = None
+
     @property
     def code(self):
         return self._core.code_path
@@ -27,9 +29,16 @@ class PathEnvironment(object):
 
     @property
     def plugin_support(self):
+        if self._plugin_support is not None:
+            return self._plugin_support
+
         base_path = self.code[:self.code.index(os.path.sep + 'Plug-ins')]
 
         return os.path.join(base_path, 'Plug-in Support')
+
+    @plugin_support.setter
+    def plugin_support(self, path):
+        self._plugin_support = path
 
 
 class Environment(object):
