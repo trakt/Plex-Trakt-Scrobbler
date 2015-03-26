@@ -51,6 +51,15 @@ def Start():
     m.start()
 
 
+@expose
+def Api(*args, **kwargs):
+    try:
+        return ApiManager.process(*args, **kwargs)
+    except Exception, ex:
+        Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
+        return None
+
+
 def ValidatePrefs():
     last_activity_mode = get_pref('activity_mode')
 
