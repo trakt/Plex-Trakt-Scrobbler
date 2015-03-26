@@ -43,6 +43,11 @@ def module_start():
     plugin_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     log.debug('plugin_dir: %r', plugin_dir)
 
+    import_modules(os.path.join(plugin_dir, 'api'), exclude=[
+        '__init__.py',
+        'core'
+    ])
+
     import_modules(os.path.join(plugin_dir, 'managers'), exclude=[
         '__init__.py',
         'core'

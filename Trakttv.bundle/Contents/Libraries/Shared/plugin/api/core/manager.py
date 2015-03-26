@@ -26,10 +26,22 @@ class ApiManager(object):
             return cls.build_error('unknown.method', 'Unable to find method: %r' % k_method)
 
         try:
-            return func(*args, **kwargs)
+            return cls.build_response(func(*args, **kwargs))
         except Exception, ex:
             log.error('Exception raised while handling request %r: %s', key, ex, exc_info=True)
             return cls.build_error('exception', 'Exception raised while handling the request')
+
+    @classmethod
+    def register(cls, service):
+        key = service.__key__
+
+        if not key:
+            log.warn('Service %r has an invalid "__key__" attribute', service)
+            return
+
+        cls.services[key] = service
+
+        log.debug('Registered service: %r (%r)', key, service)
 
     @classmethod
     def build_error(cls, code, message=None):
@@ -43,3 +55,9 @@ class ApiManager(object):
             result['error']['message'] = message
 
         return result
+
+    @classmethod
+    def build_response(cls, result):
+        return {
+            'result': result
+        }
