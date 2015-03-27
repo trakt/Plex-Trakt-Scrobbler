@@ -12,6 +12,7 @@ class PlayingHandler(SessionHandler):
     def process(cls, session, payload):
         if cls.has_media_changed(session, payload):
             yield 'stop', session.payload
+            return
         elif cls.has_finished(session, payload):
             yield 'stop', payload
             return

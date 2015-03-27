@@ -1,4 +1,4 @@
-from plugin.core.helpers.variable import to_integer, merge
+from plugin.core.helpers.variable import to_integer, merge, resolve
 from plugin.managers.core.base import Get, Manager
 from plugin.managers.client import ClientManager
 from plugin.managers.session.base import UpdateSession
@@ -51,9 +51,12 @@ class UpdateWSession(UpdateSession):
         )
 
     def to_dict(self, obj, info, fetch=False):
+        fetch = resolve(fetch, obj, info)
+
         view_offset = to_integer(info.get('viewOffset'))
 
         result = {
+            'rating_key': to_integer(info.get('ratingKey')),
             'view_offset': view_offset
         }
 
@@ -65,6 +68,8 @@ class UpdateWSession(UpdateSession):
 
         # Retrieve session
         session_key = to_integer(info.get('sessionKey'))
+
+        log.debug('Fetching details for session #%s', session_key)
 
         p_item = Plex['status'].sessions().get(session_key)
 

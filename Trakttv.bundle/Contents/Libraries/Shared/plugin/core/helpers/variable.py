@@ -3,6 +3,13 @@ def merge(a, b):
     return a
 
 
+def resolve(value, *args, **kwargs):
+    if hasattr(value, '__call__'):
+        return value(*args, **kwargs)
+
+    return value
+
+
 def to_integer(value):
     if value is None:
         return None

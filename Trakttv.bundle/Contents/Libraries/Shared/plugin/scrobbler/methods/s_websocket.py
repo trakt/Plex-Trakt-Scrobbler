@@ -37,7 +37,7 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        WSessionManager.update(session, info)
+        WSessionManager.update(session, info, fetch=lambda s, i: s.rating_key != to_integer(i.get('ratingKey')))
 
     @classmethod
     def to_events(cls, session, info):
