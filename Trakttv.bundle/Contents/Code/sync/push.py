@@ -146,7 +146,8 @@ class Base(SyncBase):
             # Empty request
             return
 
-        response = Trakt[path].add(kwargs, exceptions=True)
+        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+            response = Trakt[path].add(kwargs, exceptions=True)
 
         if not response:
             log.warn('[%s] Request failed', path)
@@ -161,7 +162,8 @@ class Base(SyncBase):
             # Empty request
             return
 
-        response = Trakt[path].remove(kwargs, exceptions=True)
+        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+            response = Trakt[path].remove(kwargs, exceptions=True)
 
         if not response:
             log.warn('[%s] Request failed', path)

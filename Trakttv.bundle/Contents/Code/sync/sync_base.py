@@ -82,26 +82,27 @@ class TraktInterface(Base):
             'exceptions': exceptions
         }
 
-        # Merge watched library
-        if watched and Trakt['sync/watched'].get(media, **params) is None:
-            log.warn('Unable to fetch watched items')
-            return None, None
-
-        # Merge ratings
-        if ratings:
-            if Trakt['sync/ratings'].get(media, **params) is None:
-                log.warn('Unable to fetch ratings')
+        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+            # Merge watched library
+            if watched and Trakt['sync/watched'].get(media, **params) is None:
+                log.warn('Unable to fetch watched items')
                 return None, None
 
-            # Fetch episode ratings (if we are fetching shows)
-            if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
-                log.warn('Unable to fetch episode ratings')
-                return None, None
+            # Merge ratings
+            if ratings:
+                if Trakt['sync/ratings'].get(media, **params) is None:
+                    log.warn('Unable to fetch ratings')
+                    return None, None
 
-        # Merge collected library
-        if collected and Trakt['sync/collection'].get(media, **params) is None:
-            log.warn('Unable to fetch collected items')
-            return None, None
+                # Fetch episode ratings (if we are fetching shows)
+                if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
+                    log.warn('Unable to fetch episode ratings')
+                    return None, None
+
+            # Merge collected library
+            if collected and Trakt['sync/collection'].get(media, **params) is None:
+                log.warn('Unable to fetch collected items')
+                return None, None
 
         # Generate item table with alternative keys
         table = items.copy()
