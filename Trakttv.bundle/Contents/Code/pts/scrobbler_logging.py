@@ -14,7 +14,7 @@ log = Logger('pts.scrobbler_logging')
 
 
 class LoggingScrobbler(ScrobblerMethod):
-    name = 'LoggingScrobbler'
+    name = 'logging'
 
     def __init__(self):
         super(LoggingScrobbler, self).__init__()

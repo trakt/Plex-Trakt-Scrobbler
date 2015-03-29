@@ -30,7 +30,7 @@ from core.helpers import spawn, get_pref, schedule, get_class_name, md5
 from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.modules.manager import ModuleManager
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
@@ -51,8 +51,6 @@ log = Logger()
 
 class Main(object):
     modules = [
-        Activity,
-
         # core
         UpdateChecker(),
 
@@ -276,6 +274,9 @@ class Main(object):
         log.info('Started %s modules: %s', len(names), ', '.join(names))
 
         ModuleManager.start()
+
+        # Start plex.activity.py
+        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
 
 
 def Start():
