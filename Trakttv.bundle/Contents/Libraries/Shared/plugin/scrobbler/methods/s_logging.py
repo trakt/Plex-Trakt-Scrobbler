@@ -12,6 +12,8 @@ log = logging.getLogger(__name__)
 
 
 class Logging(Base):
+    name = 'logging'
+
     def __init__(self):
         Activity.on('logging.playing', self.on_playing)
 

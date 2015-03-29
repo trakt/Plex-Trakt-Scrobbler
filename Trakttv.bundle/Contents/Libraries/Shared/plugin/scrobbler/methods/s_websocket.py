@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class WebSocket(Base):
+    name = 'websocket'
+
     def __init__(self):
         Activity.on('websocket.playing', self.on_playing)
 

@@ -29,11 +29,13 @@ except Exception, ex:
 from core.logger import Logger
 from core.helpers import spawn, get_pref
 from core.plugin import ART, NAME, ICON
+from main import Main
 
 from plugin.api.core.manager import ApiManager
 from plugin.core.constants import PLUGIN_IDENTIFIER
 
 from plex import Plex
+import time
 
 
 log = Logger()
@@ -44,8 +46,6 @@ def Start():
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
-
-    from main import Main
 
     m = Main()
     m.start()
@@ -66,11 +66,18 @@ def ValidatePrefs():
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
-        # TODO this can cause the preferences dialog to get stuck on "saving"
-        #  - might need to delay this for a few seconds to avoid this.
-        spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
 
-    return MessageContainer(
-        "Success",
-        "Success"
-    )
+        def restart():
+            # Delay until after `ValidatePrefs` returns
+            time.sleep(3)
+
+            # Restart plugin
+            Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
+
+        spawn(restart)
+        return MessageContainer("Success", "Success")
+
+    # Re-initialize modules
+    Main.init_logging()
+
+    return MessageContainer("Success", "Success")

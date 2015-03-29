@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 
 
 class Base(object):
+    name = None
+
     @classmethod
     def build_request(cls, session, rating_key=None):
         metadata = Metadata.get(rating_key or session.rating_key)

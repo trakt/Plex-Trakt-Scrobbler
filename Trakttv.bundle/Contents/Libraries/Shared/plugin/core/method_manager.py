@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 class MethodManager(object):
     def __init__(self, methods, single=True):
         self.methods = [
-            (m.__name__, m) for m in methods
+            (m.name, m) for m in methods
         ]
         self.single = single
 

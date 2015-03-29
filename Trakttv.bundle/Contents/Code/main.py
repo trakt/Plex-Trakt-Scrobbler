@@ -3,11 +3,12 @@ from core.configuration import Configuration
 from core.header import Header
 from core.helpers import get_class_name, md5
 from core.logger import Logger
+from core.logging_handler import PlexHandler
 from core.logging_reporter import RAVEN
 from core.update_checker import UpdateChecker
 from sync.sync_manager import SyncManager
 
-from plugin.core.constants import PLUGIN_VERSION
+from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.core.helpers.thread import module_start
 from plugin.modules.core.manager import ModuleManager
 
@@ -16,6 +17,7 @@ from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt
+import logging
 import os
 
 log = Logger()
@@ -23,8 +25,6 @@ log = Logger()
 
 class Main(object):
     modules = [
-        Activity,
-
         # core
         UpdateChecker(),
 
@@ -44,6 +44,9 @@ class Main(object):
 
         # Initialize sentry error reporting
         self.init_raven()
+
+        # Initialize logging
+        self.init_logging()
 
     def init(self):
         names = []
@@ -71,6 +74,16 @@ class Main(object):
         RAVEN.tags.update({
             'server.version': server.version
         })
+
+    @staticmethod
+    def init_logging():
+        level = PlexHandler.get_min_level('plugin')
+
+        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
+
+        # Update main logger level
+        logger = logging.getLogger(PLUGIN_IDENTIFIER)
+        logger.setLevel(level)
 
     @staticmethod
     def init_plex():
@@ -152,3 +165,6 @@ class Main(object):
         log.info('Started %s modules: %s', len(names), ', '.join(names))
 
         ModuleManager.start()
+
+        # Start plex.activity.py
+        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
