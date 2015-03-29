@@ -24,6 +24,7 @@ from core.cache import CacheManager
 from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
+from core.logging_handler import PlexHandler
 from core.logging_reporter import RAVEN
 from core.helpers import spawn, get_pref, schedule, get_class_name, md5
 from core.plugin import ART, NAME, ICON
@@ -41,6 +42,7 @@ from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt, ClientError
+import logging
 import os
 
 
@@ -76,6 +78,9 @@ class Main(object):
         # Initialize sentry error reporting
         self.init_raven()
 
+        # Initialize logging
+        self.init_logging()
+
     def init(self):
         names = []
 
@@ -102,6 +107,16 @@ class Main(object):
         RAVEN.tags.update({
             'server.version': server.version
         })
+
+    @staticmethod
+    def init_logging():
+        level = PlexHandler.get_min_level('plugin')
+
+        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
+
+        # Update main logger level
+        logger = logging.getLogger(PLUGIN_IDENTIFIER)
+        logger.setLevel(level)
 
     @staticmethod
     def init_plex():
@@ -293,5 +308,9 @@ def ValidatePrefs():
         # TODO this can cause the preferences dialog to get stuck on "saving"
         #  - might need to delay this for a few seconds to avoid this.
         spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
+        return message
+
+    # Re-initialize modules
+    Main.init_logging()
 
     return message
