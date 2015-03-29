@@ -2,7 +2,7 @@ PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
-PLUGIN_VERSION_BASE = (0, 9, 1, 23)
+PLUGIN_VERSION_BASE = (0, 9, 1, 24)
 PLUGIN_VERSION_BRANCH = 'master'
 
 PLUGIN_VERSION = ''.join([
@@ -12,6 +12,6 @@ PLUGIN_VERSION = ''.join([
 
 ACTIVITY_MODE = {
     'Automatic':            None,
-    'Logging (Legacy)':     ['LoggingActivity', 'LoggingScrobbler'],
-    'WebSocket (PlexPass)': ['WebSocketActivity', 'WebSocketScrobbler']
+    'Logging (Legacy)':     ['logging'],
+    'WebSocket (PlexPass)': ['websocket']
 }

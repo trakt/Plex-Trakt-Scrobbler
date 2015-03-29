@@ -24,12 +24,13 @@ from core.cache import CacheManager
 from core.configuration import Configuration
 from core.header import Header
 from core.logger import Logger
+from core.logging_handler import PlexHandler
 from core.logging_reporter import RAVEN
 from core.helpers import spawn, get_pref, schedule, get_class_name, md5
 from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
-from plugin.core.constants import PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.modules.manager import ModuleManager
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
@@ -41,7 +42,9 @@ from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt, ClientError
+import logging
 import os
+import time
 
 
 log = Logger()
@@ -49,8 +52,6 @@ log = Logger()
 
 class Main(object):
     modules = [
-        Activity,
-
         # core
         UpdateChecker(),
 
@@ -75,6 +76,9 @@ class Main(object):
 
         # Initialize sentry error reporting
         self.init_raven()
+
+        # Initialize logging
+        self.init_logging()
 
     def init(self):
         names = []
@@ -102,6 +106,16 @@ class Main(object):
         RAVEN.tags.update({
             'server.version': server.version
         })
+
+    @staticmethod
+    def init_logging():
+        level = PlexHandler.get_min_level('plugin')
+
+        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
+
+        # Update main logger level
+        logger = logging.getLogger(PLUGIN_IDENTIFIER)
+        logger.setLevel(level)
 
     @staticmethod
     def init_plex():
@@ -262,6 +276,9 @@ class Main(object):
 
         ModuleManager.start()
 
+        # Start plex.activity.py
+        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
+
 
 def Start():
     ObjectContainer.art = R(ART)
@@ -290,8 +307,18 @@ def ValidatePrefs():
     # Restart if activity_mode has changed
     if Prefs['activity_mode'] != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
-        # TODO this can cause the preferences dialog to get stuck on "saving"
-        #  - might need to delay this for a few seconds to avoid this.
-        spawn(lambda: Plex[':/plugins'].restart(PLUGIN_IDENTIFIER))
+
+        def restart():
+            # Delay until after `ValidatePrefs` returns
+            time.sleep(3)
+
+            # Restart plugin
+            Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
+
+        spawn(restart)
+        return message
+
+    # Re-initialize modules
+    Main.init_logging()
 
     return message
