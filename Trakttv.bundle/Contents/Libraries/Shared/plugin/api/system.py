@@ -1,4 +1,5 @@
 from plugin.api.core.base import Service
+from plugin.core.constants import PLUGIN_VERSION
 
 
 class System(Service):
@@ -9,4 +10,10 @@ class System(Service):
         return {
             'args': args,
             'kwargs': kwargs
+        }
+
+    @classmethod
+    def ping(cls):
+        return {
+            'version': PLUGIN_VERSION
         }
