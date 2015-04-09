@@ -6,7 +6,10 @@ class Media(object):
     def __init__(self, keys=None):
         self.keys = keys
 
+        self.images = None
+        self.overview = None
         self.rating = None
+        self.score = None
 
     @property
     def pk(self):
@@ -16,6 +19,12 @@ class Media(object):
         return self.keys[0]
 
     def update(self, info=None, **kwargs):
+        update_attributes(self, info, [
+            'overview',
+            'images',
+            'score'
+        ])
+
         self.rating = Rating.create(info) or self.rating
 
     def __str__(self):
@@ -104,7 +113,10 @@ class Show(Media):
     def update(self, info=None, **kwargs):
         super(Show, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year'])
+        update_attributes(self, info, ['title'])
+
+        if info.get('year'):
+            self.year = int(info['year'])
 
     @classmethod
     def create(cls, keys, info=None, **kwargs):
@@ -121,6 +133,7 @@ class Season(Media):
     def __init__(self, keys=None):
         super(Season, self).__init__(keys)
 
+        self.show = None
         self.episodes = {}
 
     def to_identifier(self):
@@ -165,6 +178,9 @@ class Season(Media):
 class Episode(Video):
     def __init__(self, keys=None):
         super(Episode, self).__init__(keys)
+
+        self.show = None
+        self.season = None
 
         self.title = None
 
@@ -267,7 +283,10 @@ class Movie(Video):
     def update(self, info=None, **kwargs):
         super(Movie, self).update(info, **kwargs)
 
-        update_attributes(self, info, ['title', 'year'])
+        update_attributes(self, info, ['title'])
+
+        if info.get('year'):
+            self.year = int(info['year'])
 
     @classmethod
     def create(cls, keys, info, **kwargs):

@@ -69,6 +69,7 @@ class SyncMapper(Mapper):
     @classmethod
     def show_season(cls, show, season_num, item=None, **kwargs):
         season = cls.map_item(show.seasons, item, 'season', key=season_num, **kwargs)
+        season.show = show
 
         # Update with root info
         if item and 'season' in item:
@@ -79,6 +80,8 @@ class SyncMapper(Mapper):
     @classmethod
     def show_episode(cls, season, episode_num, item=None, **kwargs):
         episode = cls.map_item(season.episodes, item, 'episode', key=episode_num, **kwargs)
+        episode.show = season.show
+        episode.season = season
 
         # Update with root info
         if item and 'episode' in item:
