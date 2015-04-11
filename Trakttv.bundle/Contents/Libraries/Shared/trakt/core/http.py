@@ -34,7 +34,7 @@ class HttpClient(object):
 
         return self
 
-    def request(self, method, path=None, params=None, data=None, query=None, authenticated=True, **kwargs):
+    def request(self, method, path=None, params=None, data=None, query=None, authenticated=False, **kwargs):
         # retrieve configuration
         ctx = self.configuration.pop()
 

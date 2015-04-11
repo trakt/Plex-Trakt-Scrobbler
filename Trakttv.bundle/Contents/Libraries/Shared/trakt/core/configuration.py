@@ -112,7 +112,7 @@ class OAuthConfiguration(object):
     def __init__(self, owner):
         self.owner = owner
 
-    def __call__(self, token=None, refresh_token=None, created_at=None, expires_in=None, refresh=False):
+    def __call__(self, token=None, refresh_token=None, created_at=None, expires_in=None, refresh=None):
         if type(self.owner) is ConfigurationManager:
             return Configuration(self.owner).oauth(token, refresh_token, created_at, expires_in, refresh)
 
@@ -128,7 +128,7 @@ class OAuthConfiguration(object):
 
         return self.owner
 
-    def from_response(self, response=None, refresh=False):
+    def from_response(self, response=None, refresh=None):
         if type(self.owner) is ConfigurationManager:
             return Configuration(self.owner).oauth.from_response(response, refresh)
 

@@ -11,8 +11,7 @@ log = logging.getLogger(__name__)
 def authenticated(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-        if args and isinstance(args[0], Interface):
-            interface = args[0]
+        kwargs['authenticated'] = True
 
         return func(*args, **kwargs)
 
