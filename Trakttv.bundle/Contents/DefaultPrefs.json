@@ -1,17 +1,9 @@
 [
     {
-        "id": "username",
+        "id": "pin",
         "type": "text",
-        "label": "Username",
+        "label": "Authentication PIN (visit https://trakt.tv/pin/478)",
         "default": ""
-    },
-    {
-        "id": "password",
-        "type": "text",
-        "label": "Password",
-        "default": "",
-        "option": "hidden",
-        "secure": "true"
     },
     {
         "id": "start_scrobble",

@@ -4,6 +4,7 @@ from trakt.interfaces.auth import *
 from trakt.interfaces.movies import *
 from trakt.interfaces.oauth import *
 from trakt.interfaces.scrobble import *
+from trakt.interfaces.search import *
 from trakt.interfaces.shows import *
 from trakt.interfaces.sync import *
 from trakt.interfaces.users import *
@@ -14,6 +15,7 @@ INTERFACES = [
     OAuthInterface,
 
     ScrobbleInterface,
+    SearchInterface,
 
     # /sync/
     SyncInterface,

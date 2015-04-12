@@ -11,12 +11,14 @@ class ConfigurationManager(object):
         self.defaults = Configuration(self)
         self.stack = ContextCollection([self.defaults])
 
+        self.oauth = OAuthConfiguration(self)
+
     @property
     def current(self):
         return self.stack[-1]
 
-    def app(self, name=None, version=None, date=None):
-        return Configuration(self).app(name, version, date)
+    def app(self, name=None, version=None, date=None, id=None):
+        return Configuration(self).app(name, version, date, id)
 
     def auth(self, login=None, token=None):
         return Configuration(self).auth(login, token)
@@ -28,9 +30,6 @@ class ConfigurationManager(object):
              timeout=DEFAULT_HTTP_TIMEOUT):
 
         return Configuration(self).http(retry, max_retries, retry_sleep, timeout)
-
-    def oauth(self, token=None):
-        return Configuration(self).oauth(token)
 
     def get(self, key, default=None):
         for x in range(len(self.stack) - 1, -1, -1):
@@ -54,10 +53,13 @@ class Configuration(object):
 
         self.data = {}
 
-    def app(self, name=None, version=None, date=None):
+        self.oauth = OAuthConfiguration(self)
+
+    def app(self, name=None, version=None, date=None, id=None):
         self.data['app.name'] = name
         self.data['app.version'] = version
         self.data['app.date'] = date
+        self.data['app.id'] = id
 
         return self
 
@@ -84,11 +86,6 @@ class Configuration(object):
 
         return self
 
-    def oauth(self, token=None):
-        self.data['oauth.token'] = token
-
-        return self
-
     def get(self, key, default=None):
         return self.data.get(key, default)
 
@@ -109,3 +106,43 @@ class Configuration(object):
 
     def __setitem__(self, key, value):
         self.data[key] = value
+
+
+class OAuthConfiguration(object):
+    def __init__(self, owner):
+        self.owner = owner
+
+    def __call__(self, token=None, refresh_token=None, created_at=None, expires_in=None, refresh=None):
+        if type(self.owner) is ConfigurationManager:
+            return Configuration(self.owner).oauth(token, refresh_token, created_at, expires_in, refresh)
+
+        self.owner.data.update({
+            'oauth.token':          token,
+            'oauth.refresh_token':  refresh_token,
+
+            'oauth.created_at':     created_at,
+            'oauth.expires_in':     expires_in,
+
+            'oauth.refresh':        refresh
+        })
+
+        return self.owner
+
+    def from_response(self, response=None, refresh=None):
+        if type(self.owner) is ConfigurationManager:
+            return Configuration(self.owner).oauth.from_response(response, refresh)
+
+        if not response:
+            raise ValueError('Invalid "response" parameter provided to oauth.from_response()')
+
+        self.owner.data.update({
+            'oauth.token':          response.get('access_token'),
+            'oauth.refresh_token':  response.get('refresh_token'),
+
+            'oauth.created_at':     response.get('created_at'),
+            'oauth.expires_in':     response.get('expires_in'),
+
+            'oauth.refresh':        refresh
+        })
+
+        return self.owner

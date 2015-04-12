@@ -1,4 +1,4 @@
-import urllib
+from six.moves.urllib_parse import urlencode
 
 
 def setdefault(d, defaults, func=None):
@@ -32,9 +32,13 @@ def update_attributes(obj, dictionary, keys):
 
 
 def build_url(*args, **kwargs):
-    parameters = filter(lambda key, value: value, kwargs.items())
+    parameters = [
+        (key, value)
+        for (key, value) in kwargs.items()
+        if value
+    ]
 
     return ''.join([
-        '/'.join(args),
-        ('?' + urllib.urlencode(parameters)) if parameters else ''
+        '/'.join([str(x) for x in args]),
+        ('?' + urlencode(parameters)) if parameters else ''
     ])

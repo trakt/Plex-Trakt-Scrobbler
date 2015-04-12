@@ -104,11 +104,12 @@ class Main(object):
             client=Plex.client
         )
 
-    @staticmethod
-    def init_trakt():
+    @classmethod
+    def init_trakt(cls):
         # Client
         Trakt.configuration.defaults.client(
-            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
+            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61',
+            secret='bf00575b1ad252b514f14b2c6171fe650d474091daad5eb6fa890ef24d581f65'
         )
 
         # Application
@@ -120,6 +121,14 @@ class Main(object):
         # Setup request retrying
         Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
         Trakt.http.rebuild()
+
+        Trakt.on('oauth.token_refreshed', cls.on_token_refreshed)
+
+    @classmethod
+    def on_token_refreshed(cls, authorization):
+        log.debug('Authentication - PIN authorization refreshed')
+
+        # TODO update account with new authorization
 
     @classmethod
     def update_config(cls, valid=None):
