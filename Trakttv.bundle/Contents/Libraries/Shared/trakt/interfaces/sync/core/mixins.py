@@ -13,7 +13,9 @@ class Get(Interface):
             r_params.extend(params)
 
         response = self.http.get(
-            params=r_params
+            params=r_params,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         items = self.get_data(response, **kwargs)
@@ -47,7 +49,9 @@ class Add(Interface):
     @authenticated
     def add(self, items, **kwargs):
         response = self.http.post(
-            data=items
+            data=items,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         return self.get_data(response, **kwargs)
@@ -58,7 +62,9 @@ class Remove(Interface):
     def remove(self, items, **kwargs):
         response = self.http.post(
             'remove',
-            data=items
+            data=items,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         return self.get_data(response, **kwargs)

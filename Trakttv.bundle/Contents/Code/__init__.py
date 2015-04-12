@@ -136,11 +136,12 @@ class Main(object):
             client=Plex.client
         )
 
-    @staticmethod
-    def init_trakt():
+    @classmethod
+    def init_trakt(cls):
         # Client
         Trakt.configuration.defaults.client(
-            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
+            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61',
+            secret='bf00575b1ad252b514f14b2c6171fe650d474091daad5eb6fa890ef24d581f65'
         )
 
         # Application
@@ -152,6 +153,15 @@ class Main(object):
         # Setup request retrying
         Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
         Trakt.http.rebuild()
+
+        Trakt.on('oauth.token_refreshed', cls.on_token_refreshed)
+
+    @classmethod
+    def on_token_refreshed(cls, authorization):
+        log.debug('Authentication - PIN authorization refreshed')
+
+        # Update stored authorization
+        Dict['trakt.pin.authorization'] = authorization
 
     @classmethod
     def update_config(cls, valid=None):
@@ -178,80 +188,77 @@ class Main(object):
 
     @classmethod
     def authenticate(cls, retry_interval=30):
-        if not Prefs['username'] or not Prefs['password']:
-            log.warn('Authentication failed, username or password field empty')
+        # Authenticate - PIN
+        if cls.authenticate_pin():
+            # Update trakt.py
+            Trakt.configuration.defaults.oauth.from_response(
+                Dict['trakt.pin.authorization']
+            )
 
-            cls.update_config(False)
+            # Update configuration
+            Main.update_config(True)
+            return True
+
+        # Authenticate - AUTH (username/password)
+        if cls.authenticate_auth():
+            # Update trakt.py
+            Trakt.configuration.defaults.auth(
+                Dict['trakt.username'],
+                Dict['trakt.token']
+            )
+
+            # Update configuration
+            Main.update_config(True)
+            return True
+
+        # Authentication failure
+        log.warn('Authentication failed')
+
+        Main.update_config(False)
+        return False
+
+    @classmethod
+    def authenticate_auth(cls):
+        if not Dict['trakt.username'] or not Dict['trakt.token']:
+            log.debug('Authentication - Unable to use AUTH (missing "trakt.username" or "trakt.token" properties)')
             return False
 
-        # Clear authentication details if username has changed
-        if Dict['trakt.token'] and Dict['trakt.username'] != Prefs['username']:
-            # Reset authentication details
-            Dict['trakt.username'] = None
-            Dict['trakt.token'] = None
+        log.info('Authentication - Using AUTH (username/password)')
+        return True
 
-            log.info('Authentication cleared, username was changed')
+    @classmethod
+    def authenticate_pin(cls):
+        if not Prefs['pin']:
+            log.debug('Authentication - Unable to use PIN ("pin" field is empty)')
+            return False
 
-        # Authentication
-        retry = False
+        if Dict['trakt.pin.authorization'] and Prefs['pin'] != Dict['trakt.pin.code']:
+            # PIN changed, clear stored authorization
+            Dict['trakt.pin.authorization'] = None
+            Dict['trakt.pin.code'] = None
 
-        if not Dict['trakt.token']:
-            # Authenticate with trakt.tv (no token has previously been stored)
-            with Trakt.configuration.http(retry=True):
-                try:
-                    Dict['trakt.token'] = Trakt['auth'].login(
-                        Prefs['username'],
-                        Prefs['password'],
-                        exceptions=True
-                    )
+        if not Dict['trakt.pin.authorization']:
+            # Exchange PIN for an authentication token
+            authorization = Trakt['oauth'].token_exchange(
+                code=Prefs['pin'],
+                redirect_uri='urn:ietf:wg:oauth:2.0:oob'
+            )
 
-                    Dict['trakt.username'] = Prefs['username']
-                except ClientError, ex:
-                    log.warn('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Client error (invalid username or password), don't retry the request
-                    retry = False
-                except Exception, ex:
-                    log.error('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Server error, retry the request
-                    retry = True
-
-            Dict.Save()
-
-        # Update trakt client configuration
-        Trakt.configuration.defaults.auth(
-            Dict['trakt.username'],
-            Dict['trakt.token']
-        )
-
-        # TODO actually test trakt.tv authentication
-        success = bool(Dict['trakt.token'])
-
-        if not success:
-            # status - False = invalid credentials, None = request failed
-            if retry:
-                # Increase retry interval each time to a maximum of 30 minutes
-                if retry_interval < 60 * 30:
-                    retry_interval = int(retry_interval * 1.3)
-
-                # Ensure we never go over 30 minutes
-                if retry_interval > 60 * 30:
-                    retry_interval = 60 * 30
-
-                log.warn('Unable to authentication with trakt.tv, will try again in %s seconds', retry_interval)
-                schedule(cls.authenticate, retry_interval, retry_interval)
+            if authorization:
+                # Update stored authorization
+                Dict['trakt.pin.authorization'] = authorization
+                Dict['trakt.pin.code'] = Prefs['pin']
             else:
-                log.warn('Authentication failed, username or password is incorrect')
+                # Clear stored authorization
+                Dict['trakt.pin.authorization'] = None
+                Dict['trakt.pin.code'] = None
 
-            Main.update_config(False)
+        # Check if the exchange was successful
+        if not Dict['trakt.pin.authorization']:
+            log.debug('Authentication - Unable to use PIN (unable to exchange pin for an authentication token)')
             return False
 
-        log.info('Authentication successful')
-
-        Main.update_config(True)
+        log.info('Authentication - Using PIN')
         return True
 
     def start(self):
