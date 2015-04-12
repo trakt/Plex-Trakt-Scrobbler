@@ -51,3 +51,10 @@ class Environment(object):
         cls.path = PathEnvironment(core)
         cls.dict = dict
         cls.prefs = prefs
+
+    @classmethod
+    def get_pref(cls, key):
+        try:
+            return cls.prefs[key]
+        except:
+            return None

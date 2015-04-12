@@ -128,15 +128,12 @@ class ActionManager(Manager):
             log.info('Missing `account` for action, unable to send')
             return None
 
-        if not account.token:
-            log.info("Account with username %r hasn't been authenticated yet", account.username)
-
         # Retrieve request data
         request = json.loads(request)
         log.debug('request: %r', request)
 
-        # Send request
-        with Trakt.configuration.auth(account.username, account.token):
+        # Send request with account authorization
+        with account.authorization():
             return func(**request)
 
     @classmethod

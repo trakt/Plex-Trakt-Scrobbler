@@ -12,5 +12,8 @@ def migrate(migrator, database):
     Client.create_table()
     ClientRule.create_table()
 
+    BasicCredential.create_table()
+    OAuthCredential.create_table()
+
     User.create_table()
     UserRule.create_table()
