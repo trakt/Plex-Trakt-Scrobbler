@@ -4,10 +4,12 @@ from plugin.models.core import db
 from playhouse.apsw_ext import *
 
 
-class BasicCredential(Model):
+class Credential(Model):
     class Meta:
         database = db
 
+
+class BasicCredential(Credential):
     account = ForeignKeyField(Account, 'basic_credentials', unique=True)
 
     password = CharField(null=True)
@@ -16,10 +18,7 @@ class BasicCredential(Model):
     token = CharField(null=True)
 
 
-class OAuthCredential(Model):
-    class Meta:
-        database = db
-
+class OAuthCredential(Credential):
     account = ForeignKeyField(Account, 'oauth_credentials', unique=True)
 
     code = CharField(null=True)

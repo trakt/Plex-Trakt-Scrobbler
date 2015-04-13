@@ -1,10 +1,57 @@
-from plugin.managers.core.base import Manager
-from plugin.models import Account
+from plugin.managers.core.base import Manager, Update
+from plugin.managers.credential import OAuthCredentialManager
+from plugin.models import Account, OAuthCredential
 
+from trakt import Trakt
 import logging
 
 log = logging.getLogger(__name__)
 
 
+class UpdateAccount(Update):
+    def from_pin(self, account, pin):
+        oauth = account.oauth_credentials.first()
+
+        if oauth and oauth.code == pin:
+            log.debug("PIN hasn't changed, ignoring account authorization update")
+            return account
+
+        if not oauth:
+            # Create new `OAuthCredential` for the account
+            oauth = OAuthCredential(
+                account=account
+            )
+
+        # Update `OAuthCredential`
+        if not OAuthCredentialManager.update.from_pin(oauth, pin, save=False):
+            log.warn("Unable to update OAuthCredential (token exchange failed, hasn't changed, etc..)")
+            return None
+
+        # Validate the account authorization
+        with account.oauth_authorization(oauth):
+            settings = Trakt['users/settings'].get()
+
+        if not settings:
+            log.warn('Unable to retrieve account details for authorization')
+            return None
+
+        username = settings.get('user', {}).get('username')
+
+        if not username:
+            log.warn('Unable to retrieve username for authorization')
+            return None
+
+        self(account, {'username': username}, save=False)
+
+        # Save `OAuthCredential` and `Account`
+        oauth.save()
+        account.save()
+
+        log.info('Updated account authorization for %r', account)
+        return account
+
+
 class AccountManager(Manager):
+    update = UpdateAccount
+
     model = Account

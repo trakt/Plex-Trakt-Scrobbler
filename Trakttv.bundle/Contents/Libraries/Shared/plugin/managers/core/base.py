@@ -35,7 +35,7 @@ class Create(Method):
 
 
 class Update(Method):
-    def __call__(self, obj, data):
+    def __call__(self, obj, data, save=True):
         changed = False
 
         for key, value in data.items():
@@ -48,11 +48,13 @@ class Update(Method):
             changed = True
             setattr(obj, key, value)
 
-        if changed:
-            obj.save()
-            return True
+        if not changed:
+            return False
 
-        return False
+        if save:
+            obj.save()
+
+        return True
 
 
 class ManagerMeta(type):

@@ -32,6 +32,7 @@ from core.plugin import ART, NAME, ICON
 from main import Main
 
 from plugin.api.core.manager import ApiManager
+from plugin.core.configuration import Configuration
 from plugin.core.constants import PLUGIN_IDENTIFIER
 
 from plex import Plex
@@ -61,6 +62,9 @@ def Api(*args, **kwargs):
 
 
 def ValidatePrefs():
+    for key in Configuration.handlers.keys():
+        Configuration.process(key, Prefs[key])
+
     last_activity_mode = get_pref('activity_mode')
 
     # Restart if activity_mode has changed
