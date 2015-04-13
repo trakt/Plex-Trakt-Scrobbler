@@ -44,16 +44,21 @@ class Migrations(object):
 
         # Get or create `Account`
         try:
-            account = Account.create(
-                username=username
-            )
+            account = Account.get(Account.id == 1)
+        except Account.DoesNotExist:
+            account = None
 
-            # Create default rules for account
-            cls.rules(account)
-        except apsw.ConstraintError:
-            account = Account.get(
-                username=username
-            )
+        if account:
+            log.debug('Account already exists, ignoring account migration')
+            return False
+
+        # Create new `Account`
+        account = Account.create(
+            username=username
+        )
+
+        # Create default rules for account
+        cls.rules(account)
 
         # Create credentials
         cls.basic_credential(account)
