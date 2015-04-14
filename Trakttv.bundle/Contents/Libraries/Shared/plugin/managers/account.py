@@ -10,6 +10,11 @@ log = logging.getLogger(__name__)
 
 class UpdateAccount(Update):
     def from_pin(self, account, pin):
+        if not pin:
+            log.debug('"pin" parameter is empty, ignoring account authorization update')
+            return account
+
+        # Retrieve current account `OAuthCredential`
         oauth = account.oauth_credentials.first()
 
         if oauth and oauth.code == pin:

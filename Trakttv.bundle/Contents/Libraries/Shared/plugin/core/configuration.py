@@ -44,6 +44,10 @@ class Configuration(object):
 
     @handler
     def pin(self, value):
+        if not value:
+            # Ignore empty PIN field
+            return True
+
         # Retrieve administrator account
         account = AccountManager.get(Account.id == 1)
 
