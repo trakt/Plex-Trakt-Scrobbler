@@ -47,6 +47,8 @@ def Start():
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
+    PopupDirectoryObject.thumb = R(ICON)
+    PopupDirectoryObject.art = R(ART)
 
     m = Main()
     m.start()

@@ -2,7 +2,10 @@ from core.helpers import timestamp, pad_title, plural, get_filter, normalize
 from core.localization import localization
 from core.logger import Logger
 from sync.sync_manager import SyncManager
+
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.managers.account import AccountManager
+from plugin.models.account import Account
 
 from ago import human
 from datetime import datetime
@@ -15,15 +18,32 @@ log = Logger('interface.sync_menu')
 
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
+@route(PLUGIN_PREFIX + '/sync/accounts')
+def AccountsMenu():
+    oc = ObjectContainer(title2=L('accounts:title'), no_cache=True)
+
+    for account in AccountManager.get.all():
+        oc.add(DirectoryObject(
+            key=Callback(ControlsMenu, account_id=account.id),
+            title=account.username
+        ))
+
+    return oc
+
 @route(PLUGIN_PREFIX + '/sync')
-def SyncMenu(refresh=None):
-    oc = ObjectContainer(title2=L('sync_menu:title'), no_history=True, no_cache=True)
+def ControlsMenu(account_id=1, refresh=None):
+    account = AccountManager.get(Account.id == account_id)
+
+    if account.id != 1:
+        return MessageContainer('Not Implemented', "Multi-user syncing hasn't been implemented yet")
+
+    oc = ObjectContainer(title2=LF('controls:title', account.username), no_cache=True)
     all_keys = []
 
-    create_active_item(oc)
+    create_active_item(oc, account)
 
     oc.add(DirectoryObject(
-        key=Callback(Synchronize),
+        key=Callback(Synchronize, account_id=account.id),
         title=pad_title('Synchronize'),
         summary=get_task_status('synchronize'),
         thumb=R("icon-sync.png")
@@ -34,7 +54,7 @@ def SyncMenu(refresh=None):
 
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, section=section.key),
+            key=Callback(Push, account_id=account.id, section=section.key),
             title=pad_title('Push "%s" to trakt' % section.title),
             summary=get_task_status('push', section.key),
             thumb=R("icon-sync_up.png")
@@ -43,14 +63,14 @@ def SyncMenu(refresh=None):
 
     if len(all_keys) > 1:
         oc.add(DirectoryObject(
-            key=Callback(Push),
+            key=Callback(Push, account_id=account.id),
             title=pad_title('Push all to trakt'),
             summary=get_task_status('push'),
             thumb=R("icon-sync_up.png")
         ))
 
     oc.add(DirectoryObject(
-        key=Callback(Pull),
+        key=Callback(Pull, account_id=account.id),
         title=pad_title('Pull from trakt'),
         summary=get_task_status('pull'),
         thumb=R("icon-sync_down.png")
@@ -59,7 +79,7 @@ def SyncMenu(refresh=None):
     return oc
 
 
-def create_active_item(oc):
+def create_active_item(oc, account):
     task, handler = SyncManager.get_current()
     if not task:
         return
@@ -82,13 +102,13 @@ def create_active_item(oc):
 
     # Create items
     oc.add(DirectoryObject(
-        key=Callback(SyncMenu, refresh=timestamp()),
+        key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
         title=pad_title(title),
         summary=summary + ' (click to refresh)'
     ))
 
     oc.add(DirectoryObject(
-        key=Callback(Cancel),
+        key=Callback(Cancel, account_id=account.id),
         title=pad_title('%s - Cancel' % normalize(handler.title))
     ))
 
@@ -147,7 +167,7 @@ def get_task_status(key, section=None):
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
-def Synchronize():
+def Synchronize(account_id=1):
     success, message = SyncManager.trigger_synchronize()
 
     if not success:
@@ -161,7 +181,7 @@ def Synchronize():
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
-def Push(section=None):
+def Push(account_id=1, section=None):
     success, message = SyncManager.trigger_push(section)
 
     if not success:
@@ -174,7 +194,7 @@ def Push(section=None):
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
-def Pull():
+def Pull(account_id=1):
     success, message = SyncManager.trigger_pull()
 
     if not success:
@@ -187,7 +207,7 @@ def Pull():
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
-def Cancel():
+def Cancel(account_id=1):
     if not SyncManager.cancel():
         return MessageContainer(
             L('cancel_failure:title'),
