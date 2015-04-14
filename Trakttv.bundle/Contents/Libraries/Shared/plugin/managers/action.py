@@ -113,6 +113,10 @@ class ActionManager(Manager):
             log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
             return None
 
+        if not result:
+            # Invalid response
+            return None
+
         if interface == 'scrobble':
             return result.get('action')
 
