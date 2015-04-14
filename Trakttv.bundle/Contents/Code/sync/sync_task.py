@@ -2,8 +2,10 @@ import uuid
 
 
 class SyncTask(object):
-    def __init__(self, key, kwargs):
+    def __init__(self, account, key, kwargs):
+        self.account = account
         self.key = key
+
         self.kwargs = kwargs
 
         self.sid = uuid.uuid4()

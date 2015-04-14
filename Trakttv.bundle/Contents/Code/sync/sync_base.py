@@ -21,6 +21,16 @@ log = Logger('sync.sync_base')
 
 class Base(object):
     @staticmethod
+    def get_account():
+        current = EG['SyncManager.current'](single=True)
+
+        if not current:
+            log.warn('Unable to retrieve current sync task')
+            return None
+
+        return current.account
+
+    @staticmethod
     def get_sid():
         current = EG['SyncManager.current'](single=True)
 
@@ -82,7 +92,7 @@ class TraktInterface(Base):
             'exceptions': exceptions
         }
 
-        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+        with cls.get_account().authorization():
             # Merge watched library
             if watched and Trakt['sync/watched'].get(media, **params) is None:
                 log.warn('Unable to fetch watched items')
@@ -152,6 +162,15 @@ class SyncBase(Base, Emitter):
 
         self.start_time = None
         self.artifacts = SynchronizedDictionary()
+
+    @property
+    def account(self):
+        current, _ = self.get_current()
+
+        if not current:
+            return None
+
+        return current.account
 
     @classmethod
     def get_key(cls):

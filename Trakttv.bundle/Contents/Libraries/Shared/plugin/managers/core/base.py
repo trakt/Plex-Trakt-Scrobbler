@@ -21,6 +21,9 @@ class Get(Method):
     def __call__(self, *query):
         return self.model.get(*query)
 
+    def all(self):
+        return self.model.select()
+
     def or_create(self, *query, **kwargs):
         pass
 

@@ -146,7 +146,7 @@ class Base(SyncBase):
             # Empty request
             return
 
-        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+        with self.account.authorization():
             response = Trakt[path].add(kwargs, exceptions=True)
 
         if not response:
@@ -162,7 +162,7 @@ class Base(SyncBase):
             # Empty request
             return
 
-        with Trakt.configuration.auth(Dict['trakt.username'], Dict['trakt.token']):
+        with self.account.authorization():
             response = Trakt[path].remove(kwargs, exceptions=True)
 
         if not response:

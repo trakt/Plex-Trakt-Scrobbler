@@ -168,7 +168,7 @@ def get_task_status(key, section=None):
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize(account_id=1):
-    success, message = SyncManager.trigger_synchronize()
+    success, message = SyncManager.trigger_synchronize(account_id)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
@@ -182,7 +182,7 @@ def Synchronize(account_id=1):
 
 @route(PLUGIN_PREFIX + '/sync/push')
 def Push(account_id=1, section=None):
-    success, message = SyncManager.trigger_push(section)
+    success, message = SyncManager.trigger_push(account_id, section)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
@@ -195,7 +195,7 @@ def Push(account_id=1, section=None):
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 def Pull(account_id=1):
-    success, message = SyncManager.trigger_pull()
+    success, message = SyncManager.trigger_pull(account_id)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
