@@ -57,7 +57,13 @@ def Start():
 @expose
 def Api(*args, **kwargs):
     try:
-        return ApiManager.process(*args, **kwargs)
+        return ApiManager.process(
+            Request.Method,
+            Request.Headers,
+            Request.Body,
+
+            *args, **kwargs
+        )
     except Exception, ex:
         Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
         return None
