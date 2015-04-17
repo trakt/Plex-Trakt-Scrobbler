@@ -1,6 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.thread import module
-from plugin.models import Account, ClientRule, UserRule, BasicCredential, OAuthCredential
+from plugin.models import Account, ClientRule, UserRule, TraktAccount, TraktBasicCredential, TraktOAuthCredential
 from plugin.models.core import db, db_path, migrations_path
 
 from peewee_migrate.core import Router
@@ -28,77 +28,28 @@ class Migrations(object):
         # Migrate account from plugin settings
         cls.account()
 
-    @classmethod
-    def get_username(cls):
-        if Environment.get_pref('username'):
-            return Environment.get_pref('username')
-
-        if Environment.dict['trakt.username']:
-            return Environment.dict['trakt.username']
-
-        raise NotImplementedError()
+    #
+    # Main
+    #
 
     @classmethod
     def account(cls):
-        username = cls.get_username()
-
-        # Get or create `Account`
+        # Ensure `Account` exists
         try:
             account = Account.get(Account.id == 1)
         except Account.DoesNotExist:
-            account = None
-
-        if account:
-            log.debug('Account already exists, ignoring account migration')
-            return False
-
-        # Create new `Account`
-        account = Account.create(
-            username=username
-        )
-
-        # Create default rules for account
-        cls.rules(account)
-
-        # Create credentials
-        cls.basic_credential(account)
-        cls.oauth_credential(account)
-
-        return True
-
-    @classmethod
-    def basic_credential(cls, account):
-        if not Environment.dict['trakt.token']:
-            return False
-
-        try:
-            BasicCredential.create(
-                account=account,
-                password=Environment.get_pref('password'),
-
-                token=Environment.dict['trakt.token']
+            account = Account.create(
+                name=cls.get_trakt_username()
             )
-        except apsw.ConstraintError:
-            log.debug('BasicCredential for %r already exists', account)
-            return False
 
-        return True
+            # Create default rules for account
+            cls.rules(account)
 
-    @classmethod
-    def oauth_credential(cls, account):
-        if not Environment.dict['trakt.pin.code'] or not Environment.dict['trakt.pin.authorization']:
-            return False
+        # Ensure trakt account details exist
+        trakt_account = cls.trakt_account(account)
 
-        try:
-            OAuthCredential.create(
-                account=account,
-                code=Environment.dict['trakt.pin.code'],
-
-                **Environment.dict['trakt.pin.authorization']
-            )
-        except apsw.ConstraintError:
-            log.debug('OAuthCredential for %r already exists', account)
-            return False
+        cls.trakt_basic_credential(trakt_account)
+        cls.trakt_oauth_credential(trakt_account)
 
         return True
 
@@ -106,3 +57,65 @@ class Migrations(object):
     def rules(cls, account):
         ClientRule.create(account=account)
         UserRule.create(account=account)
+
+    #
+    # Trakt
+    #
+
+    @classmethod
+    def trakt_account(cls, account):
+        try:
+            return TraktAccount.create(
+                account=account,
+                username=cls.get_trakt_username()
+            )
+        except apsw.ConstraintError:
+            return TraktAccount.get(
+                account=account
+            )
+
+    @classmethod
+    def trakt_basic_credential(cls, trakt_account):
+        if not Environment.dict['trakt.token']:
+            return False
+
+        try:
+            TraktBasicCredential.create(
+                account=trakt_account,
+                password=Environment.get_pref('password'),
+
+                token=Environment.dict['trakt.token']
+            )
+        except apsw.ConstraintError, ex:
+            log.debug('BasicCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            return False
+
+        return True
+
+    @classmethod
+    def trakt_oauth_credential(cls, trakt_account):
+        if not Environment.dict['trakt.pin.code'] or not Environment.dict['trakt.pin.authorization']:
+            return False
+
+        try:
+            TraktOAuthCredential.create(
+                account=trakt_account,
+                code=Environment.dict['trakt.pin.code'],
+
+                **Environment.dict['trakt.pin.authorization']
+            )
+        except apsw.ConstraintError, ex:
+            log.debug('OAuthCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            return False
+
+        return True
+
+    @classmethod
+    def get_trakt_username(cls):
+        if Environment.get_pref('username'):
+            return Environment.get_pref('username')
+
+        if Environment.dict['trakt.username']:
+            return Environment.dict['trakt.username']
+
+        raise NotImplementedError()

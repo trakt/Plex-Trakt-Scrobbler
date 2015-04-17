@@ -1,16 +1,15 @@
-from plugin.models import Account
+from plugin.models.m_trakt.account import TraktAccount
 from plugin.models.core import db
 
 from playhouse.apsw_ext import *
 
 
-class Credential(Model):
+class TraktBasicCredential(Model):
     class Meta:
         database = db
+        db_table = 'trakt.credential.basic'
 
-
-class BasicCredential(Credential):
-    account = ForeignKeyField(Account, 'basic_credentials', unique=True)
+    account = ForeignKeyField(TraktAccount, 'basic_credentials', unique=True)
 
     password = CharField(null=True)
 
@@ -18,8 +17,12 @@ class BasicCredential(Credential):
     token = CharField(null=True)
 
 
-class OAuthCredential(Credential):
-    account = ForeignKeyField(Account, 'oauth_credentials', unique=True)
+class TraktOAuthCredential(Model):
+    class Meta:
+        database = db
+        db_table = 'trakt.credential.oauth'
+
+    account = ForeignKeyField(TraktAccount, 'oauth_credentials', unique=True)
 
     code = CharField(null=True)
 

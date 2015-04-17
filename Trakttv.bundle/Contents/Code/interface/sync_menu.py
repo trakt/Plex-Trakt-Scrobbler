@@ -4,8 +4,8 @@ from core.logger import Logger
 from sync.sync_manager import SyncManager
 
 from plugin.core.constants import PLUGIN_PREFIX
-from plugin.managers.account import AccountManager
-from plugin.models.account import Account
+from plugin.managers import AccountManager
+from plugin.models import Account
 
 from ago import human
 from datetime import datetime

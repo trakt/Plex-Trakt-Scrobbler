@@ -4,7 +4,7 @@ from core.plugin import ART, NAME, ICON
 from interface.sync_menu import AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
-from plugin.managers.account import AccountManager
+from plugin.managers import AccountManager
 
 
 @handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)

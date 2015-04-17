@@ -1,5 +1,5 @@
 from plugin.managers.core.base import Manager, Update
-from plugin.models import BasicCredential, OAuthCredential
+from plugin.models import TraktBasicCredential, TraktOAuthCredential
 
 from trakt import Trakt
 import logging
@@ -7,8 +7,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class BasicCredentialManager(Manager):
-    model = BasicCredential
+class TraktBasicCredentialManager(Manager):
+    model = TraktBasicCredential
 
 
 class UpdateOAuthCredential(Update):
@@ -27,7 +27,7 @@ class UpdateOAuthCredential(Update):
         return self(oauth, data, save=save)
 
 
-class OAuthCredentialManager(Manager):
+class TraktOAuthCredentialManager(Manager):
     update = UpdateOAuthCredential
 
-    model = OAuthCredential
+    model = TraktOAuthCredential
