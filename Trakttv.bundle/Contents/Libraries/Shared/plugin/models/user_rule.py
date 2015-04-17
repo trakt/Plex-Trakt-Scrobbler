@@ -7,6 +7,7 @@ from playhouse.apsw_ext import *
 class UserRule(Model):
     class Meta:
         database = db
+        db_table = 'session.user.rule'
         primary_key = CompositeKey('name')
 
     account = ForeignKeyField(Account, 'user_rules')

@@ -8,6 +8,7 @@ from playhouse.apsw_ext import *
 class ActionHistory(Model):
     class Meta:
         database = db
+        db_table = 'action.history'
 
     account = ForeignKeyField(Account, 'action_history')
     session = ForeignKeyField(Session, 'action_history', null=True)

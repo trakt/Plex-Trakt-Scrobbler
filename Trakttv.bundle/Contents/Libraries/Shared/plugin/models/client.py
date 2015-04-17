@@ -7,6 +7,7 @@ from playhouse.apsw_ext import *
 class Client(Model):
     class Meta:
         database = db
+        db_table = 'session.client'
 
     account = ForeignKeyField(Account, 'clients', null=True)
 

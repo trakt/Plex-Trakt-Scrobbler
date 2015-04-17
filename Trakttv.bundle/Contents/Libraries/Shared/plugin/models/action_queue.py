@@ -8,6 +8,7 @@ from playhouse.apsw_ext import *
 class ActionQueue(Model):
     class Meta:
         database = db
+        db_table = 'action.queue'
         primary_key = CompositeKey('session', 'event')
 
     account = ForeignKeyField(Account, 'action_queue')
