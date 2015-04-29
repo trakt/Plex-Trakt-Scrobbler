@@ -31,7 +31,7 @@ class Get(Method):
         try:
             return self.manager.create(**kwargs)
         except apsw.ConstraintError, ex:
-            pass
+            log.debug('or_create() - ex: %r', ex)
 
         return self(*query)
 

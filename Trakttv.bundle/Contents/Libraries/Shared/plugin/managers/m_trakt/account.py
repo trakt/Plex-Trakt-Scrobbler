@@ -41,7 +41,7 @@ class UpdateAccount(Update):
 
         # Update `TraktOAuthCredential`
         TraktOAuthCredentialManager.update.from_dict(
-            lambda: TraktBasicCredentialManager.get.or_create(
+            lambda: TraktOAuthCredentialManager.get.or_create(
                 TraktOAuthCredential.account == account,
                 account=account
             ),
