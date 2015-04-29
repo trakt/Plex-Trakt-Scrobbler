@@ -3,7 +3,6 @@ from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, Trak
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
 from trakt import Trakt
-import inspect
 import logging
 
 
@@ -11,24 +10,12 @@ log = logging.getLogger(__name__)
 
 
 class UpdateAccount(Update):
+    keys = ['username']
+
     def from_dict(self, account, changes):
-        log.debug('from_api(%r, %r)', account, changes)
-
-        if not changes:
-            return False
-
-        # Resolve `account`
-        if inspect.isfunction(account):
-            account = account()
-
         # Update `TraktAccount`
-        data = {}
-
-        if 'username' in changes:
-            data['username'] = changes['username']
-
-        if data and not self(account, data):
-            log.debug('Unable to update %r (nothing changed?)', account)
+        if not super(UpdateAccount, self).from_dict(account, changes):
+            return False
 
         # Update `TraktBasicCredential`
         TraktBasicCredentialManager.update.from_dict(

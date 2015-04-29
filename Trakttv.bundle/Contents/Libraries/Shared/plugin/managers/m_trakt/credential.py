@@ -2,34 +2,17 @@ from plugin.managers.core.base import Manager, Update
 from plugin.models import TraktBasicCredential, TraktOAuthCredential
 
 from trakt import Trakt
-import inspect
 import logging
 
 log = logging.getLogger(__name__)
 
 
 class UpdateBasicCredential(Update):
+    keys = ['password', 'token']
+
     def from_dict(self, basic_credential, changes):
-        log.debug('from_dict(%r, %r)', basic_credential, changes)
-
-        if not changes:
-            return False
-
-        # Resolve `basic_credential`
-        if inspect.isfunction(basic_credential):
-            basic_credential = basic_credential()
-
         # Update `TraktBasicCredential`
-        data = {}
-
-        if 'password' in changes:
-            data['password'] = changes['password']
-
-        if 'token' in changes:
-            data['token'] = changes['token']
-
-        if data and not self(basic_credential, data):
-            # Unable to update `TraktBasicCredential`
+        if not super(UpdateBasicCredential, self).from_dict(basic_credential, changes):
             return False
 
         return True
@@ -42,29 +25,11 @@ class TraktBasicCredentialManager(Manager):
 
 
 class UpdateOAuthCredential(Update):
-    allowed_keys = ['code', 'access_token', 'refresh_token', 'created_at', 'expires_in', 'token_type', 'scope']
+    keys = ['code', 'access_token', 'refresh_token', 'created_at', 'expires_in', 'token_type', 'scope']
 
     def from_dict(self, oauth_credential, changes):
-        log.debug('from_dict(%r, %r)', oauth_credential, changes)
-
-        if not changes:
-            return False
-
-        # Resolve `basic_credential`
-        if inspect.isfunction(oauth_credential):
-            oauth_credential = oauth_credential()
-
         # Update `TraktOAuthCredential`
-        data = {}
-
-        for key in self.allowed_keys:
-            if key not in changes:
-                continue
-
-            data[key] = changes[key]
-
-        if data and not self(oauth_credential, data):
-            # Unable to update `TraktOAuthCredential`
+        if not super(UpdateOAuthCredential, self).from_dict(oauth_credential, changes):
             return False
 
         return True

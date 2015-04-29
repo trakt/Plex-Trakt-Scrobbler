@@ -46,6 +46,8 @@ class Create(Method):
 
 
 class Update(Method):
+    keys = []
+
     def __call__(self, obj, data, save=True):
         changed = False
 
@@ -64,6 +66,30 @@ class Update(Method):
 
         if save:
             obj.save()
+
+        return True
+
+    def from_dict(self, obj, changes):
+        log.debug('from_dict(%r, %r)', obj, changes)
+
+        if not changes:
+            return False
+
+        # Resolve `account`
+        if inspect.isfunction(obj):
+            obj = obj()
+
+        # Update `TraktAccount`
+        data = {}
+
+        for key in self.keys:
+            if key not in changes:
+                continue
+
+            data[key] = changes[key]
+
+        if data and not self(obj, data):
+            log.debug('Unable to update %r (nothing changed?)', obj)
 
         return True
 
