@@ -15,7 +15,7 @@ class TraktAccount(Model):
 
     account = ForeignKeyField(Account, 'trakt_accounts', unique=True)
 
-    username = CharField(unique=True)
+    username = CharField(null=True, unique=True)
 
     def authorization(self):
         # OAuth
@@ -58,10 +58,23 @@ class TraktAccount(Model):
         if not full:
             return result
 
+        # Merge authorization details
         result['authorization'] = {
-            'basic': self.basic_credentials.count() > 0,
-            'oauth': self.oauth_credentials.count() > 0
+            'basic': {'valid': False},
+            'oauth': {'valid': False}
         }
+
+        # - Basic credentials
+        basic = self.basic_credentials.first()
+
+        if basic is not None:
+            result['authorization']['basic'] = basic.to_json(self)
+
+        # - OAuth credentials
+        oauth = self.oauth_credentials.first()
+
+        if oauth is not None:
+            result['authorization']['oauth'] = oauth.to_json()
 
         return result
 

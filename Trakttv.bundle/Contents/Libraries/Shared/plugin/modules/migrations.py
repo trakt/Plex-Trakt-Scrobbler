@@ -1,11 +1,16 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.thread import module
-from plugin.models import Account, ClientRule, UserRule, TraktAccount, TraktBasicCredential, TraktOAuthCredential
+from plugin.models import Account, ClientRule, UserRule,\
+    PlexAccount, PlexBasicCredential,\
+    TraktAccount, TraktBasicCredential, TraktOAuthCredential
 from plugin.models.core import db, db_path, migrations_path
 
 from peewee_migrate.core import Router
+from xml.etree import ElementTree
 import apsw
 import logging
+import os
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +50,11 @@ class Migrations(object):
             # Create default rules for account
             cls.rules(account)
 
+        # Ensure plex account details exist
+        plex_account = cls.plex_account(account)
+
+        cls.plex_basic_credential(plex_account)
+
         # Ensure trakt account details exist
         trakt_account = cls.trakt_account(account)
 
@@ -57,6 +67,58 @@ class Migrations(object):
     def rules(cls, account):
         ClientRule.create(account=account)
         UserRule.create(account=account)
+
+    #
+    # Plex
+    #
+
+    @classmethod
+    def plex_account(cls, account):
+        try:
+            return PlexAccount.get(
+                account=account
+            )
+        except PlexAccount.DoesNotExist:
+            pass
+
+        token = os.environ.get('PLEXTOKEN')
+        username = None
+
+        if token:
+            user = cls.get_plex_user(token)
+            username = user.attrib.get('username')
+
+        return PlexAccount.create(
+            account=account,
+            username=username
+        )
+
+    @classmethod
+    def plex_basic_credential(cls, plex_account):
+        token = os.environ.get('PLEXTOKEN')
+
+        if not token:
+            return False
+
+        try:
+            PlexBasicCredential.create(
+                account=plex_account,
+
+                token=token
+            )
+        except apsw.ConstraintError, ex:
+            log.debug('BasicCredential for %r already exists - %s', plex_account, ex, exc_info=True)
+            return False
+
+        return True
+
+    @classmethod
+    def get_plex_user(cls, token):
+        response = requests.get('https://plex.tv/users/account', headers={
+            'X-Plex-Token': token
+        })
+
+        return ElementTree.fromstring(response.content)
 
     #
     # Trakt

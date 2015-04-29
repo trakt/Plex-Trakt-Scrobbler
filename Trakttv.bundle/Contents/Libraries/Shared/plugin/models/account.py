@@ -13,6 +13,10 @@ class Account(Model):
     name = TextField(unique=True)
 
     @property
+    def plex(self):
+        return self.plex_accounts.first()
+
+    @property
     def trakt(self):
         return self.trakt_accounts.first()
 
@@ -25,14 +29,21 @@ class Account(Model):
         if not full:
             return result
 
-        trakt_account = self.trakt
+        # plex
+        plex = self.plex
 
-        if trakt_account:
-            result['trakt'] = trakt_account.to_json(full=full)
+        if plex:
+            result['plex'] = plex.to_json(full=full)
+
+        # trakt
+        trakt = self.trakt
+
+        if trakt:
+            result['trakt'] = trakt.to_json(full=full)
 
         return result
 
     def __repr__(self):
-        return '<Account username: %r>' % (
-            self.username,
+        return '<Account name: %r>' % (
+            self.name
         )

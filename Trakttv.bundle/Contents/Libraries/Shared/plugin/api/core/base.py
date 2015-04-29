@@ -36,7 +36,7 @@ def expose(authenticated=True):
     def outer(func):
         def inner(self, *args, **kwargs):
             if authenticated and self.context.token is None:
-                raise ApiError()
+                raise ApiError('Authentication required')
 
             return func(self, *args, **kwargs)
 

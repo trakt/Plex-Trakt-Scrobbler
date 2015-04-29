@@ -16,6 +16,20 @@ class TraktBasicCredential(Model):
     # Authorization
     token = CharField(null=True)
 
+    def to_json(self, account):
+        result = {
+            'valid': self.token is not None,
+
+            'username': account.username
+        }
+
+        if self.password:
+            result['password'] = '*' * len(self.password)
+        elif self.token:
+            result['password'] = '*' * 8
+
+        return result
+
 
 class TraktOAuthCredential(Model):
     class Meta:
@@ -27,14 +41,24 @@ class TraktOAuthCredential(Model):
     code = CharField(null=True)
 
     # Authorization
-    access_token = CharField()
-    refresh_token = CharField()
+    access_token = CharField(null=True)
+    refresh_token = CharField(null=True)
 
-    created_at = IntegerField()
-    expires_in = IntegerField()
+    created_at = IntegerField(null=True)
+    expires_in = IntegerField(null=True)
 
-    token_type = CharField()
-    scope = CharField()
+    token_type = CharField(null=True)
+    scope = CharField(null=True)
+
+    def to_json(self):
+        result = {
+            'valid': self.access_token is not None
+        }
+
+        if self.code:
+            result['code'] = '*' * len(self.code)
+
+        return result
 
     def to_response(self):
         return {

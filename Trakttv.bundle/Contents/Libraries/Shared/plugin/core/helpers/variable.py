@@ -1,5 +1,19 @@
-def merge(a, b):
-    a.update(b)
+import collections
+
+
+def merge(a, b, recursive=False):
+    if not recursive:
+        a.update(b)
+        return a
+
+    # Merge child dictionaries
+    for k, v in b.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = merge(a.get(k, {}), v, recursive=True)
+            a[k] = r
+        else:
+            a[k] = b[k]
+
     return a
 
 

@@ -24,8 +24,16 @@ class Get(Method):
     def all(self):
         return self.model.select()
 
+    def by_id(self, id):
+        return self(self.model.id == id)
+
     def or_create(self, *query, **kwargs):
-        pass
+        try:
+            return self.manager.create(**kwargs)
+        except apsw.ConstraintError, ex:
+            pass
+
+        return self(*query)
 
 
 class Create(Method):
