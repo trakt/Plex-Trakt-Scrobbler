@@ -3,6 +3,14 @@ from plugin.models import *
 
 def migrate(migrator, database):
     #
+    # plex
+    #
+
+    PlexAccount.create_table()
+
+    PlexBasicCredential.create_table()
+
+    #
     # trakt
     #
 
