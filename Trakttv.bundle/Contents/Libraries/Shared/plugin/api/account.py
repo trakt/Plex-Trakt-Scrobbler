@@ -1,5 +1,4 @@
 from plugin.api.core.base import Service, expose
-from plugin.core.helpers.variable import merge
 from plugin.managers import AccountManager
 import logging
 

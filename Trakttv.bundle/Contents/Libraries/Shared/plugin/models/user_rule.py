@@ -17,3 +17,13 @@ class UserRule(Model):
     @property
     def account_id(self):
         return self._data['account']
+
+    def to_json(self, full=False):
+        result = {
+            'name': self.name
+        }
+
+        if full:
+            result['account'] = self.account.to_json()
+
+        return result

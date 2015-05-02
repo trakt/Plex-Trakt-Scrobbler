@@ -4,8 +4,10 @@ from plugin.managers.m_plex import PlexAccountManager, PlexBasicCredentialManage
 from plugin.managers.account import AccountManager
 from plugin.managers.action import ActionManager
 from plugin.managers.client import ClientManager
+from plugin.managers.client_rule import ClientRuleManager
 from plugin.managers.session import WSessionManager
 from plugin.managers.user import UserManager
+from plugin.managers.user_rule import UserRuleManager
 
 __all__ = [
     'TraktAccountManager',
@@ -16,7 +18,7 @@ __all__ = [
 
     'AccountManager',
     'ActionManager',
-    'ClientManager',
+    'ClientManager', 'ClientRuleManager',
     'WSessionManager',
-    'UserManager'
+    'UserManager', 'UserRuleManager'
 ]

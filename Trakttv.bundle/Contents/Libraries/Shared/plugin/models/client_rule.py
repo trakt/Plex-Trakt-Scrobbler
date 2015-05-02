@@ -19,3 +19,15 @@ class ClientRule(Model):
     @property
     def account_id(self):
         return self._data['account']
+
+    def to_json(self, full=False):
+        result = {
+            'machine_identifier': self.machine_identifier,
+            'name': self.name,
+            'address': self.address
+        }
+
+        if full:
+            result['account'] = self.account.to_json()
+
+        return result
