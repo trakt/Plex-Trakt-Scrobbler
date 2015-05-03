@@ -8,11 +8,12 @@ class UserRule(Model):
     class Meta:
         database = db
         db_table = 'session.user.rule'
-        primary_key = CompositeKey('name')
 
     account = ForeignKeyField(Account, 'user_rules')
 
     name = CharField(null=True)
+
+    priority = IntegerField()
 
     @property
     def account_id(self):
@@ -20,6 +21,9 @@ class UserRule(Model):
 
     def to_json(self, full=False):
         result = {
+            'id': self.id,
+            'priority': self.priority,
+
             'name': self.name
         }
 

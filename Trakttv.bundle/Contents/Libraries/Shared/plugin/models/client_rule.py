@@ -13,8 +13,9 @@ class ClientRule(Model):
 
     machine_identifier = CharField(null=True)
     name = CharField(null=True)
-
     address = CharField(null=True)
+
+    priority = IntegerField()
 
     @property
     def account_id(self):
@@ -22,6 +23,9 @@ class ClientRule(Model):
 
     def to_json(self, full=False):
         result = {
+            'id': self.id,
+            'priority': self.priority,
+
             'machine_identifier': self.machine_identifier,
             'name': self.name,
             'address': self.address

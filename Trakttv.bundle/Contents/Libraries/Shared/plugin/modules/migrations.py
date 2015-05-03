@@ -65,8 +65,8 @@ class Migrations(object):
 
     @classmethod
     def rules(cls, account):
-        ClientRule.create(account=account)
-        UserRule.create(account=account)
+        ClientRule.create(account=account, priority=1)
+        UserRule.create(account=account, priority=1)
 
     #
     # Plex
