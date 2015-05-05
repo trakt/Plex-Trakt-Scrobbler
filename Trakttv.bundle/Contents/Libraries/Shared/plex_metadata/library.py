@@ -15,6 +15,11 @@ class Library(object):
         types = to_iterable(types)
 
         sections = Plex['library'].sections().filter(types, keys, titles)
+
+        if sections is None:
+            log.warn('Unable to retrieve any sections (request failed)')
+            return None
+
         result = {}
 
         for section in sections:
