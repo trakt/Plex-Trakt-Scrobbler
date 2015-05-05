@@ -300,6 +300,11 @@ class Show(Base):
             return True
 
         p_shows = self.plex.library('show', section)
+
+        if p_shows is None:
+            log.warn('Unable to retrieve shows library from plex')
+            return False
+
         if not p_shows:
             # No items found, no need to continue
             return True
@@ -462,6 +467,11 @@ class Movie(Base):
             return True
 
         p_movies = self.plex.library('movie', section)
+
+        if p_movies is None:
+            log.warn('Unable to retrieve movies library from plex')
+            return False
+
         if not p_movies:
             # No items found, no need to continue
             return True
