@@ -110,6 +110,13 @@
         "default": "INFO"
     },
     {
+        "id": "level_peewee",
+        "type": "enum",
+        "label": "Logging - Database",
+        "values": ["INFO", "DEBUG"],
+        "default": "INFO"
+    },
+    {
         "id": "level_plugin",
         "type": "enum",
         "label": "Logging - Plugin",

@@ -1,7 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 
 from raven import Client
-from raven.conf import setup_logging
 from raven.handlers.logging import SentryHandler
 import logging
 import platform

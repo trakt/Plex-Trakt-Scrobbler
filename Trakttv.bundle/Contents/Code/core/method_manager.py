@@ -3,7 +3,6 @@ from core.logger import Logger
 from plugin.core.constants import ACTIVITY_MODE
 
 import threading
-import traceback
 
 log = Logger('core.method_manager')
 

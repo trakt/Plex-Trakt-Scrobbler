@@ -1,6 +1,5 @@
 from core.helpers import all, get_pref
 from core.logger import Logger
-from pts.action_manager import ActionManager
 from sync.sync_base import SyncBase
 
 from plex import Plex
@@ -46,7 +45,7 @@ class Base(SyncBase):
             Plex['library'].scrobble(p_item.rating_key)
 
             # Mark item as added in `pts.action_manager`
-            ActionManager.update_history(p_item.rating_key, 'add', 'add')
+            # TODO ActionManager.update_history(p_item.rating_key, 'add', 'add')
 
         return True
 

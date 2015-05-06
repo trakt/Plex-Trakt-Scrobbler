@@ -3,6 +3,8 @@ from core.logging_reporter import RAVEN_HANDLER
 import logging
 
 LOGGERS = [
+    'peewee',
+    'peewee_migrate',
     'plex',
     'plex_activity',
     'plex_metadata',
@@ -26,6 +28,8 @@ class PlexHandler(logging.StreamHandler):
     }
 
     level_map = {
+        'peewee_migrate':   'peewee',
+
         'plex':             'libraries',
         'plex_activity':    'libraries',
         'plex_metadata':    'libraries',

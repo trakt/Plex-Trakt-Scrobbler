@@ -3,7 +3,6 @@ from core.helpers import total_seconds, get_pref
 from core.localization import localization
 from core.logger import Logger
 from data.sync_status import SyncStatus
-from plugin.core.event import Global as EG
 from sync.sync_base import CancelException
 from sync.sync_statistics import SyncStatistics
 from sync.sync_task import SyncTask
@@ -11,14 +10,16 @@ from sync.pull import Pull
 from sync.push import Push
 from sync.synchronize import Synchronize
 
+from plugin.core.event import Global as EG
+from plugin.managers import AccountManager
+from plugin.models import Account
+
 from datetime import datetime
 from plex import Plex
 from plex_activity import Activity
 import gc
 import threading
-import traceback
 import time
-import uuid
 
 L, LF = localization('sync.manager')
 log = Logger('sync.manager')
@@ -113,7 +114,7 @@ class SyncManager(object):
     @classmethod
     def acquire(cls):
         cls.lock.acquire()
-        log.debug('Acquired work: %s' % cls.current)
+        log.debug('Acquired work: %s (account: %r)', cls.current, cls.current.account)
 
     @classmethod
     def release(cls):
@@ -221,11 +222,18 @@ class SyncManager(object):
     # Trigger
 
     @classmethod
-    def trigger(cls, key, blocking=False, **kwargs):
+    def trigger(cls, account_id, key, blocking=False, **kwargs):
         # Ensure manager is initialized
         if not cls.initialized:
             log.warn(L('not_initialized'))
             return False, L('not_initialized')
+
+        # Retrieve `Account`
+        account = AccountManager.get(Account.id == account_id)
+
+        if account.trakt is None:
+            log.info('Missing trakt account for %r', account)
+            return False, L('invalid_credentials')
 
         # Ensure sync task isn't already running
         if not cls.lock.acquire(blocking):
@@ -237,22 +245,22 @@ class SyncManager(object):
             return False, L('invalid_credentials')
 
         cls.reset()
-        cls.current = SyncTask(key, kwargs)
+        cls.current = SyncTask(account, key, kwargs)
 
         cls.lock.release()
         return True, ''
 
     @classmethod
-    def trigger_push(cls, section=None):
-        return cls.trigger('push', section=section)
+    def trigger_push(cls, account_id=1, section=None):
+        return cls.trigger(account_id, 'push', section=section)
 
     @classmethod
-    def trigger_pull(cls):
-        return cls.trigger('pull')
+    def trigger_pull(cls, account_id=1):
+        return cls.trigger(account_id, 'pull')
 
     @classmethod
-    def trigger_synchronize(cls):
-        return cls.trigger('synchronize')
+    def trigger_synchronize(cls, account_id=1):
+        return cls.trigger(account_id, 'synchronize')
 
     # Cancel
 

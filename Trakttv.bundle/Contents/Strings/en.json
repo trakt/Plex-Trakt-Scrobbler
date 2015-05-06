@@ -5,7 +5,8 @@
     "PhotosTitle"                                 : "trakt",
     "ApplicationsTitle"                           : "trakt",
 
-    "interface.sync_menu:sync_menu:title"         : "Sync",
+    "interface.sync_menu:accounts:title"          : "Accounts",
+    "interface.sync_menu:controls:title"          : "Sync (%s)",
 
     "interface.sync_menu:trigger_success:title"   : "Syncing task triggered",
     "interface.sync_menu:trigger_success:message" : "%s has been triggered and will continue in the background",

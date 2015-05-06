@@ -6,7 +6,7 @@ from plugin.core.collections import SynchronizedDictionary
 from plugin.core.environment import Environment
 from plugin.core.event import Global as EG
 from plugin.core.jsonw import ArtifactEncoder, ArtifactTransformer, json_write
-from plugin.modules.manager import ModuleManager
+from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
 from plex import Plex
@@ -20,6 +20,16 @@ log = Logger('sync.sync_base')
 
 
 class Base(object):
+    @staticmethod
+    def get_account():
+        current = EG['SyncManager.current'](single=True)
+
+        if not current:
+            log.warn('Unable to retrieve current sync task')
+            return None
+
+        return current.account
+
     @staticmethod
     def get_sid():
         current = EG['SyncManager.current'](single=True)
@@ -82,26 +92,35 @@ class TraktInterface(Base):
             'exceptions': exceptions
         }
 
-        # Merge watched library
-        if watched and Trakt['sync/watched'].get(media, **params) is None:
-            log.warn('Unable to fetch watched items')
+        # Retrieve account
+        account = cls.get_account()
+        trakt_account = account.trakt
+
+        if trakt_account is None:
+            log.info('Missing trakt account for %r', account)
             return None, None
 
-        # Merge ratings
-        if ratings:
-            if Trakt['sync/ratings'].get(media, **params) is None:
-                log.warn('Unable to fetch ratings')
+        with trakt_account.authorization():
+            # Merge watched library
+            if watched and Trakt['sync/watched'].get(media, **params) is None:
+                log.warn('Unable to fetch watched items')
                 return None, None
 
-            # Fetch episode ratings (if we are fetching shows)
-            if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
-                log.warn('Unable to fetch episode ratings')
-                return None, None
+            # Merge ratings
+            if ratings:
+                if Trakt['sync/ratings'].get(media, **params) is None:
+                    log.warn('Unable to fetch ratings')
+                    return None, None
 
-        # Merge collected library
-        if collected and Trakt['sync/collection'].get(media, **params) is None:
-            log.warn('Unable to fetch collected items')
-            return None, None
+                # Fetch episode ratings (if we are fetching shows)
+                if media == 'shows' and Trakt['sync/ratings'].get('episodes', **params) is None:
+                    log.warn('Unable to fetch episode ratings')
+                    return None, None
+
+            # Merge collected library
+            if collected and Trakt['sync/collection'].get(media, **params) is None:
+                log.warn('Unable to fetch collected items')
+                return None, None
 
         # Generate item table with alternative keys
         table = items.copy()
@@ -151,6 +170,15 @@ class SyncBase(Base, Emitter):
 
         self.start_time = None
         self.artifacts = SynchronizedDictionary()
+
+    @property
+    def account(self):
+        current, _ = self.get_current()
+
+        if not current:
+            return None
+
+        return current.account
 
     @classmethod
     def get_key(cls):
