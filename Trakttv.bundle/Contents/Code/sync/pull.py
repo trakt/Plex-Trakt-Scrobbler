@@ -161,6 +161,10 @@ class Show(Base):
         p_shows = self.plex.library('show')
         self.save('last_library', p_shows, source='plex')
 
+        if p_shows is None:
+            log.warn('Unable to retrieve shows library from plex')
+            return False
+
         # Fetch library, and only get ratings and collection if enabled
         t_shows, t_shows_table = self.trakt.merged('shows', ratings='ratings' in enabled_funcs, collected=True)
         self.save('last_library', t_shows_table, source='trakt')
@@ -285,6 +289,10 @@ class Movie(Base):
 
         p_movies = self.plex.library('movie')
         self.save('last_library', p_movies, source='plex')
+
+        if p_movies is None:
+            log.warn('Unable to retrieve movies library from plex')
+            return False
 
         # Fetch library, and only get ratings and collection if enabled
         t_movies, t_movies_table = self.trakt.merged('movies', ratings='ratings' in enabled_funcs, collected=True)
