@@ -45,7 +45,7 @@ class FTPStore(BaseStore):
             # Download item
             self._store.retrbinary('RETR %s' % key, local.write)
             self._updated = False
-            return self.loads(local.getvalue())
+            return self.loads(local.getvalue(), key)
         except:
             raise KeyError(key)
 

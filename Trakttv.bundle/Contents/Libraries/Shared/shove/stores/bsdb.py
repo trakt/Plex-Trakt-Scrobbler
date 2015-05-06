@@ -41,7 +41,7 @@ class BSDBStore(SyncStore):
 
     @synchronized
     def __getitem__(self, key):
-        return self.loads(self._store[key])
+        return self.loads(self._store[key], key)
 
     @synchronized
     def __setitem__(self, key, value):

@@ -72,7 +72,7 @@ class ClientStore(BaseStore):
             self._engine = url2pathname(engine.split('://')[1])
 
     def __getitem__(self, key):
-        return self.loads(super(ClientStore, self).__getitem__(key))
+        return self.loads(super(ClientStore, self).__getitem__(key), key)
 
     def __setitem__(self, key, value):
         super(ClientStore, self).__setitem__(key, self.dumps(value))
