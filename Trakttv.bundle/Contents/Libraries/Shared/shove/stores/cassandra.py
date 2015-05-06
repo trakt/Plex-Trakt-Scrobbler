@@ -61,7 +61,7 @@ class CassandraStore(SimpleStore):
         try:
             item = self._store.get(key).get('key')
             if item is not None:
-                return self.loads(item)
+                return self.loads(item, key)
             raise KeyError(key)
         except pycassa.NotFoundException:
             raise KeyError(key)

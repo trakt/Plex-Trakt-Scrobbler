@@ -33,7 +33,7 @@ class MemCache(Base):
         value = self._store.get(key)
         if value is None:
             raise KeyError(key)
-        return self.loads(value)
+        return self.loads(value, key)
 
     def __setitem__(self, key, value):
         self._store.set(key, self.dumps(value), self.timeout)

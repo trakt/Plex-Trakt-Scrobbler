@@ -34,7 +34,7 @@ class RedisCache(Base):
         self.timeout = kw.get('timeout', 300)
 
     def __getitem__(self, key):
-        return self.loads(self._store[key])
+        return self.loads(self._store[key], key)
 
     def __setitem__(self, key, value):
         self._store.setex(key, self.dumps(value), self.timeout)
