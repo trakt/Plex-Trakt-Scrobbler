@@ -57,7 +57,7 @@ class S3Store(BaseStore):
         if rkey is None:
             raise KeyError(key)
         # fetch string
-        value = self.loads(rkey.get_contents_as_string())
+        value = self.loads(rkey.get_contents_as_string(), key)
         # flag that the store has not been updated
         self._updated = False
         return value

@@ -78,7 +78,7 @@ class DBCache(Base):
             if row.expires < datetime.now().replace(microsecond=0):
                 del self[key]
                 raise KeyError(key)
-            return self.loads(native(row.value))
+            return self.loads(native(row.value), key)
         raise KeyError(key)
 
     def __setitem__(self, key, value):

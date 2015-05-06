@@ -57,7 +57,7 @@ class DBStore(BaseStore):
             [self._store.c.value], self._store.c.key == key,
         ).execute().fetchone()
         if row is not None:
-            return self.loads(native(row.value))
+            return self.loads(native(row.value), key)
         raise KeyError(key)
 
     def __setitem__(self, k, v):

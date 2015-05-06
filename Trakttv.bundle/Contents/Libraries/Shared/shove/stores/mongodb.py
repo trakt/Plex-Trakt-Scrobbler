@@ -36,7 +36,7 @@ class MongoDBStore(SimpleStore):
 
     def __getitem__(self, key):
         try:
-            return self.loads(self._store.find_one(dict(key=key))['value'])
+            return self.loads(self._store.find_one(dict(key=key))['value'], key)
         except TypeError:
             raise KeyError(key)
 

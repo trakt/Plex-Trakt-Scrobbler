@@ -33,7 +33,7 @@ class LevelDBStore(ClientStore):
         self._store = leveldb.LevelDB(self._engine)
 
     def __getitem__(self, key):
-        item = self.loads(self._store.Get(key))
+        item = self.loads(self._store.Get(key), key)
         if item is not None:
             return item
         raise KeyError(key)

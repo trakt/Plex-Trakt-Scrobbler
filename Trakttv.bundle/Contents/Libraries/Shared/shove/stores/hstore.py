@@ -69,7 +69,7 @@ class HStore(BaseStore):
             self._store.execute('SELECT data -> %s as t FROM shove', [key])
             data = self._store.fetchone()['t']
             if data is not None:
-                return self.loads(data)
+                return self.loads(data, key)
             raise KeyError
         except psycopg2.ProgrammingError:
             self._conn.rollback()
@@ -128,7 +128,7 @@ class HStore(BaseStore):
         try:
             self._store.execute('SELECT data as i FROM shove')
             for k, v in items(self._store.fetchall()['i']):
-                yield k, loads(v)
+                yield k, loads(v, k)
         except psycopg2.ProgrammingError:
             self._conn.rollback()
 
