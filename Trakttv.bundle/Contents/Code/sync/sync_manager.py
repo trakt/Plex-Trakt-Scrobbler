@@ -231,6 +231,10 @@ class SyncManager(object):
         # Retrieve `Account`
         account = AccountManager.get(Account.id == account_id)
 
+        if account.trakt is None:
+            log.info('Missing trakt account for %r', account)
+            return False, L('invalid_credentials')
+
         # Ensure sync task isn't already running
         if not cls.lock.acquire(blocking):
             return False, L('already_running')

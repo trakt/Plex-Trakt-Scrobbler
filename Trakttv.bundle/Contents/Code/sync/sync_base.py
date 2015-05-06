@@ -92,7 +92,15 @@ class TraktInterface(Base):
             'exceptions': exceptions
         }
 
-        with cls.get_account().authorization():
+        # Retrieve account
+        account = cls.get_account()
+        trakt_account = account.trakt
+
+        if trakt_account is None:
+            log.info('Missing trakt account for %r', account)
+            return None, None
+
+        with trakt_account.authorization():
             # Merge watched library
             if watched and Trakt['sync/watched'].get(media, **params) is None:
                 log.warn('Unable to fetch watched items')

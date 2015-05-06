@@ -25,7 +25,7 @@ def AccountsMenu():
     for account in AccountManager.get.all():
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id),
-            title=account.username
+            title=account.name
         ))
 
     return oc
@@ -37,7 +37,7 @@ def ControlsMenu(account_id=1, refresh=None):
     if account.id != 1:
         return MessageContainer('Not Implemented', "Multi-user syncing hasn't been implemented yet")
 
-    oc = ObjectContainer(title2=LF('controls:title', account.username), no_cache=True)
+    oc = ObjectContainer(title2=LF('controls:title', account.name), no_cache=True)
     all_keys = []
 
     create_active_item(oc, account)

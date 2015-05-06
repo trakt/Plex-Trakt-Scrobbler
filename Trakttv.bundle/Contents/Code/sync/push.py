@@ -146,7 +146,7 @@ class Base(SyncBase):
             # Empty request
             return
 
-        with self.account.authorization():
+        with self.account.trakt.authorization():
             response = Trakt[path].add(kwargs, exceptions=True)
 
         if not response:
@@ -162,7 +162,7 @@ class Base(SyncBase):
             # Empty request
             return
 
-        with self.account.authorization():
+        with self.account.trakt.authorization():
             response = Trakt[path].remove(kwargs, exceptions=True)
 
         if not response:

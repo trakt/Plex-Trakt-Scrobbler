@@ -137,7 +137,13 @@ class ActionManager(Manager):
         log.debug('request: %r', request)
 
         # Send request with account authorization
-        with account.authorization():
+        trakt_account = account.trakt
+
+        if trakt_account is None:
+            log.info('Missing trakt account for %r', account)
+            return None
+        
+        with trakt_account.authorization():
             return func(**request)
 
     @classmethod

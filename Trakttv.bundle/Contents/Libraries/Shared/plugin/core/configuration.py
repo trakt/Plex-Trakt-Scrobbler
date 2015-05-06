@@ -1,6 +1,6 @@
 from plugin.core.helpers import decorator
-from plugin.managers import AccountManager
-from plugin.models import Account
+from plugin.managers import TraktAccountManager
+from plugin.models import TraktAccount
 
 import logging
 
@@ -49,10 +49,10 @@ class Configuration(object):
             return True
 
         # Retrieve administrator account
-        account = AccountManager.get(Account.id == 1)
+        trakt_account = TraktAccountManager.get(TraktAccount.account == 1)
 
         # Update administrator authorization
-        if not AccountManager.update.from_pin(account, value):
+        if not TraktAccountManager.update.from_pin(trakt_account, value):
             log.warn('Unable to update account')
             return False
 
