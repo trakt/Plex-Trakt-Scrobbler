@@ -5,6 +5,7 @@ from core.logger import Logger
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import AccountManager
 from plugin.models import Account
+from plugin.sync import Sync, SyncAction, SyncData
 
 from ago import human
 from datetime import datetime
@@ -19,6 +20,7 @@ log = Logger('interface.sync_menu')
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
 def AccountsMenu():
+    # TODO adding profile thumbnails (from trakt.tv or plex.tv?) would be a nice addition
     oc = ObjectContainer(title2=L('accounts:title'), no_cache=True)
 
     for account in AccountManager.get.all():
@@ -39,7 +41,7 @@ def ControlsMenu(account_id=1, refresh=None):
     oc = ObjectContainer(title2=LF('controls:title', account.name), no_cache=True)
     all_keys = []
 
-    create_active_item(oc, account)
+    create_active_item(oc, account)  # TODO this should be moved to the `AccountsMenu` if there is multiple accounts
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize, account_id=account.id),
@@ -79,6 +81,7 @@ def ControlsMenu(account_id=1, refresh=None):
 
 
 def create_active_item(oc, account):
+    # TODO implement active sync retrieval method
     task, handler = SyncManager.get_current()
     if not task:
         return
@@ -128,6 +131,7 @@ def format_remaining(value):
 def get_task_status(key, section=None):
     result = []
 
+    # TODO implement task status retrieval method
     status = SyncManager.get_status(key, section)
 
     if status.previous_timestamp:
@@ -167,7 +171,8 @@ def get_task_status(key, section=None):
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize(account_id=1):
-    success, message = SyncManager.trigger_synchronize(account_id)
+    # TODO implement options to change `SyncData` option per `Account`
+    success, message = Sync.start(account_id, SyncAction.Both, SyncData.All)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
@@ -181,7 +186,8 @@ def Synchronize(account_id=1):
 
 @route(PLUGIN_PREFIX + '/sync/push')
 def Push(account_id=1, section=None):
-    success, message = SyncManager.trigger_push(account_id, section)
+    # TODO implement options to change `SyncData` option per `Account`
+    success, message = Sync.start(account_id, SyncAction.Push, SyncData.All, section=section)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
@@ -194,7 +200,8 @@ def Push(account_id=1, section=None):
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 def Pull(account_id=1):
-    success, message = SyncManager.trigger_pull(account_id)
+    # TODO implement options to change `SyncData` option per `Account`
+    success, message = Sync.start(account_id, SyncAction.Pull, SyncData.All)
 
     if not success:
         return MessageContainer(L('trigger_failure:title'), message)
@@ -206,8 +213,8 @@ def Pull(account_id=1):
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
-def Cancel(account_id=1):
-    if not SyncManager.cancel():
+def Cancel():
+    if not Sync.cancel():
         return MessageContainer(
             L('cancel_failure:title'),
             L('cancel_failure:message'),
