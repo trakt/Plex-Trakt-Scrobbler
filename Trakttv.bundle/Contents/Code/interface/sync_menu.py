@@ -1,7 +1,6 @@
 from core.helpers import timestamp, pad_title, plural, get_filter, normalize
 from core.localization import localization
 from core.logger import Logger
-from sync.sync_manager import SyncManager
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import AccountManager

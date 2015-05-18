@@ -8,8 +8,6 @@ Environment.setup(Core, Dict, Prefs)
 # Modules
 # ------------------------------------------------
 import core
-import data
-import sync
 import interface
 # ------------------------------------------------
 # Handlers

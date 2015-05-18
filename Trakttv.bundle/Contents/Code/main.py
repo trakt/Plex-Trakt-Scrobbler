@@ -6,7 +6,6 @@ from core.logger import Logger
 from core.logging_handler import PlexHandler
 from core.logging_reporter import RAVEN
 from core.update_checker import UpdateChecker
-from sync.sync_manager import SyncManager
 
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.core.helpers.thread import module_start
@@ -26,10 +25,7 @@ log = Logger()
 class Main(object):
     modules = [
         # core
-        UpdateChecker(),
-
-        # sync
-        SyncManager
+        UpdateChecker()
     ]
 
     def __init__(self):
