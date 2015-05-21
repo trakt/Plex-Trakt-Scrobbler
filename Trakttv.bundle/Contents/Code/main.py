@@ -143,8 +143,12 @@ class Main(object):
         Dict.Save()
 
         # Update plex.metadata.py `Matcher` preferences
-        Matcher.set_caper(preferences['matcher'] == 'plex_extended')
-        Matcher.set_extend(preferences['matcher'] == 'plex_extended')
+        extended_matcher = preferences['matcher'] == 'plex_extended'
+
+        Matcher.configure(
+            caper_enabled=extended_matcher,
+            extend_enabled=extended_matcher
+        )
 
         log.info('Preferences updated %s', preferences)
         # TODO EventManager.fire('preferences.updated', preferences)
