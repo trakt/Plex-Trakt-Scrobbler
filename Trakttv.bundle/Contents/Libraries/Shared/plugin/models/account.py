@@ -12,13 +12,33 @@ class Account(Model):
 
     name = TextField(unique=True)
 
+    def __init__(self, *args, **kwargs):
+        super(Account, self).__init__(*args, **kwargs)
+
+        self._plex_account = None
+        self._trakt_account = None
+
     @property
     def plex(self):
+        if self._plex_account:
+            return self._plex_account
+
         return self.plex_accounts.first()
+
+    @plex.setter
+    def plex(self, value):
+        self._plex_account = value
 
     @property
     def trakt(self):
+        if self._trakt_account:
+            return self._trakt_account
+
         return self.trakt_accounts.first()
+
+    @trakt.setter
+    def trakt(self, value):
+        self._trakt_account = value
 
     def to_json(self, full=False):
         result = {

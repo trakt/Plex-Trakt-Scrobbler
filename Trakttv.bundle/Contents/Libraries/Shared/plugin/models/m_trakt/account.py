@@ -17,15 +17,43 @@ class TraktAccount(Model):
 
     username = CharField(null=True, unique=True)
 
+    def __init__(self, *args, **kwargs):
+        super(TraktAccount, self).__init__(*args, **kwargs)
+
+        self._basic_credential = None
+        self._oauth_credential = None
+
+    @property
+    def basic(self):
+        if self._basic_credential:
+            return self._basic_credential
+
+        return self.basic_credentials.first()
+
+    @basic.setter
+    def basic(self, value):
+        self._basic_credential = value
+
+    @property
+    def oauth(self):
+        if self._oauth_credential:
+            return self._oauth_credential
+
+        return self.oauth_credentials.first()
+
+    @oauth.setter
+    def oauth(self, value):
+        self._oauth_credential = value
+
     def authorization(self):
         # OAuth
-        oauth = self.oauth_credentials.first()
+        oauth = self.oauth
 
         if oauth:
             return self.oauth_authorization(oauth)
 
         # Basic (legacy)
-        basic = self.basic_credentials.first()
+        basic = self.basic
 
         if basic:
             return self.basic_authorization(basic)
@@ -35,7 +63,7 @@ class TraktAccount(Model):
 
     def basic_authorization(self, basic_credential=None):
         if basic_credential is None:
-            basic_credential = self.basic_credentials.first()
+            basic_credential = self.basic
 
         log.debug('Using basic authorization for %r', self)
 
@@ -43,7 +71,7 @@ class TraktAccount(Model):
 
     def oauth_authorization(self, oauth_credential=None):
         if oauth_credential is None:
-            oauth_credential = self.oauth_credentials.first()
+            oauth_credential = self.oauth
 
         log.debug('Using oauth authorization for %r', self)
 
@@ -65,13 +93,13 @@ class TraktAccount(Model):
         }
 
         # - Basic credentials
-        basic = self.basic_credentials.first()
+        basic = self.basic
 
         if basic is not None:
             result['authorization']['basic'] = basic.to_json(self)
 
         # - OAuth credentials
-        oauth = self.oauth_credentials.first()
+        oauth = self.oauth
 
         if oauth is not None:
             result['authorization']['oauth'] = oauth.to_json()

@@ -16,6 +16,22 @@ class PlexAccount(Model):
 
     username = CharField(null=True, unique=True)
 
+    def __init__(self, *args, **kwargs):
+        super(PlexAccount, self).__init__(*args, **kwargs)
+
+        self._basic_credential = None
+
+    @property
+    def basic(self):
+        if self._basic_credential:
+            return self._basic_credential
+
+        return self.basic_credentials.first()
+
+    @basic.setter
+    def basic(self, value):
+        self._basic_credential = value
+
     def to_json(self, full=False):
         result = {
             'id': self.id,
@@ -31,7 +47,7 @@ class PlexAccount(Model):
         }
 
         # - Basic credentials
-        basic = self.basic_credentials.first()
+        basic = self.basic
 
         if basic is not None:
             result['authorization']['basic'] = basic.to_json(self)
