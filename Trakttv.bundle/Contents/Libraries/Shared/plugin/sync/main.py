@@ -1,31 +1,46 @@
-from plugin.sync.core.enums import SyncAction, SyncData
-from plugin.sync.modules import *
+from threading import Thread
+from plugin.sync.core.task import SyncTask
+from plugin.sync.handlers import *
+from plugin.sync.modes import *
 
 import logging
 
 log = logging.getLogger(__name__)
 
-MODULES = [
+HANDLERS = [
     Collection,
     Playback,
     Ratings,
     Watched
 ]
 
+MODES = [
+    FastPull,
+    Full,
+    Pull,
+    Push
+]
+
 
 class Main(object):
     def __init__(self):
-        self.modules = dict(self._construct_modules())
+        self.handlers = dict(self._construct_modules(HANDLERS, 'data'))
+        self.modes = dict(self._construct_modules(MODES, 'mode'))
 
-    def _construct_modules(self):
-        for module in MODULES:
-            if module.__data__ is None:
-                log.warn('Module %r is missing a valid "__data__" attribute')
+        self.current = None
+        self.thread = None
+
+    def _construct_modules(self, modules, attribute):
+        for cls in modules:
+            key = getattr(cls, attribute, None)
+
+            if key is None:
+                log.warn('Module %r is missing a valid %r attribute', cls, attribute)
                 continue
 
-            yield module.__data__, module(self)
+            yield key, cls(self)
 
-    def start(self, account, action, data, **kwargs):
+    def start(self, account, mode, data, media, **kwargs):
         """Start a sync for the provided account
 
         Note: if a sync is already running a `SyncError` will be raised.
@@ -33,16 +48,52 @@ class Main(object):
         :param account: Account to synchronize with trakt
         :type account: int or plugin.models.Account
 
-        :param action: Syncing action to perform (pull, push)
-        :type action: int (plugin.sync.SyncAction)
+        :param mode: Syncing mode (pull, push, etc..)
+        :type mode: int (plugin.sync.SyncMode)
 
         :param data: Data to synchronize (collection, ratings, etc..)
         :type data: int (plugin.sync.SyncData)
 
+        :param media: Media to synchronize (movies, shows, etc..)
+        :type media: int (plugin.sync.SyncMedia)
+
         :return: `SyncResult` object with details on the sync outcome.
         :rtype: plugin.sync.core.result.SyncResult
         """
-        raise NotImplementedError
+        self.current = SyncTask.create(account, mode, data, media, **kwargs)
+
+        self.thread = Thread(target=self.run_wrapper)
+        self.thread.start()
+
+        return None, None
+
+    def run_wrapper(self):
+        if self.current is None:
+            log.warn('Missing "current" sync task')
+            return
+
+        log.info('(%r) Started', self.current.mode)
+
+        try:
+            # Run in trakt authorization context
+            with self.current.account.trakt.authorization():
+                self.run()
+        except Exception, ex:
+            log.warn('Exception raised in run(): %s', ex, exc_info=True)
+
+        log.info('(%r) Done', self.current.mode)
+
+    def run(self):
+        if self.current.mode not in self.modes:
+            log.warn('Unknown sync mode: %r', self.current.mode)
+            return
+
+        self.modes[self.current.mode].run()
+
+        # TODO Syncing 2.0:
+        # 2. apply `task.state.trakt.changes`
+        # 3. find changes that need to be sent to trakt
+        # 4. push changes to trakt.tv
 
     def cancel(self):
         """Trigger a currently running sync to cancel
