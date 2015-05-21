@@ -5,7 +5,7 @@ from core.logger import Logger
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import AccountManager
 from plugin.models import Account
-from plugin.sync import Sync, SyncAction, SyncData
+from plugin.sync import Sync, SyncData, SyncMedia, SyncMode
 
 from ago import human
 from datetime import datetime
@@ -77,11 +77,20 @@ def ControlsMenu(account_id=1, refresh=None):
         thumb=R("icon-sync_down.png")
     ))
 
+    oc.add(DirectoryObject(
+        key=Callback(FastPull, account_id=account.id),
+        title=pad_title('Pull (Fast) from trakt'),
+        summary=get_task_status('fast_pull'),
+        thumb=R("icon-sync.png")
+    ))
+
     return oc
 
 
 def create_active_item(oc, account):
     # TODO implement active sync retrieval method
+    return
+
     task, handler = SyncManager.get_current()
     if not task:
         return
@@ -129,9 +138,11 @@ def format_remaining(value):
 
 
 def get_task_status(key, section=None):
+    # TODO implement task status retrieval method
+    return '<Not Implemented>'
+
     result = []
 
-    # TODO implement task status retrieval method
     status = SyncManager.get_status(key, section)
 
     if status.previous_timestamp:
@@ -172,10 +183,10 @@ def get_task_status(key, section=None):
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize(account_id=1):
     # TODO implement options to change `SyncData` option per `Account`
-    success, message = Sync.start(account_id, SyncAction.Both, SyncData.All)
+    success, result = Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
 
-    if not success:
-        return MessageContainer(L('trigger_failure:title'), message)
+    # if not success:
+    #     return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
         L('trigger_success:title'),
@@ -183,14 +194,27 @@ def Synchronize(account_id=1):
     )
 
 
+@route(PLUGIN_PREFIX + '/sync/fast_pull')
+def FastPull(account_id=1):
+    # TODO implement options to change `SyncData` option per `Account`
+    success, result = Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
+
+    # if not success:
+    #     return MessageContainer(L('trigger_failure:title'), message)
+
+    return MessageContainer(
+        L('trigger_success:title'),
+        LF('trigger_success:message', 'Fast Pull')
+    )
+
 
 @route(PLUGIN_PREFIX + '/sync/push')
 def Push(account_id=1, section=None):
     # TODO implement options to change `SyncData` option per `Account`
-    success, message = Sync.start(account_id, SyncAction.Push, SyncData.All, section=section)
+    success, result = Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
 
-    if not success:
-        return MessageContainer(L('trigger_failure:title'), message)
+    # if not success:
+    #     return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
         L('trigger_success:title'),
@@ -201,10 +225,10 @@ def Push(account_id=1, section=None):
 @route(PLUGIN_PREFIX + '/sync/pull')
 def Pull(account_id=1):
     # TODO implement options to change `SyncData` option per `Account`
-    success, message = Sync.start(account_id, SyncAction.Pull, SyncData.All)
+    success, result = Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
 
-    if not success:
-        return MessageContainer(L('trigger_failure:title'), message)
+    # if not success:
+    #     return MessageContainer(L('trigger_failure:title'), message)
 
     return MessageContainer(
         L('trigger_success:title'),
