@@ -2,8 +2,15 @@
 # Environment
 # ------------------------------------------------
 from plugin.core.environment import Environment
+import os
 
 Environment.setup(Core, Dict, Prefs)
+
+# plex.database.py
+os.environ['LIBRARY_DB'] = os.path.join(
+    Environment.path.plugin_support, 'Databases',
+    'com.plexapp.plugins.library.db'
+)
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
