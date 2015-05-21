@@ -4,18 +4,27 @@ class Differ(object):
     def run(self, base, current):
         raise NotImplementedError
 
-    def process_added(self, current):
+    def process_added(self, current, handlers=None):
         for h in self.handlers:
+            if handlers is not None and h.name not in handlers:
+                continue
+
             for action in h.on_added(current):
                 yield action
 
-    def process_removed(self, base):
+    def process_removed(self, base, handlers=None):
         for h in self.handlers:
+            if handlers is not None and h.name not in handlers:
+                continue
+
             for action in h.on_removed(base):
                 yield action
 
-    def process_common(self, base, current):
+    def process_common(self, base, current, handlers=None):
         for h in self.handlers:
+            if handlers is not None and h.name not in handlers:
+                continue
+
             for action in h.on_common(base, current):
                 yield action
 

@@ -1,6 +1,6 @@
 from trakt_sync.differ.core.base import Differ
 from trakt_sync.differ.core.helpers import dict_path
-from trakt_sync.differ.handlers import Collection, Playback, Rating, Watched
+from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
 
 
 class ShowDiffer(Differ):
@@ -9,28 +9,28 @@ class ShowDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Rating
+                Ratings
             ]
         ]
 
-    def run(self, base, current):
+    def run(self, base, current, handlers=None):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
         changes = {}
 
         for key in keys_current - keys_base:
-            actions = self.process_added(current[key])
+            actions = self.process_added(current[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 
         for key in keys_base - keys_current:
-            actions = self.process_removed(base[key])
+            actions = self.process_removed(base[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 
         for key in keys_base & keys_current:
-            actions = self.process_common(base[key], current[key])
+            actions = self.process_common(base[key], current[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 
@@ -42,7 +42,8 @@ class ShowDiffer(Differ):
             self.season.run(
                 b.seasons if b else {},
                 c.seasons if c else {},
-                changes=changes
+                changes=changes,
+                handlers=handlers
             )
 
         return changes
@@ -54,11 +55,11 @@ class SeasonDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Rating
+                Ratings
             ]
         ]
 
-    def run(self, base, current, changes=None):
+    def run(self, base, current, changes=None, handlers=None):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
@@ -66,17 +67,17 @@ class SeasonDiffer(Differ):
             changes = {}
 
         for key in keys_current - keys_base:
-            actions = self.process_added(current[key])
+            actions = self.process_added(current[key], handlers=handlers)
 
             self.store_season_actions(changes, current[key], actions)
 
         for key in keys_base - keys_current:
-            actions = self.process_removed(base[key])
+            actions = self.process_removed(base[key], handlers=handlers)
 
             self.store_season_actions(changes, base[key], actions)
 
         for key in keys_base & keys_current:
-            actions = self.process_common(base[key], current[key])
+            actions = self.process_common(base[key], current[key], handlers=handlers)
 
             self.store_season_actions(changes, current[key], actions)
 
@@ -88,7 +89,8 @@ class SeasonDiffer(Differ):
             self.episode.run(
                 b.episodes if b else {},
                 c.episodes if c else {},
-                changes=changes
+                changes=changes,
+                handlers=handlers
             )
 
         return changes
@@ -116,12 +118,12 @@ class EpisodeDiffer(Differ):
             h(self) for h in [
                 Collection,
                 Playback,
-                Rating,
+                Ratings,
                 Watched
             ]
         ]
 
-    def run(self, base, current, changes=None):
+    def run(self, base, current, changes=None, handlers=None):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
@@ -129,17 +131,17 @@ class EpisodeDiffer(Differ):
             changes = {}
 
         for key in keys_current - keys_base:
-            actions = self.process_added(current[key])
+            actions = self.process_added(current[key], handlers=handlers)
 
             self.store_episode_actions(changes, current[key], actions)
 
         for key in keys_base - keys_current:
-            actions = self.process_removed(base[key])
+            actions = self.process_removed(base[key], handlers=handlers)
 
             self.store_episode_actions(changes, base[key], actions)
 
         for key in keys_base & keys_current:
-            actions = self.process_common(base[key], current[key])
+            actions = self.process_common(base[key], current[key], handlers=handlers)
 
             self.store_episode_actions(changes, current[key], actions)
 

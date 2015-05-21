@@ -1,3 +1,4 @@
+from trakt_sync.differ import MovieDiffer, ShowDiffer
 import trakt_sync.cache.enums as enums
 
 from trakt import Trakt
@@ -17,6 +18,10 @@ class Cache(object):
         self.media = Cache.Media.parse(media)
         self.data = Cache.Data.parse(data)
 
+        # Differs
+        self._movie_differ = MovieDiffer()
+        self._show_differ = ShowDiffer()
+
     def refresh(self, username):
         activities = Trakt['sync'].last_activities()
 
@@ -24,7 +29,13 @@ class Cache(object):
             media = Cache.Media.get(m)
 
             for d in self.data:
-                collection = self._get_collection(username, media)
+                data = Cache.Data.get(d)
+
+                if not self.exists(d, m):
+                    # Unsupported media + data combination
+                    continue
+
+                collection = self._get_collection(username, media, data)
 
                 timestamp_key = Cache.Data.get_timestamp_key(d)
 
@@ -39,15 +50,19 @@ class Cache(object):
                 store = self.fetch(d, m)
 
                 if store is None:
+                    # Unable to retrieve data
                     continue
 
                 # Find changes
-                changes = self.diff(collection['store'], store)
+                changes = self.diff(m, d, collection['store'], store)
 
                 # Update timestamp in cache to `current`
-                # collection = self._get_collection(username, media)
-                # collection['store'].update(store)
-                # collection['timestamps'][media][timestamp_key] = current
+                collection['store'].update(store)
+                collection['timestamps'][media][timestamp_key] = current
+
+                if changes is None:
+                    # No changes detected
+                    continue
 
                 yield (m, d), changes
 
@@ -55,8 +70,7 @@ class Cache(object):
         interface = Cache.Data.get_interface(data)
         method = Cache.Media.get(media)
 
-        # Retrieve function (`method`) from `interface`
-        func = getattr(Trakt[interface], method, None)
+        func = self.fetch_func(data, media)
 
         if func is None:
             return None
@@ -71,25 +85,43 @@ class Cache(object):
 
         return None
 
-    def diff(self, last_items, current_items):
-        if not last_items:
-            # No `last` data stored
-            return current_items, {}
+    @staticmethod
+    def fetch_func(data, media):
+        if type(data) is not str:
+            data = Cache.Data.get_interface(data)
 
-        # Retrieve keys
-        keys_last = last_items.archive.keys()
-        keys_current = current_items.keys()
+        if type(media) is not str:
+            media = Cache.Media.get(media)
 
-        # Find added/removed keys
-        keys_added = [k for k in keys_current if k not in keys_last]
-        keys_removed = [k for k in keys_last if k not in keys_current]
+        # Retrieve function (`method`) from `interface`
+        return getattr(Trakt[data], media, None)
 
-        # TODO find changes
-        return dict([
-            (k, current_items[k]) for k in keys_added
-        ]), dict([
-            (k, last_items[k]) for k in keys_removed
-        ])
+    @classmethod
+    def exists(cls, data, media):
+        func = cls.fetch_func(data, media)
+
+        return func is not None
+
+    def diff(self, media, data, base, current):
+        if not base:
+            if not current:
+                return None
+
+            # No `base` data stored, assume all the `current` items have been added
+            return {
+                'added': current
+            }
+
+        data_name = Cache.Data.get(data)
+
+        if media == Cache.Media.Movies:
+            result = self._movie_differ.run(base, current, handlers=[data_name])
+        elif media in [Cache.Media.Shows, Cache.Media.Seasons, Cache.Media.Episodes]:
+            result = self._show_differ.run(base, current, handlers=[data_name])
+        else:
+            raise Exception('Unknown media type: %r', media)
+
+        return result.get(data_name)
 
     def __getitem__(self, key):
         collection = self._get_collection(*key)
@@ -97,21 +129,18 @@ class Cache(object):
         return collection['store']
 
     @staticmethod
-    def _build_key(username, media):
-        if media in ['seasons', 'episodes']:
-            media = 'shows'
+    def _build_key(username, media, data):
+        return username, media, data
 
-        return username, media
-
-    def _get_collection(self, username, media):
-        key = self._build_key(username, media)
+    def _get_collection(self, username, media, data):
+        key = self._build_key(username, media, data)
 
         if key not in self.collections:
             self.collections[key] = {}
 
         collection = self.collections[key]
 
-        collection['store'] = self._get_store(username, media)
+        collection['store'] = self._get_store(username, media, data)
 
         if 'timestamps' not in collection:
             collection['timestamps'] = {}
@@ -121,11 +150,11 @@ class Cache(object):
 
         return collection
 
-    def _get_store(self, username, media):
-        key = self._build_key(username, media)
+    def _get_store(self, username, media, data):
+        key = self._build_key(username, media, data)
 
         if key not in self.stores:
-            self.stores[key] = self.storage('stores.%s.%s' % (username, media))
+            self.stores[key] = self.storage('stores.%s.%s.%s' % (username, media, data))
 
         return self.stores[key]
 

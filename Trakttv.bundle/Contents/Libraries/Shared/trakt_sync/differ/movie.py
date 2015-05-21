@@ -1,5 +1,5 @@
 from trakt_sync.differ.core.base import Differ
-from trakt_sync.differ.handlers import Collection, Playback, Rating, Watched
+from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
 
 
 class MovieDiffer(Differ):
@@ -8,29 +8,29 @@ class MovieDiffer(Differ):
             h(self) for h in [
                 Collection,
                 Playback,
-                Rating,
+                Ratings,
                 Watched
             ]
         ]
 
-    def run(self, base, current):
+    def run(self, base, current, handlers=None):
         b = set(base.keys())
         c = set(current.keys())
 
         changes = {}
 
         for key in c - b:
-            actions = self.process_added(current[key])
+            actions = self.process_added(current[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 
         for key in b - c:
-            actions = self.process_removed(base[key])
+            actions = self.process_removed(base[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 
         for key in b & c:
-            actions = self.process_common(base[key], current[key])
+            actions = self.process_common(base[key], current[key], handlers=handlers)
 
             self.store_actions(changes, actions)
 

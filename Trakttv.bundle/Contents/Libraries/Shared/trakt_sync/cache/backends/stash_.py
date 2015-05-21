@@ -51,7 +51,7 @@ class StashBackend(Backend):
 
     @staticmethod
     def key_decode(key):
-        key = key.split('/')
+        key = str(key).split('/')
 
         if len(key) == 1:
             return key[0]

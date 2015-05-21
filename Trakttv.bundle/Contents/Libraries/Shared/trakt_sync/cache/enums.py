@@ -58,6 +58,7 @@ class Data(Enum):
     Watchlist   = 0x16
 
     __attributes__ = None
+    __map__ = None
 
     @classmethod
     def initialize(cls):
@@ -86,6 +87,19 @@ class Data(Enum):
                 'timestamp': 'watchlisted_at'
             }
         }
+
+    @classmethod
+    def get(cls, key):
+        if cls.__map__ is None:
+            cls.__map__ = {
+                Data.Collection:    'collection',
+                Data.Playback:      'playback',
+                Data.Ratings:       'ratings',
+                Data.Watched:       'watched',
+                Data.Watchlist:     'watchlist'
+            }
+
+        return cls.__map__.get(key)
 
     @classmethod
     def get_interface(cls, key):
