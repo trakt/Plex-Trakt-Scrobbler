@@ -108,8 +108,6 @@ class ManagerMeta(type):
             if not value or not inspect.isclass(value):
                 continue
 
-            log.debug('Constructing manager method %r for %r', value, cls)
-
             # Construct method
             setattr(cls, key, value(cls))
 

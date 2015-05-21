@@ -3,7 +3,7 @@ from plugin.core.helpers.thread import module
 from plugin.models import Account, ClientRule, UserRule,\
     PlexAccount, PlexBasicCredential,\
     TraktAccount, TraktBasicCredential, TraktOAuthCredential
-from plugin.models.core import db, db_path, migrations_path
+from plugin.models.core import db, migrations_path
 
 from peewee_migrate.core import Router
 from xml.etree import ElementTree
@@ -19,7 +19,6 @@ log = logging.getLogger(__name__)
 class Migrations(object):
     @classmethod
     def start(cls):
-        log.debug('db_path: %r', db_path)
         log.debug('migrations_path: %r', migrations_path)
 
         # Connect to database, enable WAL
