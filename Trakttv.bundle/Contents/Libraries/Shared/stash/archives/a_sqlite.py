@@ -1,7 +1,11 @@
 from stash.archives.core.base import Archive
 
 from contextlib import closing
-import sqlite3
+
+try:
+    import sqlite3
+except ImportError:
+    sqlite3 = None
 
 
 class SqliteArchive(Archive):
@@ -9,6 +13,9 @@ class SqliteArchive(Archive):
 
     def __init__(self, db, table):
         super(SqliteArchive, self).__init__()
+
+        if sqlite3 is None:
+            raise Exception('"sqlite3" library is not available')
 
         self.db = sqlite3.connect(db) if type(db) is str else db
         self.table = table
@@ -70,7 +77,7 @@ class SqliteArchive(Archive):
         return self.loads(row[0])
 
     def __iter__(self):
-        raise NotImplementedError
+        return self.iterkeys()
 
     def __len__(self):
         row = self.select_one('select count(*) from "%s"' % self.table)

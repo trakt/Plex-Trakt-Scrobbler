@@ -17,6 +17,15 @@ class ApswArchive(Archive):
         with closing(self.db.cursor()) as c:
             c.execute('create table if not exists "%s" (key PRIMARY KEY, value BLOB)' % self.table)
 
+    def iterkeys(self):
+        rows = self.select('select key from "%s"' % self.table)
+
+        for row in rows:
+            yield self.key_decode(row[0])
+
+    def keys(self):
+        return list(self.iterkeys())
+
     def save(self):
         pass
 
@@ -83,7 +92,7 @@ class ApswArchive(Archive):
         return self.loads(row[0])
 
     def __iter__(self):
-        raise NotImplementedError
+        return self.iterkeys()
 
     def __len__(self):
         row = self.select_one('select count(*) from "%s"' % self.table)

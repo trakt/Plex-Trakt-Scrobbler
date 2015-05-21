@@ -49,7 +49,9 @@ class Stash(MutableMapping):
         return self.algorithm[key]
 
     def __iter__(self):
-        raise NotImplementedError
+        self.flush()
+
+        return iter(self.archive)
 
     def __len__(self):
         self.flush()
