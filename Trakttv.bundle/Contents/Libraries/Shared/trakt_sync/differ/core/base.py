@@ -1,3 +1,15 @@
+from trakt.objects import Show
+from trakt.objects import Movie
+from trakt_sync.differ.core.helpers import dict_path
+
+KEY_AGENTS = [
+    'imdb',
+    'tmdb',
+    'tvdb',
+    'tvrage'
+]
+
+
 class Differ(object):
     handlers = None
 
@@ -29,14 +41,13 @@ class Differ(object):
                 yield action
 
     @staticmethod
-    def store_action(changes, key, collection, action, properties=None):
-        if collection not in changes:
-            changes[collection] = {}
+    def store_action(changes, keys, collection, action, properties=None):
+        items = dict_path(changes, (
+            collection, action
+        ))
 
-        if action not in changes[collection]:
-            changes[collection][action] = {}
-
-        changes[collection][action][key] = properties
+        for key in keys:
+            items[key] = properties
 
     @classmethod
     def store_actions(cls, changes, actions):
@@ -52,3 +63,15 @@ class Differ(object):
             changes[media] = {}
 
         changes[media][key] = data
+
+    @staticmethod
+    def item_keys(item):
+        if type(item) not in [Show, Movie]:
+            yield item.pk
+            return
+
+        for agent, sid in item.keys:
+            if agent not in KEY_AGENTS:
+                continue
+
+            yield agent, sid

@@ -20,10 +20,10 @@ class Handler(object):
         return getattr(base, attribute), getattr(current, attribute)
 
     def add(self, item):
-        return item.pk, self.name, 'added', self.properties(item)
+        return list(self._differ.item_keys(item)), self.name, 'added', self.properties(item)
 
     def remove(self, item):
-        return item.pk, self.name, 'removed', self.properties(item)
+        return list(self._differ.item_keys(item)), self.name, 'removed', self.properties(item)
 
     def change(self, (base, current)):
-        return base.pk, self.name, 'changed', self.properties((base, current))
+        return list(self._differ.item_keys(base)), self.name, 'changed', self.properties((base, current))

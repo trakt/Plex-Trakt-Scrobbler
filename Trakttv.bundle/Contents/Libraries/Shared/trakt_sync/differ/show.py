@@ -105,7 +105,8 @@ class SeasonDiffer(Differ):
         show = season.show
 
         seasons = dict_path(changes, (
-            collection, action, show.pk,
+            collection, action,
+            list(cls.item_keys(show)),
             'seasons',
         ))
 
@@ -154,11 +155,12 @@ class EpisodeDiffer(Differ):
 
     @classmethod
     def store_episode_action(cls, changes, episode, key, collection, action, properties=None):
-        season_num, episode_num = key
+        season_num, episode_num = key[0]
         show = episode.show
 
         episodes = dict_path(changes, (
-            collection, action, show.pk,
+            collection, action,
+            list(cls.item_keys(show)),
             'seasons', season_num,
             'episodes'
         ))
