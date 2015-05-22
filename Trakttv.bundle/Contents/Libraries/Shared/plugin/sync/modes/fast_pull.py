@@ -24,7 +24,7 @@ class FastPull(Mode):
             try:
                 self.handlers[data].run(media, self.current.mode, changes)
             except Exception, ex:
-                log.warn('Exception raised in modules[%r].run(%r, ...): %s', data, media, ex, exc_info=True)
+                log.warn('Exception raised in handlers[%r].run(%r, ...): %s', data, media, ex, exc_info=True)
 
         # Flush caches to archives
         # self.current.state.flush()

@@ -30,7 +30,7 @@ class DataHandler(object):
                 log.warn('%r does not has a valid "media" attribute', cls)
                 continue
 
-            yield cls.media, cls(main)
+            yield cls.media, cls(self, main)
 
     def run(self, media, mode, *args, **kwargs):
         module = self.__children.get(media)
@@ -45,7 +45,8 @@ class DataHandler(object):
 class MediaHandler(object):
     media = None
 
-    def __init__(self, main):
+    def __init__(self, data, main):
+        self.__data = data
         self.__main = main
 
     @property
@@ -55,6 +56,14 @@ class MediaHandler(object):
     @property
     def handlers(self):
         return self.__main.handlers
+
+    @staticmethod
+    def build_action(action, rating_key, p_value, t_value):
+        raise NotImplementedError
+
+    @staticmethod
+    def get_operands(p_settings, t_item):
+        raise NotImplementedError
 
     def run(self, mode, *args, **kwargs):
         if mode == SyncMode.FastPull:
@@ -94,7 +103,7 @@ class MediaHandler(object):
 
             self.execute_action(action, key, p_settings, t_items[key])
 
-    def execute_action(self, action, key, p_settings, t_properties):
+    def execute_action(self, action, **kwargs):
         # Find matching function
         func = getattr(self, 'on_%s' % action, None)
 
@@ -102,13 +111,25 @@ class MediaHandler(object):
             raise NotImplementedError
 
         # Execute action
-        return func(key, p_settings, t_properties)
+        return func(**kwargs)
 
-    def on_added(self, key, p_settings, t_properties):
+    def get_action(self, p_value, t_value):
+        if p_value is None and t_value is not None:
+            return 'added'
+
+        if p_value is not None and t_value is None:
+            return 'removed'
+
+        if p_value != t_value:
+            return 'changed'
+
+        return None
+
+    def on_added(self, *args, **kwargs):
         raise NotImplementedError
 
-    def on_removed(self, key, p_settings, t_properties):
+    def on_removed(self, *args, **kwargs):
         raise NotImplementedError
 
-    def on_changed(self, key, p_settings, t_properties):
+    def on_changed(self, *args, **kwargs):
         raise NotImplementedError
