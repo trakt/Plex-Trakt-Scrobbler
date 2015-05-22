@@ -17,11 +17,26 @@ class ApswArchive(Archive):
         with closing(self.db.cursor()) as c:
             c.execute('create table if not exists "%s" (key PRIMARY KEY, value BLOB)' % self.table)
 
+    def items(self):
+        return list(self.iteritems())
+
+    def iteritems(self):
+        rows = self.select('select key, value from "%s"' % self.table)
+
+        for key, value in rows:
+            yield self.key_decode(key), self.loads(value)
+
     def iterkeys(self):
         rows = self.select('select key from "%s"' % self.table)
 
-        for row in rows:
-            yield self.key_decode(row[0])
+        for key, in rows:
+            yield self.key_decode(key)
+
+    def itervalues(self):
+        rows = self.select('select value from "%s"' % self.table)
+
+        for value, in rows:
+            yield self.loads(value)
 
     def keys(self):
         return list(self.iterkeys())

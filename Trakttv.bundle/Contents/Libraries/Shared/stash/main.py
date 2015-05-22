@@ -13,19 +13,32 @@ class Stash(MutableMapping):
 
         self.key_transform = key_transform or (lambda key: key, lambda key: key)
 
+    def compact(self):
+        return self.algorithm.compact()
+
     def flush(self):
         # Update `archive` with the items in `cache`
         self.archive.update(self.cache)
 
-    def save(self):
-        # Flush items from `cache` to `archive`
+    def items(self):
         self.flush()
 
-        # Ensure `archive` is completely saved
-        self.archive.save()
+        return self.archive.items()
 
-    def compact(self):
-        return self.algorithm.compact()
+    def iteritems(self):
+        self.flush()
+
+        return self.archive.iteritems()
+
+    def iterkeys(self):
+        self.flush()
+
+        return self.archive.iterkeys()
+
+    def itervalues(self):
+        self.flush()
+
+        return self.archive.itervalues()
 
     def prime(self, keys=None, force=False):
         """Prime cache with `keys` from archive.
@@ -41,6 +54,13 @@ class Stash(MutableMapping):
             keys=keys,
             force=force
         )
+
+    def save(self):
+        # Flush items from `cache` to `archive`
+        self.flush()
+
+        # Ensure `archive` is completely saved
+        self.archive.save()
 
     def __delitem__(self, key):
         del self.algorithm[key]
