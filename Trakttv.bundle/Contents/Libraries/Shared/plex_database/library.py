@@ -111,8 +111,6 @@ class MovieLibrary(LibraryBase):
         ]
 
         def movies_iterator():
-            x = 0
-
             for movie_id, movie in movies:
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
@@ -125,8 +123,7 @@ class MovieLibrary(LibraryBase):
                 guid_raw, guid_parsed = movie['guid']
                 guid = guid_parsed if parse_guid else guid_raw
 
-                yield x, guid, movie['settings']
-                x += 1
+                yield movie_id, guid, movie['settings']
 
         return movies_iterator()
 
@@ -369,8 +366,6 @@ class EpisodeLibrary(LibraryBase):
                 x += 1
 
         def episodes_iterator():
-            x = 0
-
             for item in episodes.tuples().iterator():
                 # Expand `item` tuple
                 (
@@ -410,14 +405,12 @@ class EpisodeLibrary(LibraryBase):
 
                 for episode_num in episode_nums:
                     ids = {
-                        '#': x,
                         'show': show_id,
                         'season': season_id,
                         'episode': episode_id
                     }
 
                     yield ids, guid, (season_num, episode_num), settings
-                    x += 1
 
         return shows_iterator(), seasons, episodes_iterator()
 
