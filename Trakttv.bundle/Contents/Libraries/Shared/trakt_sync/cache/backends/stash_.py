@@ -18,6 +18,18 @@ class StashBackend(Backend):
     def flush(self):
         return self.stash.flush()
 
+    def items(self):
+        return self.stash.items()
+
+    def iteritems(self):
+        return self.stash.iteritems()
+
+    def iterkeys(self):
+        return self.stash.iterkeys()
+
+    def itervalues(self):
+        return self.stash.itervalues()
+
     def save(self):
         return self.stash.save()
 
