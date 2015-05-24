@@ -1,5 +1,7 @@
 from stash.core.modules.base import Module
 
+import collections
+
 
 class Algorithm(Module):
     __group__ = 'algorithm'
@@ -14,6 +16,26 @@ class Algorithm(Module):
 
     def compact(self, force=False):
         raise NotImplementedError
+
+    def delete(self, keys):
+        if not keys:
+            return
+
+        if not isinstance(keys, collections.Iterable):
+            keys = [keys]
+
+        for key in keys:
+            try:
+                # Delete `key` from `archive`
+                del self.archive[key]
+            except KeyError:
+                pass
+
+            try:
+                # Delete `key` from `cache`
+                del self.cache[key]
+            except KeyError:
+                pass
 
     def prime(self, keys=None, force=False):
         raise NotImplementedError

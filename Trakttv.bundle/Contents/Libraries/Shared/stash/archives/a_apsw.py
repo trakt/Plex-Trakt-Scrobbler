@@ -2,6 +2,7 @@ from stash.archives.core.base import Archive
 
 from contextlib import closing
 import apsw
+import collections
 
 
 class ApswArchive(Archive):
@@ -58,6 +59,23 @@ class ApswArchive(Archive):
             return None
 
         return rows[0]
+
+    def delete(self, keys):
+        if not keys:
+            return
+
+        if not isinstance(keys, collections.Iterable):
+            keys = [keys]
+
+        # Start transaction
+        with self.db:
+            # Create cursor
+            with closing(self.db.cursor()) as c:
+                # Delete `keys`
+                c.executemany(self._query_delete(), [
+                    self.key_encode(key)
+                    for key in keys
+                ])
 
     def get_items(self, keys=None):
         if keys:
@@ -124,6 +142,9 @@ class ApswArchive(Archive):
         with closing(self.db.cursor()) as c:
             c.execute('update "%s" set value=? WHERE key=?' % self.table, (buffer(value), key))
             c.execute('insert or ignore into "%s" values(?,?)' % self.table, (key, buffer(value)))
+
+    def _query_delete(self):
+        return 'delete from "%s" where key=?' % self.table
 
     def _query_upsert(self):
         return 'insert or replace into "%s" values(?,?)' % self.table

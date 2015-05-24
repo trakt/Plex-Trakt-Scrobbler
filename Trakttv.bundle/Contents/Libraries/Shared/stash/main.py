@@ -16,6 +16,9 @@ class Stash(MutableMapping):
     def compact(self):
         return self.algorithm.compact()
 
+    def delete(self, keys):
+        return self.algorithm.delete(keys)
+
     def flush(self):
         # Update `archive` with the items in `cache`
         self.archive.update(self.cache)

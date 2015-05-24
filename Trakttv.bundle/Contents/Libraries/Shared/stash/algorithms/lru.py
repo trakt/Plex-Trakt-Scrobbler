@@ -8,6 +8,7 @@ try:
 except ImportError:
     from pyllist import dllist
 
+import collections
 import logging
 import thread
 
@@ -39,7 +40,7 @@ class LruAlgorithm(Algorithm):
         except KeyError:
             pass
 
-        # Remove value from `cache` and `archive`
+        # Remove `key` from `cache` and `archive`
         return super(LruAlgorithm, self).__delitem__(key)
 
     def __getitem__(self, key):
@@ -83,6 +84,25 @@ class LruAlgorithm(Algorithm):
             return
 
         self.release_items(count - self.capacity)
+
+    def delete(self, keys):
+        if not keys:
+            return
+
+        if not isinstance(keys, collections.Iterable):
+            keys = [keys]
+
+        for key in keys:
+            try:
+                node = self.nodes.pop(key)
+
+                # Remove `node` from `queue`
+                self.queue.remove(node)
+            except KeyError:
+                pass
+
+        # Remove keys from `cache` and `archive`
+        return super(LruAlgorithm, self).delete(keys)
 
     def release(self, key=None):
         if key is None:

@@ -1,5 +1,7 @@
 from stash.core.modules.base import MappingModule
 
+import collections
+
 
 class Archive(MappingModule):
     __group__ = 'archive'
@@ -16,6 +18,16 @@ class Archive(MappingModule):
 
     def save(self):
         raise NotImplementedError
+
+    def delete(self, keys):
+        if not keys:
+            return
+
+        if not isinstance(keys, collections.Iterable):
+            keys = [keys]
+
+        for key in keys:
+            del self[key]
 
     def get_items(self, keys=None):
         if keys is None:
