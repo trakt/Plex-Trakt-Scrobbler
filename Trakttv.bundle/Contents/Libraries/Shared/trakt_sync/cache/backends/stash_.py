@@ -15,6 +15,9 @@ class StashBackend(Backend):
     def cache(self):
         return self.stash.cache
 
+    def delete(self, keys):
+        return self.stash.delete(keys)
+
     def flush(self):
         return self.stash.flush()
 

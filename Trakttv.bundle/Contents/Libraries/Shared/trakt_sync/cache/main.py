@@ -3,6 +3,9 @@ import trakt_sync.cache.enums as enums
 
 from trakt import Trakt
 from trakt.core.helpers import from_iso8601
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Cache(object):
@@ -56,8 +59,10 @@ class Cache(object):
                 # Find changes
                 changes = self.diff(m, d, collection['store'], store)
 
+                # Update store
+                self.update_store((username, media, data), store)
+
                 # Update timestamp in cache to `current`
-                collection['store'].update(store)
                 collection['timestamps'][media][timestamp_key] = current
 
                 if changes is None:
@@ -122,6 +127,16 @@ class Cache(object):
             raise Exception('Unknown media type: %r', media)
 
         return result.get(data_name)
+
+    def update_store(self, (username, media, data), current):
+        collection = self._get_collection(username, media, data)
+        collection_keys = set(collection['store'].keys())
+
+        # Add + Update items
+        collection['store'].update(current)
+
+        # Delete items
+        collection['store'].delete(collection_keys - set(current.keys()))
 
     def __getitem__(self, key):
         collection = self._get_collection(*key)
