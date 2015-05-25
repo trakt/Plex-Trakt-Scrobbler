@@ -4,6 +4,12 @@
 
 **WARNING:** If you have multiple users on your server, please ensure you have filters set. The default configuration will scrobble all media playing on your server to your trakt.tv account.
 
+### Links
+
+ - [Configuration](https://github.com/fuzeman/Plex-Trakt-Scrobbler/wiki/Configuration) *(outdated - some options might be renamed or missing)*
+ - [Contributors](https://github.com/trakt/Plex-Trakt-Scrobbler/graphs/contributors)
+ - [Credits](Trakttv.bundle/CREDITS.md) *(for other resources)*
+
 ## Installation
 
 ### Unsupported App Store  
