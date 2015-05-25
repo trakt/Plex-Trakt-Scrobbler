@@ -18,7 +18,8 @@ def MainMenu():
     oc.add(DirectoryObject(
         key=Callback(SyncMenu),
         title=L("Sync"),
-        summary=L("Sync the Plex library with Trakt.tv")
+        summary=L("Sync the Plex library with Trakt.tv"),
+        thumb=R("icon-sync.png")
     ))
 
     oc.add(DirectoryObject(
