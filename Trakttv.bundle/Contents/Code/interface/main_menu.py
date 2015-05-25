@@ -24,7 +24,8 @@ def MainMenu():
 
     oc.add(DirectoryObject(
         key=Callback(AboutMenu),
-        title=L("About")
+        title=L("About"),
+        thumb=R("icon-about.png")
     ))
 
     oc.add(PrefsObject(
