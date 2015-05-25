@@ -30,12 +30,14 @@ def MainMenu():
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu),
             title=L("Sync"),
-            summary=L("Sync the Plex library with trakt.tv")
+            summary=L("Sync the Plex library with trakt.tv"),
+            thumb=R("icon-sync.png")
         ))
 
     oc.add(DirectoryObject(
         key=Callback(AboutMenu),
-        title=L("About")
+        title=L("About"),
+        thumb=R("icon-about.png")
     ))
 
     oc.add(PrefsObject(
