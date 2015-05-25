@@ -11,10 +11,10 @@ class FastPull(Mode):
 
     def run(self):
         # Fetch changes from trakt.tv
-        self.current.state.trakt.refresh()
+        self.trakt.refresh()
 
         # Quick pull - applies any changes to your trakt profile, won't directly compare changes between plex & trakt.
-        for (media, data), changes in self.current.state.trakt.changes:
+        for (media, data), changes in self.trakt.changes:
             log.debug('[%r, %r]', media, data)
 
             if data not in self.handlers:

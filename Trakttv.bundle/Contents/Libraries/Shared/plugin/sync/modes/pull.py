@@ -12,14 +12,14 @@ class Movies(Mode):
 
     def run(self):
         # Retrieve movie sections
-        p_sections = self.current.state.plex.library.sections(
+        p_sections = self.plex.library.sections(
             LibrarySectionType.Movie,
             LibrarySection.id
         ).tuples()
 
         # Fetch movies with account settings
         # TODO use actual `account`
-        p_items = self.current.state.plex.library.movies.mapped(
+        p_items = self.plex.library.movies.mapped(
             p_sections,
             account=1,
             parse_guid=True
@@ -29,14 +29,14 @@ class Movies(Mode):
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
-            pk = self.current.state.trakt.table.get(key)
+            pk = self.trakt.table.get(key)
 
             if pk is None:
                 # No `pk` found
                 continue
 
             for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
-                t_items = self.current.state.trakt[(SyncMedia.Movies, data)]
+                t_items = self.trakt[(SyncMedia.Movies, data)]
                 t_item = t_items.get(pk)
 
                 self.execute_handlers(
@@ -56,10 +56,10 @@ class Pull(Mode):
 
     def run(self):
         # Fetch changes from trakt.tv
-        self.current.state.trakt.refresh()
+        self.trakt.refresh()
 
         # Build key table for lookups
-        self.current.state.trakt.build_table()
+        self.trakt.build_table()
 
         # Run children
         self.execute_children()

@@ -45,6 +45,20 @@ class Mode(object):
     def handlers(self):
         return self.__main.handlers
 
+    @property
+    def plex(self):
+        if not self.current or not self.current.state:
+            return None
+
+        return self.current.state.plex
+
+    @property
+    def trakt(self):
+        if not self.current or not self.current.state:
+            return None
+
+        return self.current.state.trakt
+
     def run(self):
         raise NotImplementedError
 
