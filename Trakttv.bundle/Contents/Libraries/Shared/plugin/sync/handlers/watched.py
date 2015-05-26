@@ -29,13 +29,11 @@ class Base(MediaHandler):
             t_item.last_watched_at if t_item else None
         )
 
-
-class Movies(Base):
-    media = SyncMedia.Movies
+    @staticmethod
+    def scrobble(rating_key):
+        return Plex['library'].scrobble(rating_key)
 
     def pull(self, rating_key, p_settings, t_item):
-        log.debug('Movies.pull(%s, %r, %r)', rating_key, p_settings, t_item)
-
         # Retrieve properties
         p_viewed_at, t_viewed_at = self.get_operands(p_settings, t_item)
 
@@ -54,27 +52,23 @@ class Movies(Base):
             t_viewed_at
         ))
 
+
+class Movies(Base):
+    media = SyncMedia.Movies
+
     def on_added(self, rating_key, t_viewed_at):
         log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
 
-        return Plex['library'].scrobble(rating_key)
-
-    def on_removed(self, rating_key):
-        log.debug('Movies.on_removed(%r)', rating_key)
-
-        raise NotImplementedError
-
-    def on_changed(self, rating_key, p_viewed_at, t_viewed_at):
-        log.debug('Movies.on_changed(%r, %r, %r)', rating_key, p_viewed_at, t_viewed_at)
-
-        raise NotImplementedError
+        return self.scrobble(rating_key)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
-    def pull(self, rating_key, p_settings, t_item):
-        log.debug('Episodes.pull(%s, %r, %r)', rating_key, p_settings, t_item)
+    def on_added(self, rating_key, t_viewed_at):
+        log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
+
+        return self.scrobble(rating_key)
 
 
 class Watched(DataHandler):
