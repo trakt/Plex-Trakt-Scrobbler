@@ -34,7 +34,7 @@ class Movies(Base):
     media = SyncMedia.Movies
 
     def pull(self, rating_key, p_settings, t_item):
-        log.debug('pull(%s, %r, %r)', rating_key, p_settings, t_item)
+        log.debug('Movies.pull(%s, %r, %r)', rating_key, p_settings, t_item)
 
         # Retrieve properties
         p_rating, t_rating = self.get_operands(p_settings, t_item)
@@ -55,24 +55,32 @@ class Movies(Base):
         ))
 
     def on_added(self, rating_key, t_rating):
-        log.debug('on_added(%r, %r)', rating_key, t_rating)
+        log.debug('Movies.on_added(%r, %r)', rating_key, t_rating)
 
         Plex['library'].rate(rating_key, t_rating)
 
     def on_removed(self, rating_key):
-        log.debug('on_removed(%r)', rating_key)
+        log.debug('Movies.on_removed(%r)', rating_key)
 
         raise NotImplementedError
 
     def on_changed(self, rating_key, p_rating, t_rating):
-        log.debug('on_changed(%r, %r, %r)', rating_key, p_rating, t_rating)
+        log.debug('Movies.on_changed(%r, %r, %r)', rating_key, p_rating, t_rating)
 
         raise NotImplementedError
+
+
+class Episodes(Base):
+    media = SyncMedia.Episodes
+
+    def pull(self, rating_key, p_settings, t_item):
+        log.debug('Episodes.pull(%s, %r, %r)', rating_key, p_settings, t_item)
 
 
 class Ratings(DataHandler):
     data = SyncData.Ratings
 
     children = [
-        Movies
+        Movies,
+        Episodes
     ]

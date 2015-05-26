@@ -6,16 +6,28 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Movies(MediaHandler):
+class Base(MediaHandler):
+    pass
+
+
+class Movies(Base):
     media = SyncMedia.Movies
 
     def pull(self, rating_key, p_settings, t_item):
-        log.debug('pull(%s, %r, %r)', rating_key, p_settings, t_item)
+        log.debug('Movies.pull(%s, %r, %r)', rating_key, p_settings, t_item)
+
+
+class Episodes(Base):
+    media = SyncMedia.Episodes
+
+    def pull(self, rating_key, p_settings, t_item):
+        log.debug('Episodes.pull(%s, %r, %r)', rating_key, p_settings, t_item)
 
 
 class Playback(DataHandler):
     data = SyncData.Playback
 
     children = [
-        Movies
+        Movies,
+        Episodes
     ]

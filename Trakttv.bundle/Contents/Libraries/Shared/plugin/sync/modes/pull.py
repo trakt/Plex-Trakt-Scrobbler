@@ -47,11 +47,74 @@ class Movies(Mode):
                 )
 
 
+class Shows(Mode):
+    mode = SyncMode.Pull
+
+    def run(self):
+        # Retrieve show sections
+        p_sections = self.plex.library.sections(
+            LibrarySectionType.Show,
+            LibrarySection.id
+        ).tuples()
+
+        # Fetch episodes with account settings
+        # TODO use actual `account`
+        p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
+            p_sections,
+            account=1,
+            parse_guid=True
+        )
+
+        # TODO process shows, seasons
+
+        # Process episodes
+        for ids, p_guid, (season_num, episode_num), p_settings in p_episodes:
+            key = (p_guid.agent, p_guid.sid)
+
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            if pk is None:
+                # No `pk` found
+                continue
+
+            if not ids.get('episode'):
+                # Missing `episode` rating key
+                continue
+
+            for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+                t_show = self.trakt[(SyncMedia.Episodes, data)].get(pk)
+
+                if t_show is None:
+                    # Unable to find matching show in trakt data
+                    continue
+
+                t_season = t_show.seasons.get(season_num)
+
+                if t_season is None:
+                    # Unable to find matching season in `t_show`
+                    continue
+
+                t_episode = t_season.episodes.get(episode_num)
+
+                if t_episode is None:
+                    # Unable to find matching episode in `t_season`
+                    continue
+
+                self.execute_handlers(
+                    SyncMedia.Episodes, data,
+                    rating_key=ids['episode'],
+                    p_settings=p_settings,
+                    t_item=t_episode
+                )
+
+
 class Pull(Mode):
     mode = SyncMode.Pull
 
     children = [
-        Movies
+        Movies,
+        Shows
     ]
 
     def run(self):
