@@ -29,13 +29,11 @@ class Base(MediaHandler):
             t_item.rating.value if t_item and t_item.rating else None
         )
 
-
-class Movies(Base):
-    media = SyncMedia.Movies
+    @staticmethod
+    def rate(rating_key, value):
+        return Plex['library'].rate(rating_key, value)
 
     def pull(self, rating_key, p_settings, t_item):
-        log.debug('Movies.pull(%s, %r, %r)', rating_key, p_settings, t_item)
-
         # Retrieve properties
         p_rating, t_rating = self.get_operands(p_settings, t_item)
 
@@ -54,27 +52,23 @@ class Movies(Base):
             t_rating
         ))
 
+
+class Movies(Base):
+    media = SyncMedia.Movies
+
     def on_added(self, rating_key, t_rating):
         log.debug('Movies.on_added(%r, %r)', rating_key, t_rating)
 
-        Plex['library'].rate(rating_key, t_rating)
-
-    def on_removed(self, rating_key):
-        log.debug('Movies.on_removed(%r)', rating_key)
-
-        raise NotImplementedError
-
-    def on_changed(self, rating_key, p_rating, t_rating):
-        log.debug('Movies.on_changed(%r, %r, %r)', rating_key, p_rating, t_rating)
-
-        raise NotImplementedError
+        return self.rate(rating_key, t_rating)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
-    def pull(self, rating_key, p_settings, t_item):
-        log.debug('Episodes.pull(%s, %r, %r)', rating_key, p_settings, t_item)
+    def on_added(self, rating_key, t_rating):
+        log.debug('Episodes.on_added(%r, %r)', rating_key, t_rating)
+
+        return self.rate(rating_key, t_rating)
 
 
 class Ratings(DataHandler):
