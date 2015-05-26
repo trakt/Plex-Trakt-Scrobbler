@@ -7,6 +7,14 @@ import logging
 
 log = logging.getLogger(__name__)
 
+COLLECTION_MAP = {
+    'shows': {
+        'collection':  ('episodes', 'collection'),
+        'watched':     ('episodes', 'watched')
+    }
+}
+
+
 
 class Cache(object):
     Data = enums.Data
@@ -145,6 +153,10 @@ class Cache(object):
 
     @staticmethod
     def _build_key(username, media, data):
+        if media in COLLECTION_MAP and data in COLLECTION_MAP[media]:
+            # Apply collection map
+            media, data = COLLECTION_MAP[media][data]
+
         return username, media, data
 
     def _get_collection(self, username, media, data):
@@ -169,7 +181,7 @@ class Cache(object):
         key = self._build_key(username, media, data)
 
         if key not in self.stores:
-            self.stores[key] = self.storage('stores.%s.%s.%s' % (username, media, data))
+            self.stores[key] = self.storage('stores.%s' % ('.'.join(key)))
 
         return self.stores[key]
 
