@@ -123,7 +123,9 @@ class MovieLibrary(LibraryBase):
                 guid_raw, guid_parsed = movie['guid']
                 guid = guid_parsed if parse_guid else guid_raw
 
-                yield movie_id, guid, movie['settings']
+                yield movie_id, guid, {
+                    'settings': movie['settings']
+                }
 
         return movies_iterator()
 
@@ -304,6 +306,7 @@ class EpisodeLibrary(LibraryBase):
                         MetadataItemSettings.view_offset,
                         MetadataItemSettings.last_viewed_at,
 
+                        MediaPart.duration,
                         MediaPart.file
                     )
                     .join(
@@ -369,11 +372,10 @@ class EpisodeLibrary(LibraryBase):
             for item in episodes.tuples().iterator():
                 # Expand `item` tuple
                 (
-                    show_id,
-                    season_id,
+                    show_id, season_id,
                     episode_id, episode_index,
                     rating, view_offset, last_viewed_at,
-                    file
+                    duration, file
                 ) = item
 
                 # Retrieve parents
@@ -410,7 +412,10 @@ class EpisodeLibrary(LibraryBase):
                         'episode': episode_id
                     }
 
-                    yield ids, guid, (season_num, episode_num), settings
+                    yield ids, guid, (season_num, episode_num), {
+                        'duration': duration,
+                        'settings': settings
+                    }
 
         return shows_iterator(), seasons, episodes_iterator()
 
