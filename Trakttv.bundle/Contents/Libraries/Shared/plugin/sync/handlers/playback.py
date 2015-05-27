@@ -32,6 +32,10 @@ class Base(MediaHandler):
             kwargs['p_duration'] = p_duration
             kwargs['t_view_offset'] = t_view_offset
 
+            if t_view_offset <= 60 * 1000:
+                # Ignore progress below one minute
+                return None
+
         if action == 'changed':
             kwargs['p_view_offset'] = p_view_offset
 
@@ -88,12 +92,30 @@ class Movies(Base):
 
         return self.update_progress(rating_key, t_view_offset, p_duration)
 
+    def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
+        log.debug('Movies.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
+
+        if t_view_offset < p_view_offset:
+            # Ignore change, plex progress has advanced
+            return
+
+        return self.update_progress(rating_key, t_view_offset, p_duration)
+
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
     def on_added(self, rating_key, t_view_offset, p_duration):
         log.debug('Episodes.on_added(%s, %r, %r)', rating_key, t_view_offset, p_duration)
+
+        return self.update_progress(rating_key, t_view_offset, p_duration)
+
+    def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
+        log.debug('Episodes.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
+
+        if t_view_offset < p_view_offset:
+            # Ignore change, plex progress has advanced
+            return
 
         return self.update_progress(rating_key, t_view_offset, p_duration)
 
