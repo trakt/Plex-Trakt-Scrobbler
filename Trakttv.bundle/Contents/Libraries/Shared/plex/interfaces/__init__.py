@@ -6,6 +6,7 @@ from plex.interfaces.preferences import PreferencesInterface
 from plex.interfaces.root import RootInterface
 from plex.interfaces.section import SectionInterface
 from plex.interfaces.status import StatusInterface
+from plex.interfaces.timeline import TimelineInterface
 
 
 # TODO automatic interface discovery
@@ -24,7 +25,8 @@ INTERFACES = [
 
     # /:
     PluginInterface,
-    PreferencesInterface
+    PreferencesInterface,
+    TimelineInterface
 ]
 
 

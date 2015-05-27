@@ -18,6 +18,15 @@ class ConfigurationManager(object):
     def cache(self, **definitions):
         return Configuration(self).cache(**definitions)
 
+    def client(self, identifier, product, version):
+        return Configuration(self).client(identifier, product, version)
+
+    def device(self, name, system):
+        return Configuration(self).device(name, system)
+
+    def platform(self, name, version):
+        return Configuration(self).platform(name, version)
+
     def server(self, host='127.0.0.1', port=32400):
         return Configuration(self).server(host, port)
 
@@ -51,6 +60,26 @@ class Configuration(object):
     def cache(self, **definitions):
         for key, value in definitions.items():
             self.data['cache.%s' % key] = value
+
+        return self
+
+    def client(self, identifier, product, version):
+        self.data['client.identifier'] = identifier
+
+        self.data['client.product'] = product
+        self.data['client.version'] = version
+
+        return self
+
+    def device(self, name, system):
+        self.data['device.name'] = name
+        self.data['device.system'] = system
+
+        return self
+
+    def platform(self, name, version):
+        self.data['platform.name'] = name
+        self.data['platform.version'] = version
 
         return self
 
