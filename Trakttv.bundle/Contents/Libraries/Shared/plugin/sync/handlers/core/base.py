@@ -58,7 +58,7 @@ class MediaHandler(object):
         return self.__main.handlers
 
     @staticmethod
-    def build_action(action, rating_key, p_value, t_value):
+    def build_action(*args, **kwargs):
         raise NotImplementedError
 
     @staticmethod
@@ -103,7 +103,7 @@ class MediaHandler(object):
 
             self.execute_action(action, key, p_settings, t_items[key])
 
-    def execute_action(self, action, **kwargs):
+    def execute_action(self, action, args):
         # Find matching function
         func = getattr(self, 'on_%s' % action, None)
 
@@ -111,7 +111,12 @@ class MediaHandler(object):
             raise NotImplementedError
 
         # Execute action
-        return func(**kwargs)
+        parameters = self.build_action(*args)
+
+        if parameters is None:
+            return False
+
+        return func(**parameters)
 
     def get_action(self, p_value, t_value):
         if p_value is None and t_value is not None:

@@ -23,9 +23,9 @@ class Base(MediaHandler):
         return kwargs
 
     @staticmethod
-    def get_operands(p_settings, t_item):
+    def get_operands(p_item, t_item):
         return (
-            p_settings.get('rating'),
+            p_item.get('settings', {}).get('rating'),
             t_item.rating.value if t_item and t_item.rating else None
         )
 
@@ -33,9 +33,9 @@ class Base(MediaHandler):
     def rate(rating_key, value):
         return Plex['library'].rate(rating_key, value)
 
-    def pull(self, rating_key, p_settings, t_item):
+    def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
-        p_rating, t_rating = self.get_operands(p_settings, t_item)
+        p_rating, t_rating = self.get_operands(p_item, t_item)
 
         # Determine performed action
         action = self.get_action(p_rating, t_rating)
@@ -45,7 +45,7 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, **self.build_action(
+        self.execute_action(action, (
             action,
             rating_key,
             p_rating,

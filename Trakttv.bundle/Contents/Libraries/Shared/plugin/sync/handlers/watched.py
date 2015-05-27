@@ -23,9 +23,9 @@ class Base(MediaHandler):
         return kwargs
 
     @staticmethod
-    def get_operands(p_settings, t_item):
+    def get_operands(p_item, t_item):
         return (
-            p_settings.get('last_viewed_at'),
+            p_item.get('settings', {}).get('last_viewed_at'),
             t_item.last_watched_at if t_item else None
         )
 
@@ -33,9 +33,9 @@ class Base(MediaHandler):
     def scrobble(rating_key):
         return Plex['library'].scrobble(rating_key)
 
-    def pull(self, rating_key, p_settings, t_item):
+    def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
-        p_viewed_at, t_viewed_at = self.get_operands(p_settings, t_item)
+        p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
 
         # Determine performed action
         action = self.get_action(p_viewed_at, t_viewed_at)
@@ -45,7 +45,7 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, **self.build_action(
+        self.execute_action(action, (
             action,
             rating_key,
             p_viewed_at,

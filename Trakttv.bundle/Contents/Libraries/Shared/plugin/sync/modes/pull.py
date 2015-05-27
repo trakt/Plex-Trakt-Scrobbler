@@ -25,7 +25,7 @@ class Movies(Mode):
             parse_guid=True
         )
 
-        for rating_key, p_guid, p_settings in p_items:
+        for rating_key, p_guid, p_item in p_items:
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
@@ -42,7 +42,8 @@ class Movies(Mode):
                 self.execute_handlers(
                     SyncMedia.Movies, data,
                     rating_key=rating_key,
-                    p_settings=p_settings,
+
+                    p_item=p_item,
                     t_item=t_item
                 )
 
@@ -68,7 +69,7 @@ class Shows(Mode):
         # TODO process shows, seasons
 
         # Process episodes
-        for ids, p_guid, (season_num, episode_num), p_settings in p_episodes:
+        for ids, p_guid, (season_num, episode_num), p_item in p_episodes:
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
@@ -104,7 +105,8 @@ class Shows(Mode):
                 self.execute_handlers(
                     SyncMedia.Episodes, data,
                     rating_key=ids['episode'],
-                    p_settings=p_settings,
+
+                    p_item=p_item,
                     t_item=t_episode
                 )
 

@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class Base(MediaHandler):
-    def pull(self, rating_key, p_settings, t_item):
+    def pull(self, rating_key, p_item, t_item):
         # Nothing to do
         return True
 
