@@ -18,6 +18,7 @@ from requests.packages.urllib3.util import Retry
 from trakt import Trakt
 import logging
 import os
+import uuid
 
 log = Logger()
 
@@ -83,9 +84,21 @@ class Main(object):
 
     @staticmethod
     def init_plex():
+        # Ensure client identifier has been generated
+        if not Dict['plex.client.identifier']:
+            # Generate identifier
+            Dict['plex.client.identifier'] = uuid.uuid4()
+
         # plex.py
         Plex.configuration.defaults.authentication(
             os.environ.get('PLEXTOKEN')
+        )
+
+        Plex.configuration.defaults.client(
+            identifier=Dict['plex.client.identifier'],
+
+            product='trakt (for Plex)',
+            version=PLUGIN_VERSION
         )
 
         # plex.activity.py
