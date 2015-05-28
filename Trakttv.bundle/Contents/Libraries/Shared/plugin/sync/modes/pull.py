@@ -130,4 +130,4 @@ class Pull(Mode):
         self.execute_children()
 
         # Flush caches to archives
-        # self.current.state.flush()
+        self.current.state.flush()

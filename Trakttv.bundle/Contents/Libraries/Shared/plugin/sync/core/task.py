@@ -161,8 +161,6 @@ class SyncStateTrakt(object):
             store = self.cache[key]
 
             for pk, item in store.iteritems():
-                #log.debug('[%s] Mapping %r', pk, item)
-
                 # Map `item.keys` -> `pk`
                 for key in item.keys:
                     agent, _ = key
