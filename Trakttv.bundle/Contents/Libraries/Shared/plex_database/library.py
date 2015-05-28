@@ -4,6 +4,9 @@ from plex_metadata.guid import Guid
 
 from peewee import JOIN_LEFT_OUTER
 from stash.algorithms.core.prime_context import PrimeContext
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class LibraryBase(object):
@@ -379,8 +382,17 @@ class EpisodeLibrary(LibraryBase):
                 ) = item
 
                 # Retrieve parents
-                show = shows[show_id]
-                season = seasons[season_id]
+                show = shows.get(show_id)
+
+                if show is None:
+                    log.debug('Unable to find show by id: %r', show_id)
+                    continue
+
+                season = seasons.get(season_id)
+
+                if season is None:
+                    log.debug('Unable to find season by id: %r', season_id)
+                    continue
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
