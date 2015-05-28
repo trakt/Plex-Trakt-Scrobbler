@@ -7,6 +7,14 @@ log = logging.getLogger(__name__)
 
 
 class Base(MediaHandler):
+    #
+    # Modes
+    #
+
+    def fast_pull(self, action, rating_key, p_item, t_item):
+        # Nothing to do
+        return True
+
     def pull(self, rating_key, p_item, t_item):
         # Nothing to do
         return True

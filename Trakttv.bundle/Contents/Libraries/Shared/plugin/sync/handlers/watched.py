@@ -33,6 +33,13 @@ class Base(MediaHandler):
     def scrobble(rating_key):
         return Plex['library'].scrobble(rating_key)
 
+    #
+    # Modes
+    #
+
+    def fast_pull(self, action, rating_key, p_item, t_item):
+        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
+
     def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
         p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)

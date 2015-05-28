@@ -33,6 +33,13 @@ class Base(MediaHandler):
     def rate(rating_key, value):
         return Plex['library'].rate(rating_key, value)
 
+    #
+    # Modes
+    #
+
+    def fast_pull(self, action, rating_key, p_item, t_item):
+        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
+
     def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
         p_rating, t_rating = self.get_operands(p_item, t_item)

@@ -63,6 +63,13 @@ class Base(MediaHandler):
     def update_progress(rating_key, time, duration):
         return Plex[':/timeline'].update(rating_key, 'stopped', time, duration)
 
+    #
+    # Modes
+    #
+
+    def fast_pull(self, action, rating_key, p_item, t_item):
+        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
+
     def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
         p_progress, t_progress = self.get_operands(p_item, t_item)
