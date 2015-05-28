@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncData, SyncMedia
-from plugin.sync.handlers.core.base import DataHandler, MediaHandler
+from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
 from plex import Plex
 import logging
@@ -63,6 +63,7 @@ class Base(MediaHandler):
 class Movies(Base):
     media = SyncMedia.Movies
 
+    @bind('added')
     def on_added(self, rating_key, t_viewed_at):
         log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
 
@@ -72,6 +73,7 @@ class Movies(Base):
 class Episodes(Base):
     media = SyncMedia.Episodes
 
+    @bind('added')
     def on_added(self, rating_key, t_viewed_at):
         log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
 

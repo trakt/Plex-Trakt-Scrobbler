@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncData, SyncMedia
-from plugin.sync.handlers.core.base import DataHandler, MediaHandler
+from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
 from plex import Plex
 import logging
@@ -94,11 +94,13 @@ class Base(MediaHandler):
 class Movies(Base):
     media = SyncMedia.Movies
 
+    @bind('added')
     def on_added(self, rating_key, t_view_offset, p_duration):
         log.debug('Movies.on_added(%s, %r, %r)', rating_key, t_view_offset, p_duration)
 
         return self.update_progress(rating_key, t_view_offset, p_duration)
 
+    @bind('changed')
     def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
         log.debug('Movies.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
 
@@ -112,11 +114,13 @@ class Movies(Base):
 class Episodes(Base):
     media = SyncMedia.Episodes
 
+    @bind('added')
     def on_added(self, rating_key, t_view_offset, p_duration):
         log.debug('Episodes.on_added(%s, %r, %r)', rating_key, t_view_offset, p_duration)
 
         return self.update_progress(rating_key, t_view_offset, p_duration)
 
+    @bind('changed')
     def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
         log.debug('Episodes.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
 
