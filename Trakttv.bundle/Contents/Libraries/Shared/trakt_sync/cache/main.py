@@ -7,10 +7,17 @@ import logging
 
 log = logging.getLogger(__name__)
 
-COLLECTION_MAP = {
+COLLECTION_NAME_MAP = {
     'shows': {
         'collection':  ('episodes', 'collection'),
         'watched':     ('episodes', 'watched')
+    }
+}
+
+COLLECTION_ENUM_MAP = {
+    enums.Media.Shows: {
+        enums.Data.Collection:  (enums.Media.Episodes, enums.Data.Collection),
+        enums.Data.Watched:     (enums.Media.Episodes, enums.Data.Watched)
     }
 }
 
@@ -77,7 +84,7 @@ class Cache(object):
                     # No changes detected
                     continue
 
-                yield (m, d), changes
+                yield self._collection_key(m, d), changes
 
     def fetch(self, data, media):
         interface = Cache.Data.get_interface(data)
@@ -152,15 +159,23 @@ class Cache(object):
         return collection['store']
 
     @staticmethod
-    def _build_key(username, media, data):
-        if media in COLLECTION_MAP and data in COLLECTION_MAP[media]:
+    def _collection_key(media, data):
+        if media in COLLECTION_ENUM_MAP and data in COLLECTION_ENUM_MAP[media]:
             # Apply collection map
-            media, data = COLLECTION_MAP[media][data]
+            media, data = COLLECTION_ENUM_MAP[media][data]
+
+        return media, data
+
+    @classmethod
+    def _storage_key(cls, username, media, data):
+        if media in COLLECTION_NAME_MAP and data in COLLECTION_NAME_MAP[media]:
+            # Apply collection map
+            media, data = COLLECTION_NAME_MAP[media][data]
 
         return username, media, data
 
     def _get_collection(self, username, media, data):
-        key = self._build_key(username, media, data)
+        key = self._storage_key(username, media, data)
 
         if key not in self.collections:
             self.collections[key] = {}
@@ -178,7 +193,7 @@ class Cache(object):
         return collection
 
     def _get_store(self, username, media, data):
-        key = self._build_key(username, media, data)
+        key = self._storage_key(username, media, data)
 
         if key not in self.stores:
             self.stores[key] = self.storage('stores.%s' % ('.'.join(key)))
