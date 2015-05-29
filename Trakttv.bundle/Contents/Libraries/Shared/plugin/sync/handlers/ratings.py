@@ -55,8 +55,6 @@ class Base(MediaHandler):
     #
 
     def fast_pull(self, action, rating_key, p_item, t_item):
-        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
-
         if not action:
             # No action provided
             return
@@ -107,6 +105,12 @@ class Movies(Base):
 
         return self.rate(key, t_value)
 
+    @bind('removed', [SyncMode.FastPull])
+    def on_removed(self, key):
+        log.debug('Movies.on_removed(%r)', key)
+
+        return self.rate(key, 0)
+
 
 class Episodes(Base):
     media = SyncMedia.Episodes
@@ -122,6 +126,12 @@ class Episodes(Base):
         log.debug('Episodes.on_changed(%r, %r, %r, %r)', key, p_value, t_previous, t_value)
 
         return self.rate(key, t_value)
+
+    @bind('removed', [SyncMode.FastPull])
+    def on_removed(self, key):
+        log.debug('Episodes.on_removed(%r)', key)
+
+        return self.rate(key, 0)
 
 
 class Ratings(DataHandler):
