@@ -9,9 +9,9 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, rating_key, p_item, p_progress, t_progress):
+    def build_action(action, key, p_item, p_progress, t_progress):
         kwargs = {
-            'rating_key': rating_key
+            'key': key
         }
 
         # Retrieve plex parameters
@@ -21,23 +21,20 @@ class Base(MediaHandler):
             # Missing data required for playback syncing
             return None
 
-        p_view_offset = p_item.get('settings', {}).get('view_offset')
+        kwargs['p_value'] = p_item.get('settings', {}).get('view_offset')
 
         # Set arguments for action
         if action in ['added', 'changed']:
             # Calculate trakt view offset
-            t_view_offset = p_duration * (float(t_progress) / 100)
-            t_view_offset = int(round(t_view_offset, 0))
+            t_value = p_duration * (float(t_progress) / 100)
+            t_value = int(round(t_value, 0))
 
             kwargs['p_duration'] = p_duration
-            kwargs['t_view_offset'] = t_view_offset
+            kwargs['t_value'] = t_value
 
-            if t_view_offset <= 60 * 1000:
+            if t_value <= 60 * 1000:
                 # Ignore progress below one minute
                 return None
-
-        if action == 'changed':
-            kwargs['p_view_offset'] = p_view_offset
 
         return kwargs
 
@@ -54,10 +51,13 @@ class Base(MediaHandler):
             # Calculate progress from duration and view offset
             p_progress = round((float(p_view_offset) / p_duration) * 100, 2)
 
-        return (
-            p_progress,
-            t_item.progress if t_item else None
-        )
+        # Retrieve trakt progress from item
+        if type(t_item) is dict:
+            t_progress = t_item.get('progress')
+        else:
+            t_progress = t_item.progress if t_item else None
+
+        return p_progress, t_progress
 
     @staticmethod
     def update_progress(rating_key, time, duration):
@@ -68,7 +68,21 @@ class Base(MediaHandler):
     #
 
     def fast_pull(self, action, rating_key, p_item, t_item):
-        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
+        if not action:
+            # No action provided
+            return
+
+        # Retrieve properties
+        p_progress, t_progress = self.get_operands(p_item, t_item)
+
+        # Execute action
+        self.execute_action(action, (
+            action,
+            rating_key,
+            p_item,
+            p_progress,
+            t_progress
+        ))
 
     def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
@@ -95,40 +109,48 @@ class Movies(Base):
     media = SyncMedia.Movies
 
     @bind('added')
-    def on_added(self, rating_key, t_view_offset, p_duration):
-        log.debug('Movies.on_added(%s, %r, %r)', rating_key, t_view_offset, p_duration)
+    def on_added(self, key, p_duration, p_value, t_value):
+        log.debug('Movies.on_added(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
 
-        return self.update_progress(rating_key, t_view_offset, p_duration)
+        if p_value is not None and p_value > t_value:
+            # Already updated progress
+            return
+
+        return self.update_progress(key, t_value, p_duration)
 
     @bind('changed')
-    def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
-        log.debug('Movies.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
+    def on_changed(self, key, p_duration, p_value, t_value):
+        log.debug('Movies.on_changed(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
 
-        if t_view_offset < p_view_offset:
+        if p_value > t_value:
             # Ignore change, plex progress has advanced
             return
 
-        return self.update_progress(rating_key, t_view_offset, p_duration)
+        return self.update_progress(key, t_value, p_duration)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added')
-    def on_added(self, rating_key, t_view_offset, p_duration):
-        log.debug('Episodes.on_added(%s, %r, %r)', rating_key, t_view_offset, p_duration)
+    def on_added(self, key, p_duration, p_value, t_value):
+        log.debug('Episodes.on_added(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
 
-        return self.update_progress(rating_key, t_view_offset, p_duration)
+        if p_value is not None and p_value > t_value:
+            # Already updated progress
+            return
+
+        return self.update_progress(key, t_value, p_duration)
 
     @bind('changed')
-    def on_changed(self, rating_key, t_view_offset, p_view_offset, p_duration):
-        log.debug('Episodes.on_changed(%s, %r, %r, %r)', rating_key, t_view_offset, p_view_offset, p_duration)
+    def on_changed(self, key, p_duration, p_value, t_value):
+        log.debug('Episodes.on_changed(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
 
-        if t_view_offset < p_view_offset:
+        if p_value > t_value:
             # Ignore change, plex progress has advanced
             return
 
-        return self.update_progress(rating_key, t_view_offset, p_duration)
+        return self.update_progress(key, t_value, p_duration)
 
 
 class Playback(DataHandler):
