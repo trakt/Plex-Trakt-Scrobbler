@@ -93,7 +93,7 @@ class Shows(Mode):
                 continue
 
             for (media, data), changes in self.trakt.changes:
-                if media != SyncMedia.Shows:
+                if media != SyncMedia.Episodes:
                     # Ignore changes that aren't for episodes
                     continue
 
