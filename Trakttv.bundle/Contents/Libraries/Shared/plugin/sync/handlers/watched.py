@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
 from plex import Plex
@@ -94,7 +94,7 @@ class Movies(Base):
 
         return self.scrobble(key)
 
-    @bind('removed')
+    @bind('removed', [SyncMode.FastPull])
     def on_removed(self, key, p_value):
         log.debug('Movies.on_removed(%r, %r)', key, p_value)
 
@@ -118,7 +118,7 @@ class Episodes(Base):
 
         return self.scrobble(key)
 
-    @bind('removed')
+    @bind('removed', [SyncMode.FastPull])
     def on_removed(self, key, p_value):
         log.debug('Episodes.on_removed(%r, %r)', key, p_value)
 
