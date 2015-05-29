@@ -9,36 +9,57 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, rating_key, p_viewed_at, t_viewed_at):
+    def build_action(action, key, p_value, t_value):
         kwargs = {
-            'rating_key': rating_key
+            'key': key,
+
+            'p_value': p_value
         }
 
         if action in ['added', 'changed']:
-            kwargs['t_viewed_at'] = t_viewed_at
-
-        if action == 'changed':
-            kwargs['p_viewed_at'] = p_viewed_at
+            kwargs['t_value'] = t_value
 
         return kwargs
 
     @staticmethod
     def get_operands(p_item, t_item):
-        return (
-            p_item.get('settings', {}).get('last_viewed_at'),
-            t_item.last_watched_at if t_item else None
-        )
+        p_viewed_at = p_item.get('settings', {}).get('last_viewed_at')
+
+        # Retrieve trakt `viewed_at` from item
+        if type(t_item) is dict:
+            t_viewed_at = t_item.get('last_watched_at')
+        else:
+            t_viewed_at = t_item.last_watched_at if t_item else None
+
+        return p_viewed_at, t_viewed_at
 
     @staticmethod
-    def scrobble(rating_key):
-        return Plex['library'].scrobble(rating_key)
+    def scrobble(key):
+        return Plex['library'].scrobble(key)
+
+    @staticmethod
+    def unscrobble(key):
+        return Plex['library'].unscrobble(key)
 
     #
     # Modes
     #
 
     def fast_pull(self, action, rating_key, p_item, t_item):
-        log.debug('fast_pull(%r, %r, %r, %r)', action, rating_key, p_item, t_item)
+        if not action:
+            # No action provided
+            return
+
+        # Retrieve properties
+        p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
+
+        # Execute action
+        self.execute_action(action, (
+            action,
+            rating_key,
+            p_viewed_at,
+            t_viewed_at
+        ))
 
     def pull(self, rating_key, p_item, t_item):
         # Retrieve properties
@@ -64,20 +85,48 @@ class Movies(Base):
     media = SyncMedia.Movies
 
     @bind('added')
-    def on_added(self, rating_key, t_viewed_at):
-        log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
+    def on_added(self, key, p_value, t_value):
+        log.debug('Movies.on_added(%r, %r, %r)', key, p_value, t_value)
 
-        return self.scrobble(rating_key)
+        if p_value is not None:
+            # Already scrobbled
+            return
+
+        return self.scrobble(key)
+
+    @bind('removed')
+    def on_removed(self, key, p_value):
+        log.debug('Movies.on_removed(%r, %r)', key, p_value)
+
+        if p_value is None:
+            # Already un-scrobbled
+            return
+
+        return self.unscrobble(key)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added')
-    def on_added(self, rating_key, t_viewed_at):
-        log.debug('Movies.on_added(%r, %r)', rating_key, t_viewed_at)
+    def on_added(self, key, p_value, t_value):
+        log.debug('Episodes.on_added(%r, %r, %r)', key, p_value, t_value)
 
-        return self.scrobble(rating_key)
+        if p_value is not None:
+            # Already scrobbled
+            return
+
+        return self.scrobble(key)
+
+    @bind('removed')
+    def on_removed(self, key, p_value):
+        log.debug('Episodes.on_removed(%r, %r)', key, p_value)
+
+        if p_value is None:
+            # Already un-scrobbled
+            return
+
+        return self.unscrobble(key)
 
 
 class Watched(DataHandler):
