@@ -11,6 +11,13 @@ def migrate(migrator, database):
     PlexBasicCredential.create_table()
 
     #
+    # sync
+    #
+
+    SyncStatus.create_table()
+    SyncResult.create_table()
+
+    #
     # trakt
     #
 
@@ -24,6 +31,8 @@ def migrate(migrator, database):
     #
 
     Account.create_table()
+    Exception.create_table()
+    Message.create_table()
     Session.create_table()
 
     ActionHistory.create_table()
