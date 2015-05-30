@@ -1,8 +1,8 @@
 from plugin.models.core import db
 
-from plugin.models.m_plex import PlexAccount, PlexBasicCredential
-from plugin.models.m_sync import SyncResult, SyncStatus
-from plugin.models.m_trakt import TraktAccount, TraktBasicCredential, TraktOAuthCredential
+from plugin.models.m_plex import *
+from plugin.models.m_sync import *
+from plugin.models.m_trakt import *
 
 from plugin.models.account import Account
 from plugin.models.action_history import ActionHistory

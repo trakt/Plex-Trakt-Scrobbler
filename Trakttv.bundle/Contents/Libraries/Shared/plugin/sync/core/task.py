@@ -1,6 +1,8 @@
 from plugin.core.database import Database
 from plugin.models import *
+from plugin.sync.core.exception_logger import ExceptionLogger
 
+from datetime import datetime
 from peewee import JOIN_LEFT_OUTER
 from plex import Plex
 from plex_database.library import Library
@@ -8,32 +10,58 @@ from plex_database.matcher import Matcher
 from stash import ApswArchive, Stash
 from trakt_sync.cache.backends import StashBackend
 from trakt_sync.cache.main import Cache
-import logging
 from trakt_sync.differ.core.base import KEY_AGENTS
+import logging
 
 log = logging.getLogger(__name__)
 
 
 class SyncTask(object):
-    def __init__(self, account, mode, data, media, **kwargs):
+    def __init__(self, account, mode, data, media, result, status, **kwargs):
         self.account = account
 
+        # Sync options
         self.mode = mode
-
         self.data = data
         self.media = media
 
+        # Extra arguments
         self.kwargs = kwargs
 
+        # Global syncing state information
         self.state = SyncState(self)
+
+        # State/Result management
+        self.result = result
+        self.status = status
+
+        self.exceptions = []
+        self.success = None
+
+    def finish(self):
+        # Update result in database
+        self.result.ended_at = datetime.utcnow()
+        self.result.success = self.success
+        self.result.save()
+
+        # Store exceptions in database
+        for exc_info in self.exceptions:
+            try:
+                ExceptionLogger.result_store(self.result, exc_info)
+            except Exception, ex:
+                log.warn('Unable to store exception: %s', str(ex), exc_info=True)
+
+        # Flush caches to archives
+        self.state.flush()
 
     @classmethod
     def create(cls, account, mode, data, media, **kwargs):
-        log.debug(type(account))
-
+        # Get account
         if type(account) is int:
+            # TODO Move account retrieval/join to `Account` class
             account = (Account
                 .select(
+                    Account.id,
                     Account.name,
 
                     PlexAccount.username,
@@ -82,9 +110,22 @@ class SyncTask(object):
         elif type(account) is not Account:
             raise ValueError('Unexpected value provided for the "account" parameter')
 
+        # Get/Create sync status
+        status = SyncStatus.get_or_create(
+            account=account,
+            mode=mode
+        )
+
+        # Create new sync result object
+        result = SyncResult.create(
+            status=status,
+            started_at=datetime.utcnow()
+        )
+
         return SyncTask(
             account, mode,
             data, media,
+            result, status,
             **kwargs
         )
 

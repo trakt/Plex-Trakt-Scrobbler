@@ -4,6 +4,7 @@ from plugin.sync.handlers import *
 from plugin.sync.modes import *
 
 import logging
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,12 @@ class Main(object):
         except Exception, ex:
             log.warn('Exception raised in run(): %s', ex, exc_info=True)
 
+            self.current.exceptions.append(sys.exc_info())
+            self.current.success = False
+
+        # Sync task complete, run final tasks
+        self.current.finish()
+
         log.info('(%r) Done', self.current.mode)
 
     def run(self):
@@ -89,11 +96,6 @@ class Main(object):
             return
 
         self.modes[self.current.mode].run()
-
-        # TODO Syncing 2.0:
-        # 2. apply `task.state.trakt.changes`
-        # 3. find changes that need to be sent to trakt
-        # 4. push changes to trakt.tv
 
     def cancel(self):
         """Trigger a currently running sync to cancel

@@ -24,9 +24,16 @@ class Message(Model):
         database = db
         db_table = 'message'
 
-    code = IntegerField(primary_key=True)
+    code = IntegerField(null=True)
     type = IntegerField()
 
+    # Tracking data
+    exception_hash = CharField(null=True, unique=True, max_length=32)
+    revision = IntegerField(null=True)
+
+    version_base = CharField(max_length=12)
+    version_branch = CharField(max_length=42)
+
     # User-friendly explanation
-    summary = CharField(max_length=160)  # Short single-line summary
-    description = TextField()  # Extra related details
+    summary = CharField(null=True, max_length=160)  # Short single-line summary
+    description = TextField(null=True)  # Extra related details

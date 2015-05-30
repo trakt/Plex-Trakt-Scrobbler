@@ -13,4 +13,9 @@ class Exception(Model):
 
     type = TextField()
     message = TextField()
-    stack = TextField()
+    traceback = TextField()
+
+    hash = CharField(null=True, max_length=32)
+
+    version_base = CharField(max_length=12)
+    version_branch = CharField(max_length=42)

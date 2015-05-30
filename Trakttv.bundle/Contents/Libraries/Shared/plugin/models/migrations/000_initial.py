@@ -15,7 +15,10 @@ def migrate(migrator, database):
     #
 
     SyncStatus.create_table()
+
     SyncResult.create_table()
+    SyncResultError.create_table()
+    SyncResultException.create_table()
 
     #
     # trakt

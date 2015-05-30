@@ -13,9 +13,27 @@ class SyncResult(Model):
 
     status = ForeignKeyField(SyncStatus, 'history')
 
-    timestamp = DateTimeField()
-    success = BooleanField()
+    # Timestamps
+    started_at = DateTimeField(null=True)
+    ended_at = DateTimeField(null=True)
 
-    # Failure details
-    error = ForeignKeyField(Message, null=True)
-    exception = ForeignKeyField(Exception, null=True)
+    # Result
+    success = BooleanField(null=True)
+
+
+class SyncResultError(Model):
+    class Meta:
+        database = db
+        db_table = 'sync.result.error'
+
+    result = ForeignKeyField(SyncResult, 'errors')
+    error = ForeignKeyField(Message, 'results')
+
+
+class SyncResultException(Model):
+    class Meta:
+        database = db
+        db_table = 'sync.result.exception'
+
+    result = ForeignKeyField(SyncResult, 'exceptions')
+    exception = ForeignKeyField(Exception, 'results')
