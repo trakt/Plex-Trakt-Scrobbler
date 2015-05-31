@@ -1,10 +1,10 @@
-from core.helpers import timestamp, pad_title, plural, get_filter, normalize
+from core.helpers import timestamp, pad_title, get_filter, normalize
 from core.localization import localization
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import AccountManager
-from plugin.models import Account
+from plugin.models import Account, SyncResult
 from plugin.sync import Sync, SyncData, SyncMedia, SyncMode
 
 from ago import human
@@ -19,9 +19,11 @@ log = Logger('interface.sync_menu')
 # NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
-def AccountsMenu():
+def AccountsMenu(refresh=None):
     # TODO adding profile thumbnails (from trakt.tv or plex.tv?) would be a nice addition
     oc = ObjectContainer(title2=L('accounts:title'), no_cache=True)
+
+    AccountsStatus(oc)
 
     for account in AccountManager.get.all():
         oc.add(DirectoryObject(
@@ -31,151 +33,191 @@ def AccountsMenu():
 
     return oc
 
+
+def AccountsStatus(oc):
+    # TODO display statistics (progress, est. time remaining, etc..)
+    task = Sync.current
+
+    if not task:
+        # No task running
+        return
+
+    account = task.account
+
+    # Build task title
+    if task.data == SyncData.All:
+        # <mode>
+        title = normalize(SyncMode.title(task.mode))
+    else:
+        # <mode> [<data>]
+        title = '%s [%s]' % (
+            normalize(SyncMode.title(task.mode)),
+            normalize(SyncData.title(task.data))
+        )
+
+    # Create items
+    oc.add(DirectoryObject(
+        key=Callback(AccountsMenu, refresh=timestamp()),
+        title=pad_title('%s (%s) - Status' % (title, account.name)),
+        summary='Working (click to refresh)'
+    ))
+
+    oc.add(DirectoryObject(
+        key=Callback(Cancel, account_id=account.id),
+        title=pad_title('%s (%s) - Cancel' % (title, account.name))
+    ))
+
+
 @route(PLUGIN_PREFIX + '/sync')
 def ControlsMenu(account_id=1, refresh=None):
     account = AccountManager.get(Account.id == account_id)
 
-    if account.id != 1:
-        return MessageContainer('Not Implemented', "Multi-user syncing hasn't been implemented yet")
-
     oc = ObjectContainer(title2=LF('controls:title', account.name), no_cache=True)
-    all_keys = []
 
-    create_active_item(oc, account)  # TODO this should be moved to the `AccountsMenu` if there is multiple accounts
+    ControlsStatus(oc, account)  # TODO this should be moved to the `AccountsMenu` if there is multiple accounts
+
+    #
+    # Full
+    #
 
     oc.add(DirectoryObject(
         key=Callback(Synchronize, account_id=account.id),
-        title=pad_title('Synchronize'),
-        summary=get_task_status('synchronize'),
+        title=pad_title(SyncMode.title(SyncMode.Full)),
+        summary=ModeStatus(account, SyncMode.Full),
         thumb=R("icon-sync.png")
     ))
 
-    f_allow, f_deny = get_filter('filter_sections')
-    sections = Plex['library'].sections()
-
-    for section in sections.filter(['show', 'movie'], titles=f_allow):
-        oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id, section=section.key),
-            title=pad_title('Push "%s" to trakt' % section.title),
-            summary=get_task_status('push', section.key),
-            thumb=R("icon-sync_up.png")
-        ))
-        all_keys.append(section.key)
-
-    if len(all_keys) > 1:
-        oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id),
-            title=pad_title('Push all to trakt'),
-            summary=get_task_status('push'),
-            thumb=R("icon-sync_up.png")
-        ))
+    #
+    # Pull
+    #
 
     oc.add(DirectoryObject(
         key=Callback(Pull, account_id=account.id),
-        title=pad_title('Pull from trakt'),
-        summary=get_task_status('pull'),
+        title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
+        summary=ModeStatus(account, SyncMode.Pull),
         thumb=R("icon-sync_down.png")
     ))
 
     oc.add(DirectoryObject(
         key=Callback(FastPull, account_id=account.id),
-        title=pad_title('Pull (Fast) from trakt'),
-        summary=get_task_status('fast_pull'),
-        thumb=R("icon-sync.png")
+        title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
+        summary=ModeStatus(account, SyncMode.FastPull),
+        thumb=R("icon-sync_down.png")
     ))
+
+    #
+    # Push
+    #
+
+    sections = Plex['library'].sections()
+    section_keys = []
+
+    f_allow, f_deny = get_filter('filter_sections')
+
+    for section in sections.filter(['show', 'movie'], titles=f_allow):
+        oc.add(DirectoryObject(
+            key=Callback(Push, account_id=account.id, section=section.key),
+            title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
+            summary=ModeStatus(account, SyncMode.Push, section.key),
+            thumb=R("icon-sync_up.png")
+        ))
+        section_keys.append(section.key)
+
+    if len(section_keys) > 1:
+        oc.add(DirectoryObject(
+            key=Callback(Push, account_id=account.id),
+            title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
+            summary=ModeStatus(account, SyncMode.Push),
+            thumb=R("icon-sync_up.png")
+        ))
 
     return oc
 
 
-def create_active_item(oc, account):
-    # TODO implement active sync retrieval method
-    return
+def ControlsStatus(oc, account):
+    # TODO display statistics (progress, est. time remaining, etc..)
+    task = Sync.current
 
-    task, handler = SyncManager.get_current()
     if not task:
+        # No task running
         return
 
-    # Format values
-    remaining = format_remaining(task.statistics.seconds_remaining)
-    progress = format_percentage(task.statistics.progress)
+    if task.account.id != account.id:
+        # Current task does not match this account
+        return
 
-    # Title
-    title = '%s - Status' % normalize(handler.title)
-
-    if progress:
-        title += ' (%s)' % progress
-
-    # Summary
-    summary = task.statistics.message or 'Working'
-
-    if remaining:
-        summary += ', ~%s second%s remaining' % (remaining, plural(remaining))
+    # Build task title
+    if task.data == SyncData.All:
+        # <mode>
+        title = normalize(SyncMode.title(task.mode))
+    else:
+        # <mode> [<data>]
+        title = '%s [%s]' % (
+            normalize(SyncMode.title(task.mode)),
+            normalize(SyncData.title(task.data))
+        )
 
     # Create items
     oc.add(DirectoryObject(
         key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
-        title=pad_title(title),
-        summary=summary + ' (click to refresh)'
+        title=pad_title('%s - Status' % title),
+        summary='Working (click to refresh)'
     ))
 
     oc.add(DirectoryObject(
         key=Callback(Cancel, account_id=account.id),
-        title=pad_title('%s - Cancel' % normalize(handler.title))
+        title=pad_title('%s - Cancel' % title)
     ))
 
 
-def format_percentage(value):
-    if not value:
-        return None
+def ModeStatus(account, mode, section=None):
+    status = SyncResult.get_latest(account, mode, section).first()
 
-    return '%d%%' % (value * 100)
+    if status is None or status.latest is None:
+        return 'Not run yet.'
 
-def format_remaining(value):
-    if not value:
-        return None
+    # Build status details string
+    fragments = []
 
-    return int(round(value, 0))
-
-
-def get_task_status(key, section=None):
-    # TODO implement task status retrieval method
-    return '<Not Implemented>'
-
-    result = []
-
-    status = SyncManager.get_status(key, section)
-
-    if status.previous_timestamp:
-        since = datetime.utcnow() - status.previous_timestamp
+    if status.latest.ended_at:
+        since = datetime.utcnow() - status.latest.ended_at
 
         if since.seconds < 1:
-            result.append('Last run just a moment ago')
+            fragments.append('Last run just a moment ago')
         else:
-            result.append('Last run %s' % human(since, precision=1))
+            fragments.append('Last run %s' % human(since, precision=1))
 
-    if status.previous_elapsed:
-        if status.previous_elapsed.seconds < 1:
-            result.append('taking less than a second')
-        else:
-            result.append('taking %s' % human(
-                status.previous_elapsed,
-                precision=1,
-                past_tense='%s'
-            ))
+        if status.latest.started_at:
+            elapsed = status.latest.ended_at - status.latest.started_at
 
-    if status.previous_success is True:
-        result.append('was successful')
-    elif status.previous_timestamp:
-        # Only add 'failed' fragment if there was actually a previous run
+            if elapsed.seconds < 1:
+                fragments.append('taking less than a second')
+            else:
+                fragments.append('taking %s' % human(
+                    elapsed,
+                    precision=1,
+                    past_tense='%s'
+                ))
+
+    if status.latest.success:
+        fragments.append('was successful')
+    else:
         message = 'failed'
 
-        if status.error:
-            message += ' (%s)' % status.error
+        # Resolve errors
+        errors = list(status.latest.get_errors())
 
-        result.append(message)
+        if len(errors) > 1:
+            # Multiple errors
+            message += ' (%d errors, %s)' % (len(errors), errors[0].summary)
+        elif len(errors) == 1:
+            # Single error
+            message += ' (%s)' % errors[0].summary
 
-    if len(result):
-        return ', '.join(result) + '.'
+        fragments.append(message)
+
+    if len(fragments):
+        return ', '.join(fragments) + '.'
 
     return 'Not run yet.'
 

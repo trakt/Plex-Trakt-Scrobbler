@@ -90,6 +90,9 @@ class Main(object):
 
         log.info('(%r) Done', self.current.mode)
 
+        # Cleanup sync manager
+        self.current = None
+
     def run(self):
         if self.current.mode not in self.modes:
             log.warn('Unknown sync mode: %r', self.current.mode)
