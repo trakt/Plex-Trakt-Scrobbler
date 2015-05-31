@@ -20,6 +20,40 @@ class SyncResult(Model):
     # Result
     success = BooleanField(null=True)
 
+    def get_errors(self):
+        query = (SyncResultError
+            .select(SyncResultError, Message)
+            .join(Message, JOIN_LEFT_OUTER, on=(
+                Message.id == SyncResultError.error
+            ).alias('message'))
+            .where(
+                SyncResultError.result == self
+            )
+        )
+
+        return [
+            item.message
+            for item in query
+        ]
+
+    @classmethod
+    def get_latest(cls, account, mode, section=None):
+        return (SyncStatus
+                .select(SyncStatus, SyncResult)
+                .join(SyncResult, JOIN_LEFT_OUTER, on=(
+                    SyncResult.status == SyncStatus.id
+                ).alias('latest'))
+                .where(
+                    SyncStatus.account == account,
+                    SyncStatus.mode == mode,
+                    SyncStatus.section == section,
+
+                    SyncResult.success != None
+                )
+                .order_by(SyncResult.started_at.desc())
+                .limit(1)
+        )
+
 
 class SyncResultError(Model):
     class Meta:
