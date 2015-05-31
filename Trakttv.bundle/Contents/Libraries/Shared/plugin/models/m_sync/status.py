@@ -10,4 +10,6 @@ class SyncStatus(Model):
         db_table = 'sync.status'
 
     account = ForeignKeyField(Account, 'sync_status')
+
     mode = IntegerField()
+    section = CharField(null=True, max_length=3)
