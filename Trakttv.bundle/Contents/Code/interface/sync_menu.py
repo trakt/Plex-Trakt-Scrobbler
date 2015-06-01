@@ -225,57 +225,33 @@ def ModeStatus(account, mode, section=None):
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize(account_id=1):
     # TODO implement options to change `SyncData` option per `Account`
-    success, result = Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
+    Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
 
-    # if not success:
-    #     return MessageContainer(L('trigger_failure:title'), message)
-
-    return MessageContainer(
-        L('trigger_success:title'),
-        LF('trigger_success:message', 'Synchronize')
-    )
+    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
 def FastPull(account_id=1):
     # TODO implement options to change `SyncData` option per `Account`
-    success, result = Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
+    Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
 
-    # if not success:
-    #     return MessageContainer(L('trigger_failure:title'), message)
-
-    return MessageContainer(
-        L('trigger_success:title'),
-        LF('trigger_success:message', 'Fast Pull')
-    )
+    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
 def Push(account_id=1, section=None):
     # TODO implement options to change `SyncData` option per `Account`
-    success, result = Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
+    Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
 
-    # if not success:
-    #     return MessageContainer(L('trigger_failure:title'), message)
-
-    return MessageContainer(
-        L('trigger_success:title'),
-        LF('trigger_success:message', 'Push')
-    )
+    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 def Pull(account_id=1):
     # TODO implement options to change `SyncData` option per `Account`
-    success, result = Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
+    Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
 
-    # if not success:
-    #     return MessageContainer(L('trigger_failure:title'), message)
-
-    return MessageContainer(
-        L('trigger_success:title'),
-        LF('trigger_success:message', 'Pull')
-    )
+    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
