@@ -141,7 +141,7 @@ class Cache(object):
         else:
             raise Exception('Unknown media type: %r', media)
 
-        return result.get(data_name)
+        return result
 
     def update_store(self, (username, media, data), current):
         collection = self._get_collection(username, media, data)

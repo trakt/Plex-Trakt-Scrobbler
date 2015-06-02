@@ -41,8 +41,8 @@ class Differ(object):
                 yield action
 
     @staticmethod
-    def store_action(changes, keys, collection, action, properties=None):
-        items = dict_path(changes, (
+    def store_action(result, keys, collection, action, properties=None):
+        items = dict_path(result.changes, (
             collection, action
         ))
 
@@ -50,9 +50,9 @@ class Differ(object):
             items[key] = properties
 
     @classmethod
-    def store_actions(cls, changes, actions):
+    def store_actions(cls, result, actions):
         for action in actions:
-            cls.store_action(changes, *action)
+            cls.store_action(result, *action)
 
     @classmethod
     def store_child(cls, changes, key, media, data):
@@ -75,3 +75,14 @@ class Differ(object):
                 continue
 
             yield agent, sid
+
+    @staticmethod
+    def increment_metric(metric, collection, action):
+        metrics = dict_path(metric, (
+            collection,
+        ))
+
+        if action not in metrics:
+            metrics[action] = 0
+
+        metrics[action] += 1

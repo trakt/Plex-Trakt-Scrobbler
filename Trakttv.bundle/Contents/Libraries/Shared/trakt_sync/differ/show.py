@@ -1,5 +1,6 @@
 from trakt_sync.differ.core.base import Differ
 from trakt_sync.differ.core.helpers import dict_path
+from trakt_sync.differ.core.result import Result
 from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
 
 
@@ -17,22 +18,22 @@ class ShowDiffer(Differ):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
-        changes = {}
+        result = ShowResult()
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
 
-            self.store_actions(changes, actions)
+            self.store_actions(result, actions)
 
         for key in keys_base - keys_current:
             actions = self.process_removed(base[key], handlers=handlers)
 
-            self.store_actions(changes, actions)
+            self.store_actions(result, actions)
 
         for key in keys_base & keys_current:
             actions = self.process_common(base[key], current[key], handlers=handlers)
 
-            self.store_actions(changes, actions)
+            self.store_actions(result, actions)
 
         # Run season differ on shows
         for key in keys_base | keys_current:
@@ -42,11 +43,18 @@ class ShowDiffer(Differ):
             self.season.run(
                 b.seasons if b else {},
                 c.seasons if c else {},
-                changes=changes,
+                result=result,
                 handlers=handlers
             )
 
-        return changes
+        return result
+
+    @staticmethod
+    def store_action(result, keys, collection, action, properties=None):
+        Differ.store_action(result, keys, collection, action, properties)
+
+        # Update show metrics
+        Differ.increment_metric(result.metrics.shows, collection, action)
 
 
 class SeasonDiffer(Differ):
@@ -59,27 +67,27 @@ class SeasonDiffer(Differ):
             ]
         ]
 
-    def run(self, base, current, changes=None, handlers=None):
+    def run(self, base, current, result=None, handlers=None):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
-        if changes is None:
-            changes = {}
+        if result is None:
+            result = ShowResult()
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
 
-            self.store_season_actions(changes, current[key], actions)
+            self.store_season_actions(result, current[key], actions)
 
         for key in keys_base - keys_current:
             actions = self.process_removed(base[key], handlers=handlers)
 
-            self.store_season_actions(changes, base[key], actions)
+            self.store_season_actions(result, base[key], actions)
 
         for key in keys_base & keys_current:
             actions = self.process_common(base[key], current[key], handlers=handlers)
 
-            self.store_season_actions(changes, current[key], actions)
+            self.store_season_actions(result, current[key], actions)
 
         # Run episode differ on seasons
         for key in keys_base | keys_current:
@@ -89,28 +97,32 @@ class SeasonDiffer(Differ):
             self.episode.run(
                 b.episodes if b else {},
                 c.episodes if c else {},
-                changes=changes,
+                result=result,
                 handlers=handlers
             )
 
-        return changes
+        return result
 
     @classmethod
-    def store_season_actions(cls, changes, season, actions):
+    def store_season_actions(cls, result, season, actions):
         for action in actions:
-            cls.store_season_action(changes, season, *action)
+            cls.store_season_action(result, season, *action)
 
     @classmethod
-    def store_season_action(cls, changes, season, key, collection, action, properties=None):
+    def store_season_action(cls, result, season, key, collection, action, properties=None):
         show = season.show
 
-        seasons = dict_path(changes, (
+        # Store action in `result`
+        seasons = dict_path(result.changes, (
             collection, action,
             list(cls.item_keys(show)),
             'seasons',
         ))
 
         seasons[key] = properties
+
+        # Update episode metrics
+        Differ.increment_metric(result.metrics.seasons, collection, action)
 
 
 class EpisodeDiffer(Differ):
@@ -124,41 +136,42 @@ class EpisodeDiffer(Differ):
             ]
         ]
 
-    def run(self, base, current, changes=None, handlers=None):
+    def run(self, base, current, result=None, handlers=None):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
-        if changes is None:
-            changes = {}
+        if result is None:
+            result = ShowResult()
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
 
-            self.store_episode_actions(changes, current[key], actions)
+            self.store_episode_actions(result, current[key], actions)
 
         for key in keys_base - keys_current:
             actions = self.process_removed(base[key], handlers=handlers)
 
-            self.store_episode_actions(changes, base[key], actions)
+            self.store_episode_actions(result, base[key], actions)
 
         for key in keys_base & keys_current:
             actions = self.process_common(base[key], current[key], handlers=handlers)
 
-            self.store_episode_actions(changes, current[key], actions)
+            self.store_episode_actions(result, current[key], actions)
 
-        return changes
+        return result
 
     @classmethod
-    def store_episode_actions(cls, changes, episode, actions):
+    def store_episode_actions(cls, result, episode, actions):
         for action in actions:
-            cls.store_episode_action(changes, episode, *action)
+            cls.store_episode_action(result, episode, *action)
 
     @classmethod
-    def store_episode_action(cls, changes, episode, key, collection, action, properties=None):
+    def store_episode_action(cls, result, episode, key, collection, action, properties=None):
         season_num, episode_num = key[0]
         show = episode.show
 
-        episodes = dict_path(changes, (
+        # Store action in `result`
+        episodes = dict_path(result.changes, (
             collection, action,
             list(cls.item_keys(show)),
             'seasons', season_num,
@@ -166,3 +179,20 @@ class EpisodeDiffer(Differ):
         ))
 
         episodes[episode_num] = properties
+
+        # Update episode metrics
+        Differ.increment_metric(result.metrics.episodes, collection, action)
+
+
+class ShowResult(Result):
+    def __init__(self):
+        super(ShowResult, self).__init__()
+
+        self.metrics = ShowMetrics()
+
+
+class ShowMetrics(object):
+    def __init__(self):
+        self.shows = {}
+        self.seasons = {}
+        self.episodes = {}
