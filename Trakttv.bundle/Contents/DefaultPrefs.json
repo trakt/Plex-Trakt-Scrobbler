@@ -92,7 +92,7 @@
     {
         "id": "filter_sections",
         "type": "text",
-        "label": "Global Filter - Sections (comma separated)",
+        "label": "Global Filter - Libraries (comma separated)",
         "default": "*"
     },
     {
