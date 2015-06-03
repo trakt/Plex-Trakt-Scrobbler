@@ -84,10 +84,12 @@ class Migrations(object):
         username = None
 
         if token:
-            user = cls.get_plex_user(token)
+            user = cls.get_plex_account(token)
             username = user.attrib.get('username')
 
         return PlexAccount.create(
+            id=1,  # administrator account id
+
             account=account,
             username=username
         )
@@ -112,7 +114,7 @@ class Migrations(object):
         return True
 
     @classmethod
-    def get_plex_user(cls, token):
+    def get_plex_account(cls, token):
         response = requests.get('https://plex.tv/users/account', headers={
             'X-Plex-Token': token
         })
