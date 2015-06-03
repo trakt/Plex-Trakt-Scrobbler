@@ -89,7 +89,6 @@ class UpdateClient(Update):
 
     def match(self, result, client, player):
         # Apply global filters
-        # TODO apply section filter
         if not Filters.is_valid_client(player) or\
            not Filters.is_valid_address(client):
             # Client didn't pass filters, update `account` attribute and return

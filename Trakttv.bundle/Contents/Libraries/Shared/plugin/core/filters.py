@@ -114,19 +114,17 @@ class Filters(object):
         )
 
     @classmethod
-    def is_valid_section(cls, ws):
-        raise NotImplementedError
-
+    def is_valid_section(cls, metadata):
         return cls.match(
-            ws, 'filter_sections',
-            f_current=lambda: ws.metadata.section.title,
+            'filter_sections',
+            f_current=lambda: metadata.section.title,
             f_validate=lambda value, f_allow, f_deny: (
                 (f_allow and value not in f_allow) or
                 value in f_deny
             ),
             f_check=lambda: (
-                not ws.metadata or
-                not ws.metadata.section.title
+                not metadata or
+                not metadata.section.title
             )
         )
 

@@ -1,3 +1,4 @@
+from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
 
@@ -15,6 +16,10 @@ class Base(object):
     @classmethod
     def build_request(cls, session, rating_key=None):
         metadata = Metadata.get(rating_key or session.rating_key)
+
+        if not Filters.is_valid_section(metadata):
+            return None
+
         guid = Guid.parse(metadata.guid)
 
         result = None
