@@ -72,6 +72,7 @@ class SyncTask(object):
                     Account.id,
                     Account.name,
 
+                    PlexAccount.id,
                     PlexAccount.username,
                     PlexBasicCredential.token,
 

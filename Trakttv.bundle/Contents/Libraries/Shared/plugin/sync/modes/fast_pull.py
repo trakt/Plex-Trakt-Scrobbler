@@ -19,10 +19,9 @@ class Movies(Mode):
         ).tuples()
 
         # Fetch movies with account settings
-        # TODO use actual `account`
         p_items = self.plex.library.movies.mapped(
             p_sections,
-            account=1,
+            account=self.current.account.plex.id,
             parse_guid=True
         )
 
@@ -94,10 +93,9 @@ class Shows(Mode):
         ).tuples()
 
         # Fetch episodes with account settings
-        # TODO use actual `account`
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
             p_sections,
-            account=1,
+            account=self.current.account.plex.id,
             parse_guid=True
         )
 
