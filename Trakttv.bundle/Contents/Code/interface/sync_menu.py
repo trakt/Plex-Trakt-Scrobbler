@@ -55,14 +55,20 @@ def AccountsStatus(oc):
             normalize(SyncData.title(task.data))
         )
 
+    # - Progress percentage
+    percent = task.progress.percent
+
+    if percent is not None:
+        title += ' (%2d%%)' % percent
+
     # Build task summary
     summary = 'Working'
 
-    # Estimated seconds remaining
+    # - Estimated seconds remaining
     remaining_seconds = task.progress.remaining_seconds
 
     if remaining_seconds is not None:
-        summary += ', %.01f seconds remaining' % remaining_seconds
+        summary += ', %.02f seconds remaining' % remaining_seconds
 
     # Create items
     oc.add(DirectoryObject(
@@ -166,14 +172,20 @@ def ControlsStatus(oc, account):
             normalize(SyncData.title(task.data))
         )
 
+    # - Progress percentage
+    percent = task.progress.percent
+
+    if percent is not None:
+        title += ' (%2d%%)' % percent
+
     # Build task summary
     summary = 'Working'
 
-    # Estimated seconds remaining
+    # - Estimated seconds remaining
     remaining_seconds = task.progress.remaining_seconds
 
     if remaining_seconds is not None:
-        summary += ', %.01f seconds remaining' % remaining_seconds
+        summary += ', %.02f seconds remaining' % remaining_seconds
 
     # Create items
     oc.add(DirectoryObject(
