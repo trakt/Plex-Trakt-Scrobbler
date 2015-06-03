@@ -32,13 +32,14 @@ except Exception, ex:
 
 # Local imports
 from core.logger import Logger
-from core.helpers import spawn, get_pref
+from core.helpers import spawn
 from core.plugin import ART, NAME, ICON
 from main import Main
 
 from plugin.api.core.manager import ApiManager
 from plugin.core.configuration import Configuration
 from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.core.helpers.variable import get_pref
 
 from plex import Plex
 import time

@@ -13,7 +13,6 @@ class Scrobbler(object):
     ])
     started = []
 
-
     @classmethod
     def start(cls, blocking=False):
         enabled = ACTIVITY_MODE.get(Environment.prefs['activity_mode'])

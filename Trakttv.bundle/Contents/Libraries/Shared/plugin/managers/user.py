@@ -1,3 +1,4 @@
+from plugin.core.filters import Filters
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.models import User, UserRule
@@ -67,6 +68,16 @@ class UpdateUser(Update):
             # Return simple update
             return result
 
+        return self.match(result, user)
+
+    def match(self, result, user):
+        # Apply global filters
+        if not Filters.is_valid_user(user):
+            # User didn't pass filters, update `account` attribute and return
+            result['account'] = None
+
+            return result
+
         # Find matching `UserRule`
         query = UserRule.select().where((
             (UserRule.name == user['title']) | (UserRule.name == None)
@@ -74,10 +85,10 @@ class UpdateUser(Update):
 
         rules = list(query.execute())
 
-        if len(rules) != 1:
-            return result
-
-        result['account'] = rules[0].account_id
+        if len(rules) == 1:
+            result['account'] = rules[0].account_id
+        else:
+            result['account'] = None
 
         return result
 

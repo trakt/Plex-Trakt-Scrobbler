@@ -1,3 +1,4 @@
+from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.models import Client, ClientRule
@@ -83,6 +84,19 @@ class UpdateClient(Update):
         else:
             log.info('Unable to find client with machine_identifier %r', player['machine_identifier'])
 
+        # Try match client against a rule
+        return self.match(result, client, player)
+
+    def match(self, result, client, player):
+        # Apply global filters
+        # TODO apply section filter
+        if not Filters.is_valid_client(player) or\
+           not Filters.is_valid_address(client):
+            # Client didn't pass filters, update `account` attribute and return
+            result['account'] = None
+
+            return result
+
         # Find matching `ClientRule`
         address = client['address'] if client else None
 
@@ -94,10 +108,10 @@ class UpdateClient(Update):
 
         rules = list(query.execute())
 
-        if len(rules) != 1:
-            return result
-
-        result['account'] = rules[0].account_id
+        if len(rules) == 1:
+            result['account'] = rules[0].account_id
+        else:
+            result['account'] = None
 
         return result
 

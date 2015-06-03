@@ -26,7 +26,7 @@ class Session(Model):
 
     @property
     def account_id(self):
-        return self._data['account']
+        return self._data.get('account')
 
     @property
     def payload(self):

@@ -32,10 +32,22 @@ class ActionManager(Manager):
         if request is not None:
             request = json.dumps(request)
 
+        # Retrieve `account_id` for action
+        account_id = None
+
+        if session:
+            account_id = session.account_id
+        elif account:
+            account_id = account.id
+
+        if account_id is None:
+            log.debug('Unable to find valid account for event %r, session %r', event, session)
+            return None
+
         # Try queue the event
         try:
             obj = ActionQueue.create(
-                account=session.account_id if session else account,
+                account=account_id,
                 session=session,
 
                 event=event,

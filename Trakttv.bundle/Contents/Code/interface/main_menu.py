@@ -1,9 +1,10 @@
 from core.cache import CacheManager
-from core.helpers import pad_title, get_pref
+from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
 from interface.sync_menu import AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
+from plugin.core.helpers.variable import get_pref
 from plugin.managers import AccountManager
 
 

@@ -1,8 +1,10 @@
-from core.helpers import timestamp, pad_title, get_filter, normalize
+from core.helpers import timestamp, pad_title
 from core.localization import localization
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.core.filters import Filters
+from plugin.core.helpers.variable import normalize
 from plugin.managers import AccountManager
 from plugin.models import Account, SyncResult
 from plugin.sync import Sync, SyncData, SyncMedia, SyncMode
@@ -127,7 +129,7 @@ def ControlsMenu(account_id=1, refresh=None):
     sections = Plex['library'].sections()
     section_keys = []
 
-    f_allow, f_deny = get_filter('filter_sections')
+    f_allow, f_deny = Filters.get('filter_sections')
 
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
