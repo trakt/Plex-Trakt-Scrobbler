@@ -7,9 +7,21 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Movies(Mode):
+class Base(Mode):
     mode = SyncMode.Pull
 
+    def step(self, pending, data, key):
+        if key not in pending[data]:
+            return
+
+        # Increment one step
+        self.current.progress.step()
+
+        # Remove from `pending` dictionary
+        del pending[data][key]
+
+
+class Movies(Base):
     def run(self):
         # Retrieve movie sections
         p_sections = self.plex.library.sections(
@@ -25,6 +37,21 @@ class Movies(Mode):
             parse_guid=True
         )
 
+        # Calculate total number of movies
+        pending = {}
+        total = 0
+
+        for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
+            if data not in pending:
+                pending[data] = {}
+
+            for pk in self.trakt[(SyncMedia.Movies, data)]:
+                pending[data][pk] = False
+                total += 1
+
+        # Task started
+        self.current.progress.start(total)
+
         for rating_key, p_guid, p_item in p_items:
             key = (p_guid.agent, p_guid.sid)
 
@@ -36,21 +63,26 @@ class Movies(Mode):
                 continue
 
             for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
-                t_items = self.trakt[(SyncMedia.Movies, data)]
-                t_item = t_items.get(pk)
+                t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
                 self.execute_handlers(
                     SyncMedia.Movies, data,
                     rating_key=rating_key,
 
                     p_item=p_item,
-                    t_item=t_item
+                    t_item=t_movie
                 )
 
+                # Increment one step
+                self.step(pending, data, pk)
 
-class Shows(Mode):
-    mode = SyncMode.Pull
+        # Task stopped
+        log.debug('Pending: %r', pending)
 
+        self.current.progress.stop()
+
+
+class Shows(Base):
     def run(self):
         # Retrieve show sections
         p_sections = self.plex.library.sections(
@@ -67,6 +99,28 @@ class Shows(Mode):
         )
 
         # TODO process shows, seasons
+
+        # Calculate total number of episodes
+        pending = {}
+        total = 0
+
+        for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+            t_episodes = [
+                (key, se, ep)
+                for key, t_show in self.trakt[(SyncMedia.Episodes, data)].items()
+                for se, t_season in t_show.seasons.items()
+                for ep in t_season.episodes.iterkeys()
+            ]
+
+            if data not in pending:
+                pending[data] = {}
+
+            for key in t_episodes:
+                pending[data][key] = False
+                total += 1
+
+        # Task started
+        self.current.progress.start(total)
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_item in p_episodes:
@@ -109,6 +163,14 @@ class Shows(Mode):
                     p_item=p_item,
                     t_item=t_episode
                 )
+
+                # Increment one step
+                self.step(pending, data, (pk, season_num, episode_num))
+
+        # Task stopped
+        log.debug('Pending: %r', pending)
+
+        self.current.progress.stop()
 
 
 class Pull(Mode):

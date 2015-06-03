@@ -55,11 +55,20 @@ def AccountsStatus(oc):
             normalize(SyncData.title(task.data))
         )
 
+    # Build task summary
+    summary = 'Working'
+
+    # Estimated seconds remaining
+    remaining_seconds = task.progress.remaining_seconds
+
+    if remaining_seconds is not None:
+        summary += ', %.01f seconds remaining' % remaining_seconds
+
     # Create items
     oc.add(DirectoryObject(
         key=Callback(AccountsMenu, refresh=timestamp()),
         title=pad_title('%s (%s) - Status' % (title, account.name)),
-        summary='Working (click to refresh)'
+        summary='%s (click to refresh)' % summary
     ))
 
     oc.add(DirectoryObject(
@@ -157,11 +166,20 @@ def ControlsStatus(oc, account):
             normalize(SyncData.title(task.data))
         )
 
+    # Build task summary
+    summary = 'Working'
+
+    # Estimated seconds remaining
+    remaining_seconds = task.progress.remaining_seconds
+
+    if remaining_seconds is not None:
+        summary += ', %.01f seconds remaining' % remaining_seconds
+
     # Create items
     oc.add(DirectoryObject(
         key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
         title=pad_title('%s - Status' % title),
-        summary='Working (click to refresh)'
+        summary='%s (click to refresh)' % summary
     ))
 
     oc.add(DirectoryObject(

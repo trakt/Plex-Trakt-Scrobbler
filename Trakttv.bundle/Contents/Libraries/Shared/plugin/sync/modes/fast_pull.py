@@ -2,6 +2,7 @@ from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode
 
 from plex_database.models import LibrarySectionType, LibrarySection
+from trakt_sync.cache.main import Cache
 import logging
 
 log = logging.getLogger(__name__)
@@ -25,6 +26,23 @@ class Movies(Mode):
             parse_guid=True
         )
 
+        # Calculate total number of steps
+        total = 0
+
+        for (media, data), result in self.trakt.changes:
+            if media != SyncMedia.Movies:
+                # Ignore changes that aren't for episodes
+                continue
+
+            data_name = Cache.Data.get(data)
+
+            for count in result.metrics.movies.get(data_name, {}).itervalues():
+                total += count
+
+        # Task started
+        self.current.progress.start(total)
+
+        # Process movies
         for rating_key, p_guid, p_item in p_items:
             key = (p_guid.agent, p_guid.sid)
 
@@ -35,12 +53,14 @@ class Movies(Mode):
                 # No `pk` found
                 continue
 
-            for (media, data), changes in self.trakt.changes:
+            for (media, data), result in self.trakt.changes:
                 if media != SyncMedia.Movies:
                     # Ignore changes that aren't for movies
                     continue
 
-                for action, items in changes.items():
+                data_name = Cache.Data.get(data)
+
+                for action, items in result.changes[data_name].items():
                     t_item = items.get(pk)
 
                     if t_item is None:
@@ -55,6 +75,12 @@ class Movies(Mode):
                         p_item=p_item,
                         t_item=t_item
                     )
+
+                    # Increment one step
+                    self.current.progress.step()
+
+        # Task stopped
+        self.current.progress.stop()
 
 
 class Shows(Mode):
@@ -77,6 +103,22 @@ class Shows(Mode):
 
         # TODO process shows, seasons
 
+        # Calculate total number of episode changes
+        total = 0
+
+        for (media, data), result in self.trakt.changes:
+            if media != SyncMedia.Episodes:
+                # Ignore changes that aren't for episodes
+                continue
+
+            data_name = Cache.Data.get(data)
+
+            for count in result.metrics.episodes.get(data_name, {}).itervalues():
+                total += count
+
+        # Task started
+        self.current.progress.start(total)
+
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_item in p_episodes:
             key = (p_guid.agent, p_guid.sid)
@@ -92,13 +134,15 @@ class Shows(Mode):
                 # Missing `episode` rating key
                 continue
 
-            for (media, data), changes in self.trakt.changes:
+            for (media, data), result in self.trakt.changes:
                 if media != SyncMedia.Episodes:
                     # Ignore changes that aren't for episodes
                     continue
 
-                for action, items in changes.items():
-                    t_show = items.get(pk)
+                data_name = Cache.Data.get(data)
+
+                for action, shows in result.changes[data_name].items():
+                    t_show = shows.get(pk)
 
                     if t_show is None:
                         # Unable to find matching show in trakt data
@@ -124,6 +168,12 @@ class Shows(Mode):
                         p_item=p_item,
                         t_item=t_episode
                     )
+
+                    # Increment one step
+                    self.current.progress.step()
+
+        # Task stopped
+        self.current.progress.stop()
 
 
 class FastPull(Mode):
