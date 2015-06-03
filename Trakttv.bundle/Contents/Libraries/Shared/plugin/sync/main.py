@@ -79,6 +79,8 @@ class Main(object):
             # Run in trakt authorization context
             with self.current.account.trakt.authorization():
                 self.run()
+
+            self.current.success = True
         except Exception, ex:
             log.warn('Exception raised in run(): %s', ex, exc_info=True)
 
