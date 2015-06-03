@@ -74,25 +74,25 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Filter - myPlex users (optional, comma separated)",
+        "label": "Global Filter - Users (comma separated)",
         "default": ""
     },
     {
         "id": "scrobble_clients",
         "type": "text",
-        "label": "Filter - Clients (optional, comma separated)",
+        "label": "Global Filter - Client Names (comma separated)",
         "default": ""
-    },
-    {
-        "id": "filter_sections",
-        "type": "text",
-        "label": "Filter - Sections (comma separated)",
-        "default": "*"
     },
     {
         "id": "filter_networks",
         "type": "text",
-        "label": "Filter - IP Networks (comma separated)",
+        "label": "Global Filter - Client IPs (comma separated)",
+        "default": "*"
+    },
+    {
+        "id": "filter_sections",
+        "type": "text",
+        "label": "Global Filter - Sections (comma separated)",
         "default": "*"
     },
     {
