@@ -56,21 +56,13 @@ class Migrations(object):
         cls.plex_basic_credential(plex_account)
 
         # Ensure trakt account details exist
-        trakt_account = cls.trakt_account(account)
+        created, trakt_account = cls.trakt_account(account)
 
         cls.trakt_basic_credential(trakt_account)
         cls.trakt_oauth_credential(trakt_account)
 
-        with trakt_account.authorization():
-            settings = Trakt['users/settings'].get()
-            user = settings.get('user', {})
-
-            # Store avatar/thumb in database
-            images = user.get('images', {})
-            avatar = images.get('avatar', {})
-
-            trakt_account.thumb = avatar.get('full')
-            trakt_account.save()
+        # Refresh trakt account details
+        trakt_account.refresh(force=created)
 
         return True
 
@@ -145,12 +137,12 @@ class Migrations(object):
     @classmethod
     def trakt_account(cls, account):
         try:
-            return TraktAccount.create(
+            return True, TraktAccount.create(
                 account=account,
                 username=cls.get_trakt_username()
             )
         except apsw.ConstraintError:
-            return TraktAccount.get(
+            return False, TraktAccount.get(
                 account=account
             )
 

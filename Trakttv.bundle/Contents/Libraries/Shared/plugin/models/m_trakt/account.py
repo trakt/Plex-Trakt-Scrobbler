@@ -1,11 +1,14 @@
 from plugin.models.core import db
 from plugin.models.account import Account
 
+from datetime import datetime, timedelta
 from playhouse.apsw_ext import *
 from trakt import Trakt
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl
 import logging
+
+REFRESH_INTERVAL = timedelta(days=1)
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +22,11 @@ class TraktAccount(Model):
 
     username = CharField(null=True, unique=True)
     thumb = TextField(null=True)
+
+    cover = TextField(null=True)
+    timezone = TextField(null=True)
+
+    refreshed_at = DateTimeField(null=True)
 
     def __init__(self, *args, **kwargs):
         super(TraktAccount, self).__init__(*args, **kwargs)
@@ -79,6 +87,35 @@ class TraktAccount(Model):
         log.debug('Using oauth authorization for %r', self)
 
         return Trakt.configuration.oauth.from_response(oauth_credential.to_response(), refresh=True)
+
+    def refresh(self, force=False):
+        if not force and self.refreshed_at:
+            # Only refresh account every `REFRESH_INTERVAL`
+            since_refresh = datetime.utcnow() - self.refreshed_at
+
+            if since_refresh < REFRESH_INTERVAL:
+                return
+
+        # Fetch trakt account details
+        with self.authorization():
+            settings = Trakt['users/settings'].get()
+
+        # Update user details
+        user = settings.get('user', {})
+        avatar = user.get('images', {}).get('avatar', {})
+
+        self.thumb = avatar.get('full')
+
+        # Update account details
+        account = settings.get('account', {})
+
+        self.cover = account.get('cover_image')
+        self.timezone = account.get('timezone')
+
+        self.refreshed_at = datetime.utcnow()
+
+        # Store changes in database
+        self.save()
 
     def thumb_url(self, default=None, rating='pg', size=256):
         if not self.thumb:
