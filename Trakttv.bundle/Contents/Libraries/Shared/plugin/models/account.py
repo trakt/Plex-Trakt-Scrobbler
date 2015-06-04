@@ -11,7 +11,7 @@ class Account(Model):
     class Meta:
         database = db
 
-    name = TextField(unique=True)
+    name = CharField(unique=True)
     thumb = TextField(null=True)
 
     def __init__(self, *args, **kwargs):
