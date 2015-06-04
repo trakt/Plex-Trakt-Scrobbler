@@ -1,6 +1,7 @@
 from plugin.models.core import db
 
 from playhouse.apsw_ext import *
+from urlparse import urlparse
 import logging
 
 log = logging.getLogger(__name__)
@@ -11,6 +12,7 @@ class Account(Model):
         database = db
 
     name = TextField(unique=True)
+    thumb = TextField(null=True)
 
     def __init__(self, *args, **kwargs):
         super(Account, self).__init__(*args, **kwargs)
@@ -39,6 +41,45 @@ class Account(Model):
     @trakt.setter
     def trakt(self, value):
         self._trakt_account = value
+
+    def thumb_url(self, update=False):
+        if self.thumb and not update:
+            return self.thumb
+
+        # Build thumb from `plex` and `trakt` accounts
+        thumb = self.build_thumb()
+
+        # If `thumb` has changed, store in database
+        if thumb != self.thumb:
+            self.thumb = thumb
+            self.save()
+
+        return thumb
+
+    def build_thumb(self):
+        p = self.plex
+        p_thumb = p.thumb_url() if p else None
+
+        t = self.trakt
+        t_thumb = t.thumb_url(p_thumb) if t else None
+
+        if t_thumb:
+            # Trakt gravatar (with built-in fallback to plex thumb)
+            return t_thumb
+
+        if p_thumb:
+            # Plex gravatar
+            return p_thumb
+
+        if t and t.thumb:
+            # Trakt raw
+            return t.thumb
+
+        if p:
+            # Plex raw
+            return p.thumb
+
+        return None
 
     def to_json(self, full=False):
         result = {

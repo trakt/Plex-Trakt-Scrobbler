@@ -2,6 +2,8 @@ from plugin.models.core import db
 from plugin.models.account import Account
 
 from playhouse.apsw_ext import *
+from urllib import urlencode
+from urlparse import urlparse, parse_qsl
 import logging
 
 log = logging.getLogger(__name__)
@@ -15,6 +17,7 @@ class PlexAccount(Model):
     account = ForeignKeyField(Account, 'plex_accounts', unique=True)
 
     username = CharField(null=True, unique=True)
+    thumb = TextField(null=True)
 
     def __init__(self, *args, **kwargs):
         super(PlexAccount, self).__init__(*args, **kwargs)
@@ -31,6 +34,28 @@ class PlexAccount(Model):
     @basic.setter
     def basic(self, value):
         self._basic_credential = value
+
+    def thumb_url(self, default=None, rating='pg', size=256):
+        if not self.thumb:
+            return None
+
+        thumb = urlparse(self.thumb)
+
+        if not thumb.netloc.endswith('gravatar.com'):
+            return None
+
+        result = 'https://secure.gravatar.com%s' % thumb.path
+
+        if default is None:
+            query = dict(parse_qsl(thumb.query))
+
+            default = query.get('d') or query.get('default')
+
+        return result + '?' + urlencode({
+            'd': default,
+            'r': rating,
+            's': size
+        })
 
     def to_json(self, full=False):
         result = {

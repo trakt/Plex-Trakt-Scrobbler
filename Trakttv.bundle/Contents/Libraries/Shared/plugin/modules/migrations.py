@@ -6,6 +6,7 @@ from plugin.models import Account, ClientRule, UserRule,\
 from plugin.models.core import db, migrations_path
 
 from peewee_migrate.core import Router
+from trakt import Trakt
 from xml.etree import ElementTree
 import apsw
 import logging
@@ -60,6 +61,17 @@ class Migrations(object):
         cls.trakt_basic_credential(trakt_account)
         cls.trakt_oauth_credential(trakt_account)
 
+        with trakt_account.authorization():
+            settings = Trakt['users/settings'].get()
+            user = settings.get('user', {})
+
+            # Store avatar/thumb in database
+            images = user.get('images', {})
+            avatar = images.get('avatar', {})
+
+            trakt_account.thumb = avatar.get('full')
+            trakt_account.save()
+
         return True
 
     @classmethod
@@ -81,17 +93,22 @@ class Migrations(object):
             pass
 
         token = os.environ.get('PLEXTOKEN')
+
         username = None
+        thumb = None
 
         if token:
             user = cls.get_plex_account(token)
+
             username = user.attrib.get('username')
+            thumb = user.attrib.get('thumb')
 
         return PlexAccount.create(
             id=1,  # administrator account id
-
             account=account,
-            username=username
+
+            username=username,
+            thumb=thumb
         )
 
     @classmethod
