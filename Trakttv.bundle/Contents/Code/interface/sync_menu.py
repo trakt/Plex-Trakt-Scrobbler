@@ -30,7 +30,8 @@ def AccountsMenu(refresh=None):
     for account in AccountManager.get.all():
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id),
-            title=account.name
+            title=account.name,
+            thumb=account.thumb_url()
         ))
 
     return oc
