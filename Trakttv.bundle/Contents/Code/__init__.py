@@ -20,6 +20,7 @@ import interface
 # Handlers
 # ------------------------------------------------
 from interface.main_menu import MainMenu
+from interface.resources import Cover, Thumb
 # ------------------------------------------------
 
 # Check "apsw" availability, log any errors

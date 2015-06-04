@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title
+from core.helpers import timestamp, pad_title, function_path
 from core.localization import localization
 from core.logger import Logger
 
@@ -22,8 +22,10 @@ log = Logger('interface.sync_menu')
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
 def AccountsMenu(refresh=None):
-    # TODO adding profile thumbnails (from trakt.tv or plex.tv?) would be a nice addition
-    oc = ObjectContainer(title2=L('accounts:title'), no_cache=True)
+    oc = ObjectContainer(
+        title2=L('accounts:title'),
+        no_cache=True
+    )
 
     AccountsStatus(oc)
 
@@ -31,7 +33,9 @@ def AccountsMenu(refresh=None):
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id),
             title=account.name,
-            thumb=account.thumb_url()
+
+            art=function_path('Cover.png', account_id=account.id),
+            thumb=function_path('Thumb.png', account_id=account.id)
         ))
 
     return oc
@@ -90,9 +94,15 @@ def AccountsStatus(oc):
 def ControlsMenu(account_id=1, refresh=None):
     account = AccountManager.get(Account.id == account_id)
 
-    oc = ObjectContainer(title2=LF('controls:title', account.name), no_cache=True)
+    # Build sync controls menu
+    oc = ObjectContainer(
+        title2=LF('controls:title', account.name),
+        no_cache=True,
 
-    ControlsStatus(oc, account)  # TODO this should be moved to the `AccountsMenu` if there is multiple accounts
+        art=function_path('Cover.png', account_id=account.id)
+    )
+
+    ControlsStatus(oc, account)
 
     #
     # Full
@@ -102,7 +112,9 @@ def ControlsMenu(account_id=1, refresh=None):
         key=Callback(Synchronize, account_id=account.id),
         title=pad_title(SyncMode.title(SyncMode.Full)),
         summary=ModeStatus(account, SyncMode.Full),
-        thumb=R("icon-sync.png")
+
+        thumb=R("icon-sync.png"),
+        art=function_path('Cover.png', account_id=account.id)
     ))
 
     #
@@ -113,14 +125,18 @@ def ControlsMenu(account_id=1, refresh=None):
         key=Callback(Pull, account_id=account.id),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
         summary=ModeStatus(account, SyncMode.Pull),
-        thumb=R("icon-sync_down.png")
+
+        thumb=R("icon-sync_down.png"),
+        art=function_path('Cover.png', account_id=account.id)
     ))
 
     oc.add(DirectoryObject(
         key=Callback(FastPull, account_id=account.id),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
         summary=ModeStatus(account, SyncMode.FastPull),
-        thumb=R("icon-sync_down.png")
+
+        thumb=R("icon-sync_down.png"),
+        art=function_path('Cover.png', account_id=account.id)
     ))
 
     #
@@ -137,7 +153,9 @@ def ControlsMenu(account_id=1, refresh=None):
             key=Callback(Push, account_id=account.id, section=section.key),
             title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
             summary=ModeStatus(account, SyncMode.Push, section.key),
-            thumb=R("icon-sync_up.png")
+
+            thumb=R("icon-sync_up.png"),
+            art=function_path('Cover.png', account_id=account.id)
         ))
         section_keys.append(section.key)
 
@@ -146,7 +164,9 @@ def ControlsMenu(account_id=1, refresh=None):
             key=Callback(Push, account_id=account.id),
             title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
             summary=ModeStatus(account, SyncMode.Push),
-            thumb=R("icon-sync_up.png")
+
+            thumb=R("icon-sync_up.png"),
+            art=function_path('Cover.png', account_id=account.id)
         ))
 
     return oc

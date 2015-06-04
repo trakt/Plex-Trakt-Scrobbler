@@ -1,12 +1,15 @@
 from core.logger import Logger
 
+from plugin.core.constants import PLUGIN_PREFIX
+
+import base64
+import cerealizer
 import hashlib
 import inspect
-import re
 import sys
 import threading
 import time
-import unicodedata
+import urllib
 
 log = Logger('core.helpers')
 
@@ -297,3 +300,26 @@ def md5(value):
     m.update(value)
 
     return m.hexdigest()
+
+
+def safe_encode(string):
+    string = str(string)
+    return base64.b64encode(string).replace('/', '@').replace('+', '*').replace('=', '_')
+
+
+def pack(obj):
+    serialized_obj = cerealizer.dumps(obj)
+    encoded_string = safe_encode(serialized_obj)
+    return urllib.quote(encoded_string)
+
+
+def function_path(name, ext=None, **kwargs):
+    return '%s/:/function/%s%s?%s' % (
+        PLUGIN_PREFIX,
+        name,
+        ('.%s' % ext) if ext else '',
+
+        urllib.urlencode({
+            'function_args': pack(kwargs)
+        })
+    )
