@@ -1,3 +1,33 @@
+import re
+import unicodedata
+
+def flatten(text):
+    if text is None:
+        return None
+
+    # Normalize `text` to ascii
+    text = normalize(text)
+
+    # Remove special characters
+    text = re.sub('[^A-Za-z0-9\s]+', '', text)
+
+    # Merge duplicate spaces
+    text = ' '.join(text.split())
+
+    # Convert to lower-case
+    return text.lower()
+
+def normalize(text):
+    if text is None:
+        return None
+
+    # Normalize unicode characters
+    if type(text) is unicode:
+        text = unicodedata.normalize('NFKD', text)
+
+    # Ensure text is ASCII, ignore unknown characters
+    return text.encode('ascii', 'ignore')
+
 def to_iterable(value):
     if value is None:
         return None
