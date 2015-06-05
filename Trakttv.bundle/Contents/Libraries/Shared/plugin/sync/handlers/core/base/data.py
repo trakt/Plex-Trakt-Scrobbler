@@ -5,6 +5,8 @@ log = logging.getLogger(__name__)
 
 class DataHandler(object):
     data = None
+    mode = None
+
     children = None
 
     def __init__(self, main):

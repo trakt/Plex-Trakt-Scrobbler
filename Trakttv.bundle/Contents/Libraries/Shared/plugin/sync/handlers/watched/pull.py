@@ -129,8 +129,9 @@ class Episodes(Base):
         return self.unscrobble(key)
 
 
-class Watched(DataHandler):
+class Pull(DataHandler):
     data = SyncData.Watched
+    mode = [SyncMode.FastPull, SyncMode.Pull]
 
     children = [
         Movies,
