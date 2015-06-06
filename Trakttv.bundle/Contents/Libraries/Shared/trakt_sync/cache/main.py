@@ -1,8 +1,10 @@
+from dateutil.tz import tzutc
 from trakt_sync.differ import MovieDiffer, ShowDiffer
 import trakt_sync.cache.enums as enums
 
 from trakt import Trakt
 from trakt.core.helpers import from_iso8601
+import arrow
 import logging
 
 log = logging.getLogger(__name__)
@@ -58,7 +60,12 @@ class Cache(object):
                 timestamp_key = Cache.Data.get_timestamp_key(d)
 
                 current = self._get_timestamp(activities, d, m)
+
                 last = collection['timestamps'][media].get(timestamp_key)
+
+                if last and last.tzinfo is None:
+                    # Missing "tzinfo", assume UTC
+                    last = last.replace(tzinfo=tzutc())
 
                 if last and last == current:
                     # Latest data already cached

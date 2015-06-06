@@ -1,3 +1,4 @@
+from dateutil.tz import tzutc
 from trakt_sync.differ.handlers.core.base import Handler
 
 
@@ -13,6 +14,10 @@ class Ratings(Handler):
             yield self.remove(base)
 
     def on_common(self, base, current):
+        if base.rating and base.rating.timestamp and base.rating.timestamp.tzinfo is None:
+            # Missing "tzinfo", assume UTC
+            base.rating.timestamp = base.rating.timestamp.replace(tzinfo=tzutc())
+
         if base.rating == current.rating:
             return
 
