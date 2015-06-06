@@ -4,13 +4,21 @@ from plex_metadata.guid import Guid
 
 from peewee import JOIN_LEFT_OUTER, DateTimeField
 from stash.algorithms.core.prime_context import PrimeContext
-from tzlocal import get_localzone
 import logging
-import pytz
-
-TZ_LOCAL = get_localzone()
 
 log = logging.getLogger(__name__)
+
+# Optional tzlocal/pytz import
+try:
+    from tzlocal import get_localzone
+    import pytz
+
+    TZ_LOCAL = get_localzone()
+except ImportError:
+    pytz = None
+    TZ_LOCAL = None
+
+    log.info('Unable to import "tzlocal" + "pytz": datetime objects will be returned without "tzinfo"')
 
 
 class LibraryBase(object):
@@ -162,6 +170,10 @@ class MovieLibrary(LibraryBase):
         if type(field) is DateTimeField and value:
             if value.tzinfo:
                 # `tzinfo` provided, ignore conversion
+                return value
+
+            if not TZ_LOCAL or not pytz:
+                # Missing "tzlocal" or "pytz" module
                 return value
 
             # Convert datetime to UTC
