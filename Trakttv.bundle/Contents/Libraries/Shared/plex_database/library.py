@@ -2,9 +2,13 @@ from plex_database.matcher import Default as Matcher
 from plex_database.models import *
 from plex_metadata.guid import Guid
 
-from peewee import JOIN_LEFT_OUTER
+from peewee import JOIN_LEFT_OUTER, DateTimeField
 from stash.algorithms.core.prime_context import PrimeContext
+from tzlocal import get_localzone
 import logging
+import pytz
+
+TZ_LOCAL = get_localzone()
 
 log = logging.getLogger(__name__)
 
@@ -129,14 +133,18 @@ class MovieLibrary(LibraryBase):
 
         return query
 
-    @staticmethod
-    def _parse(fields, row):
+    @classmethod
+    def _parse(cls, fields, row):
         item = {}
 
         for x in xrange(2, len(fields)):
             field = fields[x]
             value = row[x]
 
+            # Parse field
+            value = cls._parse_field(field, value)
+
+            # Update `item` with field
             if field.model_class == MetadataItem:
                 item[field.name] = value
             elif field.model_class == MetadataItemSettings:
@@ -148,6 +156,18 @@ class MovieLibrary(LibraryBase):
                 raise ValueError('Unable to parse field %r, unknown model %r', field, field.model_class)
 
         return row[0], row[1], item
+
+    @staticmethod
+    def _parse_field(field, value):
+        if type(field) is DateTimeField and value:
+            if value.tzinfo:
+                # `tzinfo` provided, ignore conversion
+                return value
+
+            # Convert datetime to UTC
+            return TZ_LOCAL.localize(value).astimezone(pytz.utc)
+
+        return value
 
     def mapped(self, sections, fields=None, account=None, parse_guid=False):
         # Retrieve `id` from `Account`
