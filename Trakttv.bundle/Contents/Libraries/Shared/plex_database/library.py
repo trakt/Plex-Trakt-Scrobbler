@@ -47,7 +47,7 @@ class LibraryBase(object):
 
 
 class MovieLibrary(LibraryBase):
-    def __call__(self, sections, account, fields=None):
+    def __call__(self, sections, fields=None, account=None, where=None):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
@@ -55,80 +55,136 @@ class MovieLibrary(LibraryBase):
         # Map `Section` list to ids
         section_ids = [id for (id, ) in sections]
 
-        #  Set defaults for `fields`
-        if not fields:
-            fields = [
-                MetadataItem.id,
-                MetadataItem.parent,
+        # Build `select()` query
+        if fields is None:
+            fields = []
 
-                MetadataItem.guid
-            ]
+        fields = [
+            MetadataItem.id,
+            MetadataItem.guid
+        ] + fields
 
-            if account:
-                fields.extend([
-                    MetadataItemSettings.rating,
-                    MetadataItemSettings.view_offset,
-                    MetadataItemSettings.last_viewed_at
-                ])
+        # Build `where()` query
+        if where is None:
+            where = []
 
-        # Blue `where()` query
-        query = [
+        where += [
             MetadataItem.library_section << section_ids,
             MetadataItem.metadata_type == MetadataItemType.Movie
         ]
 
-        if account:
-            query.append(
-                (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
-            )
+        # Build query
+        query = self._join(
+            MetadataItem.select(*fields),
+            self._models(fields, account),
+            account, where
+        ).where(
+            *where
+        )
 
-            return MetadataItem.select(*fields).join(
-                MetadataItemSettings, JOIN_LEFT_OUTER, on=(
-                    MetadataItemSettings.guid == MetadataItem.guid
-                ).alias('settings')
-            ).where(*query)
+        # Parse rows
+        return [
+            self._parse(fields, row)
+            for row in query.tuples().iterator()
+        ]
 
-        return MetadataItem.select(*fields).where(*query)
+    @staticmethod
+    def _models(fields, account=None):
+        models = {}
 
-    def mapped(self, sections, account, parse_guid=False):
+        for field in fields:
+            model = field.model_class
+
+            # Ensure `model` is only returned once
+            if model.__name__ in models:
+                continue
+
+            # Test model validity
+            if model == MetadataItemSettings and account is None:
+                raise ValueError('MetadataItemSettings fields require the "account" parameter')
+
+            # Update `models` dictionary, yield model
+            models[model.__name__] = model
+
+            yield model
+
+    @staticmethod
+    def _join(query, models, account, where):
+        for model in models:
+            if model == MetadataItem:
+                continue
+
+            if model == MetadataItemSettings:
+                query = query.join(
+                    MetadataItemSettings, JOIN_LEFT_OUTER, on=(
+                        MetadataItemSettings.guid == MetadataItem.guid
+                    ).alias('settings')
+                )
+
+                where.append(
+                    (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
+                )
+            else:
+                raise ValueError('Unable to join unknown model: %r', model)
+
+        return query
+
+    @staticmethod
+    def _parse(fields, row):
+        item = {}
+
+        for x in xrange(2, len(fields)):
+            field = fields[x]
+            value = row[x]
+
+            if field.model_class == MetadataItem:
+                item[field.name] = value
+            elif field.model_class == MetadataItemSettings:
+                if 'settings' not in item:
+                    item['settings'] = {}
+
+                item['settings'][field.name] = value
+            else:
+                raise ValueError('Unable to parse field %r, unknown model %r', field, field.model_class)
+
+        return row[0], row[1], item
+
+    def mapped(self, sections, fields=None, account=None, parse_guid=False):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
 
-        # Retrieve shows
-        movies = Library.movies(sections, account, [
-            MetadataItem.id,
-            MetadataItem.guid,
+        # Build `fields` list
+        if fields is None:
+            fields = []
 
-            MetadataItemSettings.rating,
-            MetadataItemSettings.view_offset,
-            MetadataItemSettings.last_viewed_at
-        ])
+        if account:
+            fields += [
+                MetadataItemSettings.rating,
+                MetadataItemSettings.view_offset,
+                MetadataItemSettings.last_viewed_at
+            ]
 
-        movies = [
-            (id, {
-                'guid': (guid, None),
-                'settings': self.settings_video(rating, view_offset, last_viewed_at)
-            })
-            for (id, guid, rating, view_offset, last_viewed_at) in movies.tuples().iterator()
-        ]
+        # Retrieve movies
+        movies = Library.movies(
+            sections, fields,
+            account=account
+        )
+
+        # Iterate over items, parse guid (if enabled)
+        guids = {}
 
         def movies_iterator():
-            for movie_id, movie in movies:
+            for id, guid, movie in movies:
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
-                    raw, parsed = movie['guid']
+                    if id not in guids:
+                        guids[id] = Guid.parse(guid)
 
-                    if parsed is None:
-                        movie['guid'] = (raw, Guid.parse(raw))
+                    guid = guids[id]
 
-                # Pick `guid` based on request (`parse_guid` parameter)
-                guid_raw, guid_parsed = movie['guid']
-                guid = guid_parsed if parse_guid else guid_raw
-
-                yield movie_id, guid, {
-                    'settings': movie['settings']
-                }
+                # Return item
+                yield id, guid, movie
 
         return movies_iterator()
 
