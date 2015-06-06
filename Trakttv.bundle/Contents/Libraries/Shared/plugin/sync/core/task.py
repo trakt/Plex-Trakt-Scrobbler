@@ -36,6 +36,7 @@ class SyncTask(object):
         self.result = result
         self.status = status
 
+        self.artifacts = {}
         self.exceptions = []
         self.success = None
 

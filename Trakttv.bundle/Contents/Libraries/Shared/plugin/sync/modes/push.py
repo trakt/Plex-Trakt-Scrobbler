@@ -1,7 +1,7 @@
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP
 
-from plex_database.models import LibrarySectionType, LibrarySection
+from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem
 import logging
 
 log = logging.getLogger(__name__)
@@ -21,7 +21,10 @@ class Movies(Base):
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
-            p_sections,
+            p_sections, [
+                MetadataItem.title,
+                MetadataItem.year
+            ],
             account=self.current.account.plex.id,
             parse_guid=True
         )
@@ -40,13 +43,17 @@ class Movies(Base):
                     SyncMedia.Movies, data,
                     rating_key=rating_key,
 
+                    p_guid=p_guid,
                     p_item=p_item,
+
                     t_item=t_movie
                 )
 
 
 class Shows(Base):
-    pass
+    def run(self):
+        # TODO implement shows push
+        pass
 
 
 class Push(Mode):
@@ -66,3 +73,6 @@ class Push(Mode):
 
         # Run children
         self.execute_children()
+
+        # Push artifacts to trakt
+        log.debug(self.current.artifacts)

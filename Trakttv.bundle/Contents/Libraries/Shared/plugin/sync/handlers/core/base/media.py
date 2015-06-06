@@ -10,10 +10,14 @@ class MediaHandler(object):
     media = None
 
     def __init__(self, data, main):
-        self.__data = data
+        self.__parent = data
         self.__main = main
 
         self.__handlers = {}
+
+    @property
+    def parent(self):
+        return self.__parent
 
     def discover(self):
         for key in dir(self):
