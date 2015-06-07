@@ -8,6 +8,7 @@ from plex import Plex
 from plex_database.library import Library
 from plex_database.matcher import Matcher
 from stash import ApswArchive, Stash
+from trakt import Trakt
 from trakt_sync.cache.backends import StashBackend
 from trakt_sync.cache.main import Cache
 from trakt_sync.differ.core.base import KEY_AGENTS
@@ -192,6 +193,45 @@ class SyncStateTrakt(object):
         data = Cache.Data.get(data)
 
         return self.cache[(self.task.account.trakt.username, media, data)]
+
+    def send(self, data, action, **kwargs):
+        log.debug('[%s](%s)', data, action)
+
+        # Ensure items exist in `kwargs`
+        if not kwargs:
+            return False
+
+        if not kwargs.get('movies') and not kwargs.get('shows'):
+            return False
+
+        # Try retrieve interface for `data`
+        interface = Cache.Data.get_interface(data)
+
+        if interface == 'sync/watched':
+            # Watched add/remove functions are on the "sync/history" interface
+            interface = 'sync/history'
+
+        if interface is None:
+            log.warn('[%s](%s) Unknown data type', data, action)
+            return False
+
+        # Try retrieve method for `action`
+        func = getattr(Trakt[interface], action, None)
+
+        if func is None:
+            log.warn('[%s](%s) Unable find action in interface', data, action)
+            return False
+
+        # Send request to trakt.tv
+        log.debug('[%s](%s) Request', data, action)
+
+        response = func(kwargs)
+
+        if response is None:
+            return False
+
+        log.debug('[%s](%s) Response: %r', data, action, response)
+        return True
 
     def refresh(self):
         # Refresh cache for account, store changes
