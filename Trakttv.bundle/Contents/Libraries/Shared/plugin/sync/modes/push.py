@@ -74,5 +74,13 @@ class Push(Mode):
         # Run children
         self.execute_children()
 
+        # Aggregate artifacts into request tuples
+        requests = [
+            (data, action, request)
+            for (data, actions) in self.current.artifacts.items()
+            for (action, request) in actions.items()
+        ]
+
         # Push artifacts to trakt
-        log.debug(self.current.artifacts)
+        for data, action, request in requests:
+            self.trakt.send(data, action, **request)
