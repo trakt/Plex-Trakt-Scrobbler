@@ -15,6 +15,10 @@ def Cover(account_id):
     # Refresh trakt account details
     account.trakt.refresh()
 
+    if account.trakt.cover is None:
+        return Redirect(R('art-default.png'))
+
+    # Request cover image
     response = requests.get(account.trakt.cover)
 
     if response.status_code != 200:
