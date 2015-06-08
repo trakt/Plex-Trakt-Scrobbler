@@ -113,9 +113,14 @@ class MediaHandler(object):
             if key not in t_items:
                 continue
 
-            self.execute_action(action, key, p_settings, t_items[key])
+            self.execute_action(
+                action,
+                key=key,
+                p_settings=p_settings,
+                t_item=t_items[key]
+            )
 
-    def execute_action(self, action, args):
+    def execute_action(self, action, **kwargs):
         # Find matching function
         func = self.__handlers.get(self.current.mode, {}).get(action)
 
@@ -124,7 +129,10 @@ class MediaHandler(object):
             return False
 
         # Execute action
-        parameters = self.build_action(*args)
+        parameters = self.build_action(
+            action=action,
+            **kwargs
+        )
 
         if parameters is None:
             return False

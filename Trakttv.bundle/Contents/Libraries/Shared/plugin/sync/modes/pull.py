@@ -66,7 +66,7 @@ class Movies(Base):
 
                 self.execute_handlers(
                     SyncMedia.Movies, data,
-                    rating_key=rating_key,
+                    key=rating_key,
 
                     p_item=p_item,
                     t_item=t_movie
@@ -156,7 +156,7 @@ class Shows(Base):
 
                 self.execute_handlers(
                     SyncMedia.Episodes, data,
-                    rating_key=ids['episode'],
+                    key=ids['episode'],
 
                     p_item=p_episode,
                     t_item=t_episode

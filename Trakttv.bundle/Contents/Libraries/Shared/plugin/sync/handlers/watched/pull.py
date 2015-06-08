@@ -9,17 +9,14 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, key, p_value, t_value):
-        kwargs = {
-            'key': key,
-
-            'p_value': p_value
-        }
+    def build_action(action, t_value, **kwargs):
+        data = {}
 
         if action in ['added', 'changed']:
-            kwargs['t_value'] = t_value
+            data['t_value'] = t_value
 
-        return kwargs
+        data.update(kwargs)
+        return data
 
     @staticmethod
     def get_operands(p_item, t_item):
@@ -45,7 +42,7 @@ class Base(MediaHandler):
     # Modes
     #
 
-    def fast_pull(self, action, rating_key, p_item, t_item):
+    def fast_pull(self, action, p_item, t_item, **kwargs):
         if not action:
             # No action provided
             return
@@ -54,14 +51,15 @@ class Base(MediaHandler):
         p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_viewed_at,
-            t_viewed_at
-        ))
 
-    def pull(self, rating_key, p_item, t_item):
+            p_value=p_viewed_at,
+            t_value=t_viewed_at,
+            **kwargs
+        )
+
+    def pull(self, p_item, t_item, **kwargs):
         # Retrieve properties
         p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
 
@@ -73,12 +71,13 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_viewed_at,
-            t_viewed_at
-        ))
+
+            p_value=p_viewed_at,
+            t_value=t_viewed_at,
+            **kwargs
+        )
 
 
 class Movies(Base):

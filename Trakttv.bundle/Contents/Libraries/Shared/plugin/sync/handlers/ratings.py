@@ -9,21 +9,20 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, key, p_value, t_value):
-        kwargs = {
-            'key': key
-        }
+    def build_action(action, p_value, t_value, **kwargs):
+        data = {}
 
         if action in ['added', 'changed']:
             if type(t_value) is tuple:
-                kwargs['t_previous'], kwargs['t_value'] = t_value
+                data['t_previous'], data['t_value'] = t_value
             else:
-                kwargs['t_value'] = t_value
+                data['t_value'] = t_value
 
         if action == 'changed':
-            kwargs['p_value'] = p_value
+            data['p_value'] = p_value
 
-        return kwargs
+        data.update(kwargs)
+        return data
 
     @staticmethod
     def get_operands(p_item, t_item):
@@ -54,7 +53,7 @@ class Base(MediaHandler):
     # Modes
     #
 
-    def fast_pull(self, action, rating_key, p_item, t_item):
+    def fast_pull(self, action, p_item, t_item, **kwargs):
         if not action:
             # No action provided
             return
@@ -63,14 +62,15 @@ class Base(MediaHandler):
         p_rating, t_rating = self.get_operands(p_item, t_item)
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_rating,
-            t_rating
-        ))
 
-    def pull(self, rating_key, p_item, t_item):
+            p_value=p_rating,
+            t_value=t_rating,
+            **kwargs
+        )
+
+    def pull(self, p_item, t_item, **kwargs):
         # Retrieve properties
         p_rating, t_rating = self.get_operands(p_item, t_item)
 
@@ -82,12 +82,13 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_rating,
-            t_rating
-        ))
+
+            p_value=p_rating,
+            t_value=t_rating,
+            **kwargs
+        )
 
 
 class Movies(Base):

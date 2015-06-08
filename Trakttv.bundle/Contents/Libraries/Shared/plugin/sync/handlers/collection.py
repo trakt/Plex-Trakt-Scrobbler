@@ -11,11 +11,11 @@ class Base(MediaHandler):
     # Modes
     #
 
-    def fast_pull(self, action, rating_key, p_item, t_item):
+    def fast_pull(self, action, p_item, t_item, **kwargs):
         # Nothing to do
         return True
 
-    def pull(self, rating_key, p_item, t_item):
+    def pull(self, p_item, t_item, **kwargs):
         # Nothing to do
         return True
 

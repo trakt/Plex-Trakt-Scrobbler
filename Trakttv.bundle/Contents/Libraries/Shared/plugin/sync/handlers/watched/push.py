@@ -10,20 +10,17 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, key, p_guid, p_item, p_value, t_value):
-        kwargs = {
-            'key': key,
-
-            't_value': t_value
-        }
+    def build_action(action, p_guid, p_item, p_value, **kwargs):
+        data = {}
 
         if action in ['added', 'changed']:
-            kwargs['p_guid'] = p_guid
-            kwargs['p_item'] = p_item
+            data['p_guid'] = p_guid
+            data['p_item'] = p_item
 
-            kwargs['p_value'] = p_value
+            data['p_value'] = p_value
 
-        return kwargs
+        data.update(kwargs)
+        return data
 
     @staticmethod
     def get_operands(p_item, t_item):
@@ -49,7 +46,7 @@ class Base(MediaHandler):
 
         return None
 
-    def push(self, rating_key, p_guid, p_item, t_item):
+    def push(self, p_item, t_item, **kwargs):
         # Retrieve properties
         p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
 
@@ -61,16 +58,14 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
 
-            p_guid,
-            p_item,
-            p_viewed_at,
-
-            t_viewed_at
-        ))
+            p_item=p_item,
+            p_value=p_viewed_at,
+            t_value=t_viewed_at,
+            **kwargs
+        )
 
 
 class Movies(Base):
@@ -120,7 +115,7 @@ class Movies(Base):
         return True
 
     @bind('added', [SyncMode.Push])
-    def on_added(self, key, p_guid, p_item, p_value, t_value):
+    def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
         log.debug('Movies.on_added(%r, %r, %r, %r, %r)', key, p_guid, p_item, p_value, t_value)
 
         if t_value:
@@ -129,7 +124,7 @@ class Movies(Base):
         self.store('add', p_guid, p_item, watched_at=p_value)
 
     @bind('removed', [SyncMode.Push])
-    def on_removed(self, key, p_value, t_value):
+    def on_removed(self, key, p_value, t_value, **kwargs):
         log.debug('Movies.on_removed(%r, %r, %r)', key, p_value, t_value)
 
 
@@ -137,14 +132,14 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Push])
-    def on_added(self, key, p_value, t_value):
-        log.debug('Episodes.on_added(%r, %r, %r)', key, p_value, t_value)
+    def on_added(self, key, p_guid, p_show, p_item, p_value, t_value, **kwargs):
+        log.debug('Episodes.on_added(%r, %r, %r, %r, %r, %r)', key, p_guid, p_show, p_item, p_value, t_value)
 
         if t_value:
             return
 
     @bind('removed', [SyncMode.Push])
-    def on_removed(self, key, p_value, t_value):
+    def on_removed(self, key, p_value, t_value, **kwargs):
         log.debug('Episodes.on_removed(%r, %r, %r)', key, p_value, t_value)
 
 

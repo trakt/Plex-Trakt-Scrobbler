@@ -9,10 +9,8 @@ log = logging.getLogger(__name__)
 
 class Base(MediaHandler):
     @staticmethod
-    def build_action(action, key, p_item, p_progress, t_progress):
-        kwargs = {
-            'key': key
-        }
+    def build_action(action, p_item, p_value, t_value, **kwargs):
+        data = {}
 
         # Retrieve plex parameters
         p_duration = p_item.get('part', {}).get('duration')
@@ -21,22 +19,23 @@ class Base(MediaHandler):
             # Missing data required for playback syncing
             return None
 
-        kwargs['p_value'] = p_item.get('settings', {}).get('view_offset')
+        data['p_value'] = p_item.get('settings', {}).get('view_offset')
 
         # Set arguments for action
         if action in ['added', 'changed']:
             # Calculate trakt view offset
-            t_value = p_duration * (float(t_progress) / 100)
+            t_value = p_duration * (float(t_value) / 100)
             t_value = int(round(t_value, 0))
 
-            kwargs['p_duration'] = p_duration
-            kwargs['t_value'] = t_value
+            data['p_duration'] = p_duration
+            data['t_value'] = t_value
 
             if t_value <= 60 * 1000:
                 # Ignore progress below one minute
                 return None
 
-        return kwargs
+        data.update(kwargs)
+        return data
 
     @staticmethod
     def get_operands(p_item, t_item):
@@ -67,7 +66,7 @@ class Base(MediaHandler):
     # Modes
     #
 
-    def fast_pull(self, action, rating_key, p_item, t_item):
+    def fast_pull(self, action, p_item, t_item, **kwargs):
         if not action:
             # No action provided
             return
@@ -76,15 +75,16 @@ class Base(MediaHandler):
         p_progress, t_progress = self.get_operands(p_item, t_item)
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_item,
-            p_progress,
-            t_progress
-        ))
 
-    def pull(self, rating_key, p_item, t_item):
+            p_item=p_item,
+            p_value=p_progress,
+            t_value=t_progress,
+            **kwargs
+        )
+
+    def pull(self, p_item, t_item, **kwargs):
         # Retrieve properties
         p_progress, t_progress = self.get_operands(p_item, t_item)
 
@@ -96,13 +96,14 @@ class Base(MediaHandler):
             return
 
         # Execute action
-        self.execute_action(action, (
+        self.execute_action(
             action,
-            rating_key,
-            p_item,
-            p_progress,
-            t_progress
-        ))
+
+            p_item=p_item,
+            p_value=p_progress,
+            t_value=t_progress,
+            **kwargs
+        )
 
 
 class Movies(Base):
