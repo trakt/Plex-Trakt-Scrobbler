@@ -15,7 +15,7 @@ class Base(MediaHandler):
         }
 
         # Retrieve plex parameters
-        p_duration = p_item.get('duration')
+        p_duration = p_item.get('part', {}).get('duration')
 
         if p_duration is None:
             # Missing data required for playback syncing
@@ -41,7 +41,7 @@ class Base(MediaHandler):
     @staticmethod
     def get_operands(p_item, t_item):
         # Retrieve plex parameters
-        p_duration = p_item.get('duration')
+        p_duration = p_item.get('part', {}).get('duration')
         p_view_offset = p_item.get('settings', {}).get('view_offset')
 
         # Calculate progress in plex (if available)

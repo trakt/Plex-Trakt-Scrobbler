@@ -118,7 +118,7 @@ class Shows(Mode):
         self.current.progress.start(total)
 
         # Process episodes
-        for ids, p_guid, (season_num, episode_num), p_item in p_episodes:
+        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
@@ -163,7 +163,7 @@ class Shows(Mode):
                         action=action,
                         rating_key=ids['episode'],
 
-                        p_item=p_item,
+                        p_item=p_episode,
                         t_item=t_episode
                     )
 
