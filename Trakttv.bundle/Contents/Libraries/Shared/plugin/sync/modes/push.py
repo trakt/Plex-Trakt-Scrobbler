@@ -52,8 +52,72 @@ class Movies(Base):
 
 class Shows(Base):
     def run(self):
-        # TODO implement shows push
-        pass
+        # Retrieve movie sections
+        p_sections = self.plex.library.sections(
+            LibrarySectionType.Show,
+            LibrarySection.id
+        ).tuples()
+
+        # Fetch movies with account settings
+        p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
+            p_sections, ([
+                MetadataItem.title,
+                MetadataItem.year
+            ], [], []),
+            account=self.current.account.plex.id,
+            parse_guid=True
+        )
+
+        # Task started
+
+        # TODO process shows, seasons
+
+        # Process episodes
+        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            key = (p_guid.agent, p_guid.sid)
+
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+                t_show, t_season, t_episode = self.t_objects(
+                    self.trakt[(SyncMedia.Episodes, data)], pk,
+                    season_num, episode_num
+                )
+
+                self.execute_handlers(
+                    SyncMedia.Episodes, data,
+
+                    key=ids['episode'],
+                    season_num=season_num,
+                    episode_num=episode_num,
+
+                    p_guid=p_guid,
+                    p_show=p_show,
+                    p_item=p_episode,
+
+                    t_show=t_show,
+                    t_item=t_episode
+                )
+
+    @staticmethod
+    def t_objects(collection, pk, season_num, episode_num):
+        # Try find trakt `Show` from `collection`
+        t_show = collection.get(pk)
+
+        if t_show is None:
+            return t_show, None, None
+
+        # Try find trakt `Season`
+        t_season = t_show.seasons.get(season_num)
+
+        if t_season is None:
+            return t_show, t_season, None
+
+        # Try find trakt `Episode`
+        t_episode = t_season.episodes.get(episode_num)
+
+        return t_show, t_season, t_episode
 
 
 class Push(Mode):
