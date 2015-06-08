@@ -20,6 +20,13 @@ except ImportError:
 
     log.info('Unable to import "tzlocal" + "pytz": datetime objects will be returned without "tzinfo"')
 
+MODEL_KEYS = {
+    MediaItem:              'media',
+    MediaPart:              'part',
+
+    MetadataItemSettings:   'settings'
+}
+
 
 class LibraryBase(object):
     def __init__(self, library=None):
@@ -56,6 +63,91 @@ class LibraryBase(object):
             result['last_viewed_at'] = last_viewed_at
 
         return result
+
+    @staticmethod
+    def _models(fields, account=None):
+        models = {}
+
+        for field in fields:
+            model = field.model_class
+
+            # Ensure `model` is only returned once
+            if model.__name__ in models:
+                continue
+
+            # Test model validity
+            if model == MetadataItemSettings and account is None:
+                raise ValueError('MetadataItemSettings fields require the "account" parameter')
+
+            # Update `models` dictionary, yield model
+            models[model.__name__] = model
+
+            yield model
+
+    @staticmethod
+    def _join(query, models, account, where):
+        for model in models:
+            if model == MetadataItem:
+                continue
+
+            if model == MetadataItemSettings:
+                query = query.join(
+                    MetadataItemSettings, JOIN_LEFT_OUTER, on=(
+                        MetadataItemSettings.guid == MetadataItem.guid
+                    ).alias('settings')
+                )
+
+                where.append(
+                    (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
+                )
+            elif model in [MediaItem, MediaPart]:
+                pass
+            else:
+                raise ValueError('Unable to join unknown model: %r' % model)
+
+        return query
+
+    @classmethod
+    def _parse(cls, fields, row, offset=0):
+        item = {}
+
+        for x in xrange(offset, len(fields)):
+            field = fields[x]
+            value = row[x]
+
+            # Parse field
+            value = cls._parse_field(field, value)
+
+            # Update `item` with field
+            if field.model_class in [MetadataItem, Episode]:
+                item[field.name] = value
+            elif field.model_class in MODEL_KEYS:
+                key = MODEL_KEYS[field.model_class]
+
+                if key not in item:
+                    item[key] = {}
+
+                item[key][field.name] = value
+            else:
+                raise ValueError('Unable to parse field %r, unknown model %r' % (field, field.model_class))
+
+        return tuple(list(row[:offset]) + [item])
+
+    @staticmethod
+    def _parse_field(field, value):
+        if type(field) is DateTimeField and value:
+            if value.tzinfo:
+                # `tzinfo` provided, ignore conversion
+                return value
+
+            if not TZ_LOCAL or not pytz:
+                # Missing "tzlocal" or "pytz" module
+                return value
+
+            # Convert datetime to UTC
+            return TZ_LOCAL.localize(value).astimezone(pytz.utc)
+
+        return value
 
 
 class MovieLibrary(LibraryBase):
@@ -96,90 +188,9 @@ class MovieLibrary(LibraryBase):
 
         # Parse rows
         return [
-            self._parse(fields, row)
+            self._parse(fields, row, offset=2)
             for row in query.tuples().iterator()
         ]
-
-    @staticmethod
-    def _models(fields, account=None):
-        models = {}
-
-        for field in fields:
-            model = field.model_class
-
-            # Ensure `model` is only returned once
-            if model.__name__ in models:
-                continue
-
-            # Test model validity
-            if model == MetadataItemSettings and account is None:
-                raise ValueError('MetadataItemSettings fields require the "account" parameter')
-
-            # Update `models` dictionary, yield model
-            models[model.__name__] = model
-
-            yield model
-
-    @staticmethod
-    def _join(query, models, account, where):
-        for model in models:
-            if model == MetadataItem:
-                continue
-
-            if model == MetadataItemSettings:
-                query = query.join(
-                    MetadataItemSettings, JOIN_LEFT_OUTER, on=(
-                        MetadataItemSettings.guid == MetadataItem.guid
-                    ).alias('settings')
-                )
-
-                where.append(
-                    (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
-                )
-            else:
-                raise ValueError('Unable to join unknown model: %r', model)
-
-        return query
-
-    @classmethod
-    def _parse(cls, fields, row):
-        item = {}
-
-        for x in xrange(2, len(fields)):
-            field = fields[x]
-            value = row[x]
-
-            # Parse field
-            value = cls._parse_field(field, value)
-
-            # Update `item` with field
-            if field.model_class == MetadataItem:
-                item[field.name] = value
-            elif field.model_class == MetadataItemSettings:
-                if 'settings' not in item:
-                    item['settings'] = {}
-
-                item['settings'][field.name] = value
-            else:
-                raise ValueError('Unable to parse field %r, unknown model %r', field, field.model_class)
-
-        return row[0], row[1], item
-
-    @staticmethod
-    def _parse_field(field, value):
-        if type(field) is DateTimeField and value:
-            if value.tzinfo:
-                # `tzinfo` provided, ignore conversion
-                return value
-
-            if not TZ_LOCAL or not pytz:
-                # Missing "tzlocal" or "pytz" module
-                return value
-
-            # Convert datetime to UTC
-            return TZ_LOCAL.localize(value).astimezone(pytz.utc)
-
-        return value
 
     def mapped(self, sections, fields=None, account=None, parse_guid=False):
         # Retrieve `id` from `Account`
@@ -222,7 +233,7 @@ class MovieLibrary(LibraryBase):
 
 
 class ShowLibrary(LibraryBase):
-    def __call__(self, sections, account, fields=None):
+    def __call__(self, sections, fields=None, account=None, where=None):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
@@ -230,40 +241,38 @@ class ShowLibrary(LibraryBase):
         # Map `Section` list to ids
         section_ids = [id for (id, ) in sections]
 
-        #  Set defaults for `fields`
-        if not fields:
-            fields = [
-                MetadataItem.id,
-                MetadataItem.parent,
+        # Build `select()` query
+        if fields is None:
+            fields = []
 
-                MetadataItem.guid,
-                MetadataItem.index,
-                MetadataItem.metadata_type
-            ]
-
-            if account:
-                fields.extend([
-                    MetadataItemSettings.rating
-                ])
+        fields = [
+            MetadataItem.id,
+            MetadataItem.guid
+        ] + fields
 
         # Build `where()` query
-        query = [
-            MetadataItem.metadata_type == MetadataItemType.Show,
-            MetadataItem.library_section << section_ids
+        if where is None:
+            where = []
+
+        where += [
+            MetadataItem.library_section << section_ids,
+            MetadataItem.metadata_type == MetadataItemType.Show
         ]
 
-        if account:
-            query.append(
-                (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
-            )
+        # Build query
+        query = self._join(
+            MetadataItem.select(*fields),
+            self._models(fields, account),
+            account, where
+        ).where(
+            *where
+        )
 
-            return MetadataItem.select(*fields).join(
-                MetadataItemSettings, JOIN_LEFT_OUTER, (
-                    MetadataItemSettings.guid == MetadataItem.guid
-                ).alias('settings')
-            ).where(*query)
-
-        return MetadataItem.select(*fields).where(*query)
+        # Parse rows
+        return [
+            self._parse(fields, row, offset=2)
+            for row in query.tuples().iterator()
+        ]
 
 
 class SeasonLibrary(LibraryBase):
@@ -308,7 +317,7 @@ class SeasonLibrary(LibraryBase):
 
 
 class EpisodeLibrary(LibraryBase):
-    def __call__(self, sections, account=None, fields=None):
+    def __call__(self, sections, fields=None, account=None, where=None):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
@@ -316,124 +325,54 @@ class EpisodeLibrary(LibraryBase):
         # Map `Section` list to ids
         section_ids = [id for (id, ) in sections]
 
-        # Set defaults for `fields`
-        if not fields:
-            fields = [
-                MetadataItem.id,
-                MetadataItem.index
-            ]
+        # Build `select()` query
+        if fields is None:
+            fields = []
 
-            if account:
-                fields.extend([
-                    MetadataItemSettings.rating,
-                    MetadataItemSettings.view_offset,
-                    MetadataItemSettings.last_viewed_at
-                ])
+        fields = [
+            MetadataItem.id,
+            MetadataItem.index
+        ] + fields
 
         # Build `where()` query
-        query = [
-            MetadataItem.metadata_type == MetadataItemType.Episode,
-            MetadataItem.library_section << section_ids
+        if where is None:
+            where = []
+
+        where += [
+            MetadataItem.library_section << section_ids,
+            MetadataItem.metadata_type == MetadataItemType.Episode
         ]
 
-        if account:
-            query.append(
-                (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
-            )
+        # Build query
+        query = self._join(
+            MetadataItem.select(*fields),
+            self._models(fields, account),
+            account, where
+        ).where(
+            *where
+        )
 
-            return MetadataItem.select(*fields).join(
-                MetadataItemSettings, JOIN_LEFT_OUTER, (
-                    MetadataItemSettings.guid == MetadataItem.guid
-                ).alias('settings')
-            ).where(*query)
+        # Parse rows
+        return [
+            self._parse(fields, row, offset=2)
+            for row in query.tuples().iterator()
+        ]
 
-        return MetadataItem.select(*fields).where(*query)
-
-    def mapped(self, sections, account=None, parse_guid=False):
+    def mapped(self, sections, fields=None, account=None, parse_guid=False):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
 
-        # Retrieve shows
-        shows = Library.shows(sections, account, [
-            MetadataItem.id,
-            MetadataItem.guid,
+        # Parse `fields`
+        if fields is None:
+            fields = ([], [], [])
 
-            MetadataItemSettings.rating
-        ])
+        sh_fields, se_fields, ep_fields = fields
 
-        shows = dict([
-            (id, {'guid': (guid, None), 'settings': self.settings_directory(rating)})
-            for (id, guid, rating) in shows.tuples().iterator()
-        ])
-
-        # Retrieve seasons
-        seasons = Library.seasons(sections, account, [
-            MetadataItem.id,
-            MetadataItem.index,
-
-            MetadataItemSettings.rating
-        ])
-
-        seasons = dict([
-            (id, {'index': index, 'settings': self.settings_directory(rating)})
-            for (id, index, rating) in seasons.tuples().iterator()
-        ])
-
-        # Retrieve episodes
-        Season = MetadataItem.alias()
-        Episode = MetadataItem.alias()
-
-        episodes = (MetadataItem
-                    .select(
-                        MetadataItem.id,
-
-                        Season.id,
-
-                        Episode.id,
-                        Episode.index,
-
-                        MetadataItemSettings.rating,
-                        MetadataItemSettings.view_offset,
-                        MetadataItemSettings.last_viewed_at,
-
-                        MediaPart.duration,
-                        MediaPart.file
-                    )
-                    .join(
-                        Season, on=(
-                            Season.parent == MetadataItem.id
-                        ).alias('season')
-                    )
-                    .join(
-                        Episode, on=(
-                            Episode.parent == Season.id
-                        ).alias('episode')
-                    )
-                    .join(
-                        MetadataItemSettings, JOIN_LEFT_OUTER, on=(
-                            MetadataItemSettings.guid == Episode.guid
-                        ).alias('settings')
-                    )
-                    .switch(Episode)
-                    .join(
-                        MediaItem, on=(
-                            MediaItem.metadata_item == Episode.id
-                        ).alias('media')
-                    )
-                    .join(
-                        MediaPart, on=(
-                            MediaPart.media_item == MediaItem.id
-                        ).alias('part')
-                    )
-                    .where(
-                        MetadataItem.metadata_type == MetadataItemType.Show,
-                        (
-                            (MetadataItemSettings.id >> None) |
-                            (MetadataItemSettings.account == account)
-                        )
-                    )
-        )
+        # Retrieve items
+        shows = self.mapped_shows(sections, sh_fields, account)
+        seasons = self.mapped_seasons(sections, se_fields, account)
+        episodes = self.mapped_episodes(sections, ep_fields, account)
 
         # Prime `Matcher` cache
         if self.matcher.cache is not None and hasattr(self.matcher.cache, 'prime'):
@@ -441,83 +380,154 @@ class EpisodeLibrary(LibraryBase):
         else:
             context = PrimeContext()
 
+        # Show iterator, parse guid (if enabled)
+        guids = {}
+
         def shows_iterator():
             x = 0
 
-            for show in shows:
+            for sh_id, (guid, show) in shows.items():
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
-                    raw, parsed = show['guid']
+                    if id not in guids:
+                        guids[sh_id] = Guid.parse(guid)
 
-                    if parsed is None:
-                        show['guid'] = (raw, Guid.parse(raw))
+                    guid = guids[sh_id]
 
-                # Pick `guid` based on request (`parse_guid` parameter)
-                guid_raw, guid_parsed = show['guid']
-                guid = guid_parsed if parse_guid else guid_raw
-
-                yield x, guid, show['settings']
+                yield x, guid, show
                 x += 1
 
+        # Episode iterator, parse guid (if enabled)
         def episodes_iterator():
-            for item in episodes.tuples().iterator():
-                # Expand `item` tuple
-                (
-                    show_id, season_id,
-                    episode_id, episode_index,
-                    rating, view_offset, last_viewed_at,
-                    duration, file
-                ) = item
-
+            for sh_id, se_id, ep_id, ep_index, episode in episodes:
                 # Retrieve parents
-                show = shows.get(show_id)
+                guid, show = shows.get(sh_id)
 
                 if show is None:
-                    log.debug('Unable to find show by id: %r', show_id)
+                    log.debug('Unable to find show by id: %r', sh_id)
                     continue
 
-                season = seasons.get(season_id)
+                season = seasons.get(se_id)
 
                 if season is None:
-                    log.debug('Unable to find season by id: %r', season_id)
+                    log.debug('Unable to find season by id: %r', se_id)
                     continue
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
-                    raw, parsed = show['guid']
+                    if id not in guids:
+                        guids[sh_id] = Guid.parse(guid)
 
-                    if parsed is None:
-                        show['guid'] = (raw, Guid.parse(raw))
-
-                # Build dictionary of settings
-                settings = self.settings_video(rating, view_offset, last_viewed_at)
-
-                # Pick `guid` based on request (`parse_guid` parameter)
-                guid_raw, guid_parsed = show['guid']
-                guid = guid_parsed if parse_guid else guid_raw
+                    guid = guids[sh_id]
 
                 # Use primed `Matcher` buffer
                 with context:
                     # Run `Matcher` on episode
                     season_num, episode_nums = self.matcher.process_episode(
-                        episode_id,
-                        (season['index'], episode_index),
-                        file
+                        ep_id,
+                        (season['index'], ep_index),
+                        episode['part']['file']
                     )
 
                 for episode_num in episode_nums:
                     ids = {
-                        'show': show_id,
-                        'season': season_id,
-                        'episode': episode_id
+                        'show': sh_id,
+                        'season': se_id,
+                        'episode': ep_id
                     }
 
-                    yield ids, guid, (season_num, episode_num), {
-                        'duration': duration,
-                        'settings': settings
-                    }
+                    yield ids, guid, (season_num, episode_num), show, season, episode
 
         return shows_iterator(), seasons, episodes_iterator()
+
+    def mapped_shows(self, sections, fields=None, account=None):
+        # Parse `fields`
+        if fields is None:
+            fields = []
+
+        fields = [
+            MetadataItemSettings.rating
+        ] + fields
+
+        # Retrieve shows
+        shows = Library.shows(sections, fields, account)
+
+        # Map shows by `id`
+        return dict([
+            (id, (guid, show))
+            for (id, guid, show) in shows
+        ])
+
+    def mapped_seasons(self, sections, fields=None, account=None):
+        # Parse `fields`
+        if fields is None:
+            fields = []
+
+        fields = [
+            MetadataItem.id,
+            MetadataItem.index,
+
+            MetadataItemSettings.rating
+        ] + fields
+
+        # Retrieve seasons
+        seasons = Library.seasons(sections, account, fields)
+
+        # Map shows by `id`
+        return dict([
+            (id, {'index': index, 'settings': self.settings_directory(rating)})
+            for (id, index, rating) in seasons.tuples().iterator()
+        ])
+
+    def mapped_episodes(self, sections, fields=None, account=None, where=None):
+        # Map `Section` list to ids
+        section_ids = [id for (id, ) in sections]
+
+        # Build `select()` query
+        fields = [
+            MetadataItem.id,
+            Season.id,
+
+            Episode.id,
+            Episode.index,
+
+            MediaPart.duration,
+            MediaPart.file,
+
+            MetadataItemSettings.rating,
+            MetadataItemSettings.view_offset,
+            MetadataItemSettings.last_viewed_at
+        ] + fields
+
+        # Build `where()` query
+        if where is None:
+            where = []
+
+        where += [
+            MetadataItem.library_section << section_ids,
+            MetadataItem.metadata_type == MetadataItemType.Show
+        ]
+
+        # Build query
+        episodes = self._join(
+            (MetadataItem.select(*fields)
+             .join(Season, on=(Season.parent == MetadataItem.id).alias('season'))
+             .join(Episode, on=(Episode.parent == Season.id).alias('episode'))
+             .join(MediaItem, on=(MediaItem.metadata_item == Episode.id).alias('media'))
+             .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
+             .switch(Episode)
+             ),
+            self._models(fields, account),
+            account, where
+        ).where(
+            *where
+        )
+
+        def iterator():
+            for row in episodes.tuples().iterator():
+                yield self._parse(fields, row, offset=4)
+
+        return iterator()
 
 
 class Library(object):
