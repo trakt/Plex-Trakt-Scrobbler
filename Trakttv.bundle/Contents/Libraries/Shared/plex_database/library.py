@@ -85,23 +85,31 @@ class LibraryBase(object):
             yield model
 
     @staticmethod
-    def _join(query, models, account, where):
+    def _join(query, models, account, where, exclude=None):
+        if exclude is None:
+            exclude = []
+
         for model in models:
             if model == MetadataItem:
                 continue
 
+            if model in exclude:
+                continue
+
             if model == MetadataItemSettings:
                 query = query.join(
-                    MetadataItemSettings, JOIN_LEFT_OUTER, on=(
-                        MetadataItemSettings.guid == MetadataItem.guid
-                    ).alias('settings')
+                    MetadataItemSettings, JOIN_LEFT_OUTER,
+                    on=(MetadataItemSettings.guid == MetadataItem.guid).alias('settings')
                 )
 
                 where.append(
                     (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
                 )
-            elif model in [MediaItem, MediaPart]:
-                pass
+            elif model == MediaItem:
+                query = query.join(
+                    MediaItem, JOIN_LEFT_OUTER,
+                    on=(MediaItem.metadata_item == MetadataItem.id).alias('media')
+                )
             else:
                 raise ValueError('Unable to join unknown model: %r' % model)
 
@@ -511,14 +519,17 @@ class EpisodeLibrary(LibraryBase):
         # Build query
         episodes = self._join(
             (MetadataItem.select(*fields)
-             .join(Season, on=(Season.parent == MetadataItem.id).alias('season'))
-             .join(Episode, on=(Episode.parent == Season.id).alias('episode'))
-             .join(MediaItem, on=(MediaItem.metadata_item == Episode.id).alias('media'))
-             .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
-             .switch(Episode)
-             ),
+                         .join(Season, on=(Season.parent == MetadataItem.id).alias('season'))
+                         .join(Episode, on=(Episode.parent == Season.id).alias('episode'))
+                         .join(MediaItem, on=(MediaItem.metadata_item == Episode.id).alias('media'))
+                         .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
+                         .switch(Episode)
+            ),
             self._models(fields, account),
-            account, where
+            account, where, [
+                MediaItem,
+                MediaPart
+            ]
         ).where(
             *where
         )
