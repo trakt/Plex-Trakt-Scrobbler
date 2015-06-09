@@ -1,8 +1,6 @@
-from plugin.core.helpers.variable import dict_path
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
-from datetime import datetime
 import logging
 
 log = logging.getLogger(__name__)
@@ -71,76 +69,35 @@ class Base(MediaHandler):
 class Movies(Base):
     media = SyncMedia.Movies
 
-    def store(self, action, p_guid, p_item, **kwargs):
-        if 'title' not in p_item or 'year' not in p_item:
-            log.warn('Missing "title" or "year" parameters on %r', p_item.rating_key)
-            return False
-
-        request = {
-            'title': p_item['title'],
-            'year': p_item['year'],
-
-            'ids': {}
-        }
-
-        if not p_guid:
-            log.warn('No GUID present on %r', p_item.rating_key)
-            return False
-
-        # Set identifier
-        request['ids'][p_guid.agent] = p_guid.sid
-
-        # Set extra attributes
-        for key, value in kwargs.items():
-            if type(value) is datetime:
-                try:
-                    # Convert `datetime` object to string
-                    value = value.strftime('%Y-%m-%dT%H:%M:%S') + '.000-00:00'
-                except Exception, ex:
-                    log.warn('Unable to convert %r to string', value)
-                    return False
-
-            request[key] = value
-
-        # Store artifact
-        artifacts = dict_path(self.current.artifacts, [
-            self.parent.data,
-            action
-        ])
-
-        if 'movies' not in artifacts:
-            artifacts['movies'] = []
-
-        artifacts['movies'].append(request)
-        return True
-
     @bind('added', [SyncMode.Push])
     def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
-        log.debug('Movies.on_added(%r, %r, %r, %r, %r)', key, p_guid, p_item, p_value, t_value)
+        log.debug('Movies.on_added(%r, ...)', key)
 
         if t_value:
             return
 
-        self.store('add', p_guid, p_item, watched_at=p_value)
+        self.store_movie('add', p_guid, p_item, watched_at=p_value)
 
     @bind('removed', [SyncMode.Push])
     def on_removed(self, key, p_value, t_value, **kwargs):
-        log.debug('Movies.on_removed(%r, %r, %r)', key, p_value, t_value)
+        log.debug('Movies.on_removed(%r, ...)', key)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Push])
-    def on_added(self, key, p_guid, p_show, p_item, p_value, t_value, **kwargs):
-        log.debug('Episodes.on_added(%r, %r, %r, %r, %r, %r)', key, p_guid, p_show, p_item, p_value, t_value)
+    def on_added(self, key, p_guid, season_num, episode_num, p_show, p_value, t_value, **kwargs):
+        log.debug('Episodes.on_added(%r, ...)', key)
 
         if t_value:
             return
 
+        self.store_episode('add', p_guid, season_num, episode_num, p_show, watched_at=p_value)
+
     @bind('removed', [SyncMode.Push])
     def on_removed(self, key, p_value, t_value, **kwargs):
-        log.debug('Episodes.on_removed(%r, %r, %r)', key, p_value, t_value)
+        log.debug('Episodes.on_removed(%r, ...)', key)
 
 
 class Push(DataHandler):
