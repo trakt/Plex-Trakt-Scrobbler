@@ -159,3 +159,13 @@ class MediaHandler(object):
 
     def on_changed(self, *args, **kwargs):
         raise NotImplementedError
+
+    #
+    # Artifacts
+    #
+
+    def store_episode(self, action, p_guid, season_num, episode_num, p_show, **kwargs):
+        return self.current.artifacts.store_episode(self.parent.data, action, p_guid, season_num, episode_num, p_show, **kwargs)
+
+    def store_movie(self, action, p_guid, p_movie, **kwargs):
+        return self.current.artifacts.store_movie(self.parent.data, action, p_guid, p_movie, **kwargs)

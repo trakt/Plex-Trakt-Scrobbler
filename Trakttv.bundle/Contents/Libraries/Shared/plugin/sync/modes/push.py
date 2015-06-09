@@ -41,7 +41,8 @@ class Movies(Base):
 
                 self.execute_handlers(
                     SyncMedia.Movies, data,
-                    rating_key=rating_key,
+
+                    key=rating_key,
 
                     p_guid=p_guid,
                     p_item=p_item,
@@ -138,13 +139,5 @@ class Push(Mode):
         # Run children
         self.execute_children()
 
-        # Aggregate artifacts into request tuples
-        requests = [
-            (data, action, request)
-            for (data, actions) in self.current.artifacts.items()
-            for (action, request) in actions.items()
-        ]
-
-        # Push artifacts to trakt
-        for data, action, request in requests:
-            self.trakt.send(data, action, **request)
+        # Send artifacts to trakt
+        self.current.artifacts.send()
