@@ -1,7 +1,7 @@
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP
 
-from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem
+from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem, MediaItem
 import logging
 
 log = logging.getLogger(__name__)
@@ -64,7 +64,14 @@ class Shows(Base):
             p_sections, ([
                 MetadataItem.title,
                 MetadataItem.year
-            ], [], []),
+            ], [], [
+                MediaItem.audio_channels,
+                MediaItem.audio_codec,
+                MediaItem.height,
+                MediaItem.interlaced,
+
+                MetadataItem.added_at
+            ]),
             account=self.current.account.plex.id,
             parse_guid=True
         )

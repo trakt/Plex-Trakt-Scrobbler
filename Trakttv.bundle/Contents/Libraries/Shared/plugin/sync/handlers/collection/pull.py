@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core.base import DataHandler, MediaHandler
 
 import logging
@@ -28,8 +28,9 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
 
-class Collection(DataHandler):
+class Pull(DataHandler):
     data = SyncData.Collection
+    mode = [SyncMode.FastPull, SyncMode.Pull]
 
     children = [
         Movies,
