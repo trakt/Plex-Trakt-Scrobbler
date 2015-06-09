@@ -76,7 +76,10 @@ class Movies(Base):
         if t_value:
             return
 
-        self.store_movie('add', p_guid, p_item, watched_at=p_value)
+        self.store_movie('add', p_guid,
+            p_item,
+            watched_at=p_value
+        )
 
     @bind('removed', [SyncMode.Push])
     def on_removed(self, key, p_value, t_value, **kwargs):
@@ -87,13 +90,16 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Push])
-    def on_added(self, key, p_guid, season_num, episode_num, p_show, p_value, t_value, **kwargs):
+    def on_added(self, key, p_guid, identifier, p_item, p_value, t_value, **kwargs):
         log.debug('Episodes.on_added(%r, ...)', key)
 
         if t_value:
             return
 
-        self.store_episode('add', p_guid, season_num, episode_num, p_show, watched_at=p_value)
+        self.store_episode('add', p_guid,
+            identifier, p_item,
+            watched_at=p_value
+        )
 
     @bind('removed', [SyncMode.Push])
     def on_removed(self, key, p_value, t_value, **kwargs):

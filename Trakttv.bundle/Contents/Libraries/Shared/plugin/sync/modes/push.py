@@ -22,8 +22,14 @@ class Movies(Base):
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
             p_sections, [
+                MetadataItem.added_at,
                 MetadataItem.title,
-                MetadataItem.year
+                MetadataItem.year,
+
+                MediaItem.audio_channels,
+                MediaItem.audio_codec,
+                MediaItem.height,
+                MediaItem.interlaced
             ],
             account=self.current.account.plex.id,
             parse_guid=True
@@ -97,8 +103,7 @@ class Shows(Base):
                     SyncMedia.Episodes, data,
 
                     key=ids['episode'],
-                    season_num=season_num,
-                    episode_num=episode_num,
+                    identifier=(season_num, episode_num),
 
                     p_guid=p_guid,
                     p_show=p_show,

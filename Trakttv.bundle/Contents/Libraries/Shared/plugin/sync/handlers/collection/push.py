@@ -172,14 +172,14 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Push])
-    def on_added(self, key, p_guid, season_num, episode_num, p_show, p_item, p_value, t_value, **kwargs):
+    def on_added(self, key, p_guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
         log.debug('Episodes.on_added(%r, ...)', key)
 
         if t_value:
             return
 
-        self.store_episode(
-            'add', p_guid, season_num, episode_num, p_show,
+        self.store_episode('add', p_guid,
+            identifier, p_show,
             collected_at=p_value,
             **self.build_metadata(p_item)
         )

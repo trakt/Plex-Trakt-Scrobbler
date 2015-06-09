@@ -405,8 +405,9 @@ class SyncArtifacts(object):
         log.debug('[%s](%s) Response: %r', data, action, response)
         return True
 
-    def store_episode(self, data, action, p_guid, season_num, episode_num, p_show, **kwargs):
+    def store_episode(self, data, action, p_guid, identifier, p_show, **kwargs):
         key = (p_guid.agent, p_guid.sid)
+        season_num, episode_num = identifier
 
         shows = dict_path(self.artifacts, [
             data,
