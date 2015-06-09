@@ -73,6 +73,9 @@ class Base(MediaHandler):
 
     @staticmethod
     def get_audio_channels(channels):
+        if channels is None:
+            return None
+
         if channels < 3:
             return '%.01f' % channels
 
@@ -123,7 +126,9 @@ class Base(MediaHandler):
     def build_metadata(cls, p_item):
         p_media = p_item.get('media', {})
 
-        data = {}
+        data = {
+            'media_type': 'digital'
+        }
 
         # Set attributes
         if 'audio_codec' in p_media:
@@ -166,6 +171,19 @@ class Base(MediaHandler):
 
 class Movies(Base):
     media = SyncMedia.Movies
+
+    @bind('added', [SyncMode.Push])
+    def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
+        log.debug('Movies.on_added(%r, ...)', key)
+
+        if t_value:
+            return
+
+        self.store_movie('add', p_guid,
+            p_item,
+            collected_at=p_value,
+            **self.build_metadata(p_item)
+        )
 
 
 class Episodes(Base):
