@@ -4,19 +4,12 @@ from core.plugin import ART, NAME, ICON
 from interface.sync_menu import AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
-from plugin.core.helpers.variable import get_pref
 from plugin.managers import AccountManager
 
 
 @handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)
 def MainMenu():
     oc = ObjectContainer(no_cache=True)
-
-    if not get_pref('valid'):
-        oc.add(DirectoryObject(
-            key=PLUGIN_PREFIX,
-            title=L("Error: Authentication failed"),
-        ))
 
     num_accounts = AccountManager.get.all().count()
 

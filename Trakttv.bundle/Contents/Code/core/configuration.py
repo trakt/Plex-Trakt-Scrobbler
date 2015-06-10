@@ -39,12 +39,6 @@ class ConfigurationProcessor(object):
     def matcher(self, value):
         return MATCHER_MAP.get(value)
 
-    def scrobble(self, value):
-        return value and self.preferences['valid']
-
-    def sync_run_library(self, value):
-        return value and self.preferences['valid']
-
     def sync_collection(self, value):
         return SYNC_TASK_MAP.get(value)
 

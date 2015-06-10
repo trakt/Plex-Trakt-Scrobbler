@@ -140,14 +140,8 @@ class Main(object):
         # TODO update account with new authorization
 
     @classmethod
-    def update_config(cls, valid=None):
+    def update_config(cls):
         preferences = Dict['preferences'] or {}
-
-        # If no validation provided, use last stored result or assume true
-        if valid is None:
-            valid = preferences.get('valid', True)
-
-        preferences['valid'] = valid
 
         Configuration.process(preferences)
 
