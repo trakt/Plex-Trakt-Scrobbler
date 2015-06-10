@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, function_path
+from core.helpers import timestamp, pad_title, function_path, redirect
 from core.localization import localization
 from core.logger import Logger
 
@@ -91,7 +91,7 @@ def AccountsStatus(oc):
 
 
 @route(PLUGIN_PREFIX + '/sync')
-def ControlsMenu(account_id=1, refresh=None):
+def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
     account = AccountManager.get(Account.id == account_id)
 
     # Build sync controls menu
@@ -101,6 +101,13 @@ def ControlsMenu(account_id=1, refresh=None):
 
         art=function_path('Cover.png', account_id=account.id)
     )
+
+    if title and summary:
+        oc.add(DirectoryObject(
+            key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
+            title=pad_title(title),
+            summary=summary
+        ))
 
     ControlsStatus(oc, account)
 
@@ -280,7 +287,7 @@ def Synchronize(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
 
-    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
+    return redirect('/sync', account_id=account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
@@ -288,7 +295,7 @@ def FastPull(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
 
-    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
+    return redirect('/sync', account_id=account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
@@ -296,7 +303,7 @@ def Push(account_id=1, section=None, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
 
-    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
+    return redirect('/sync', account_id=account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
@@ -304,7 +311,7 @@ def Pull(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
 
-    return Redirect((PLUGIN_PREFIX + '/sync?account_id=%s') % account_id)
+    return redirect('/sync', account_id=account_id)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')

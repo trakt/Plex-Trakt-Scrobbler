@@ -323,3 +323,12 @@ def function_path(name, ext=None, **kwargs):
             'function_args': pack(kwargs)
         })
     )
+
+
+def redirect(path, **kwargs):
+    url = PLUGIN_PREFIX + path
+
+    if kwargs:
+        url += '?' + urllib.urlencode(kwargs)
+
+    return Redirect(url)
