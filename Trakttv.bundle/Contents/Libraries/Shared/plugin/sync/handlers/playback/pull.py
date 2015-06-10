@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
 from plex import Plex
@@ -154,8 +154,9 @@ class Episodes(Base):
         return self.update_progress(key, t_value, p_duration)
 
 
-class Playback(DataHandler):
+class Pull(DataHandler):
     data = SyncData.Playback
+    mode = [SyncMode.FastPull, SyncMode.Pull]
 
     children = [
         Movies,
