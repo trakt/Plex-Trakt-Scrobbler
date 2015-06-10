@@ -135,7 +135,7 @@ class Episodes(Base):
         return self.rate(key, 0)
 
 
-class Ratings(DataHandler):
+class Pull(DataHandler):
     data = SyncData.Ratings
 
     children = [
