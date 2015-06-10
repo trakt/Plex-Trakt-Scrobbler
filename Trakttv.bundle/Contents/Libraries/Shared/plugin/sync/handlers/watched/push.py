@@ -82,7 +82,7 @@ class Movies(Base):
         )
 
     @bind('removed', [SyncMode.Push])
-    def on_removed(self, key, p_value, t_value, **kwargs):
+    def on_removed(self, key, t_value, **kwargs):
         log.debug('Movies.on_removed(%r, ...)', key)
 
 
@@ -102,7 +102,7 @@ class Episodes(Base):
         )
 
     @bind('removed', [SyncMode.Push])
-    def on_removed(self, key, p_value, t_value, **kwargs):
+    def on_removed(self, key, t_value, **kwargs):
         log.debug('Episodes.on_removed(%r, ...)', key)
 
 
