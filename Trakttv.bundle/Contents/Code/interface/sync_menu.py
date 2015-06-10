@@ -18,7 +18,7 @@ L, LF = localization('interface.sync_menu')
 log = Logger('interface.sync_menu')
 
 
-# NOTE: pad_title(...) is used as a "hack" to force the UI to use 'media-details-list'
+# NOTE: pad_title(...) is used to force the UI to use 'media-details-list'
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
 def AccountsMenu(refresh=None):
@@ -109,7 +109,7 @@ def ControlsMenu(account_id=1, refresh=None):
     #
 
     oc.add(DirectoryObject(
-        key=Callback(Synchronize, account_id=account.id),
+        key=Callback(Synchronize, account_id=account.id, refresh=timestamp()),
         title=pad_title(SyncMode.title(SyncMode.Full)),
         summary=ModeStatus(account, SyncMode.Full),
 
@@ -122,7 +122,7 @@ def ControlsMenu(account_id=1, refresh=None):
     #
 
     oc.add(DirectoryObject(
-        key=Callback(Pull, account_id=account.id),
+        key=Callback(Pull, account_id=account.id, refresh=timestamp()),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
         summary=ModeStatus(account, SyncMode.Pull),
 
@@ -131,7 +131,7 @@ def ControlsMenu(account_id=1, refresh=None):
     ))
 
     oc.add(DirectoryObject(
-        key=Callback(FastPull, account_id=account.id),
+        key=Callback(FastPull, account_id=account.id, refresh=timestamp()),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
         summary=ModeStatus(account, SyncMode.FastPull),
 
@@ -150,7 +150,7 @@ def ControlsMenu(account_id=1, refresh=None):
 
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id, section=section.key),
+            key=Callback(Push, account_id=account.id, section=section.key, refresh=timestamp()),
             title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
             summary=ModeStatus(account, SyncMode.Push, section.key),
 
@@ -161,7 +161,7 @@ def ControlsMenu(account_id=1, refresh=None):
 
     if len(section_keys) > 1:
         oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id),
+            key=Callback(Push, account_id=account.id, refresh=timestamp()),
             title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
             summary=ModeStatus(account, SyncMode.Push),
 
@@ -276,7 +276,7 @@ def ModeStatus(account, mode, section=None):
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
-def Synchronize(account_id=1):
+def Synchronize(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
 
@@ -284,7 +284,7 @@ def Synchronize(account_id=1):
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
-def FastPull(account_id=1):
+def FastPull(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
 
@@ -292,7 +292,7 @@ def FastPull(account_id=1):
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
-def Push(account_id=1, section=None):
+def Push(account_id=1, section=None, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
 
@@ -300,7 +300,7 @@ def Push(account_id=1, section=None):
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
-def Pull(account_id=1):
+def Pull(account_id=1, refresh=None):
     # TODO implement options to change `SyncData` option per `Account`
     Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
 

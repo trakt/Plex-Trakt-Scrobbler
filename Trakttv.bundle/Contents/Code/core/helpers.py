@@ -200,7 +200,7 @@ def sum(values):
 
 
 def timestamp():
-    return int(time.time())
+    return str(time.time())
 
 
 # <bound method type.start of <class 'Scrobbler'>>
