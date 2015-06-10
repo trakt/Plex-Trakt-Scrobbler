@@ -13,20 +13,12 @@ def MainMenu():
 
     num_accounts = AccountManager.get.all().count()
 
-    if num_accounts > 1:
-        Log.Debug('AccountsMenu')
-        oc.add(PopupDirectoryObject(
-            key=Callback(AccountsMenu),
-            title=L("Sync"),
-            summary=L("Sync the Plex library with trakt.tv")
-        ))
-    else:
-        oc.add(DirectoryObject(
-            key=Callback(ControlsMenu),
-            title=L("Sync"),
-            summary=L("Sync the Plex library with trakt.tv"),
-            thumb=R("icon-sync.png")
-        ))
+    oc.add(DirectoryObject(
+        key=Callback(AccountsMenu if num_accounts > 1 else ControlsMenu),
+        title=L("Sync"),
+        summary=L("Sync the Plex library with trakt.tv"),
+        thumb=R("icon-sync.png")
+    ))
 
     oc.add(DirectoryObject(
         key=Callback(AboutMenu),
