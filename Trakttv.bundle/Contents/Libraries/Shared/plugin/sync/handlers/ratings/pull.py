@@ -137,6 +137,7 @@ class Episodes(Base):
 
 class Pull(DataHandler):
     data = SyncData.Ratings
+    mode = [SyncMode.FastPull, SyncMode.Pull]
 
     children = [
         Movies,
