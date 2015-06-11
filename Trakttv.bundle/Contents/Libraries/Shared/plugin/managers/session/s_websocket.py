@@ -84,9 +84,19 @@ class UpdateWSession(UpdateSession):
             log.warn('Unable to retrieve guid/metadata for session %r', session_key)
             return result
 
-        # Store client + user in `result`
-        result['client'] = ClientManager.get.or_create(p_item.session.player, fetch=True)
-        result['user'] = UserManager.get.or_create(p_item.session.user, fetch=True)
+        # Create/Retrieve `Client` for session
+        result['client'] = ClientManager.get.or_create(
+            p_item.session.player,
+            fetch=True,
+            match=True
+        )
+
+        # Create/Retrieve `User` for session
+        result['user'] = UserManager.get.or_create(
+            p_item.session.user,
+            fetch=True,
+            match=True
+        )
 
         return merge(result, {
             # Pick account from `client` or `user` objects

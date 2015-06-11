@@ -18,7 +18,7 @@ class GetClient(Get):
             Client.key == player['key']
         )
 
-    def or_create(self, player, fetch=False):
+    def or_create(self, player, fetch=False, match=False):
         player = self.manager.parse_player(player)
 
         try:
@@ -28,24 +28,30 @@ class GetClient(Get):
             )
 
             # Update newly created object
-            self.manager.update(obj, player, fetch)
+            self.manager.update(obj, player, fetch=fetch, match=match)
 
             return obj
         except apsw.ConstraintError:
             # Return existing user
-            return self(player)
+            obj = self(player)
+
+            if fetch or match:
+                # Update existing `User`
+                self.manager.update(obj, player, fetch=fetch, match=match)
+
+            return obj
 
 
 class UpdateClient(Update):
-    def __call__(self, obj, player, fetch=False):
+    def __call__(self, obj, player, fetch=False, match=False):
         player = self.manager.parse_player(player)
-        data = self.to_dict(obj, player, fetch)
+        data = self.to_dict(obj, player, fetch=fetch, match=match)
 
         return super(UpdateClient, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, player, fetch=False):
+    def to_dict(self, obj, player, fetch=False, match=False):
         result = {
             'name': player['title']
         }
@@ -57,37 +63,48 @@ class UpdateClient(Update):
         if player.get('product'):
             result['product'] = player['product']
 
-        if not fetch:
-            # Return simple update
-            return result
+        client = None
 
+        if fetch or match:
+            # Fetch client from plex server
+            result, client = self.fetch(result, player)
+
+        if match:
+            # Try match client against a rule
+            result = self.match(result, client, player)
+
+        return result
+
+    @staticmethod
+    def fetch(result, player):
         # Fetch client details
         client = Plex.clients().get(player['key'])
 
-        if client:
-            # Merge client details from plex API
-            result = merge(result, dict([
-                (key, getattr(client, key)) for key in [
-                    'device_class',
-                    'product',
-                    'version',
-
-                    'host',
-                    'address',
-                    'port',
-
-                    'protocol',
-                    'protocol_capabilities',
-                    'protocol_version'
-                ] if getattr(client, key)
-            ]))
-        else:
+        if not client:
             log.info('Unable to find client with key %r', player['key'])
+            return result, None
 
-        # Try match client against a rule
-        return self.match(result, client, player)
+        # Merge client details from plex API
+        result = merge(result, dict([
+            (key, getattr(client, key)) for key in [
+                'device_class',
+                'product',
+                'version',
 
-    def match(self, result, client, player):
+                'host',
+                'address',
+                'port',
+
+                'protocol',
+                'protocol_capabilities',
+                'protocol_version'
+            ] if getattr(client, key)
+        ]))
+
+        return result, client
+
+    @staticmethod
+    def match(result, client, player):
         # Apply global filters
         if not Filters.is_valid_client(player) or\
            not Filters.is_valid_address(client):

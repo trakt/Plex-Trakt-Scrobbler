@@ -20,7 +20,7 @@ class GetUser(Get):
             User.key == to_integer(user['key'])
         )
 
-    def or_create(self, user, fetch=False):
+    def or_create(self, user, fetch=False, match=False):
         user = self.manager.parse_user(user)
 
         if not user:
@@ -33,28 +33,34 @@ class GetUser(Get):
             )
 
             # Update newly created object
-            self.manager.update(obj, user, fetch)
+            self.manager.update(obj, user, fetch=fetch, match=match)
 
             return obj
         except apsw.ConstraintError:
             # Return existing user
-            return self(user)
+            obj = self(user)
+
+            if fetch or match:
+                # Update existing `User`
+                self.manager.update(obj, user, fetch=fetch, match=match)
+
+            return obj
 
 
 class UpdateUser(Update):
-    def __call__(self, obj, user, fetch=False):
+    def __call__(self, obj, user, fetch=False, match=False):
         user = self.manager.parse_user(user)
 
         if not user:
             return None
 
-        data = self.to_dict(obj, user, fetch)
+        data = self.to_dict(obj, user, fetch=fetch, match=match)
 
         return super(UpdateUser, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, user, fetch=False):
+    def to_dict(self, obj, user, fetch=False, match=False):
         result = {}
 
         # Fill `result` with available fields
@@ -64,13 +70,14 @@ class UpdateUser(Update):
         if user.get('thumb'):
             result['thumb'] = user['thumb']
 
-        if not fetch:
-            # Return simple update
-            return result
+        if match:
+            # Try match `User` against rules
+            result = self.match(result, user)
 
-        return self.match(result, user)
+        return result
 
-    def match(self, result, user):
+    @staticmethod
+    def match(result, user):
         # Apply global filters
         if not Filters.is_valid_user(user):
             # User didn't pass filters, update `account` attribute and return
