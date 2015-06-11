@@ -27,8 +27,13 @@ def AccountsMenu(refresh=None):
         no_cache=True
     )
 
-    AccountsStatus(oc)
+    # Active sync status
+    Active.create(
+        oc,
+        callback=Callback(AccountsMenu, refresh=timestamp()),
+    )
 
+    # Accounts
     for account in AccountManager.get.all():
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id),
@@ -39,55 +44,6 @@ def AccountsMenu(refresh=None):
         ))
 
     return oc
-
-
-def AccountsStatus(oc):
-    # TODO display statistics (progress, est. time remaining, etc..)
-    task = Sync.current
-
-    if not task:
-        # No task running
-        return
-
-    account = task.account
-
-    # Build task title
-    if task.data == SyncData.All:
-        # <mode>
-        title = normalize(SyncMode.title(task.mode))
-    else:
-        # <mode> [<data>]
-        title = '%s [%s]' % (
-            normalize(SyncMode.title(task.mode)),
-            normalize(SyncData.title(task.data))
-        )
-
-    # - Progress percentage
-    percent = task.progress.percent
-
-    if percent is not None:
-        title += ' (%2d%%)' % percent
-
-    # Build task summary
-    summary = 'Working'
-
-    # - Estimated seconds remaining
-    remaining_seconds = task.progress.remaining_seconds
-
-    if remaining_seconds is not None:
-        summary += ', %.02f seconds remaining' % remaining_seconds
-
-    # Create items
-    oc.add(DirectoryObject(
-        key=Callback(AccountsMenu, refresh=timestamp()),
-        title=pad_title('%s (%s) - Status' % (title, account.name)),
-        summary='%s (click to refresh)' % summary
-    ))
-
-    oc.add(DirectoryObject(
-        key=Callback(Cancel, account_id=account.id),
-        title=pad_title('%s (%s) - Cancel' % (title, account.name))
-    ))
 
 
 @route(PLUGIN_PREFIX + '/sync')
@@ -102,6 +58,7 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
         art=function_path('Cover.png', account_id=account.id)
     )
 
+    # Start result message
     if title and summary:
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
@@ -109,7 +66,12 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
             summary=summary
         ))
 
-    ControlsStatus(oc, account)
+    # Active sync status
+    Active.create(
+        oc,
+        callback=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
+        account=account
+    )
 
     #
     # Full
@@ -177,57 +139,6 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
         ))
 
     return oc
-
-
-def ControlsStatus(oc, account):
-    # TODO display statistics (progress, est. time remaining, etc..)
-    task = Sync.current
-
-    if not task:
-        # No task running
-        return
-
-    if task.account.id != account.id:
-        # Current task does not match this account
-        return
-
-    # Build task title
-    if task.data == SyncData.All:
-        # <mode>
-        title = normalize(SyncMode.title(task.mode))
-    else:
-        # <mode> [<data>]
-        title = '%s [%s]' % (
-            normalize(SyncMode.title(task.mode)),
-            normalize(SyncData.title(task.data))
-        )
-
-    # - Progress percentage
-    percent = task.progress.percent
-
-    if percent is not None:
-        title += ' (%2d%%)' % percent
-
-    # Build task summary
-    summary = 'Working'
-
-    # - Estimated seconds remaining
-    remaining_seconds = task.progress.remaining_seconds
-
-    if remaining_seconds is not None:
-        summary += ', %.02f seconds remaining' % remaining_seconds
-
-    # Create items
-    oc.add(DirectoryObject(
-        key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
-        title=pad_title('%s - Status' % title),
-        summary='%s (click to refresh)' % summary
-    ))
-
-    oc.add(DirectoryObject(
-        key=Callback(Cancel, account_id=account.id),
-        title=pad_title('%s - Cancel' % title)
-    ))
 
 
 def ModeStatus(account, mode, section=None):
@@ -326,3 +237,82 @@ def Cancel():
         L('cancel_success:title'),
         L('cancel_success:message')
     )
+
+
+class Active(object):
+    @classmethod
+    def create(cls, oc, callback, account=None):
+        current = Sync.current
+
+        if not current:
+            # No task running
+            return
+
+        if account and current.account.id != account.id:
+            # Only display status if `current` task matches provided `account`
+            return
+
+        # Create objects
+        title = cls.build_title(current, account)
+
+        oc.add(cls.build_status(current, title, callback))
+        oc.add(cls.build_cancel(current, title))
+
+    @staticmethod
+    def build_title(current, account):
+        if current.data == SyncData.All:
+            # <mode>
+            title = normalize(SyncMode.title(current.mode))
+        else:
+            # <mode> [<data>]
+            title = '%s [%s]' % (
+                normalize(SyncMode.title(current.mode)),
+                normalize(SyncData.title(current.data))
+            )
+
+        # Task Progress
+        percent = current.progress.percent
+
+        if percent is not None:
+            title += ' (%2d%%)' % percent
+
+        # Account Name (only display outside of account-specific menus)
+        if account is None:
+            title += ' (%s)' % current.account.name
+
+        return title
+
+    #
+    # Status
+    #
+
+    @classmethod
+    def build_status(cls, current, title, callback=None):
+        return DirectoryObject(
+            key=callback,
+            title=pad_title('%s - Status' % title),
+            summary=cls.build_status_summary(current)
+        )
+
+    @staticmethod
+    def build_status_summary(current):
+        summary = 'Working'
+
+        # Estimated time remaining
+        remaining_seconds = current.progress.remaining_seconds
+
+        if remaining_seconds is not None:
+            summary += ', %.02f seconds remaining' % remaining_seconds
+
+        return summary
+
+    #
+    # Cancel
+    #
+
+    @classmethod
+    def build_cancel(cls, current, title):
+        return DirectoryObject(
+            key=Callback(Cancel, account_id=current.account.id),
+            title=pad_title('%s - Cancel' % title)
+        )
