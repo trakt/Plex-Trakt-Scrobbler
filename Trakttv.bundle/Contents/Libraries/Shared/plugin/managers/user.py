@@ -17,7 +17,7 @@ class GetUser(Get):
             return None
 
         return super(GetUser, self).__call__(
-            User.id == to_integer(user['id'])
+            User.key == to_integer(user['key'])
         )
 
     def or_create(self, user, fetch=False):
@@ -29,7 +29,7 @@ class GetUser(Get):
         try:
             # Create new user
             obj = self.manager.create(
-                id=to_integer(user['id'])
+                key=to_integer(user['key'])
             )
 
             # Update newly created object
@@ -104,13 +104,13 @@ class UserManager(Manager):
         if type(user) is not dict:
             # Build user dict from object
             user = {
-                'id': user.id,
+                'key': user.id,
                 'title': user.title,
                 'thumb': user.thumb
             }
 
         # Validate `user`
-        if not user.get('id'):
+        if not user.get('key'):
             return None
 
         return user

@@ -11,7 +11,8 @@ class User(Model):
 
     account = ForeignKeyField(Account, 'users', null=True)
 
-    id = IntegerField(unique=True)
+    # Identification
+    key = IntegerField(unique=True)
     name = CharField(null=True)
 
     thumb = CharField(null=True)
@@ -19,3 +20,6 @@ class User(Model):
     @property
     def account_id(self):
         return self._data.get('account')
+
+    def __repr__(self):
+        return '<User id: %r, key: %r>' % (self.id, self.key)

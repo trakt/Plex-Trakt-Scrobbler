@@ -15,7 +15,7 @@ class GetClient(Get):
         player = self.manager.parse_player(player)
 
         return super(GetClient, self).__call__(
-            Client.machine_identifier == player['machine_identifier']
+            Client.key == player['key']
         )
 
     def or_create(self, player, fetch=False):
@@ -24,7 +24,7 @@ class GetClient(Get):
         try:
             # Create new client
             obj = self.manager.create(
-                machine_identifier=player['machine_identifier']
+                key=player['key']
             )
 
             # Update newly created object
@@ -62,7 +62,7 @@ class UpdateClient(Update):
             return result
 
         # Fetch client details
-        client = Plex.clients().get(player['machine_identifier'])
+        client = Plex.clients().get(player['key'])
 
         if client:
             # Merge client details from plex API
@@ -82,7 +82,7 @@ class UpdateClient(Update):
                 ] if getattr(client, key)
             ]))
         else:
-            log.info('Unable to find client with machine_identifier %r', player['machine_identifier'])
+            log.info('Unable to find client with key %r', player['key'])
 
         # Try match client against a rule
         return self.match(result, client, player)
@@ -100,7 +100,7 @@ class UpdateClient(Update):
         address = client['address'] if client else None
 
         query = ClientRule.select().where((
-            (ClientRule.machine_identifier == player['machine_identifier']) | (ClientRule.machine_identifier == None) &
+            (ClientRule.key == player['key']) | (ClientRule.key == None) &
             (ClientRule.name == player['title']) | (ClientRule.name == None) &
             (ClientRule.address == address) | (ClientRule.address == None)
         ))
@@ -128,7 +128,7 @@ class ClientManager(Manager):
 
         # Build user dict from object
         return {
-            'machine_identifier': player.machine_identifier,
+            'key': player.machine_identifier,
             'title': player.title,
 
             'platform': player.platform,

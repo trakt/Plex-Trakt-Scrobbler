@@ -78,12 +78,12 @@ class UpdateLSession(UpdateSession):
 
         # Store client + user in `result`
         result['client'] = ClientManager.get.or_create({
-            'machine_identifier': info.get('machineIdentifier'),
+            'key': info.get('machineIdentifier'),
             'title': info.get('client')
         }, fetch=True)
 
         result['user'] = UserManager.get.or_create({
-            'id': to_integer(info.get('user_id')),
+            'key': to_integer(info.get('user_id')),
             'title': info.get('user_name')
         }, fetch=True)
 
