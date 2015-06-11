@@ -3,8 +3,11 @@ from plugin.sync.core.task import SyncTask
 from plugin.sync.handlers import *
 from plugin.sync.modes import *
 
+from threading import Lock
 import logging
+import Queue
 import sys
+import time
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +25,15 @@ MODES = [
     Push
 ]
 
+class SyncError(Exception):
+    pass
+
+
+class QueueError(Exception):
+    def __init__(self, title, message=None):
+        self.title = title
+        self.message = message
+
 
 class Main(object):
     def __init__(self):
@@ -29,7 +41,12 @@ class Main(object):
         self.modes = dict(self._construct_modules(MODES, 'mode'))
 
         self.current = None
-        self.thread = None
+
+        self._queue = Queue.PriorityQueue()
+        self._queue_lock = Lock()
+
+        self._spawn_lock = Lock()
+        self._thread = None
 
     def _construct_modules(self, modules, attribute):
         for cls in modules:
@@ -41,10 +58,10 @@ class Main(object):
 
             yield key, cls(self)
 
-    def start(self, account, mode, data, media, **kwargs):
-        """Start a sync for the provided account
+    def queue(self, account, mode, data, media, priority=10, **kwargs):
+        """Queue a sync for the provided account
 
-        Note: if a sync is already running a `SyncError` will be raised.
+        Note: if a sync is already queued for the provided account a `SyncError` will be raised.
 
         :param account: Account to synchronize with trakt
         :type account: int or plugin.models.Account
@@ -61,36 +78,81 @@ class Main(object):
         :return: `SyncResult` object with details on the sync outcome.
         :rtype: plugin.sync.core.result.SyncResult
         """
-        self.current = SyncTask.create(account, mode, data, media, **kwargs)
+        try:
+            # Create new task
+            task = SyncTask.create(account, mode, data, media, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to construct task: %s', ex, exc_info=True)
+            raise QueueError("Error", "Unable to construct task")
 
-        self.thread = Thread(target=self.run_wrapper)
-        self.thread.start()
+        with self._queue_lock:
+            # Ensure we only have one task queued per account
+            account_tasks = [t for (p, a, t) in self._queue.queue if a == task.account.id]
 
-        return None, None
+            if len(account_tasks):
+                raise QueueError("Unable to queue sync", "Sync has already been queued for this account")
+
+            # Queue task until the thread is available
+            self._queue.put((priority, task.account.id, task), block=False)
+
+            # Ensure thread is active
+            self.spawn()
+
+        # Wait for task start
+        for x in xrange(3):
+            if task.started:
+                log.debug('Task %r has started', task)
+                return
+
+            time.sleep(1)
+
+        raise QueueError("Sync queued", "Sync will start once the currently queued tasks have finished")
+
+    def spawn(self):
+        """Ensure syncing thread has been spawned"""
+        with self._spawn_lock:
+            if self._thread is not None:
+                return
+
+            self._thread = Thread(target=self.run_wrapper)
+            self._thread.start()
+
+            log.debug('Spawned syncing thread: %r', self._thread)
 
     def run_wrapper(self):
-        if self.current is None:
-            log.warn('Missing "current" sync task')
-            return
+        while True:
+            # Retrieve task from queue
+            try:
+                _, _, self.current = self._queue.get(timeout=30)
+            except Queue.Empty:
+                continue
 
-        log.info('(%r) Started', self.current.mode)
+            # Start task
+            log.info('(%r) Started', self.current.mode)
+            self.current.started = True
 
-        try:
-            # Run in trakt authorization context
-            with self.current.account.trakt.authorization():
-                self.run()
+            try:
+                # Run in trakt authorization context
+                with self.current.account.trakt.authorization():
+                    self.run()
 
-            self.current.success = True
-        except Exception, ex:
-            log.warn('Exception raised in run(): %s', ex, exc_info=True)
+                self.current.success = True
+            except Exception, ex:
+                log.warn('Exception raised in run(): %s', ex, exc_info=True)
 
-            self.current.exceptions.append(sys.exc_info())
-            self.current.success = False
+                self.current.exceptions.append(sys.exc_info())
+                self.current.success = False
 
-        # Sync task complete, run final tasks
-        self.current.finish()
+            # Sync task complete, run final tasks
+            self.finish()
 
-        log.info('(%r) Done', self.current.mode)
+    def finish(self):
+        # Cleanup `current` task
+        current = self.current
+        current.finish()
+
+        # Task finished
+        log.info('(%r) Done', current.mode)
 
         # Cleanup sync manager
         self.current = None

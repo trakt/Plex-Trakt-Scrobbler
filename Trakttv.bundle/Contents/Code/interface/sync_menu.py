@@ -7,7 +7,7 @@ from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
 from plugin.managers import AccountManager
 from plugin.models import Account, SyncResult
-from plugin.sync import Sync, SyncData, SyncMedia, SyncMode
+from plugin.sync import Sync, SyncData, SyncMedia, SyncMode, QueueError
 
 from ago import human
 from datetime import datetime
@@ -47,7 +47,7 @@ def AccountsMenu(refresh=None):
 
 
 @route(PLUGIN_PREFIX + '/sync')
-def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
+def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
     account = AccountManager.get(Account.id == account_id)
 
     # Build sync controls menu
@@ -59,11 +59,11 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
     )
 
     # Start result message
-    if title and summary:
+    if title and message:
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id, refresh=timestamp()),
             title=pad_title(title),
-            summary=summary
+            summary=message
         ))
 
     # Active sync status
@@ -143,32 +143,31 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 def Synchronize(account_id=1, refresh=None):
-    # TODO implement options to change `SyncData` option per `Account`
-    Sync.start(int(account_id), SyncMode.Full, SyncData.All, SyncMedia.All)
-
-    return redirect('/sync', account_id=account_id)
+    return Trigger(int(account_id), SyncMode.Full)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
 def FastPull(account_id=1, refresh=None):
-    # TODO implement options to change `SyncData` option per `Account`
-    Sync.start(int(account_id), SyncMode.FastPull, SyncData.All, SyncMedia.All)
-
-    return redirect('/sync', account_id=account_id)
+    return Trigger(int(account_id), SyncMode.FastPull)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
 def Push(account_id=1, section=None, refresh=None):
-    # TODO implement options to change `SyncData` option per `Account`
-    Sync.start(int(account_id), SyncMode.Push, SyncData.All, SyncMedia.All, section=section)
-
-    return redirect('/sync', account_id=account_id)
+    return Trigger(int(account_id), SyncMode.Push, section=section)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 def Pull(account_id=1, refresh=None):
+    return Trigger(int(account_id), SyncMode.Pull)
+
+
+def Trigger(account_id, mode, data=SyncData.All, media=SyncMedia.All, **kwargs):
     # TODO implement options to change `SyncData` option per `Account`
-    Sync.start(int(account_id), SyncMode.Pull, SyncData.All, SyncMedia.All)
+
+    try:
+        Sync.queue(account_id, mode, data, media, **kwargs)
+    except QueueError, ex:
+        return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
 
     return redirect('/sync', account_id=account_id)
 

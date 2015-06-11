@@ -49,6 +49,8 @@ class SyncTask(object):
         self.status = status
 
         self.exceptions = []
+
+        self.started = False
         self.success = None
 
     @property
