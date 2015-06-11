@@ -80,7 +80,7 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
     oc.add(DirectoryObject(
         key=Callback(Synchronize, account_id=account.id, refresh=timestamp()),
         title=pad_title(SyncMode.title(SyncMode.Full)),
-        summary=ModeStatus(account, SyncMode.Full),
+        summary=Status.build(account, SyncMode.Full),
 
         thumb=R("icon-sync.png"),
         art=function_path('Cover.png', account_id=account.id)
@@ -93,7 +93,7 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
     oc.add(DirectoryObject(
         key=Callback(Pull, account_id=account.id, refresh=timestamp()),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
-        summary=ModeStatus(account, SyncMode.Pull),
+        summary=Status.build(account, SyncMode.Pull),
 
         thumb=R("icon-sync_down.png"),
         art=function_path('Cover.png', account_id=account.id)
@@ -102,7 +102,7 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
     oc.add(DirectoryObject(
         key=Callback(FastPull, account_id=account.id, refresh=timestamp()),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
-        summary=ModeStatus(account, SyncMode.FastPull),
+        summary=Status.build(account, SyncMode.FastPull),
 
         thumb=R("icon-sync_down.png"),
         art=function_path('Cover.png', account_id=account.id)
@@ -121,7 +121,7 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
         oc.add(DirectoryObject(
             key=Callback(Push, account_id=account.id, section=section.key, refresh=timestamp()),
             title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
-            summary=ModeStatus(account, SyncMode.Push, section.key),
+            summary=Status.build(account, SyncMode.Push, section.key),
 
             thumb=R("icon-sync_up.png"),
             art=function_path('Cover.png', account_id=account.id)
@@ -132,65 +132,13 @@ def ControlsMenu(account_id=1, title=None, summary=None, refresh=None):
         oc.add(DirectoryObject(
             key=Callback(Push, account_id=account.id, refresh=timestamp()),
             title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
-            summary=ModeStatus(account, SyncMode.Push),
+            summary=Status.build(account, SyncMode.Push),
 
             thumb=R("icon-sync_up.png"),
             art=function_path('Cover.png', account_id=account.id)
         ))
 
     return oc
-
-
-def ModeStatus(account, mode, section=None):
-    status = SyncResult.get_latest(account, mode, section).first()
-
-    if status is None or status.latest is None:
-        return 'Not run yet.'
-
-    # Build status details string
-    fragments = []
-
-    if status.latest.ended_at:
-        since = datetime.utcnow() - status.latest.ended_at
-
-        if since.seconds < 1:
-            fragments.append('Last run just a moment ago')
-        else:
-            fragments.append('Last run %s' % human(since, precision=1))
-
-        if status.latest.started_at:
-            elapsed = status.latest.ended_at - status.latest.started_at
-
-            if elapsed.seconds < 1:
-                fragments.append('taking less than a second')
-            else:
-                fragments.append('taking %s' % human(
-                    elapsed,
-                    precision=1,
-                    past_tense='%s'
-                ))
-
-    if status.latest.success:
-        fragments.append('was successful')
-    else:
-        message = 'failed'
-
-        # Resolve errors
-        errors = list(status.latest.get_errors())
-
-        if len(errors) > 1:
-            # Multiple errors
-            message += ' (%d errors, %s)' % (len(errors), errors[0].summary)
-        elif len(errors) == 1:
-            # Single error
-            message += ' (%s)' % errors[0].summary
-
-        fragments.append(message)
-
-    if len(fragments):
-        return ', '.join(fragments) + '.'
-
-    return 'Not run yet.'
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
@@ -316,3 +264,73 @@ class Active(object):
             key=Callback(Cancel, account_id=current.account.id),
             title=pad_title('%s - Cancel' % title)
         )
+
+
+class Status(object):
+    @classmethod
+    def build(cls, account, mode, section=None):
+        status = SyncResult.get_latest(account, mode, section).first()
+
+        if status is None or status.latest is None:
+            return 'Not run yet.'
+
+        # Build status fragments
+        fragments = []
+
+        if status.latest.ended_at:
+            # Build "Last run [...] ago" fragment
+            fragments.append(cls.build_since(status))
+
+            if status.latest.started_at:
+                # Build "taking [...] seconds" fragment
+                fragments.append(cls.build_elapsed(status))
+
+        # Build result fragment (success, errors)
+        fragments.append(cls.build_result(status))
+
+        # Merge fragments
+        if len(fragments):
+            return ', '.join(fragments) + '.'
+
+        return 'Not run yet.'
+
+    @staticmethod
+    def build_elapsed(status):
+        elapsed = status.latest.ended_at - status.latest.started_at
+
+        if elapsed.seconds < 1:
+            return 'taking less than a second'
+
+        return 'taking %s' % human(
+            elapsed,
+            precision=1,
+            past_tense='%s'
+        )
+
+    @staticmethod
+    def build_result(status):
+        if status.latest.success:
+            return 'was successful'
+
+        message = 'failed'
+
+        # Resolve errors
+        errors = list(status.latest.get_errors())
+
+        if len(errors) > 1:
+            # Multiple errors
+            message += ' (%d errors, %s)' % (len(errors), errors[0].summary)
+        elif len(errors) == 1:
+            # Single error
+            message += ' (%s)' % errors[0].summary
+
+        return message
+
+    @staticmethod
+    def build_since(status):
+        since = datetime.utcnow() - status.latest.ended_at
+
+        if since.seconds < 1:
+            return 'Last run just a moment ago'
+
+        return 'Last run %s' % human(since, precision=1)
