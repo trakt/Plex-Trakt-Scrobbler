@@ -11,12 +11,6 @@ sys.modules['core.logger'] = logger
 import localization
 sys.modules['core.localization'] = localization
 
-import logging_reporter
-sys.modules['core.logging_reporter'] = logging_reporter
-
-import logging_handler
-sys.modules['core.logging_handler'] = logging_handler
-
 import header
 sys.modules['core.header'] = header
 

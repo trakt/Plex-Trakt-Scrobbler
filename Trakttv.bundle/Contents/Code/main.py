@@ -3,12 +3,12 @@ from core.configuration import Configuration
 from core.header import Header
 from core.helpers import get_class_name, md5
 from core.logger import Logger
-from core.logging_handler import PlexHandler
-from core.logging_reporter import RAVEN
 from core.update_checker import UpdateChecker
 
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
 from plugin.core.helpers.thread import module_start
+from plugin.core.logger import LOG_HANDLER
+from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.modules.core.manager import ModuleManager
 
 from plex import Plex
@@ -16,7 +16,6 @@ from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt
-import logging
 import os
 import uuid
 
@@ -43,7 +42,7 @@ class Main(object):
         self.init_raven()
 
         # Initialize logging
-        self.init_logging()
+        # self.init_logging()
 
     def init(self):
         names = []
@@ -73,16 +72,6 @@ class Main(object):
         })
 
     @staticmethod
-    def init_logging():
-        level = PlexHandler.get_min_level('plugin')
-
-        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
-
-        # Update main logger level
-        logger = logging.getLogger(PLUGIN_IDENTIFIER)
-        logger.setLevel(level)
-
-    @staticmethod
     def init_plex():
         # Ensure client identifier has been generated
         if not Dict['plex.client.identifier']:
@@ -102,7 +91,7 @@ class Main(object):
         )
 
         # plex.activity.py
-        path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+        path = os.path.join(LOG_HANDLER.baseFilename, '..', '..', 'Plex Media Server.log')
         path = os.path.abspath(path)
 
         Activity['logging'].add_hint(path)

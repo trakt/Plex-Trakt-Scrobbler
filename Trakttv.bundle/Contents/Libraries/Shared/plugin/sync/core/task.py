@@ -1,7 +1,7 @@
 from plugin.core.database import Database
 from plugin.core.helpers.variable import dict_path
+from plugin.managers import ExceptionManager
 from plugin.models import *
-from plugin.sync.core.exception_logger import ExceptionLogger
 
 from datetime import datetime
 from peewee import JOIN_LEFT_OUTER
@@ -69,12 +69,28 @@ class SyncTask(object):
         # Store exceptions in database
         for exc_info in self.exceptions:
             try:
-                ExceptionLogger.result_store(self.result, exc_info)
+                self.store_exception(self.result, exc_info)
             except Exception, ex:
                 log.warn('Unable to store exception: %s', str(ex), exc_info=True)
 
         # Flush caches to archives
         self.state.flush()
+
+    @staticmethod
+    def store_exception(result, exc_info):
+        exception, error = ExceptionManager.create.from_exc_info(exc_info)
+
+        # Link error to result
+        SyncResultError.create(
+            result=result,
+            error=error
+        )
+
+        # Link exception to result
+        SyncResultException.create(
+            result=result,
+            exception=exception
+        )
 
     @classmethod
     def create(cls, account, mode, data, media, **kwargs):

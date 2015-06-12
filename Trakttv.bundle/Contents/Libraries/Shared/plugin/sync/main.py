@@ -143,8 +143,11 @@ class Main(object):
                 self.current.exceptions.append(sys.exc_info())
                 self.current.success = False
 
-            # Sync task complete, run final tasks
-            self.finish()
+            try:
+                # Sync task complete, run final tasks
+                self.finish()
+            except Exception, ex:
+                log.error('Unable to run final sync tasks: %s', ex, exc_info=True)
 
     def finish(self):
         # Cleanup `current` task
