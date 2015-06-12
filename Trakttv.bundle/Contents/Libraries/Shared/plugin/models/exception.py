@@ -17,5 +17,6 @@ class Exception(Model):
 
     hash = CharField(null=True, max_length=32)
 
+    timestamp = DateTimeField()
     version_base = CharField(max_length=12)
     version_branch = CharField(max_length=42)

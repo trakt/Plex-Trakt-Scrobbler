@@ -3,6 +3,7 @@ from plugin.managers.core.base import Manager, Create
 from plugin.managers.message import MessageManager
 from plugin.models.exception import Exception
 
+from datetime import datetime
 import hashlib
 import logging
 import os
@@ -35,6 +36,7 @@ class CreateException(Create):
             message=self.exc_message(exc_info[1]),
             traceback=self.exc_traceback(exc_info[2]),
 
+            timestamp=datetime.utcnow(),
             version_base=VERSION_BASE,
             version_branch=VERSION_BRANCH
         )
@@ -84,6 +86,7 @@ class CreateException(Create):
             message=match.group('message'),
             traceback=self.strip_traceback(match.group('traceback')),
 
+            timestamp=datetime.utcnow(),
             version_base=VERSION_BASE,
             version_branch=VERSION_BRANCH
         )
