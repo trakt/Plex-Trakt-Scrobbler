@@ -2,6 +2,7 @@ from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.managers.core.base import Get, Manager
 from plugin.models import Message
 
+from datetime import datetime
 import logging
 
 VERSION_BASE = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
@@ -13,11 +14,13 @@ log = logging.getLogger(__name__)
 class GetMessage(Get):
     def from_exception(self, exception):
         # Find matching (or create new dummy) error message
-        return self.or_create(
+        message = self.or_create(
             Message.type == Message.Type.Exception,
             Message.exception_hash == exception.hash,
 
             type=Message.Type.Exception,
+            last_seen_at=datetime.utcnow(),
+
             exception_hash=exception.hash,
             revision=0,
 
@@ -27,6 +30,13 @@ class GetMessage(Get):
             summary=exception.message,
             description=exception.traceback
         )
+
+        if message and not message._created:
+            # Update `last_seen_at` timestamp
+            message.last_seen_at = datetime.utcnow()
+            message.save()
+
+        return message
 
 
 class MessageManager(Manager):

@@ -27,6 +27,8 @@ class Message(Model):
     code = IntegerField(null=True)
     type = IntegerField()
 
+    last_seen_at = DateTimeField()
+
     # Tracking data
     exception_hash = CharField(null=True, unique=True, max_length=32)
     revision = IntegerField(null=True)
