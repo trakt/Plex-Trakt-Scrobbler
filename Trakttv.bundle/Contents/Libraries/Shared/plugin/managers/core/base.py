@@ -40,6 +40,9 @@ class Get(Method):
 
         return self(*query)
 
+    def where(self, *query):
+        return self.model.select().where(*query)
+
 
 class Create(Method):
     def __call__(self, **kwargs):
