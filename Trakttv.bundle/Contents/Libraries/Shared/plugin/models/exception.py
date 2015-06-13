@@ -9,7 +9,7 @@ class Exception(Model):
         database = db
         db_table = 'exception'
 
-    error = ForeignKeyField(Message, null=True)
+    error = ForeignKeyField(Message, 'exceptions', null=True)
 
     type = TextField()
     message = TextField()

@@ -1,16 +1,33 @@
 from core.cache import CacheManager
 from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
+from interface.m_messages import Count as MessageCount, ListMessages
 from interface.m_sync import AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
 from plugin.managers import AccountManager
+
+import locale
 
 
 @handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)
 def MainMenu():
     oc = ObjectContainer(no_cache=True)
 
+    #
+    # Messages
+    #
+    num_messages = MessageCount()
+
+    if num_messages > 0:
+        oc.add(DirectoryObject(
+            key=Callback(ListMessages),
+            title="Messages (%s)" % locale.format("%d", num_messages, grouping=True)
+        ))
+
+    #
+    # Sync
+    #
     num_accounts = AccountManager.get.all().count()
 
     oc.add(DirectoryObject(
@@ -20,6 +37,9 @@ def MainMenu():
         thumb=R("icon-sync.png")
     ))
 
+    #
+    # About
+    #
     oc.add(DirectoryObject(
         key=Callback(AboutMenu),
         title=L("About"),
