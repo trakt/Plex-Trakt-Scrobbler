@@ -4,6 +4,8 @@ from playhouse.apsw_ext import *
 
 
 class MessageType(object):
+    __titles__  = None
+
     Generic     = 0x00
     Exception   = 0x01
 
@@ -15,6 +17,23 @@ class MessageType(object):
 
     # Services
     Trakt       = 0x32
+
+    @classmethod
+    def title(cls, value):
+        if cls.__titles__ is None:
+            cls.__titles__ = {
+                MessageType.Generic:    None,
+                MessageType.Exception:  "Exception",
+
+                MessageType.Info:       "Info",
+                MessageType.Warning:    "Warning",
+                MessageType.Error:      "Error",
+                MessageType.Critical:   "Critical",
+
+                MessageType.Trakt:      "trakt.tv"
+            }
+
+        return cls.__titles__.get(value)
 
 
 class Message(Model):
