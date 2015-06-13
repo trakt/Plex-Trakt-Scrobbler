@@ -2,6 +2,7 @@
 # Environment
 # ------------------------------------------------
 from plugin.core.environment import Environment
+import locale
 import os
 
 Environment.setup(Core, Dict, Prefs)
@@ -11,6 +12,12 @@ os.environ['LIBRARY_DB'] = os.path.join(
     Environment.path.plugin_support, 'Databases',
     'com.plexapp.plugins.library.db'
 )
+
+# locale
+try:
+    Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
+except Exception, ex:
+    Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
