@@ -19,7 +19,12 @@ class Method(object):
 
 class Get(Method):
     def __call__(self, *query):
-        return self.model.get(*query)
+        obj = self.model.get(*query)
+
+        if obj:
+            obj._created = False
+
+        return obj
 
     def all(self):
         return self.model.select()
@@ -42,7 +47,13 @@ class Create(Method):
             raise Exception('Manager %r has no "model" attribute defined' % self.manager)
 
         with db.transaction():
-            return self.model.create(**kwargs)
+            obj = self.model.create(**kwargs)
+
+        if obj:
+            # Set flag
+            obj._created = True
+
+        return obj
 
 
 class Update(Method):
