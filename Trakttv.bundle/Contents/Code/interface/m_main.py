@@ -1,7 +1,7 @@
 from core.cache import CacheManager
 from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
-from interface.sync_menu import AccountsMenu, ControlsMenu
+from interface.m_sync import AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
 from plugin.managers import AccountManager

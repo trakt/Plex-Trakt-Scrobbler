@@ -13,9 +13,9 @@ from ago import human
 from datetime import datetime
 from plex import Plex
 
-L, LF = localization('interface.sync_menu')
+L, LF = localization('interface.m_sync')
 
-log = Logger('interface.sync_menu')
+log = Logger('interface.m_sync')
 
 
 # NOTE: pad_title(...) is used to force the UI to use 'media-details-list'

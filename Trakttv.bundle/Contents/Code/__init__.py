@@ -19,7 +19,7 @@ import interface
 # ------------------------------------------------
 # Handlers
 # ------------------------------------------------
-from interface.main_menu import MainMenu
+from interface.m_main import MainMenu
 from interface.resources import Cover, Thumb
 # ------------------------------------------------
 
