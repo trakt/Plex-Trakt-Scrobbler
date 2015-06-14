@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 @route(PLUGIN_PREFIX + '/messages/list')
 def ListMessages():
-    messages = List().order_by(Message.last_seen_at.desc()).limit(50)
+    messages = List().order_by(Message.last_logged_at.desc()).limit(50)
 
     oc = ObjectContainer(
         title2="Messages"
@@ -38,6 +38,10 @@ def ListMessages():
 def ViewMessage(error_id):
     # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
+
+    # Update `last_viewed_at` field
+    message.last_viewed_at = datetime.utcnow()
+    message.save()
 
     # Parse request headers
     web_client = Request.Headers.get('X-Plex-Product', '').lower() == 'plex web'
@@ -100,16 +104,26 @@ def ViewException(exception_id):
 
 def Count():
     """Get the number of messages logged in the last week"""
-    return List().count()
+    return List(viewed=False).count()
 
-def List():
+def List(viewed=None):
     """Get messages logged in the last week"""
     since = datetime.utcnow() - timedelta(days=7)
 
-    query = MessageManager.get.where(
-        Message.last_seen_at > since,
+    where = [
+        Message.last_logged_at > since,
         Message.version_base == VERSION_BASE,
         Message.version_branch == VERSION_BRANCH
-    )
+    ]
 
-    return query
+    if viewed is True:
+        where.append(
+            ~(Message.last_viewed_at >> None),
+            Message.last_viewed_at > Message.last_logged_at
+        )
+    elif viewed is False:
+        where.append(
+            (Message.last_viewed_at >> None) | (Message.last_viewed_at < Message.last_logged_at)
+        )
+
+    return MessageManager.get.where(*where)

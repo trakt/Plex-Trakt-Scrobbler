@@ -19,7 +19,7 @@ class GetMessage(Get):
             Message.exception_hash == exception.hash,
 
             type=Message.Type.Exception,
-            last_seen_at=datetime.utcnow(),
+            last_logged_at=datetime.utcnow(),
 
             exception_hash=exception.hash,
             revision=0,
@@ -32,8 +32,8 @@ class GetMessage(Get):
         )
 
         if message and not message._created:
-            # Update `last_seen_at` timestamp
-            message.last_seen_at = datetime.utcnow()
+            # Update `last_logged_at` timestamp
+            message.last_logged_at = datetime.utcnow()
             message.save()
 
         return message
