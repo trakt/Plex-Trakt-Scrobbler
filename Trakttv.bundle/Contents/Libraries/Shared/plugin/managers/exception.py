@@ -32,9 +32,9 @@ class CreateException(Create):
 
         # Create exception
         exception = self.model(
-            type=self.exc_type(exc_info[0]),
-            message=self.exc_message(exc_info[1]),
-            traceback=self.exc_traceback(exc_info[2]),
+            type=self.manager.exc_type(exc_info[0]),
+            message=self.manager.exc_message(exc_info[1]),
+            traceback=self.manager.exc_traceback(exc_info[2]),
 
             timestamp=datetime.utcnow(),
             version_base=VERSION_BASE,
@@ -51,24 +51,6 @@ class CreateException(Create):
         exception.save()
 
         return exception, exception.error
-
-    @staticmethod
-    def exc_type(type):
-        return type.__name__
-
-    @staticmethod
-    def exc_message(exception):
-        return getattr(exception, 'message', None)
-
-    @staticmethod
-    def exc_traceback(tb):
-        """Format traceback with relative paths"""
-        tb_list = traceback.extract_tb(tb)
-
-        return ''.join(traceback.format_list([
-            (os.path.relpath(filename, BASE_PATH), line_num, name, line)
-            for (filename, line_num, name, line) in tb_list
-        ]))
 
     #
     # message
@@ -135,10 +117,41 @@ class ExceptionManager(Manager):
     model = Exception
 
     @staticmethod
-    def hash(exception):
+    def exc_type(type):
+        return type.__name__
+
+    @staticmethod
+    def exc_message(exception):
+        return getattr(exception, 'message', None)
+
+    @staticmethod
+    def exc_traceback(tb):
+        """Format traceback with relative paths"""
+        tb_list = traceback.extract_tb(tb)
+
+        return ''.join(traceback.format_list([
+            (os.path.relpath(filename, BASE_PATH), line_num, name, line)
+            for (filename, line_num, name, line) in tb_list
+        ]))
+
+    @classmethod
+    def hash(cls, exception=None, exc_info=None):
+        if exception is not None:
+            # Retrieve hash parameters from `Exception` object
+            type = exception.type
+            message = exception.message
+            tb = exception.traceback
+        elif exc_info is not None:
+            # Build hash parameters from `exc_info`
+            type = cls.exc_type(exc_info[0])
+            message = cls.exc_message(exc_info[1])
+            tb = cls.exc_traceback(exc_info[2])
+        else:
+            raise ValueError
+
         m = hashlib.md5()
-        m.update(exception.type)
-        m.update(exception.message)
-        m.update(exception.traceback)
+        m.update(type)
+        m.update(message)
+        m.update(tb)
 
         return m.hexdigest()
