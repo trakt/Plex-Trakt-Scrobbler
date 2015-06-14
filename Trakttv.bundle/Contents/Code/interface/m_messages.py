@@ -36,8 +36,13 @@ def ListMessages():
 
 @route(PLUGIN_PREFIX + '/messages/view')
 def ViewMessage(error_id):
+    # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
 
+    # Parse request headers
+    web_client = Request.Headers.get('X-Plex-Product', '').lower() == 'plex web'
+
+    # Build objects
     oc = ObjectContainer(
         title2='[%s] %s' % (Message.Type.title(message.type), message.summary)
     )
@@ -45,8 +50,14 @@ def ViewMessage(error_id):
     for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
         since = datetime.utcnow() - e.timestamp
 
+        callback = Callback(ViewMessage, error_id=error_id)
+
+        if web_client:
+            # Display exception traceback in Plex/Web
+            callback = Callback(ViewException, exception_id=e.id)
+
         oc.add(DirectoryObject(
-            key=Callback(ViewException, exception_id=e.id),
+            key=callback,
             title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message))
         ))
 
@@ -54,6 +65,7 @@ def ViewMessage(error_id):
 
 @route(PLUGIN_PREFIX + '/exceptions/view')
 def ViewException(exception_id):
+    # Retrieve exception from database
     exception = ExceptionManager.get.by_id(exception_id)
 
     # Split traceback into lines
