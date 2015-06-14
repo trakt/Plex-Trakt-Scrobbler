@@ -2,7 +2,7 @@ from core.helpers import pad_title, timestamp
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
-from plugin.models import Message
+from plugin.models import Exception, Message
 
 from ago import human
 from datetime import datetime, timedelta
@@ -42,7 +42,7 @@ def ViewMessage(error_id):
         title2='[%s] %s' % (Message.Type.title(message.type), message.summary)
     )
 
-    for e in message.exceptions.limit(50):
+    for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
         since = datetime.utcnow() - e.timestamp
 
         oc.add(DirectoryObject(
