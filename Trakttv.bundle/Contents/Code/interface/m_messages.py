@@ -23,13 +23,16 @@ def ListMessages():
             continue
 
         callback = Callback(ListMessages)
+        thumb = None
 
         if m.type == Message.Type.Exception:
             callback = Callback(ViewMessage, error_id=m.id)
+            thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
 
         oc.add(DirectoryObject(
             key=callback,
-            title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary))
+            title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
+            thumb=thumb
         ))
 
     return oc
@@ -62,7 +65,8 @@ def ViewMessage(error_id):
 
         oc.add(DirectoryObject(
             key=callback,
-            title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message))
+            title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message)),
+            thumb=R("icon-exception.png")
         ))
 
     return oc

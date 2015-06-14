@@ -59,3 +59,10 @@ class Message(Model):
     # User-friendly explanation
     summary = CharField(null=True, max_length=160)  # Short single-line summary
     description = TextField(null=True)  # Extra related details
+
+    @property
+    def viewed(self):
+        if not self.last_viewed_at:
+            return False
+
+        return self.last_viewed_at > self.last_logged_at
