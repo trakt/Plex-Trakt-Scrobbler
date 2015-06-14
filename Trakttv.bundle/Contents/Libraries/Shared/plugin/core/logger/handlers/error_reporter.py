@@ -110,9 +110,7 @@ PARAMS = {
     ],
     'processors': [
         'raven.processors.RemoveStackLocalsProcessor',
-
-        'plugin.raven.processors.RelativePathProcessor',
-        'plugin.raven.processors.ExceptionHashProcessor'
+        'plugin.raven.processors.RelativePathProcessor'
     ],
 
     'release': VERSION,
