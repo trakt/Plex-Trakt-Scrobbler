@@ -5,9 +5,9 @@ from core.helpers import get_class_name, md5
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
-from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.helpers.thread import module_start
-from plugin.core.logger import LOG_HANDLER
+from plugin.core.logger import LOG_HANDLER, update_loggers
 from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.modules.core.manager import ModuleManager
 
@@ -40,9 +40,6 @@ class Main(object):
 
         # Initialize sentry error reporting
         self.init_raven()
-
-        # Initialize logging
-        # self.init_logging()
 
     def init(self):
         names = []
@@ -173,3 +170,7 @@ class Main(object):
 
         # Start plex.activity.py
         Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
+
+    @staticmethod
+    def on_configuration_changed():
+        update_loggers()

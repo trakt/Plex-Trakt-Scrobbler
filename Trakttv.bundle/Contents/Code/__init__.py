@@ -103,7 +103,7 @@ def ValidatePrefs():
         spawn(restart)
         return MessageContainer("Success", "Success")
 
-    # Re-initialize modules
-    Main.init_logging()
+    # Fire configuration changed callback
+    spawn(Main.on_configuration_changed)
 
     return MessageContainer("Success", "Success")
