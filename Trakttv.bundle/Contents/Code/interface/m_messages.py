@@ -48,7 +48,7 @@ def ViewMessage(error_id):
 
     # Build objects
     oc = ObjectContainer(
-        title2='[%s] %s' % (Message.Type.title(message.type), message.summary)
+        title2='[%s] %s' % (Message.Type.title(message.type), Trim(message.summary))
     )
 
     for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
@@ -80,7 +80,7 @@ def ViewException(exception_id):
 
     # Build exception view
     oc = ObjectContainer(
-        title2='%s: %s' % (exception.type, exception.message)
+        title2='%s: %s' % (exception.type, Trim(exception.message))
     )
 
     if not traceback:
@@ -127,3 +127,10 @@ def List(viewed=None):
         )
 
     return MessageManager.get.where(*where)
+
+
+def Trim(value, length=45):
+    if value and len(value) > length:
+        return value[:length - 3] + "..."
+
+    return value
