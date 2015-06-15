@@ -1,12 +1,13 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
-from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
+from plugin.sync.handlers.core import DataHandler, bind
+from plugin.sync.handlers.watched.base import WatchedHandler
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class Base(MediaHandler):
+class Base(WatchedHandler):
     @staticmethod
     def build_action(action, p_guid, p_item, p_value, **kwargs):
         data = {}
@@ -19,18 +20,6 @@ class Base(MediaHandler):
 
         data.update(kwargs)
         return data
-
-    @staticmethod
-    def get_operands(p_item, t_item):
-        p_viewed_at = p_item.get('settings', {}).get('last_viewed_at')
-
-        # Retrieve trakt `viewed_at` from item
-        if type(t_item) is dict:
-            t_viewed_at = t_item.get('last_watched_at')
-        else:
-            t_viewed_at = t_item.last_watched_at if t_item else None
-
-        return p_viewed_at, t_viewed_at
 
     def get_action(self, p_value, t_value):
         if p_value is None and t_value is not None:
