@@ -1,6 +1,6 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
-from plugin.sync.handlers.core import bind
-from plugin.sync.handlers.core.base import DataHandler, MediaHandler
+from plugin.sync.handlers.collection.base import CollectionHandler
+from plugin.sync.handlers.core import DataHandler, bind
 
 import logging
 import re
@@ -33,7 +33,7 @@ for k, v in AUDIO_CODECS.items():
         log.warn('Unable to compile regex pattern: %r', v, exc_info=True)
 
 
-class Base(MediaHandler):
+class Base(CollectionHandler):
     @staticmethod
     def build_action(action, p_guid, p_item, p_value, **kwargs):
         data = {}
@@ -46,18 +46,6 @@ class Base(MediaHandler):
 
         data.update(kwargs)
         return data
-
-    @staticmethod
-    def get_operands(p_item, t_item):
-        p_added_at = p_item.get('added_at')
-
-        # Retrieve trakt `viewed_at` from item
-        if type(t_item) is dict:
-            t_added_at = t_item.get('collected_at')
-        else:
-            t_added_at = t_item.collected_at if t_item else None
-
-        return p_added_at, t_added_at
 
     def get_action(self, p_value, t_value):
         if p_value is None and t_value is not None:
