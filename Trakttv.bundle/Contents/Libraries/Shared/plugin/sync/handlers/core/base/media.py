@@ -74,7 +74,7 @@ class MediaHandler(object):
         raise NotImplementedError
 
     @staticmethod
-    def get_operands(p_settings, t_item):
+    def get_operands(p_item, t_item):
         raise NotImplementedError
 
     def run(self, mode, *args, **kwargs):
