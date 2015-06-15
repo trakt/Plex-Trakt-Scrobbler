@@ -1,5 +1,6 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
-from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
+from plugin.sync.handlers.core import DataHandler, bind
+from plugin.sync.handlers.ratings.base import RatingsHandler
 
 from plex import Plex
 import logging
@@ -7,7 +8,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Base(MediaHandler):
+class Base(RatingsHandler):
     @staticmethod
     def build_action(action, p_value, t_value, **kwargs):
         data = {}
@@ -23,27 +24,6 @@ class Base(MediaHandler):
 
         data.update(kwargs)
         return data
-
-    @staticmethod
-    def get_operands(p_item, t_item):
-        p_rating = p_item.get('settings', {}).get('rating')
-
-        # Retrieve trakt rating from item
-        if type(t_item) is dict:
-            t_rating = t_item.get('rating')
-        else:
-            t_rating = t_item.rating if t_item else None
-
-        # Convert trakt `Rating` objects to plain rating values
-        if type(t_rating) is tuple:
-            t_rating = tuple([
-                (r.value if r else None)
-                for r in t_rating
-            ])
-        else:
-            t_rating = t_rating.value if t_rating else None
-
-        return p_rating, t_rating
 
     @staticmethod
     def rate(key, value):
