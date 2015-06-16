@@ -29,49 +29,35 @@ class Base(PullHandler, RatingsHandler):
     def rate(key, value):
         return Plex['library'].rate(key, value)
 
+    #
+    # Handlers
+    #
+
+    @bind('added')
+    def on_added(self, key, t_value):
+        log.debug('%s.on_added(%r, %r)', self.media, key, t_value)
+
+        return self.rate(key, t_value)
+
+    @bind('changed', [SyncMode.FastPull])
+    def on_changed(self, key, p_value, t_previous, t_value):
+        log.debug('%s.on_changed(%r, %r, %r, %r)', self.media, key, p_value, t_previous, t_value)
+
+        return self.rate(key, t_value)
+
+    @bind('removed', [SyncMode.FastPull])
+    def on_removed(self, key):
+        log.debug('%s.on_removed(%r)', self.media, key)
+
+        return self.rate(key, 0)
+
 
 class Movies(Base):
     media = SyncMedia.Movies
 
-    @bind('added')
-    def on_added(self, key, t_value):
-        log.debug('Movies.on_added(%r, %r)', key, t_value)
-
-        return self.rate(key, t_value)
-
-    @bind('changed', [SyncMode.FastPull])
-    def on_changed(self, key, p_value, t_previous, t_value):
-        log.debug('Movies.on_changed(%r, %r, %r, %r)', key, p_value, t_previous, t_value)
-
-        return self.rate(key, t_value)
-
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key):
-        log.debug('Movies.on_removed(%r)', key)
-
-        return self.rate(key, 0)
-
 
 class Episodes(Base):
     media = SyncMedia.Episodes
-
-    @bind('added')
-    def on_added(self, key, t_value):
-        log.debug('Episodes.on_added(%r, %r)', key, t_value)
-
-        return self.rate(key, t_value)
-
-    @bind('changed', [SyncMode.FastPull])
-    def on_changed(self, key, p_value, t_previous, t_value):
-        log.debug('Episodes.on_changed(%r, %r, %r, %r)', key, p_value, t_previous, t_value)
-
-        return self.rate(key, t_value)
-
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key):
-        log.debug('Episodes.on_removed(%r)', key)
-
-        return self.rate(key, 0)
 
 
 class Pull(DataHandler):
