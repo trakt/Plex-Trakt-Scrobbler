@@ -238,6 +238,13 @@ class SyncStateTrakt(object):
         log.debug('Building table...')
 
         for key in self.cache.collections:
+            username, _, _ = key
+
+            if username != self.task.account.trakt.username:
+                # Collection isn't for the current account
+                continue
+
+            # Retrieve cache store
             store = self.cache[key]
 
             for pk, item in store.iteritems():
