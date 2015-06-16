@@ -222,6 +222,15 @@ class SyncStateTrakt(object):
 
         return self.cache[(self.task.account.trakt.username, media, data)]
 
+    def invalidate(self, media, data):
+        """Invalidate collection in trakt cache"""
+        username = self.task.account.trakt.username
+
+        # Invalidate collection
+        self.cache.invalidate(username, media, data)
+
+        log.debug('Invalidated trakt cache (%r, %r) for account: %r', media, data, username)
+
     def refresh(self):
         # Refresh cache for account, store changes
         self.changes = self.cache.refresh(self.task.account.trakt.username)
@@ -392,7 +401,24 @@ class SyncArtifacts(object):
 
     def send(self):
         for data, action, request in self.flatten():
+            # Send artifact to trakt.tv
             self.send_action(data, action, **request)
+
+            # Invalidate cache to ensure actions aren't resent
+            for key, value in request.items():
+                if not value:
+                    # Empty media request
+                    continue
+
+                if key == 'shows':
+                    media = Cache.Media.Shows
+                elif key == 'movies':
+                    media = Cache.Media.Movies
+                else:
+                    # Unknown media type
+                    continue
+
+                self.task.state.trakt.invalidate(data, media)
 
     @staticmethod
     def send_action(data, action, **kwargs):
