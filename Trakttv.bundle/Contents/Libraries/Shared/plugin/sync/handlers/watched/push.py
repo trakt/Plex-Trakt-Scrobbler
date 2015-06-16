@@ -8,19 +8,6 @@ log = logging.getLogger(__name__)
 
 
 class Base(PushHandler, WatchedHandler):
-    @staticmethod
-    def build_action(action, p_guid, p_item, p_value, **kwargs):
-        data = {}
-
-        if action in ['added', 'changed']:
-            data['p_guid'] = p_guid
-            data['p_item'] = p_item
-
-            data['p_value'] = p_value
-
-        data.update(kwargs)
-        return data
-
     def push(self, p_item, t_item, **kwargs):
         # Retrieve properties
         p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)

@@ -8,19 +8,6 @@ log = logging.getLogger(__name__)
 
 
 class Base(PushHandler, PlaybackHandler):
-    @staticmethod
-    def build_action(action, p_guid, p_item, p_value, **kwargs):
-        data = {}
-
-        if action in ['added', 'changed']:
-            data['p_guid'] = p_guid
-            data['p_item'] = p_item
-
-            data['p_value'] = p_value
-
-        data.update(kwargs)
-        return data
-
     def push(self, p_item, t_item, **kwargs):
         # TODO Currently disabled, batch pushing of progress changes isn't supported on trakt
         return
