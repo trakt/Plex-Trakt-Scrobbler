@@ -1,4 +1,4 @@
-from plugin.sync.handlers.core import MediaHandler
+from plugin.sync.handlers.core.base.media import MediaHandler
 
 
 class PullHandler(MediaHandler):
