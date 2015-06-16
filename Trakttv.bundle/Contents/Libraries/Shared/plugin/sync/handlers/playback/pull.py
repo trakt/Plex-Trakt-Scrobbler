@@ -42,53 +42,37 @@ class Base(PullHandler, PlaybackHandler):
     def update_progress(rating_key, time, duration):
         return Plex[':/timeline'].update(rating_key, 'stopped', time, duration)
 
+    #
+    # Handlers
+    #
+
+    @bind('added')
+    def on_added(self, key, p_duration, p_value, t_value):
+        log.debug('%s.on_added(%s, %r, %r, %r)', self.media, key, p_duration, p_value, t_value)
+
+        if p_value is not None and p_value > t_value:
+            # Already updated progress
+            return
+
+        return self.update_progress(key, t_value, p_duration)
+
+    @bind('changed')
+    def on_changed(self, key, p_duration, p_value, t_value):
+        log.debug('%s.on_changed(%s, %r, %r, %r)', self.media, key, p_duration, p_value, t_value)
+
+        if p_value > t_value:
+            # Ignore change, plex progress has advanced
+            return
+
+        return self.update_progress(key, t_value, p_duration)
+
 
 class Movies(Base):
     media = SyncMedia.Movies
 
-    @bind('added')
-    def on_added(self, key, p_duration, p_value, t_value):
-        log.debug('Movies.on_added(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
-
-        if p_value is not None and p_value > t_value:
-            # Already updated progress
-            return
-
-        return self.update_progress(key, t_value, p_duration)
-
-    @bind('changed')
-    def on_changed(self, key, p_duration, p_value, t_value):
-        log.debug('Movies.on_changed(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
-
-        if p_value > t_value:
-            # Ignore change, plex progress has advanced
-            return
-
-        return self.update_progress(key, t_value, p_duration)
-
 
 class Episodes(Base):
     media = SyncMedia.Episodes
-
-    @bind('added')
-    def on_added(self, key, p_duration, p_value, t_value):
-        log.debug('Episodes.on_added(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
-
-        if p_value is not None and p_value > t_value:
-            # Already updated progress
-            return
-
-        return self.update_progress(key, t_value, p_duration)
-
-    @bind('changed')
-    def on_changed(self, key, p_duration, p_value, t_value):
-        log.debug('Episodes.on_changed(%s, %r, %r, %r)', key, p_duration, p_value, t_value)
-
-        if p_value > t_value:
-            # Ignore change, plex progress has advanced
-            return
-
-        return self.update_progress(key, t_value, p_duration)
 
 
 class Pull(DataHandler):
