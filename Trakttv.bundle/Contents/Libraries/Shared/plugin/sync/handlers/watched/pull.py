@@ -27,53 +27,37 @@ class Base(PullHandler, WatchedHandler):
     def unscrobble(key):
         return Plex['library'].unscrobble(key)
 
+    #
+    # Handlers
+    #
+
+    @bind('added')
+    def on_added(self, key, p_value, t_value):
+        log.debug('%s.on_added(%r, %r, %r)', self.media, key, p_value, t_value)
+
+        if p_value is not None:
+            # Already scrobbled
+            return
+
+        return self.scrobble(key)
+
+    @bind('removed', [SyncMode.FastPull])
+    def on_removed(self, key, p_value):
+        log.debug('%s.on_removed(%r, %r)', self.media, key, p_value)
+
+        if p_value is None:
+            # Already un-scrobbled
+            return
+
+        return self.unscrobble(key)
+
 
 class Movies(Base):
     media = SyncMedia.Movies
 
-    @bind('added')
-    def on_added(self, key, p_value, t_value):
-        log.debug('Movies.on_added(%r, %r, %r)', key, p_value, t_value)
-
-        if p_value is not None:
-            # Already scrobbled
-            return
-
-        return self.scrobble(key)
-
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key, p_value):
-        log.debug('Movies.on_removed(%r, %r)', key, p_value)
-
-        if p_value is None:
-            # Already un-scrobbled
-            return
-
-        return self.unscrobble(key)
-
 
 class Episodes(Base):
     media = SyncMedia.Episodes
-
-    @bind('added')
-    def on_added(self, key, p_value, t_value):
-        log.debug('Episodes.on_added(%r, %r, %r)', key, p_value, t_value)
-
-        if p_value is not None:
-            # Already scrobbled
-            return
-
-        return self.scrobble(key)
-
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key, p_value):
-        log.debug('Episodes.on_removed(%r, %r)', key, p_value)
-
-        if p_value is None:
-            # Already un-scrobbled
-            return
-
-        return self.unscrobble(key)
 
 
 class Pull(DataHandler):
