@@ -1,10 +1,9 @@
-from dateutil.tz import tzutc
 from trakt_sync.differ import MovieDiffer, ShowDiffer
 import trakt_sync.cache.enums as enums
 
+from dateutil.tz import tzutc
 from trakt import Trakt
 from trakt.core.helpers import from_iso8601
-import arrow
 import logging
 
 log = logging.getLogger(__name__)
@@ -42,6 +41,18 @@ class Cache(object):
         self._movie_differ = MovieDiffer()
         self._show_differ = ShowDiffer()
 
+    def invalidate(self, username, media, data):
+        media_key = Cache.Media.get(media)
+        data_key = Cache.Data.get(data)
+
+        # Retrieve collection from database
+        collection = self._get_collection(username, media_key, data_key)
+
+        # Update timestamp in cache to invalidate items
+        timestamp_key = Cache.Data.get_timestamp_key(data)
+
+        collection['timestamps'][media_key][timestamp_key] = None
+
     def refresh(self, username):
         activities = Trakt['sync'].last_activities()
 
@@ -55,12 +66,14 @@ class Cache(object):
                     # Unsupported media + data combination
                     continue
 
+                # Retrieve collection from database
                 collection = self._get_collection(username, media, data)
-
                 timestamp_key = Cache.Data.get_timestamp_key(d)
 
+                # Retrieve current timestamp from trakt.tv
                 current = self._get_timestamp(activities, d, m)
 
+                # Determine if cached items are still valid
                 last = collection['timestamps'][media].get(timestamp_key)
 
                 if last and last.tzinfo is None:
@@ -81,16 +94,16 @@ class Cache(object):
                 # Find changes
                 changes = self.diff(m, d, collection['store'], store)
 
-                # Update store
+                # Update collection
                 self.update_store((username, media, data), store)
 
-                # Update timestamp in cache to `current`
                 collection['timestamps'][media][timestamp_key] = current
 
                 if changes is None:
                     # No changes detected
                     continue
 
+                # Return collection changes
                 yield self._collection_key(m, d), changes
 
     def fetch(self, data, media):
@@ -103,7 +116,7 @@ class Cache(object):
             return None
 
         # Execute `func` (fetch data from trakt.tv)
-        print 'Fetching "%s"' % '/'.join([interface, method])
+        log.info('Fetching "%s"', '/'.join([interface, method]))
 
         try:
             return func(exceptions=True)
