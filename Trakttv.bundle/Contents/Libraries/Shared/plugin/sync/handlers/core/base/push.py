@@ -1,4 +1,7 @@
-class PushHandler(object):
+from plugin.sync.handlers.core import MediaHandler
+
+
+class PushHandler(MediaHandler):
     @staticmethod
     def build_action(action, p_guid, p_item, p_value, **kwargs):
         data = {}
@@ -23,3 +26,28 @@ class PushHandler(object):
             return 'changed'
 
         return None
+
+    #
+    # Modes
+    #
+
+    def push(self, p_item, t_item, **kwargs):
+        # Retrieve properties
+        p_value, t_value = self.get_operands(p_item, t_item)
+
+        # Determine performed action
+        action = self.get_action(p_value, t_value)
+
+        if not action:
+            # No action required
+            return
+
+        # Execute action
+        self.execute_action(
+            action,
+
+            p_item=p_item,
+            p_value=p_value,
+            t_value=t_value,
+            **kwargs
+        )

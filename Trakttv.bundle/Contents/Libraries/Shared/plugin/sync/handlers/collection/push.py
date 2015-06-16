@@ -110,27 +110,6 @@ class Base(PushHandler, CollectionHandler):
 
         return data
 
-    def push(self, p_item, t_item, **kwargs):
-        # Retrieve properties
-        p_added_at, t_added_at = self.get_operands(p_item, t_item)
-
-        # Determine performed action
-        action = self.get_action(p_added_at, t_added_at)
-
-        if not action:
-            # No action required
-            return
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_item=p_item,
-            p_value=p_added_at,
-            t_value=t_added_at,
-            **kwargs
-        )
-
 
 class Movies(Base):
     media = SyncMedia.Movies

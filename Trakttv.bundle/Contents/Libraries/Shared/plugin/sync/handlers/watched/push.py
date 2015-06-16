@@ -8,27 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class Base(PushHandler, WatchedHandler):
-    def push(self, p_item, t_item, **kwargs):
-        # Retrieve properties
-        p_viewed_at, t_viewed_at = self.get_operands(p_item, t_item)
-
-        # Determine performed action
-        action = self.get_action(p_viewed_at, t_viewed_at)
-
-        if not action:
-            # No action required
-            return
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_item=p_item,
-            p_value=p_viewed_at,
-            t_value=t_viewed_at,
-            **kwargs
-        )
-
+    pass
 
 class Movies(Base):
     media = SyncMedia.Movies

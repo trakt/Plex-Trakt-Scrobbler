@@ -10,27 +10,7 @@ log = logging.getLogger(__name__)
 class Base(PushHandler, PlaybackHandler):
     def push(self, p_item, t_item, **kwargs):
         # TODO Currently disabled, batch pushing of progress changes isn't supported on trakt
-        return
-
-        # Retrieve properties
-        p_progress, t_progress = self.get_operands(p_item, t_item)
-
-        # Determine performed action
-        action = self.get_action(p_progress, t_progress)
-
-        if not action:
-            # No action required
-            return
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_item=p_item,
-            p_value=p_progress,
-            t_value=t_progress,
-            **kwargs
-        )
+        return True
 
 
 class Movies(Base):
