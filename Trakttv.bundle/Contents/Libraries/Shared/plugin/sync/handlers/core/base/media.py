@@ -140,16 +140,7 @@ class MediaHandler(object):
         return func(**parameters)
 
     def get_action(self, p_value, t_value):
-        if p_value is None and t_value is not None:
-            return 'added'
-
-        if p_value is not None and t_value is None:
-            return 'removed'
-
-        if p_value != t_value:
-            return 'changed'
-
-        return None
+        raise NotImplementedError
 
     def on_added(self, *args, **kwargs):
         raise NotImplementedError

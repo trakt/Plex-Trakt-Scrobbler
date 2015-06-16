@@ -1,13 +1,13 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.collection.base import CollectionHandler
-from plugin.sync.handlers.core.base import DataHandler
+from plugin.sync.handlers.core.base import DataHandler, PullHandler
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class Base(CollectionHandler):
+class Base(PullHandler, CollectionHandler):
     #
     # Modes
     #

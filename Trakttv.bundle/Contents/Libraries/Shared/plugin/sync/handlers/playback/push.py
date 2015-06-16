@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
-from plugin.sync.handlers.core import DataHandler, bind
+from plugin.sync.handlers.core import DataHandler, PushHandler, bind
 from plugin.sync.handlers.playback.base import PlaybackHandler
 
 import logging
@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Base(PlaybackHandler):
+class Base(PushHandler, PlaybackHandler):
     @staticmethod
     def build_action(action, p_guid, p_item, p_value, **kwargs):
         data = {}
@@ -20,18 +20,6 @@ class Base(PlaybackHandler):
 
         data.update(kwargs)
         return data
-
-    def get_action(self, p_value, t_value):
-        if p_value is None and t_value is not None:
-            return 'removed'
-
-        if p_value is not None and t_value is None:
-            return 'added'
-
-        if p_value != t_value:
-            return 'changed'
-
-        return None
 
     def push(self, p_item, t_item, **kwargs):
         # TODO Currently disabled, batch pushing of progress changes isn't supported on trakt

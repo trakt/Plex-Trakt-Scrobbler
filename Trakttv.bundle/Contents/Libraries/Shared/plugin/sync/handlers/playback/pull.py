@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
-from plugin.sync.handlers.core import DataHandler, bind
+from plugin.sync.handlers.core import DataHandler, PullHandler, bind
 from plugin.sync.handlers.playback.base import PlaybackHandler
 
 from plex import Plex
@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Base(PlaybackHandler):
+class Base(PullHandler, PlaybackHandler):
     @staticmethod
     def build_action(action, p_item, p_value, t_value, **kwargs):
         data = {}

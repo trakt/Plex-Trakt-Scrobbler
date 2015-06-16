@@ -1,6 +1,6 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.collection.base import CollectionHandler
-from plugin.sync.handlers.core import DataHandler, bind
+from plugin.sync.handlers.core import DataHandler, PushHandler, bind
 
 import logging
 import re
@@ -33,7 +33,7 @@ for k, v in AUDIO_CODECS.items():
         log.warn('Unable to compile regex pattern: %r', v, exc_info=True)
 
 
-class Base(CollectionHandler):
+class Base(PushHandler, CollectionHandler):
     @staticmethod
     def build_action(action, p_guid, p_item, p_value, **kwargs):
         data = {}
@@ -46,18 +46,6 @@ class Base(CollectionHandler):
 
         data.update(kwargs)
         return data
-
-    def get_action(self, p_value, t_value):
-        if p_value is None and t_value is not None:
-            return 'removed'
-
-        if p_value is not None and t_value is None:
-            return 'added'
-
-        if p_value != t_value:
-            return 'changed'
-
-        return None
 
     @staticmethod
     def get_audio_channels(channels):
