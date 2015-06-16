@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class Base(PullHandler, RatingsHandler):
     @staticmethod
-    def build_action(action, p_value, t_value, **kwargs):
+    def build_action(action, p_item, p_value, t_value, **kwargs):
         data = {}
 
         if action in ['added', 'changed']:
@@ -28,47 +28,6 @@ class Base(PullHandler, RatingsHandler):
     @staticmethod
     def rate(key, value):
         return Plex['library'].rate(key, value)
-
-    #
-    # Modes
-    #
-
-    def fast_pull(self, action, p_item, t_item, **kwargs):
-        if not action:
-            # No action provided
-            return
-
-        # Retrieve properties
-        p_rating, t_rating = self.get_operands(p_item, t_item)
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_value=p_rating,
-            t_value=t_rating,
-            **kwargs
-        )
-
-    def pull(self, p_item, t_item, **kwargs):
-        # Retrieve properties
-        p_rating, t_rating = self.get_operands(p_item, t_item)
-
-        # Determine performed action
-        action = self.get_action(p_rating, t_rating)
-
-        if not action:
-            # No action required
-            return
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_value=p_rating,
-            t_value=t_rating,
-            **kwargs
-        )
 
 
 class Movies(Base):

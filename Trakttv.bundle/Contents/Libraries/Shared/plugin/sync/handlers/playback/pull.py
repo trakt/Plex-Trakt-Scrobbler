@@ -42,49 +42,6 @@ class Base(PullHandler, PlaybackHandler):
     def update_progress(rating_key, time, duration):
         return Plex[':/timeline'].update(rating_key, 'stopped', time, duration)
 
-    #
-    # Modes
-    #
-
-    def fast_pull(self, action, p_item, t_item, **kwargs):
-        if not action:
-            # No action provided
-            return
-
-        # Retrieve properties
-        p_progress, t_progress = self.get_operands(p_item, t_item)
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_item=p_item,
-            p_value=p_progress,
-            t_value=t_progress,
-            **kwargs
-        )
-
-    def pull(self, p_item, t_item, **kwargs):
-        # Retrieve properties
-        p_progress, t_progress = self.get_operands(p_item, t_item)
-
-        # Determine performed action
-        action = self.get_action(p_progress, t_progress)
-
-        if not action:
-            # No action required
-            return
-
-        # Execute action
-        self.execute_action(
-            action,
-
-            p_item=p_item,
-            p_value=p_progress,
-            t_value=t_progress,
-            **kwargs
-        )
-
 
 class Movies(Base):
     media = SyncMedia.Movies
