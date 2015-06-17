@@ -177,6 +177,8 @@ class SyncState(object):
         self.trakt = SyncStateTrakt(self)
 
     def flush(self):
+        log.debug('Flushing caches...')
+
         self.trakt.flush()
 
 
@@ -253,6 +255,8 @@ class SyncStateTrakt(object):
                 # Collection isn't for the current account
                 continue
 
+            log.debug('[%-31s] Building table from collection...', '/'.join(key))
+
             # Retrieve cache store
             store = self.cache[key]
 
@@ -274,7 +278,9 @@ class SyncStateTrakt(object):
     def flush(self):
         self.cache.collections.flush()
 
-        for store in self.cache.stores.values():
+        for key, store in self.cache.stores.items():
+            log.debug('[%-31s] Flushing collection...', '/'.join(key))
+
             store.flush()
 
 
@@ -400,7 +406,11 @@ class SyncArtifacts(object):
             yield show
 
     def send(self):
+        changes = False
+
         for data, action, request in self.flatten():
+            changes = True
+
             # Send artifact to trakt.tv
             self.send_action(data, action, **request)
 
@@ -419,6 +429,12 @@ class SyncArtifacts(object):
                     continue
 
                 self.task.state.trakt.invalidate(data, media)
+
+        if not changes:
+            log.info('trakt.tv profile is up-to-date')
+            return
+
+        log.info('trakt.tv profile has been updated')
 
     @staticmethod
     def send_action(data, action, **kwargs):
