@@ -46,6 +46,10 @@ class Mode(object):
         return self.__main.handlers
 
     @property
+    def modes(self):
+        return self.__main.modes
+
+    @property
     def plex(self):
         if not self.current or not self.current.state:
             return None
@@ -79,6 +83,6 @@ class Mode(object):
                 continue
 
             try:
-                self.handlers[d].run(m, self.current.mode, *args, **kwargs)
+                self.handlers[d].run(m, self.mode, *args, **kwargs)
             except Exception, ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
