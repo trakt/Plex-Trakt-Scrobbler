@@ -137,7 +137,7 @@ class SyncTask(object):
             raise ValueError('Unexpected value provided for the "account" parameter')
 
         # Get/Create sync status
-        status = SyncStatus.get_or_create(
+        status, created = SyncStatus.get_or_create(
             account=account,
             mode=mode
         )
