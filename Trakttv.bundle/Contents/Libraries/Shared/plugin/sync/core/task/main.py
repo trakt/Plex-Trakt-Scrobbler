@@ -3,7 +3,7 @@ from plugin.models import *
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.progress import SyncProgress
-from plugin.sync.core.task.state.main import SyncState
+from plugin.sync.core.task.state import SyncState
 
 from datetime import datetime
 from peewee import JOIN_LEFT_OUTER
