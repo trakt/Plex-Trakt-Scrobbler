@@ -14,6 +14,7 @@ def migrate(migrator, database):
     # sync
     #
 
+    SyncConfigurationOption.create_table()
     SyncStatus.create_table()
 
     SyncResult.create_table()

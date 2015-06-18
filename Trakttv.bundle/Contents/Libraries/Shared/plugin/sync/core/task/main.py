@@ -1,6 +1,7 @@
 from plugin.managers import ExceptionManager
 from plugin.models import *
 from plugin.sync.core.task.artifacts import SyncArtifacts
+from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.progress import SyncProgress
 from plugin.sync.core.task.state.main import SyncState
 
@@ -25,7 +26,9 @@ class SyncTask(object):
 
         # Global syncing information
         self.artifacts = SyncArtifacts(self)
+        self.configuration = SyncConfiguration(self)
         self.progress = SyncProgress(self)
+
         self.state = SyncState(self)
 
         # State/Result management
@@ -139,15 +142,21 @@ class SyncTask(object):
             mode=mode
         )
 
-        # Create new sync result object
+        # Create sync result
         result = SyncResult.create(
             status=status,
             started_at=datetime.utcnow()
         )
 
-        return SyncTask(
+        # Create sync task
+        task = SyncTask(
             account, mode,
             data, media,
             result, status,
             **kwargs
         )
+
+        # Load configuration options from database
+        task.configuration.load(account)
+
+        return task
