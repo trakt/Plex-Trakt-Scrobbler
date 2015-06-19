@@ -57,6 +57,16 @@ class Property(object):
 
         return prop
 
+    def update(self, account, value):
+        SyncConfigurationOption.insert(
+            account=account,
+            key=self.key,
+
+            value=self._pack(value)
+        ).upsert(
+            upsert=True
+        ).execute()
+
     def _clone(self):
         return Property(
             key=self.key,
