@@ -9,6 +9,8 @@ class SyncConfigurationOption(Model):
         database = db
         db_table = 'sync.configuration.option'
 
+        primary_key = CompositeKey('account', 'key')
+
     account = ForeignKeyField(Account, 'sync_configuration')
 
     key = CharField(max_length=60)
