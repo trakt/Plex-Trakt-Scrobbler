@@ -98,3 +98,9 @@ OPTIONS = [
         options=MODES
     ),
 ]
+
+# Create options map
+OPTIONS_BY_KEY = dict([
+    (prop.key, prop)
+    for prop in OPTIONS
+])

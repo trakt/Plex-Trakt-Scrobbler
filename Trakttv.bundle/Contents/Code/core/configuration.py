@@ -1,18 +1,10 @@
 from core.logger import Logger
 
-
 log = Logger('core.configuration')
 
 MATCHER_MAP = {
     'Plex':             'plex',
     'Plex Extended':    'plex_extended'
-}
-
-SYNC_TASK_MAP = {
-    'Disabled':                     [],
-    'Synchronize (Pull + Push)':    ['pull', 'push'],
-    'Pull':                         ['pull'],
-    'Push':                         ['push']
 }
 
 
@@ -39,25 +31,12 @@ class ConfigurationProcessor(object):
     def matcher(self, value):
         return MATCHER_MAP.get(value)
 
-    def sync_collection(self, value):
-        return SYNC_TASK_MAP.get(value)
-
-    def sync_ratings(self, value):
-        return SYNC_TASK_MAP.get(value)
-
-    def sync_watched(self, value):
-        return SYNC_TASK_MAP.get(value)
-
 
 class Configuration(object):
     keys = [
         'activity_mode',
         'matcher',
-        'scrobble',
-        'sync_run_library',
-        'sync_collection',
-        'sync_ratings',
-        'sync_watched'
+        'scrobble'
     ]
 
     keys_map = {
