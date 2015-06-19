@@ -1,19 +1,11 @@
 from plugin.core.helpers.variable import dict_path
 from plugin.models import *
+from plugin.sync.core.constants import GUID_AGENTS
 
 from datetime import datetime
 from trakt import Trakt
 from trakt_sync.cache.main import Cache
 import logging
-
-GUID_AGENTS = [
-    'imdb',
-    'tvdb',
-
-    'tmdb',
-    'trakt',
-    'tvrage'
-]
 
 log = logging.getLogger(__name__)
 

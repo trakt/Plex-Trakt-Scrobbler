@@ -86,3 +86,19 @@ class Mode(object):
                 self.handlers[d].run(m, self.mode, *args, **kwargs)
             except Exception, ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
+
+
+def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):
+    if dictionary is not None:
+        if rating_key in dictionary:
+            return
+
+        dictionary[rating_key] = True
+
+    title = p_item.get('title')
+    year = p_item.get('year')
+
+    if title and year:
+        logger.info('[%r] GUID agent %r is not supported on: %r (%r)', rating_key, p_guid.agent, title, year)
+    else:
+        logger.info('[%r] GUID agent %r is not supported', rating_key, p_guid.agent)

@@ -1,5 +1,6 @@
+from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
-from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP
+from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP, log_unsupported_guid
 
 from plex_database.models import LibrarySectionType, LibrarySection
 import logging
@@ -49,9 +50,15 @@ class Movies(Base):
                 total += 1
 
         # Task started
+        unsupported_movies = {}
+
         self.current.progress.start(total)
 
         for rating_key, p_guid, p_item in p_items:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
+                continue
+
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
@@ -118,10 +125,16 @@ class Shows(Base):
                 total += 1
 
         # Task started
+        unsupported_shows = {}
+
         self.current.progress.start(total)
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
+                continue
+
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
