@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 import apsw
 import logging
 import os
+import peewee
 import requests
 
 log = logging.getLogger(__name__)
@@ -116,7 +117,7 @@ class Migrations(object):
 
                 token=token
             )
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.debug('BasicCredential for %r already exists - %s', plex_account, ex, exc_info=True)
             return False
 
@@ -141,7 +142,7 @@ class Migrations(object):
                 account=account,
                 username=cls.get_trakt_username()
             )
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             return False, TraktAccount.get(
                 account=account
             )
@@ -158,7 +159,7 @@ class Migrations(object):
 
                 token=Environment.dict['trakt.token']
             )
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.debug('BasicCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
             return False
 
@@ -176,7 +177,7 @@ class Migrations(object):
 
                 **Environment.dict['trakt.pin.authorization']
             )
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.debug('OAuthCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
             return False
 

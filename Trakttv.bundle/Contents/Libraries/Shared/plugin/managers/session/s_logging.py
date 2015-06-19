@@ -7,6 +7,7 @@ from plugin.models import Session
 
 import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class GetLSession(Get):
             self.manager.update(obj, info, fetch)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing object
             return self(info)
 

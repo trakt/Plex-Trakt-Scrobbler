@@ -5,6 +5,7 @@ from plugin.models import User, UserRule
 
 import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class GetUser(Get):
             self.manager.update(obj, user, fetch=fetch, match=match)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing user
             obj = self(user)
 

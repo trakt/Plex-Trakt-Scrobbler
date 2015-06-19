@@ -6,6 +6,7 @@ from plugin.models import Client, ClientRule
 from plex import Plex
 import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class GetClient(Get):
             self.manager.update(obj, player, fetch=fetch, match=match)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing user
             obj = self(player)
 

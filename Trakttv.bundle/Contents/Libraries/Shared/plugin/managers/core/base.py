@@ -4,6 +4,7 @@ from plugin.models import db
 import apsw
 import inspect
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class Get(Method):
     def or_create(self, *query, **kwargs):
         try:
             return self.manager.create(**kwargs)
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.debug('or_create() - ex: %r', ex)
 
         return self(*query)
