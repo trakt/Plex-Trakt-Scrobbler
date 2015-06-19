@@ -6,7 +6,6 @@ from plugin.models import Account, ClientRule, UserRule,\
 from plugin.models.core import db, migrations_path
 
 from peewee_migrate.core import Router
-from trakt import Trakt
 from xml.etree import ElementTree
 import apsw
 import logging
