@@ -169,6 +169,6 @@ class TraktAccount(Model):
         return result
 
     def __repr__(self):
-        return '<Account username: %r>' % (
+        return '<TraktAccount username: %r>' % (
             self.username,
         )
