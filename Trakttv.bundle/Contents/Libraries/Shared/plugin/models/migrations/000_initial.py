@@ -14,7 +14,6 @@ def migrate(migrator, database):
     # sync
     #
 
-    SyncConfigurationOption.create_table()
     SyncStatus.create_table()
 
     SyncResult.create_table()
@@ -38,6 +37,8 @@ def migrate(migrator, database):
     Exception.create_table()
     Message.create_table()
     Session.create_table()
+
+    ConfigurationOption.create_table()
 
     ActionHistory.create_table()
     ActionQueue.create_table()

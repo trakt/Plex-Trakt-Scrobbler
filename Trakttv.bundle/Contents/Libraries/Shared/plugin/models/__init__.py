@@ -9,6 +9,7 @@ from plugin.models.action_history import ActionHistory
 from plugin.models.action_queue import ActionQueue
 from plugin.models.client import Client
 from plugin.models.client_rule import ClientRule
+from plugin.models.configuration_option import ConfigurationOption
 from plugin.models.exception import Exception
 from plugin.models.message import Message
 from plugin.models.session import Session
