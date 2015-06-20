@@ -1,34 +1,45 @@
-from plugin.preferences.options.o_sync.constants import PLEX_MODES
-from plugin.preferences.options.o_sync.core.base import SyncOption
+from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.o_sync.constants import MODES_BY_LABEL, MODES_BY_KEY
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class SyncCollection(SyncOption):
-    __database__ = 'collection.mode'
-    __plex__ = 'sync_collection'
+class SyncCollection(Option):
+    key = 'sync.collection.mode'
+    type = 'enum'
 
-    def on_plex_changed(self, value):
-        if value not in PLEX_MODES:
+    choices = MODES_BY_KEY
+    default = None
+
+    group = ('Sync', 'Collection')
+    label = 'Mode'
+
+    preference = 'sync_collection'
+
+    @classmethod
+    def on_plex_changed(cls, value, account=None):
+        if value not in MODES_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
 
         # Update database
-        self.property.update(
-            account=1,
-            value=PLEX_MODES[value]
-        )
+        cls.update(MODES_BY_LABEL[value], account)
 
 
-class SyncCleanCollection(SyncOption):
-    __database__ = 'collection.clean'
-    __plex__ = 'sync_clean_collection'
+class SyncCleanCollection(Option):
+    key = 'sync.collection.clean'
+    type = 'boolean'
 
-    def on_plex_changed(self, value):
+    default = False
+
+    group = ('Sync', 'Collection')
+    label = 'Clean collection'
+
+    preference = 'sync_clean_collection'
+
+    @classmethod
+    def on_plex_changed(cls, value, account=None):
         # Update database
-        self.property.update(
-            account=1,
-            value=value
-        )
+        cls.update(value, account)

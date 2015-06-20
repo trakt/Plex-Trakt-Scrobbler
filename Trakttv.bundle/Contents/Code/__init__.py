@@ -47,7 +47,7 @@ from main import Main
 from plugin.api.core.manager import ApiManager
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.helpers.variable import get_pref
-from plugin.preferences import OPTIONS_BY_PKEY, Preferences
+from plugin.preferences import OPTIONS_BY_PREFERENCE, Preferences
 
 from plex import Plex
 import time
@@ -85,8 +85,8 @@ def Api(*args, **kwargs):
 
 def ValidatePrefs():
     # Process configuration changes
-    for key in OPTIONS_BY_PKEY.keys():
-        Preferences.on_plex_changed(key, Prefs[key])
+    for key in OPTIONS_BY_PREFERENCE.keys():
+        Preferences.on_plex_changed(key, Prefs[key], account=1)
 
     # Restart if activity_mode has changed
     last_activity_mode = get_pref('activity_mode')
