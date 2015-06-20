@@ -14,7 +14,8 @@ class Migrations(object):
     migrations = [
         SchemaMigration,
 
-        AccountMigration
+        AccountMigration,
+        PreferencesMigration
     ]
 
     @classmethod
