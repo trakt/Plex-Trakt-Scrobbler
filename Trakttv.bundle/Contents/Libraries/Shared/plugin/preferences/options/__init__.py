@@ -8,6 +8,8 @@ OPTIONS = [
     SyncCollection,
     SyncCleanCollection,
 
+    SyncPlayback,
+
     SyncRatings,
     SyncRatingsConflict,
 
