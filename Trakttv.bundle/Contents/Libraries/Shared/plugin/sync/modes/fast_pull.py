@@ -66,6 +66,10 @@ class Movies(Mode):
 
                 data_name = Cache.Data.get(data)
 
+                if data_name not in result.changes:
+                    # No changes for collection
+                    continue
+
                 for action, items in result.changes[data_name].items():
                     t_item = items.get(pk)
 
@@ -151,6 +155,10 @@ class Shows(Mode):
                     continue
 
                 data_name = Cache.Data.get(data)
+
+                if data_name not in result.changes:
+                    # No changes for collection
+                    continue
 
                 for action, shows in result.changes[data_name].items():
                     t_show = shows.get(pk)
