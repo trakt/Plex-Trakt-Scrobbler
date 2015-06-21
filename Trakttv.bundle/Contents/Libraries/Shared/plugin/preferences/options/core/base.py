@@ -154,5 +154,5 @@ class Option(object):
     def _types(cls):
         try:
             return TYPE_MAP[cls.type]
-        except KeyError, ex:
+        except KeyError:
             raise ValueError('Unsupported type: %r' % (cls.type, ))

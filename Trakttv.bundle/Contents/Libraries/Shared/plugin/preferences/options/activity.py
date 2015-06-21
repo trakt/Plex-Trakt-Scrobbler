@@ -1,5 +1,4 @@
-from plugin.preferences.options.constants import MATCHER_BY_KEY, MatcherMode, MATCHER_BY_LABEL, ACTIVITY_BY_KEY, \
-    ActivityMode, ACTIVITY_BY_LABEL
+from plugin.preferences.options.constants import ACTIVITY_BY_KEY, ActivityMode, ACTIVITY_BY_LABEL
 from plugin.preferences.options.core.base import Option
 
 import logging
