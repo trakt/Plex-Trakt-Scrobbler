@@ -20,9 +20,6 @@ sys.modules['core.helpers'] = helpers
 import cache
 sys.modules['core.cache'] = cache
 
-import configuration
-sys.modules['core.configuration'] = configuration
-
 import update_checker
 sys.modules['core.update_checker'] = update_checker
 

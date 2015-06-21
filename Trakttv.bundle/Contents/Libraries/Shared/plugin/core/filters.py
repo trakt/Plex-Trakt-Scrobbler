@@ -1,5 +1,5 @@
 from plugin.core.environment import Environment
-from plugin.core.helpers.variable import flatten, get_pref
+from plugin.core.helpers.variable import flatten
 
 import ipaddress
 import logging
@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 class Filters(object):
     @staticmethod
     def get(key, normalize_values=True):
-        value = get_pref(key)
+        value = Environment.get_pref(key)
         if not value:
             return None, None
 

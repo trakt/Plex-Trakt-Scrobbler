@@ -46,8 +46,7 @@ from main import Main
 
 from plugin.api.core.manager import ApiManager
 from plugin.core.constants import PLUGIN_IDENTIFIER
-from plugin.core.helpers.variable import get_pref
-from plugin.preferences import OPTIONS_BY_PREFERENCE, Preferences
+from plugin.preferences import Preferences
 
 from plex import Plex
 import time
@@ -84,14 +83,15 @@ def Api(*args, **kwargs):
 
 
 def ValidatePrefs():
+    # Retrieve current activity mode
+    last_activity_mode = Preferences.get('activity.mode')
 
-    # Restart if activity_mode has changed
-    last_activity_mode = get_pref('activity_mode')
     # Migrate preferences to database
     Preferences.migrate(account=1)
     Preferences.migrate()
 
-    if Prefs['activity_mode'] != last_activity_mode:
+    # Restart if activity_mode has changed
+    if Preferences.get('activity.mode') != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
 
         def restart():

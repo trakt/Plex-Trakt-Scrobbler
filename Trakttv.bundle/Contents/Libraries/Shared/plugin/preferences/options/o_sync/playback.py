@@ -1,6 +1,5 @@
 from plugin.preferences.options.core.base import Option
 from plugin.preferences.options.o_sync.constants import MODES_BY_LABEL, MODES_BY_KEY
-from plugin.sync.core.enums import SyncMode
 
 import logging
 

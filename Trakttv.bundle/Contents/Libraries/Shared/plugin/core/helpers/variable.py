@@ -49,13 +49,6 @@ def flatten(text):
     return text.lower()
 
 
-def get_pref(key, default=None):
-    if Environment.dict['preferences'] and key in Environment.dict['preferences']:
-        return Environment.dict['preferences'][key]
-
-    return Environment.prefs[key] or default
-
-
 def merge(a, b, recursive=False):
     if not recursive:
         a.update(b)

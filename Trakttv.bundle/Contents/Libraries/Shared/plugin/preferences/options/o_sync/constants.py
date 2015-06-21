@@ -1,14 +1,9 @@
+from plugin.core.enums import ConflictResolution
 from plugin.sync.core.enums import SyncMode
 
 #
 # Conflict resolution
 #
-
-class ConflictResolution(object):
-    Latest  = 0x00
-    Trakt   = 0x01
-    Plex    = 0x02
-
 
 CONFLICT_RESOLUTION_BY_KEY = {
     ConflictResolution.Latest:  'Latest',

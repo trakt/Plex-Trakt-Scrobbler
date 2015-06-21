@@ -1,5 +1,4 @@
 from core.cache import CacheManager
-from core.configuration import Configuration
 from core.header import Header
 from core.helpers import get_class_name, md5
 from core.logger import Logger
@@ -10,10 +9,11 @@ from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, update_loggers
 from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.modules.core.manager import ModuleManager
+from plugin.preferences import Preferences
 
 from plex import Plex
 from plex_activity import Activity
-from plex_metadata import Metadata, Matcher
+from plex_metadata import Metadata
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt
 import os
@@ -30,7 +30,6 @@ class Main(object):
 
     def __init__(self):
         Header.show(self)
-        Main.update_config()
 
         self.init_trakt()
         self.init_plex()
@@ -125,27 +124,6 @@ class Main(object):
 
         # TODO update account with new authorization
 
-    @classmethod
-    def update_config(cls):
-        preferences = Dict['preferences'] or {}
-
-        Configuration.process(preferences)
-
-        # Ensure preferences dictionary is stored
-        Dict['preferences'] = preferences
-        Dict.Save()
-
-        # Update plex.metadata.py `Matcher` preferences
-        extended_matcher = preferences['matcher'] == 'plex_extended'
-
-        Matcher.configure(
-            caper_enabled=extended_matcher,
-            extend_enabled=extended_matcher
-        )
-
-        log.info('Preferences updated %s', preferences)
-        # TODO EventManager.fire('preferences.updated', preferences)
-
     def start(self):
         # Check for authentication token
         log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
@@ -169,7 +147,7 @@ class Main(object):
         ModuleManager.start()
 
         # Start plex.activity.py
-        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
+        Activity.start(ACTIVITY_MODE.get(Preferences.get('activity.mode')))
 
     @staticmethod
     def on_configuration_changed():
