@@ -20,8 +20,7 @@ class Matcher(Option):
 
     preference = 'matcher'
 
-    @classmethod
-    def on_changed(cls, value, account=None):
+    def on_changed(self, value, account=None):
         # Update matcher configuration
         extended = value == MatcherMode.PlexExtended
 
@@ -32,8 +31,7 @@ class Matcher(Option):
 
         log.debug('Configured matcher, extended: %r', extended)
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in MATCHER_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -42,5 +40,5 @@ class Matcher(Option):
         value = MATCHER_BY_LABEL[value]
 
         # Update database
-        cls.update(value)
+        self.update(value, emit=False)
         return value

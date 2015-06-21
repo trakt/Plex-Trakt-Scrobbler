@@ -19,8 +19,7 @@ class SyncWatched(Option):
 
     preference = 'sync_watched'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in MODES_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -29,5 +28,5 @@ class SyncWatched(Option):
         value = MODES_BY_LABEL[value]
 
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value

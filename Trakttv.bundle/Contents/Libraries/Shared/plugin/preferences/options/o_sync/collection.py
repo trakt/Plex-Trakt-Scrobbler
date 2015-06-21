@@ -18,8 +18,7 @@ class SyncCollection(Option):
 
     preference = 'sync_collection'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in MODES_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -28,7 +27,7 @@ class SyncCollection(Option):
         value = MODES_BY_LABEL[value]
 
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value
 
 
@@ -43,8 +42,7 @@ class SyncCleanCollection(Option):
 
     preference = 'sync_clean_collection'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value

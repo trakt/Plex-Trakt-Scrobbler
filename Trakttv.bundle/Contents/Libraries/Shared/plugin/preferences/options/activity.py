@@ -20,8 +20,7 @@ class Activity(Option):
 
     preference = 'activity_mode'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in ACTIVITY_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -30,5 +29,5 @@ class Activity(Option):
         value = ACTIVITY_BY_LABEL[value]
 
         # Update database
-        cls.update(value)
+        self.update(value, emit=False)
         return value

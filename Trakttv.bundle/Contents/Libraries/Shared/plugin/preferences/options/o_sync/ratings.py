@@ -20,8 +20,7 @@ class SyncRatings(Option):
 
     preference = 'sync_ratings'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in MODES_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -30,7 +29,7 @@ class SyncRatings(Option):
         value = MODES_BY_LABEL[value]
 
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value
 
 
@@ -46,8 +45,7 @@ class SyncRatingsConflict(Option):
 
     preference = 'sync_ratings_conflict'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         if value not in CONFLICT_RESOLUTION_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
@@ -56,5 +54,5 @@ class SyncRatingsConflict(Option):
         value = CONFLICT_RESOLUTION_BY_LABEL[value]
 
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value

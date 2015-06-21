@@ -17,8 +17,7 @@ class Scrobble(Option):
 
     preference = 'start_scrobble'
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         # Update database
-        cls.update(value, account)
+        self.update(value, account, emit=False)
         return value

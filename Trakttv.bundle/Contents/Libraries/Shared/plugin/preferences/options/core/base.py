@@ -1,6 +1,9 @@
 from plugin.models import ConfigurationOption, Account
 
+import logging
 import msgpack
+
+log = logging.getLogger(__name__)
 
 TYPE_MAP = {
     'boolean':  ('bool',),
@@ -25,7 +28,7 @@ class Option(object):
     # Plex
     preference = None
 
-    def __init__(self, option=None):
+    def __init__(self, preferences, option=None):
         # Validate class
         if not self.group or not self.label:
             raise ValueError('Missing "group" or "label" attribute on %r', self.__class__)
@@ -41,6 +44,8 @@ class Option(object):
 
         # Private attributes
         self._option = option
+        self._preferences = preferences
+
         self._value = None
 
     @property
@@ -77,38 +82,38 @@ class Option(object):
 
         return self._clone(option)
 
-    @classmethod
-    def on_database_changed(cls, value, account=None):
+    def on_database_changed(self, value, account=None):
         raise NotImplementedError
 
-    @classmethod
-    def on_plex_changed(cls, value, account=None):
+    def on_plex_changed(self, value, account=None):
         raise NotImplementedError
 
-    @classmethod
-    def on_changed(cls, value, account=None):
+    def on_changed(self, value, account=None):
         pass
 
-    @classmethod
-    def update(cls, value, account=None):
-        if cls.scope == 'account':
+    def update(self, value, account=None, emit=True):
+        if self.scope == 'account':
             if account is None:
                 raise ValueError('Account option requires the "account" parameter')
 
-            if not cls._validate_account(account):
+            if not self._validate_account(account):
                 raise ValueError('Invalid value for "account" parameter: %r' % account)
 
-        if cls.scope == 'server' and account is not None:
+        if self.scope == 'server' and account is not None:
             raise ValueError("Server option can't be called with the \"account\" parameter")
 
         ConfigurationOption.insert(
             account=account or 0,
-            key=cls.key,
+            key=self.key,
 
-            value=cls._pack(value)
+            value=self._pack(value)
         ).upsert(
             upsert=True
         ).execute()
+
+        # Emit database change to handler (if enabled)
+        if emit:
+            self._preferences.on_database_changed(self.key, value, account=account)
 
     #
     # Private functions

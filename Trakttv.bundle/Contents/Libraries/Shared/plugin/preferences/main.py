@@ -5,22 +5,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-# Construct options
-OPTIONS = [o() for o in OPTIONS]
-
-# Build option maps
-OPTIONS_BY_KEY = dict([
-    (o.key, o)
-    for o in OPTIONS
-    if o.key
-])
-
-OPTIONS_BY_PREFERENCE = dict([
-    (o.preference, o)
-    for o in OPTIONS
-    if o.preference
-])
-
 
 class Preferences(object):
     @classmethod
@@ -119,3 +103,20 @@ class Preferences(object):
             log.warn('Unable to process plex preference change for %r', key, exc_info=True)
 
         return False
+
+
+# Construct options
+OPTIONS = [o(Preferences) for o in OPTIONS]
+
+# Build option maps
+OPTIONS_BY_KEY = dict([
+    (o.key, o)
+    for o in OPTIONS
+    if o.key
+])
+
+OPTIONS_BY_PREFERENCE = dict([
+    (o.preference, o)
+    for o in OPTIONS
+    if o.preference
+])
