@@ -1,4 +1,4 @@
-from plugin.models import ConfigurationOption
+from plugin.models import ConfigurationOption, Account
 
 import msgpack
 
@@ -16,6 +16,7 @@ class Option(object):
 
     choices = None  # enum
     default = None
+    scope = 'account'
 
     # Display
     group = None
@@ -35,6 +36,9 @@ class Option(object):
         if self.type == 'enum' and self.choices is None:
             raise ValueError('Missing enum "choices" attribute on %r', self.__class__)
 
+        if self.scope not in ['account', 'server']:
+            raise ValueError('Unknown value for scope: %r', self.scope)
+
         # Private attributes
         self._option = option
         self._value = None
@@ -50,10 +54,20 @@ class Option(object):
 
         return self._value
 
-    def get(self, account):
+    def get(self, account=None):
+        if self.scope == 'account':
+            if account is None:
+                raise ValueError('Account option requires the "account" parameter')
+
+            if not self._validate_account(account):
+                raise ValueError('Invalid value for "account" parameter: %r' % account)
+
+        if self.scope == 'server' and account is not None:
+            raise ValueError("Server option can't be called with the \"account\" parameter")
+
         # Load option from database
         option = ConfigurationOption.get_or_create(
-            account=account,
+            account=account or 0,
             key=self.key,
 
             defaults={
@@ -72,9 +86,23 @@ class Option(object):
         raise NotImplementedError
 
     @classmethod
+    def on_changed(cls, value, account=None):
+        pass
+
+    @classmethod
     def update(cls, value, account=None):
+        if cls.scope == 'account':
+            if account is None:
+                raise ValueError('Account option requires the "account" parameter')
+
+            if not cls._validate_account(account):
+                raise ValueError('Invalid value for "account" parameter: %r' % account)
+
+        if cls.scope == 'server' and account is not None:
+            raise ValueError("Server option can't be called with the \"account\" parameter")
+
         ConfigurationOption.insert(
-            account=account,
+            account=account or 0,
             key=cls.key,
 
             value=cls._pack(value)
@@ -85,6 +113,16 @@ class Option(object):
     #
     # Private functions
     #
+
+    @staticmethod
+    def _validate_account(account):
+        if type(account) is int and account < 1:
+            return False
+
+        if type(account) is Account and account.id < 1:
+            return False
+
+        return True
 
     @classmethod
     def _clone(cls, option):
