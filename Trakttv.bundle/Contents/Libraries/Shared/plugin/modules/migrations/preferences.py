@@ -1,6 +1,6 @@
-from plugin.core.environment import Environment
+from plugin.models import Account
 from plugin.modules.migrations.core.base import Migration
-from plugin.preferences import OPTIONS_BY_PREFERENCE, Preferences
+from plugin.preferences import Preferences
 
 import logging
 
@@ -19,7 +19,5 @@ class PreferencesMigration(Migration):
         Preferences.initialize(account=1)
 
         # Migrate preferences to database
-        for key in OPTIONS_BY_PREFERENCE.keys():
-            Preferences.on_plex_changed(key, Environment.prefs[key], account=1)
-
-            log.debug('Updated %r option in database', key)
+        Preferences.migrate(account=1)
+        Preferences.migrate()
