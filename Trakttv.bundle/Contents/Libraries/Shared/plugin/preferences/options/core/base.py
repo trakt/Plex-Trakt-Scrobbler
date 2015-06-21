@@ -66,7 +66,7 @@ class Option(object):
             raise ValueError("Server option can't be called with the \"account\" parameter")
 
         # Load option from database
-        option = ConfigurationOption.get_or_create(
+        option, _ = ConfigurationOption.get_or_create(
             account=account or 0,
             key=self.key,
 
