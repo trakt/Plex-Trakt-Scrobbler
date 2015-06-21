@@ -65,6 +65,22 @@ class Preferences(object):
                 log.debug('Updated %r option in database', key)
 
     @classmethod
+    def update(cls, key, value, account=None):
+        if not key:
+            raise ValueError('Invalid value provided for "key"')
+
+        if key not in OPTIONS_BY_KEY:
+            raise ValueError('Unknown option %r', key)
+
+        # Update option in database
+        option = OPTIONS_BY_KEY[key]
+        option.update(value, account)
+
+    #
+    # Event handlers
+    #
+
+    @classmethod
     def on_database_changed(cls, key, value, account=None):
         if not key:
             raise ValueError('Invalid value provided for "key"')
