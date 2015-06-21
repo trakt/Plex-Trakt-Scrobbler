@@ -75,7 +75,8 @@ class Preferences(object):
         option = OPTIONS_BY_KEY[key]
 
         try:
-            option.on_database_changed(value, account=account)
+            value = option.on_database_changed(value, account=account)
+
             option.on_changed(value, account=account)
             return True
         except Exception:
@@ -94,7 +95,8 @@ class Preferences(object):
         option = OPTIONS_BY_PREFERENCE[key]
 
         try:
-            option.on_plex_changed(value, account=account)
+            value = option.on_plex_changed(value, account=account)
+
             option.on_changed(value, account=account)
             return True
         except Exception:

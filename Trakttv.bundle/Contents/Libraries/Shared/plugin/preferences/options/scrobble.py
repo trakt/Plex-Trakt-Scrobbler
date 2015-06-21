@@ -21,3 +21,4 @@ class Scrobble(Option):
     def on_plex_changed(cls, value, account=None):
         # Update database
         cls.update(value, account)
+        return value

@@ -26,8 +26,12 @@ class SyncRatings(Option):
             log.warn('Unknown value: %r', value)
             return
 
+        # Map plex `value`
+        value = MODES_BY_LABEL[value]
+
         # Update database
-        cls.update(MODES_BY_LABEL[value], account)
+        cls.update(value, account)
+        return value
 
 
 class SyncRatingsConflict(Option):
@@ -48,5 +52,9 @@ class SyncRatingsConflict(Option):
             log.warn('Unknown value: %r', value)
             return
 
+        # Map plex `value`
+        value = CONFLICT_RESOLUTION_BY_LABEL[value]
+
         # Update database
-        cls.update(CONFLICT_RESOLUTION_BY_LABEL[value], account)
+        cls.update(value, account)
+        return value

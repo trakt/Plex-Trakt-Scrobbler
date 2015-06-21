@@ -38,5 +38,9 @@ class Matcher(Option):
             log.warn('Unknown value: %r', value)
             return
 
+        # Map plex `value`
+        value = MATCHER_BY_LABEL[value]
+
         # Update database
-        cls.update(MATCHER_BY_LABEL[value])
+        cls.update(value)
+        return value

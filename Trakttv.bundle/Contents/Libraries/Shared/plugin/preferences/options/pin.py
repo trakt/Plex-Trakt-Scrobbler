@@ -18,7 +18,7 @@ class Pin(Option):
     def on_plex_changed(self, value, account):
         if not value:
             # Ignore empty PIN field
-            return True
+            return None
 
         # Retrieve administrator account
         trakt_account = TraktAccountManager.get(TraktAccount.account == account)
@@ -26,6 +26,6 @@ class Pin(Option):
         # Update administrator authorization
         if not TraktAccountManager.update.from_pin(trakt_account, value):
             log.warn('Unable to update account')
-            return False
+            return None
 
-        return True
+        return value

@@ -25,5 +25,9 @@ class SyncWatched(Option):
             log.warn('Unknown value: %r', value)
             return
 
+        # Map plex `value`
+        value = MODES_BY_LABEL[value]
+
         # Update database
-        cls.update(MODES_BY_LABEL[value], account)
+        cls.update(value, account)
+        return value

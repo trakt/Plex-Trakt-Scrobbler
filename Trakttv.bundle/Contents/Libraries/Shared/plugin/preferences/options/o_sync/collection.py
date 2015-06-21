@@ -24,8 +24,12 @@ class SyncCollection(Option):
             log.warn('Unknown value: %r', value)
             return
 
+        # Map plex `value`
+        value = MODES_BY_LABEL[value]
+
         # Update database
-        cls.update(MODES_BY_LABEL[value], account)
+        cls.update(value, account)
+        return value
 
 
 class SyncCleanCollection(Option):
@@ -43,3 +47,4 @@ class SyncCleanCollection(Option):
     def on_plex_changed(cls, value, account=None):
         # Update database
         cls.update(value, account)
+        return value
