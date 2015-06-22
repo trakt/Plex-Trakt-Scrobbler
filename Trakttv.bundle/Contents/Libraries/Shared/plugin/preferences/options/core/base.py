@@ -51,6 +51,7 @@ class Option(object):
     @property
     def value(self):
         if self._option is None:
+            log.warn('Tried to retrieve value from an option without "get()"')
             return None
 
         if self._value is None:
@@ -129,9 +130,8 @@ class Option(object):
 
         return True
 
-    @classmethod
-    def _clone(cls, option):
-        return cls(option)
+    def _clone(self, option):
+        return self.__class__(self._preferences, option)
 
     @classmethod
     def _pack(cls, value):
