@@ -24,6 +24,9 @@ class ConfigurationManager(object):
     def device(self, name, system):
         return Configuration(self).device(name, system)
 
+    def headers(self, headers):
+        return Configuration(self).headers(headers)
+
     def platform(self, name, version):
         return Configuration(self).platform(name, version)
 
@@ -74,6 +77,11 @@ class Configuration(object):
     def device(self, name, system):
         self.data['device.name'] = name
         self.data['device.system'] = system
+
+        return self
+
+    def headers(self, headers):
+        self.data['headers'] = headers
 
         return self
 

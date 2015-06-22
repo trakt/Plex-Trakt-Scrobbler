@@ -2,6 +2,7 @@ from plex.interfaces.channel import ChannelInterface
 from plex.interfaces.library import LibraryInterface
 from plex.interfaces.library.metadata import LibraryMetadataInterface
 from plex.interfaces.plugin import PluginInterface
+from plex.interfaces.plugin.preferences import PluginPreferencesInterface
 from plex.interfaces.preferences import PreferencesInterface
 from plex.interfaces.root import RootInterface
 from plex.interfaces.section import SectionInterface
@@ -16,17 +17,20 @@ INTERFACES = [
 
     # /
     ChannelInterface,
-    LibraryInterface,
     StatusInterface,
 
     # /library
+    LibraryInterface,
     LibraryMetadataInterface,
     SectionInterface,
 
     # /:
-    PluginInterface,
     PreferencesInterface,
-    TimelineInterface
+    TimelineInterface,
+
+    # /:/plugins
+    PluginInterface,
+    PluginPreferencesInterface
 ]
 
 
@@ -56,6 +60,9 @@ def construct_map(client, d=None, interfaces=None):
         if len(path) > 0:
             key = path.pop(0)
         else:
+            key = None
+
+        if key == '*':
             key = None
 
         if len(path) == 0:

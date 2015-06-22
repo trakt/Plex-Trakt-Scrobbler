@@ -1,3 +1,5 @@
+from plex.lib import six
+
 import re
 import unicodedata
 
@@ -22,11 +24,14 @@ def normalize(text):
         return None
 
     # Normalize unicode characters
-    if type(text) is unicode:
+    if type(text) is six.text_type:
         text = unicodedata.normalize('NFKD', text)
 
     # Ensure text is ASCII, ignore unknown characters
-    return text.encode('ascii', 'ignore')
+    text = text.encode('ascii', 'ignore')
+
+    # Return decoded `text`
+    return text.decode('ascii')
 
 def to_iterable(value):
     if value is None:
