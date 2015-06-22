@@ -15,6 +15,7 @@ from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
 from requests.packages.urllib3.util import Retry
+from threading import Thread
 from trakt import Trakt
 import os
 import uuid
@@ -39,6 +40,9 @@ class Main(object):
 
         # Initialize sentry error reporting
         self.init_raven()
+
+        # Construct main thread
+        self.thread = Thread(target=self.run, name='main')
 
     def init(self):
         names = []
@@ -125,6 +129,9 @@ class Main(object):
         # TODO update account with new authorization
 
     def start(self):
+        self.thread.start()
+
+    def run(self):
         # Check for authentication token
         log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
 
