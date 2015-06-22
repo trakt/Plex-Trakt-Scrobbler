@@ -86,9 +86,12 @@ def ValidatePrefs():
     # Retrieve current activity mode
     last_activity_mode = Preferences.get('activity.mode')
 
-    # Migrate preferences to database
-    Preferences.migrate(account=1)
-    Preferences.migrate()
+    if Request.Headers.get('X-Disable-Preference-Migration', '0') == '0':
+        # Migrate preferences to database
+        Preferences.migrate(account=1)
+        Preferences.migrate()
+    else:
+        log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
     if Preferences.get('activity.mode') != last_activity_mode:
