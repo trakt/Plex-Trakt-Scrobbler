@@ -16,10 +16,13 @@ class Detail(Container):
 
     allow_camera_upload = Property('allowCameraUpload', [int, bool])
     allow_channel_access = Property('allowChannelAccess', [int, bool])
+    allow_sync = Property('allowSync', [int, bool])
 
+    certificate = Property(type=[int, bool])
     multiuser = Property(type=[int, bool])
-    start_state = Property('startState')
     sync = Property(type=[int, bool])
+
+    start_state = Property('startState')
 
     silverlight = Property('silverlightInstalled', [int, bool])
     soundflower = Property('soundflowerInstalled', [int, bool])
