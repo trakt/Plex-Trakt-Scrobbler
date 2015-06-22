@@ -1,5 +1,5 @@
 from plugin.preferences.options.core.base import Option
-from plugin.preferences.options.o_sync.constants import MODES_BY_LABEL, MODES_BY_KEY
+from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
 import logging
 
@@ -10,7 +10,7 @@ class SyncCollection(Option):
     key = 'sync.collection.mode'
     type = 'enum'
 
-    choices = MODES_BY_KEY
+    choices = MODE_LABELS_BY_KEY
     default = None
 
     group = ('Sync', 'Collection')
@@ -18,13 +18,24 @@ class SyncCollection(Option):
 
     preference = 'sync_collection'
 
+    def on_database_changed(self, value, account=None):
+        if value not in MODE_IDS_BY_KEY:
+            log.warn('Unknown value: %r', value)
+            return
+
+        # Map `value` to plex preference
+        value = MODE_IDS_BY_KEY[value]
+
+        # Update preference
+        return self._update_preference(value, account)
+
     def on_plex_changed(self, value, account=None):
-        if value not in MODES_BY_LABEL:
+        if value not in MODE_KEYS_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
 
         # Map plex `value`
-        value = MODES_BY_LABEL[value]
+        value = MODE_KEYS_BY_LABEL[value]
 
         # Update database
         self.update(value, account, emit=False)
@@ -41,6 +52,10 @@ class SyncCleanCollection(Option):
     label = 'Clean collection'
 
     preference = 'sync_clean_collection'
+
+    def on_database_changed(self, value, account=None):
+        # Update preference
+        return self._update_preference(value, account)
 
     def on_plex_changed(self, value, account=None):
         # Update database

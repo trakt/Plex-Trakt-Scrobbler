@@ -1,4 +1,5 @@
-from plugin.preferences.options.constants import ACTIVITY_BY_KEY, ActivityMode, ACTIVITY_BY_LABEL
+from plugin.preferences.options.constants import ACTIVITY_LABELS_BY_KEY, ActivityMode, ACTIVITY_KEYS_BY_LABEL, \
+    ACTIVITY_IDS_BY_KEY
 from plugin.preferences.options.core.base import Option
 
 import logging
@@ -10,7 +11,7 @@ class Activity(Option):
     key = 'activity.mode'
     type = 'enum'
 
-    choices = ACTIVITY_BY_KEY
+    choices = ACTIVITY_LABELS_BY_KEY
     default = ActivityMode.Automatic
     scope = 'server'
 
@@ -19,13 +20,24 @@ class Activity(Option):
 
     preference = 'activity_mode'
 
+    def on_database_changed(self, value, account=None):
+        if value not in ACTIVITY_IDS_BY_KEY:
+            log.warn('Unknown value: %r', value)
+            return
+
+        # Map `value` to plex preference
+        value = ACTIVITY_IDS_BY_KEY[value]
+
+        # Update preference
+        return self._update_preference(value, account)
+
     def on_plex_changed(self, value, account=None):
-        if value not in ACTIVITY_BY_LABEL:
+        if value not in ACTIVITY_KEYS_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
 
         # Map plex `value`
-        value = ACTIVITY_BY_LABEL[value]
+        value = ACTIVITY_KEYS_BY_LABEL[value]
 
         # Update database
         self.update(value, emit=False)

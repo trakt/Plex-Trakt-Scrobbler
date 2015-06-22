@@ -16,6 +16,10 @@ class Scrobble(Option):
 
     preference = 'start_scrobble'
 
+    def on_database_changed(self, value, account=None):
+        # Update preference
+        return self._update_preference(value, account)
+
     def on_plex_changed(self, value, account=None):
         # Update database
         self.update(value, account, emit=False)

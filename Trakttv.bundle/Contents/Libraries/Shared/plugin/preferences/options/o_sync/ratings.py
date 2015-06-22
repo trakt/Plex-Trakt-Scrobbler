@@ -1,6 +1,6 @@
 from plugin.preferences.options.core.base import Option
-from plugin.preferences.options.o_sync.constants import MODES_BY_LABEL, CONFLICT_RESOLUTION_BY_LABEL, MODES_BY_KEY, \
-    CONFLICT_RESOLUTION_BY_KEY, ConflictResolution
+from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
+    RESOLUTION_LABELS_BY_KEY, ConflictResolution, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
 from plugin.sync.core.enums import SyncMode
 
 import logging
@@ -12,7 +12,7 @@ class SyncRatings(Option):
     key = 'sync.ratings.mode'
     type = 'enum'
 
-    choices = MODES_BY_KEY
+    choices = MODE_LABELS_BY_KEY
     default = SyncMode.Full
 
     group = ('Sync', 'Ratings')
@@ -20,13 +20,24 @@ class SyncRatings(Option):
 
     preference = 'sync_ratings'
 
+    def on_database_changed(self, value, account=None):
+        if value not in MODE_IDS_BY_KEY:
+            log.warn('Unknown value: %r', value)
+            return
+
+        # Map `value` to plex preference
+        value = MODE_IDS_BY_KEY[value]
+
+        # Update preference
+        return self._update_preference(value, account)
+
     def on_plex_changed(self, value, account=None):
-        if value not in MODES_BY_LABEL:
+        if value not in MODE_KEYS_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
 
         # Map plex `value`
-        value = MODES_BY_LABEL[value]
+        value = MODE_KEYS_BY_LABEL[value]
 
         # Update database
         self.update(value, account, emit=False)
@@ -37,7 +48,7 @@ class SyncRatingsConflict(Option):
     key = 'sync.ratings.conflict'
     type = 'enum'
 
-    choices = CONFLICT_RESOLUTION_BY_KEY
+    choices = RESOLUTION_LABELS_BY_KEY
     default = ConflictResolution.Latest
 
     group = ('Sync', 'Ratings')
@@ -45,13 +56,24 @@ class SyncRatingsConflict(Option):
 
     preference = 'sync_ratings_conflict'
 
+    def on_database_changed(self, value, account=None):
+        if value not in RESOLUTION_IDS_BY_KEY:
+            log.warn('Unknown value: %r', value)
+            return
+
+        # Map `value` to plex preference
+        value = RESOLUTION_IDS_BY_KEY[value]
+
+        # Update preference
+        return self._update_preference(value, account)
+
     def on_plex_changed(self, value, account=None):
-        if value not in CONFLICT_RESOLUTION_BY_LABEL:
+        if value not in RESOLUTION_KEYS_BY_LABEL:
             log.warn('Unknown value: %r', value)
             return
 
         # Map plex `value`
-        value = CONFLICT_RESOLUTION_BY_LABEL[value]
+        value = RESOLUTION_KEYS_BY_LABEL[value]
 
         # Update database
         self.update(value, account, emit=False)
