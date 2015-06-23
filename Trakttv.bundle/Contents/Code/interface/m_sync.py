@@ -34,7 +34,7 @@ def AccountsMenu(refresh=None):
     )
 
     # Accounts
-    for account in AccountManager.get.all():
+    for account in Accounts.list():
         oc.add(DirectoryObject(
             key=Callback(ControlsMenu, account_id=account.id),
             title=account.name,
@@ -184,6 +184,18 @@ def Cancel():
         L('cancel_success:title'),
         L('cancel_success:message')
     )
+
+
+class Accounts(object):
+    @classmethod
+    def count(cls):
+        return cls.list().count()
+
+    @classmethod
+    def list(cls):
+        return AccountManager.get.all().where(
+            Account.id != 0
+        )
 
 
 class Active(object):

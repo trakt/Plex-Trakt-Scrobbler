@@ -2,10 +2,9 @@ from core.cache import CacheManager
 from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
 from interface.m_messages import Count as MessageCount, ListMessages
-from interface.m_sync import AccountsMenu, ControlsMenu
+from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
-from plugin.managers import AccountManager
 
 import locale
 
@@ -29,10 +28,9 @@ def MainMenu():
     #
     # Sync
     #
-    num_accounts = AccountManager.get.all().count()
 
     oc.add(DirectoryObject(
-        key=Callback(AccountsMenu if num_accounts > 1 else ControlsMenu),
+        key=Callback(AccountsMenu if Accounts.count() > 1 else ControlsMenu),
         title=L("Sync"),
         summary=L("Sync the Plex library with trakt.tv"),
         thumb=R("icon-sync.png")
