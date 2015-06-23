@@ -30,13 +30,21 @@ from interface.m_main import MainMenu
 from interface.resources import Cover, Thumb
 # ------------------------------------------------
 
-# Check "apsw" availability, log any errors
+# Check "apsw" availability
 try:
     import apsw
 
     Log.Debug('apsw: %r, sqlite: %r', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
 except Exception, ex:
     Log.Error('Unable to import "apsw": %s', ex)
+
+# Check "llist" availability
+try:
+    import llist
+
+    Log.Debug('llist: available')
+except Exception, ex:
+    Log.Warn('Unable to import "llist": %s', ex)
 
 # Local imports
 from core.logger import Logger
