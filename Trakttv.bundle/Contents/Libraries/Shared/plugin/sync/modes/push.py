@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class Base(Mode):
-    mode = SyncMode.Pull
+    mode = SyncMode.Push
 
 
 class Movies(Base):
