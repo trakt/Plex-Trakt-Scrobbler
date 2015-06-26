@@ -1,3 +1,9 @@
+class SyncConflictResolution(object):
+    Latest  = 0x00
+    Trakt   = 0x01
+    Plex    = 0x02
+
+
 class SyncData(object):
     All         = 0x00
     Collection  = 0x01

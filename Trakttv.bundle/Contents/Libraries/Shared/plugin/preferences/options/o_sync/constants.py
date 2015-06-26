@@ -1,26 +1,25 @@
-from plugin.core.enums import ConflictResolution
-from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.enums import SyncConflictResolution, SyncMode
 
 #
 # Conflict resolution
 #
 
 RESOLUTION_IDS_BY_KEY = {
-    ConflictResolution.Latest:  0,
-    ConflictResolution.Trakt:   1,
-    ConflictResolution.Plex:    2
+    SyncConflictResolution.Latest:  0,
+    SyncConflictResolution.Trakt:   1,
+    SyncConflictResolution.Plex:    2
 }
 
 RESOLUTION_KEYS_BY_LABEL = {
-    'latest':                       ConflictResolution.Latest,
-    'trakt':                        ConflictResolution.Trakt,
-    'plex':                         ConflictResolution.Plex
+    'latest':                       SyncConflictResolution.Latest,
+    'trakt':                        SyncConflictResolution.Trakt,
+    'plex':                         SyncConflictResolution.Plex
 }
 
 RESOLUTION_LABELS_BY_KEY = {
-    ConflictResolution.Latest:  'Latest',
-    ConflictResolution.Trakt:   'Trakt',
-    ConflictResolution.Plex:    'Plex'
+    SyncConflictResolution.Latest:  'Latest',
+    SyncConflictResolution.Trakt:   'Trakt',
+    SyncConflictResolution.Plex:    'Plex'
 }
 
 #

@@ -1,7 +1,7 @@
 from plugin.preferences.options.core.base import Option
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
-    RESOLUTION_LABELS_BY_KEY, ConflictResolution, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
-from plugin.sync.core.enums import SyncMode
+    RESOLUTION_LABELS_BY_KEY, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
+from plugin.sync.core.enums import SyncConflictResolution, SyncMode
 
 import logging
 
@@ -49,7 +49,7 @@ class SyncRatingsConflict(Option):
     type = 'enum'
 
     choices = RESOLUTION_LABELS_BY_KEY
-    default = ConflictResolution.Latest
+    default = SyncConflictResolution.Latest
 
     group = ('Sync', 'Ratings')
     label = 'Conflict resolution'
