@@ -47,7 +47,7 @@ class Base(PullHandler, PlaybackHandler):
     #
 
     @bind('added')
-    def on_added(self, key, p_duration, p_value, t_value):
+    def on_added(self, key, p_duration, p_value, t_value, **kwargs):
         log.debug('%s.on_added(%s, %r, %r, %r)', self.media, key, p_duration, p_value, t_value)
 
         if p_value is not None and p_value > t_value:
@@ -57,7 +57,7 @@ class Base(PullHandler, PlaybackHandler):
         return self.update_progress(key, t_value, p_duration)
 
     @bind('changed')
-    def on_changed(self, key, p_duration, p_value, t_value):
+    def on_changed(self, key, p_duration, p_value, t_value, **kwargs):
         log.debug('%s.on_changed(%s, %r, %r, %r)', self.media, key, p_duration, p_value, t_value)
 
         if p_value > t_value:

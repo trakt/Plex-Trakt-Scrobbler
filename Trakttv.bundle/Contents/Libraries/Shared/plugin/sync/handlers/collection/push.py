@@ -114,7 +114,7 @@ class Base(PushHandler, CollectionHandler):
 class Movies(Base):
     media = SyncMedia.Movies
 
-    @bind('added', [SyncMode.Push])
+    @bind('added', [SyncMode.Full, SyncMode.Push])
     def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
         log.debug('Movies.on_added(%r, ...)', key)
 
@@ -131,7 +131,7 @@ class Movies(Base):
 class Episodes(Base):
     media = SyncMedia.Episodes
 
-    @bind('added', [SyncMode.Push])
+    @bind('added', [SyncMode.Full, SyncMode.Push])
     def on_added(self, key, p_guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
         log.debug('Episodes.on_added(%r, ...)', key)
 

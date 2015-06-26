@@ -32,7 +32,7 @@ class Base(PullHandler, WatchedHandler):
     #
 
     @bind('added')
-    def on_added(self, key, p_value, t_value):
+    def on_added(self, key, p_value, t_value, **kwargs):
         log.debug('%s.on_added(%r, %r, %r)', self.media, key, p_value, t_value)
 
         if p_value is not None:
@@ -41,8 +41,8 @@ class Base(PullHandler, WatchedHandler):
 
         return self.scrobble(key)
 
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key, p_value):
+    @bind('removed', [SyncMode.Full, SyncMode.FastPull])
+    def on_removed(self, key, p_value, **kwargs):
         log.debug('%s.on_removed(%r, %r)', self.media, key, p_value)
 
         if p_value is None:

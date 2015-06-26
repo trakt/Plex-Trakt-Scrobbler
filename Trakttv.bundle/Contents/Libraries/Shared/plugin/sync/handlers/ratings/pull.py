@@ -34,19 +34,19 @@ class Base(PullHandler, RatingsHandler):
     #
 
     @bind('added')
-    def on_added(self, key, t_value):
+    def on_added(self, key, t_value, **kwargs):
         log.debug('%s.on_added(%r, %r)', self.media, key, t_value)
 
         return self.rate(key, t_value)
 
-    @bind('changed', [SyncMode.FastPull])
-    def on_changed(self, key, p_value, t_previous, t_value):
+    @bind('changed', [SyncMode.Full, SyncMode.FastPull])
+    def on_changed(self, key, p_value, t_previous, t_value, **kwargs):
         log.debug('%s.on_changed(%r, %r, %r, %r)', self.media, key, p_value, t_previous, t_value)
 
         return self.rate(key, t_value)
 
-    @bind('removed', [SyncMode.FastPull])
-    def on_removed(self, key):
+    @bind('removed', [SyncMode.Full, SyncMode.FastPull])
+    def on_removed(self, key, **kwargs):
         log.debug('%s.on_removed(%r)', self.media, key)
 
         return self.rate(key, 0)
