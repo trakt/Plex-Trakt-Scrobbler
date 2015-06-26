@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode, SyncActionMode
 from plugin.sync.handlers.core import DataHandler, PullHandler, bind
 from plugin.sync.handlers.watched.base import WatchedHandler
 
@@ -19,13 +19,29 @@ class Base(PullHandler, WatchedHandler):
         data.update(kwargs)
         return data
 
-    @staticmethod
-    def scrobble(key):
-        return Plex['library'].scrobble(key)
+    def scrobble(self, key):
+        action_mode = self.configuration['sync.action.mode']
 
-    @staticmethod
-    def unscrobble(key):
-        return Plex['library'].unscrobble(key)
+        if action_mode == SyncActionMode.Update:
+            return Plex['library'].scrobble(key)
+
+        if action_mode == SyncActionMode.Log:
+            log.info('[%s] scrobble()', key)
+            return True
+
+        raise NotImplementedError('Unable to update plex, action mode %r not supported', action_mode)
+
+    def unscrobble(self, key):
+        action_mode = self.configuration['sync.action.mode']
+
+        if action_mode == SyncActionMode.Update:
+            return Plex['library'].unscrobble(key)
+
+        if action_mode == SyncActionMode.Log:
+            log.info('[%s] unscrobble()', key)
+            return True
+
+        raise NotImplementedError('Unable to update plex, action mode %r not supported', action_mode)
 
     #
     # Handlers

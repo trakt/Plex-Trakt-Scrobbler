@@ -1,6 +1,7 @@
 from plugin.core.helpers.variable import dict_path
 from plugin.models import *
 from plugin.sync.core.constants import GUID_AGENTS
+from plugin.sync.core.enums import SyncActionMode
 
 from datetime import datetime
 from trakt import Trakt
@@ -16,35 +17,24 @@ class SyncArtifacts(object):
 
         self.artifacts = {}
 
-    def flatten(self):
-        for data, actions in self.artifacts.items():
-            for action, request in actions.items():
-                if 'shows' in request:
-                    request['shows'] = list(self.flatten_shows(request['shows']))
-
-                if 'movies' in request:
-                    request['movies'] = request['movies'].values()
-
-                yield data, action, request
-
-    @staticmethod
-    def flatten_shows(shows):
-        for show in shows.itervalues():
-            if 'seasons' not in show:
-                yield show
-                continue
-
-            show['seasons'] = show['seasons'].values()
-
-            for season in show['seasons']:
-                if 'episodes' not in season:
-                    continue
-
-                season['episodes'] = season['episodes'].values()
-
-            yield show
+    #
+    # Log/Send artifacts
+    #
 
     def send(self):
+        action_mode = self.task.configuration['sync.action.mode']
+
+        if action_mode == SyncActionMode.Update:
+            self.send_actions()
+            return True
+
+        if action_mode == SyncActionMode.Log:
+            self.log_actions()
+            return True
+
+        raise NotImplementedError('Unable to send artifacts to trakt, action mode %r not supported', action_mode)
+
+    def send_actions(self):
         changes = False
 
         for data, action, request in self.flatten():
@@ -110,6 +100,16 @@ class SyncArtifacts(object):
 
         log.debug('[%s](%s) Response: %r', data, action, response)
         return True
+
+    def log_actions(self):
+        for data, action, request in self.flatten():
+            # Log request items
+            for key, value in request.items():
+                log.info('[%s][%s][%s] %r', data, action, key, value)
+
+    #
+    # Artifact storage
+    #
 
     def store_episode(self, data, action, p_guid, identifier, p_show, **kwargs):
         key = (p_guid.agent, p_guid.sid)
@@ -222,3 +222,35 @@ class SyncArtifacts(object):
             request[key] = value
 
         return True
+
+    #
+    # Flatten
+    #
+
+    def flatten(self):
+        for data, actions in self.artifacts.items():
+            for action, request in actions.items():
+                if 'shows' in request:
+                    request['shows'] = list(self.flatten_shows(request['shows']))
+
+                if 'movies' in request:
+                    request['movies'] = request['movies'].values()
+
+                yield data, action, request
+
+    @staticmethod
+    def flatten_shows(shows):
+        for show in shows.itervalues():
+            if 'seasons' not in show:
+                yield show
+                continue
+
+            show['seasons'] = show['seasons'].values()
+
+            for season in show['seasons']:
+                if 'episodes' not in season:
+                    continue
+
+                season['episodes'] = season['episodes'].values()
+
+            yield show

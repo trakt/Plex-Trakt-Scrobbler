@@ -16,6 +16,10 @@ class MediaHandler(object):
         self.__handlers = {}
 
     @property
+    def configuration(self):
+        return self.__main.current.configuration
+
+    @property
     def parent(self):
         return self.__parent
 

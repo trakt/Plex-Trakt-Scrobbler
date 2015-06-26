@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode, SyncActionMode
 from plugin.sync.handlers.core import DataHandler, PullHandler, bind
 from plugin.sync.handlers.ratings.base import RatingsHandler
 
@@ -25,9 +25,17 @@ class Base(PullHandler, RatingsHandler):
         data.update(kwargs)
         return data
 
-    @staticmethod
-    def rate(key, value):
-        return Plex['library'].rate(key, value)
+    def rate(self, key, value):
+        action_mode = self.configuration['sync.action.mode']
+
+        if action_mode == SyncActionMode.Update:
+            return Plex['library'].rate(key, value)
+
+        if action_mode == SyncActionMode.Log:
+            log.info('[%s] rate(%r)', key, value)
+            return True
+
+        raise NotImplementedError('Unable to update plex, action mode %r not supported', action_mode)
 
     #
     # Handlers

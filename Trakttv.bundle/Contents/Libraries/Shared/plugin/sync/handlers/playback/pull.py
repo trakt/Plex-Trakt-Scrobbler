@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode, SyncActionMode
 from plugin.sync.handlers.core import DataHandler, PullHandler, bind
 from plugin.sync.handlers.playback.base import PlaybackHandler
 
@@ -38,9 +38,17 @@ class Base(PullHandler, PlaybackHandler):
         data.update(kwargs)
         return data
 
-    @staticmethod
-    def update_progress(rating_key, time, duration):
-        return Plex[':/timeline'].update(rating_key, 'stopped', time, duration)
+    def update_progress(self, key, time, duration):
+        action_mode = self.configuration['sync.action.mode']
+
+        if action_mode == SyncActionMode.Update:
+            return Plex[':/timeline'].update(key, 'stopped', time, duration)
+
+        if action_mode == SyncActionMode.Log:
+            log.info('[%s] update_progress(%r)', key, time)
+            return True
+
+        raise NotImplementedError('Unable to update plex, action mode %r not supported', action_mode)
 
     #
     # Handlers
