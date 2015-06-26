@@ -150,8 +150,8 @@ class ExceptionManager(Manager):
             raise ValueError
 
         m = hashlib.md5()
-        m.update(type)
-        m.update(message)
-        m.update(tb)
+        m.update(str(type))
+        m.update(str(message))
+        m.update(str(tb))
 
         return m.hexdigest()
