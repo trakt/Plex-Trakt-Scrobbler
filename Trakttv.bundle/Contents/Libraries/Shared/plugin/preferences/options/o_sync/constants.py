@@ -1,4 +1,13 @@
-from plugin.sync.core.enums import SyncConflictResolution, SyncMode
+from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode
+
+#
+# Artifact modes
+#
+
+ACTION_MODE_LABELS_BY_KEY = {
+    SyncActionMode.Update:  'Update',
+    SyncActionMode.Log:     'Log'
+}
 
 #
 # Conflict resolution

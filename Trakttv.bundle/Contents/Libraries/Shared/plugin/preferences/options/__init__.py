@@ -12,6 +12,8 @@ OPTIONS = [
     Scrobble,
 
     # Sync
+    SyncActionModeOption,
+
     SyncCollection,
     SyncCleanCollection,
 

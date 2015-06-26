@@ -1,3 +1,7 @@
+class SyncActionMode(object):
+    Update  = 0x00
+    Log     = 0x01
+
 class SyncConflictResolution(object):
     Latest  = 0x00
     Trakt   = 0x01
