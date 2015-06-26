@@ -1,4 +1,4 @@
-from trakt_sync.differ import MovieDiffer, ShowDiffer
+from trakt_sync.differ import MovieDiffer, MovieResult, ShowDiffer, ShowResult
 import trakt_sync.cache.enums as enums
 
 from dateutil.tz import tzutc
@@ -148,9 +148,19 @@ class Cache(object):
                 return None
 
             # No `base` data stored, assume all the `current` items have been added
-            return {
+            if media == Cache.Media.Movies:
+                result = MovieResult()
+            elif media in [Cache.Media.Shows, Cache.Media.Seasons, Cache.Media.Episodes]:
+                result = ShowResult()
+            else:
+                raise Exception('Unknown media type: %r', media)
+
+            # Set `result` changes
+            result.changes = {
                 'added': current
             }
+
+            return result
 
         data_name = Cache.Data.get(data)
 
