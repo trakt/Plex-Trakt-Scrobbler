@@ -54,7 +54,7 @@ class Cache(object):
         collection['timestamps'][media_key][timestamp_key] = None
 
     def refresh(self, username):
-        activities = Trakt['sync'].last_activities()
+        activities = Trakt['sync'].last_activities(exceptions=True)
 
         for m in self.media:
             media = Cache.Media.get(m)
