@@ -124,7 +124,6 @@ class Mode(object):
 
         # Check if data is enabled
         if self.mode not in mode:
-            log.debug('%r is disabled - enabled: %r, current: %r', data, mode, self.mode)
             return False
 
         return True
