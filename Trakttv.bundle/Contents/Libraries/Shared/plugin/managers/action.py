@@ -1,6 +1,7 @@
 from plugin.core.helpers.thread import module
 from plugin.managers.core.base import Manager
 from plugin.models import ActionHistory, ActionQueue
+from plugin.preferences import Preferences
 
 from datetime import datetime
 from threading import Thread
@@ -43,6 +44,10 @@ class ActionManager(Manager):
 
         if account_id is None:
             log.debug('Unable to find valid account for event %r, session %r', event, session)
+            return None
+
+        if not Preferences.get('scrobble.enabled', account_id):
+            log.debug('Scrobbler not enabled for account %r', account_id)
             return None
 
         # Try queue the event
