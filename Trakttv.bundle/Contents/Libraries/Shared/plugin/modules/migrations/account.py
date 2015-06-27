@@ -18,6 +18,14 @@ log = logging.getLogger(__name__)
 
 class AccountMigration(Migration):
     def run(self):
+        # Ensure server `Account` exists
+        try:
+            Account.get(Account.id == 0)
+        except Account.DoesNotExist:
+            Account.create(
+                id=0
+            )
+
         # Ensure administrator `Account` exists
         try:
             account = Account.get(Account.id == 1)
