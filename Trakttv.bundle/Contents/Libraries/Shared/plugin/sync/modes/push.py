@@ -49,7 +49,7 @@ class Movies(Base):
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
 
-            for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
+            for data in self.get_data(SyncMedia.Movies):
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
                 self.execute_handlers(
@@ -106,7 +106,7 @@ class Shows(Base):
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
 
-            for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+            for data in self.get_data(SyncMedia.Episodes):
                 t_show, t_season, t_episode = self.t_objects(
                     self.trakt[(SyncMedia.Episodes, data)], pk,
                     season_num, episode_num

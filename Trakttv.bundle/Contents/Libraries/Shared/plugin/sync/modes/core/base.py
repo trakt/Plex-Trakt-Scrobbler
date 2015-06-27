@@ -1,4 +1,4 @@
-from plugin.sync import SyncMedia, SyncData
+from plugin.sync import SyncMedia, SyncData, SyncMode
 
 import itertools
 import logging
@@ -28,6 +28,13 @@ TRAKT_DATA_MAP = {
     ]
 }
 
+DATA_PREFERENCE_MAP = {
+    SyncData.Collection:    'sync.collection.mode',
+    SyncData.Playback:      'sync.playback.mode',
+    SyncData.Ratings:       'sync.ratings.mode',
+    SyncData.Watched:       'sync.watched.mode'
+}
+
 class Mode(object):
     mode = None
     children = []
@@ -40,6 +47,10 @@ class Mode(object):
     @property
     def current(self):
         return self.__main.current
+
+    @property
+    def configuration(self):
+        return self.__main.current.configuration
 
     @property
     def handlers(self):
@@ -86,6 +97,37 @@ class Mode(object):
                 self.handlers[d].run(m, self.mode, *args, **kwargs)
             except Exception, ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
+
+    def get_data(self, media):
+        for data in TRAKT_DATA_MAP[media]:
+            if not self.is_data_enabled(data):
+                continue
+
+            yield data
+
+    def is_data_enabled(self, data):
+        key = DATA_PREFERENCE_MAP[data]
+
+        if not key:
+            log.warn('Unknown data: %r', data)
+            return False
+
+        # Parse preference
+        mode = self.configuration[key]
+
+        if mode == SyncMode.Full:
+            mode = [SyncMode.FastPull, SyncMode.Push]
+        elif mode is not None:
+            mode = [mode]
+        else:
+            mode = []
+
+        # Check if data is enabled
+        if self.mode not in mode:
+            log.debug('%r is disabled - enabled: %r, current: %r', data, mode, self.mode)
+            return False
+
+        return True
 
 
 def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):

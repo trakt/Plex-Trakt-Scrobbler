@@ -23,5 +23,8 @@ class SyncConfiguration(object):
 
             log.debug(' - [%s]: %r', key, self._options[key].value)
 
+    def keys(self):
+        return self._options.keys()
+
     def __getitem__(self, key):
         return self._options[key].value

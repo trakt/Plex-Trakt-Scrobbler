@@ -41,7 +41,7 @@ class Movies(Base):
         pending = {}
         total = 0
 
-        for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
+        for data in self.get_data(SyncMedia.Movies):
             if data not in pending:
                 pending[data] = {}
 
@@ -68,7 +68,7 @@ class Movies(Base):
                 # No `pk` found
                 continue
 
-            for data in TRAKT_DATA_MAP[SyncMedia.Movies]:
+            for data in self.get_data(SyncMedia.Movies):
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
                 self.execute_handlers(
@@ -109,7 +109,7 @@ class Shows(Base):
         pending = {}
         total = 0
 
-        for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+        for data in self.get_data(SyncMedia.Episodes):
             t_episodes = [
                 (key, se, ep)
                 for key, t_show in self.trakt[(SyncMedia.Episodes, data)].items()
@@ -148,7 +148,7 @@ class Shows(Base):
                 # Missing `episode` rating key
                 continue
 
-            for data in TRAKT_DATA_MAP[SyncMedia.Episodes]:
+            for data in self.get_data(SyncMedia.Episodes):
                 t_show = self.trakt[(SyncMedia.Episodes, data)].get(pk)
 
                 if t_show is None:

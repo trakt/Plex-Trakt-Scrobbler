@@ -64,6 +64,10 @@ class Movies(Mode):
                     # Ignore changes that aren't for movies
                     continue
 
+                if not self.is_data_enabled(data):
+                    # Data type has been disabled
+                    continue
+
                 data_name = Cache.Data.get(data)
 
                 if data_name not in result.changes:
@@ -152,6 +156,10 @@ class Shows(Mode):
             for (media, data), result in self.trakt.changes:
                 if media != SyncMedia.Episodes:
                     # Ignore changes that aren't for episodes
+                    continue
+
+                if not self.is_data_enabled(data):
+                    # Data type has been disabled
                     continue
 
                 data_name = Cache.Data.get(data)
