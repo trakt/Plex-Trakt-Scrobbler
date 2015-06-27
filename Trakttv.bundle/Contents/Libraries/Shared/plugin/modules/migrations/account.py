@@ -18,11 +18,12 @@ log = logging.getLogger(__name__)
 
 class AccountMigration(Migration):
     def run(self):
-        # Ensure `Account` exists
+        # Ensure administrator `Account` exists
         try:
             account = Account.get(Account.id == 1)
         except Account.DoesNotExist:
             account = Account.create(
+                id=1,
                 name=self.get_trakt_username()
             )
 
