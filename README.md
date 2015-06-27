@@ -1,15 +1,22 @@
 # trakt (for Plex)
 
-[![](https://badge.waffle.io/trakt/Plex-Trakt-Scrobbler.png?label=Ready)](http://waffle.io/trakt/Plex-Trakt-Scrobbler)
+[![GitHub issues](https://img.shields.io/github/issues/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) [![](https://img.shields.io/github/release/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/releases)
 
-**WARNING:** If you have multiple users on your server, please ensure you have filters setup (the *only scrobble* options in the settings).
-The default setup will scrobble all media playing from your server to your trakt.tv account.
+**WARNING:** If you have multiple users on your server, please ensure you have filters set. The default configuration will scrobble all media playing on your server to your trakt.tv account.
+
+### Links
+
+ - [Configuration](https://github.com/fuzeman/Plex-Trakt-Scrobbler/wiki/Configuration) *(outdated - some options might be renamed or missing)*
+ - [Contributors](https://github.com/trakt/Plex-Trakt-Scrobbler/graphs/contributors)
+ - [Credits](Trakttv.bundle/CREDITS.md) *(for other resources)*
 
 ## Installation
 
-### Unsupported Appstore  
+### Unsupported App Store  
 
 The latest stable version of the plugin is available from the [Unsupported Appstore](https://forums.plex.tv/index.php/topic/151068-)
+
+**Note:** UAS isn't available from github anymore, you can still download it from dropbox [here](http://bit.ly/ihqmEu).
 
 ### Manual
 
@@ -31,8 +38,8 @@ The latest stable version of the plugin is available from the [Unsupported Appst
 
 ## Configuration
 
-1. In Plex/Web, navigate to `Channels` -> `Trakt.tv` -> `Settings`
-2. Enter your [trakt.tv](http://trakt.tv) username and password, and tick the *Scrobble* option to   enable automatic scrobbling.
+1. In Plex/Web, navigate to `Channels` -> `trakt` -> `Settings`
+2. Enter your [trakt.tv](http://trakt.tv) username and password, and tick the *Scrobble* option to enable automatic scrobbling.
 
 ## Issues
 

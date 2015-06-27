@@ -5,6 +5,8 @@ from plugin.managers.account import AccountManager
 from plugin.managers.action import ActionManager
 from plugin.managers.client import ClientManager
 from plugin.managers.client_rule import ClientRuleManager
+from plugin.managers.exception import ExceptionManager
+from plugin.managers.message import MessageManager, VERSION_BASE, VERSION_BRANCH
 from plugin.managers.session import WSessionManager
 from plugin.managers.user import UserManager
 from plugin.managers.user_rule import UserRuleManager

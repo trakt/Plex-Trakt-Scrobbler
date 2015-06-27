@@ -36,6 +36,9 @@ class Logging(Base):
             # Build request for the event
             request = self.build_request(session, rating_key=payload.get('rating_key'))
 
+            if not request:
+                continue
+
             # Queue request to be sent
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 

@@ -1,4 +1,52 @@
+from plugin.core.environment import Environment
+
 import collections
+import re
+import unicodedata
+
+
+def dict_path(d, path):
+    if not isinstance(path, (list, tuple)):
+        raise ValueError()
+
+    for keys in path:
+        if type(keys) is not list:
+            keys = [keys]
+
+        value = None
+
+        for key in keys:
+            if key not in d:
+                continue
+
+            value = d[key]
+
+        if value is None:
+            value = {}
+
+        for key in keys:
+            d[key] = value
+
+        d = value
+
+    return d
+
+
+def flatten(text):
+    if text is None:
+        return None
+
+    # Normalize `text` to ascii
+    text = normalize(text)
+
+    # Remove special characters
+    text = re.sub('[^A-Za-z0-9\s]+', '', text)
+
+    # Merge duplicate spaces
+    text = ' '.join(text.split())
+
+    # Convert to lower-case
+    return text.lower()
 
 
 def merge(a, b, recursive=False):
@@ -15,6 +63,18 @@ def merge(a, b, recursive=False):
             a[k] = b[k]
 
     return a
+
+
+def normalize(text):
+    if text is None:
+        return None
+
+    # Normalize unicode characters
+    if type(text) is unicode:
+        text = unicodedata.normalize('NFKD', text)
+
+    # Ensure text is ASCII, ignore unknown characters
+    return text.encode('ascii', 'ignore')
 
 
 def resolve(value, *args, **kwargs):

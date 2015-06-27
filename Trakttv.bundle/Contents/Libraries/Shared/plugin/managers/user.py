@@ -1,9 +1,11 @@
+from plugin.core.filters import Filters
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.models import User, UserRule
 
 import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +18,10 @@ class GetUser(Get):
             return None
 
         return super(GetUser, self).__call__(
-            User.id == to_integer(user['id'])
+            User.key == to_integer(user['key'])
         )
 
-    def or_create(self, user, fetch=False):
+    def or_create(self, user, fetch=False, match=False):
         user = self.manager.parse_user(user)
 
         if not user:
@@ -28,32 +30,38 @@ class GetUser(Get):
         try:
             # Create new user
             obj = self.manager.create(
-                id=to_integer(user['id'])
+                key=to_integer(user['key'])
             )
 
             # Update newly created object
-            self.manager.update(obj, user, fetch)
+            self.manager.update(obj, user, fetch=fetch, match=match)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing user
-            return self(user)
+            obj = self(user)
+
+            if fetch or match:
+                # Update existing `User`
+                self.manager.update(obj, user, fetch=fetch, match=match)
+
+            return obj
 
 
 class UpdateUser(Update):
-    def __call__(self, obj, user, fetch=False):
+    def __call__(self, obj, user, fetch=False, match=False):
         user = self.manager.parse_user(user)
 
         if not user:
             return None
 
-        data = self.to_dict(obj, user, fetch)
+        data = self.to_dict(obj, user, fetch=fetch, match=match)
 
         return super(UpdateUser, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, user, fetch=False):
+    def to_dict(self, obj, user, fetch=False, match=False):
         result = {}
 
         # Fill `result` with available fields
@@ -63,8 +71,19 @@ class UpdateUser(Update):
         if user.get('thumb'):
             result['thumb'] = user['thumb']
 
-        if not fetch:
-            # Return simple update
+        if match:
+            # Try match `User` against rules
+            result = self.match(result, user)
+
+        return result
+
+    @staticmethod
+    def match(result, user):
+        # Apply global filters
+        if not Filters.is_valid_user(user):
+            # User didn't pass filters, update `account` attribute and return
+            result['account'] = None
+
             return result
 
         # Find matching `UserRule`
@@ -74,10 +93,10 @@ class UpdateUser(Update):
 
         rules = list(query.execute())
 
-        if len(rules) != 1:
-            return result
-
-        result['account'] = rules[0].account_id
+        if len(rules) == 1:
+            result['account'] = rules[0].account_id
+        else:
+            result['account'] = None
 
         return result
 
@@ -93,13 +112,13 @@ class UserManager(Manager):
         if type(user) is not dict:
             # Build user dict from object
             user = {
-                'id': user.id,
+                'key': user.id,
                 'title': user.title,
                 'thumb': user.thumb
             }
 
         # Validate `user`
-        if not user.get('id'):
+        if not user.get('key'):
             return None
 
         return user

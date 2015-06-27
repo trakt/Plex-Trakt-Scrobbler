@@ -11,8 +11,8 @@ class Session(Model):
         database = db
 
     account = ForeignKeyField(Account, 'sessions', null=True)
-    client = ForeignKeyField(Client, 'sessions', to_field='machine_identifier', null=True)
-    user = ForeignKeyField(User, 'sessions', to_field='id', null=True)
+    client = ForeignKeyField(Client, 'sessions', to_field='key', null=True)
+    user = ForeignKeyField(User, 'sessions', to_field='key', null=True)
 
     rating_key = IntegerField(null=True)
     session_key = TextField(null=True, unique=True)
@@ -26,7 +26,7 @@ class Session(Model):
 
     @property
     def account_id(self):
-        return self._data['account']
+        return self._data.get('account')
 
     @property
     def payload(self):

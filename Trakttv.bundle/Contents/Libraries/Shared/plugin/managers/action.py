@@ -1,6 +1,7 @@
 from plugin.core.helpers.thread import module
 from plugin.managers.core.base import Manager
 from plugin.models import ActionHistory, ActionQueue
+from plugin.preferences import Preferences
 
 from datetime import datetime
 from threading import Thread
@@ -8,6 +9,7 @@ from trakt import Trakt
 import apsw
 import json
 import logging
+import peewee
 import time
 
 log = logging.getLogger(__name__)
@@ -32,10 +34,26 @@ class ActionManager(Manager):
         if request is not None:
             request = json.dumps(request)
 
+        # Retrieve `account_id` for action
+        account_id = None
+
+        if session:
+            account_id = session.account_id
+        elif account:
+            account_id = account.id
+
+        if account_id is None:
+            log.debug('Unable to find valid account for event %r, session %r', event, session)
+            return None
+
+        if not Preferences.get('scrobble.enabled', account_id):
+            log.debug('Scrobbler not enabled for account %r', account_id)
+            return None
+
         # Try queue the event
         try:
             obj = ActionQueue.create(
-                account=session.account_id if session else account,
+                account=account_id,
                 session=session,
 
                 event=event,
@@ -44,7 +62,7 @@ class ActionManager(Manager):
                 queued_at=datetime.utcnow()
             )
             log.debug('Queued %r event for %r', event, session)
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.warn('Unable to queue event %r for %r: %s', event, session, ex, exc_info=True)
 
         # Ensure process thread is started

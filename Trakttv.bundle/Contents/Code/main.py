@@ -1,24 +1,24 @@
 from core.cache import CacheManager
-from core.configuration import Configuration
 from core.header import Header
 from core.helpers import get_class_name, md5
 from core.logger import Logger
-from core.logging_handler import PlexHandler
-from core.logging_reporter import RAVEN
 from core.update_checker import UpdateChecker
-from sync.sync_manager import SyncManager
 
-from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.helpers.thread import module_start
+from plugin.core.logger import LOG_HANDLER, update_loggers
+from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.modules.core.manager import ModuleManager
+from plugin.preferences import Preferences
 
 from plex import Plex
 from plex_activity import Activity
-from plex_metadata import Metadata, Matcher
+from plex_metadata import Metadata
 from requests.packages.urllib3.util import Retry
+from threading import Thread
 from trakt import Trakt
-import logging
 import os
+import uuid
 
 log = Logger()
 
@@ -26,15 +26,11 @@ log = Logger()
 class Main(object):
     modules = [
         # core
-        UpdateChecker(),
-
-        # sync
-        SyncManager
+        UpdateChecker()
     ]
 
     def __init__(self):
         Header.show(self)
-        Main.update_config()
 
         self.init_trakt()
         self.init_plex()
@@ -45,8 +41,8 @@ class Main(object):
         # Initialize sentry error reporting
         self.init_raven()
 
-        # Initialize logging
-        self.init_logging()
+        # Construct main thread
+        self.thread = Thread(target=self.run, name='main')
 
     def init(self):
         names = []
@@ -76,24 +72,26 @@ class Main(object):
         })
 
     @staticmethod
-    def init_logging():
-        level = PlexHandler.get_min_level('plugin')
-
-        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
-
-        # Update main logger level
-        logger = logging.getLogger(PLUGIN_IDENTIFIER)
-        logger.setLevel(level)
-
-    @staticmethod
     def init_plex():
+        # Ensure client identifier has been generated
+        if not Dict['plex.client.identifier']:
+            # Generate identifier
+            Dict['plex.client.identifier'] = uuid.uuid4()
+
         # plex.py
         Plex.configuration.defaults.authentication(
             os.environ.get('PLEXTOKEN')
         )
 
+        Plex.configuration.defaults.client(
+            identifier=Dict['plex.client.identifier'],
+
+            product='trakt (for Plex)',
+            version=PLUGIN_VERSION
+        )
+
         # plex.activity.py
-        path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
+        path = os.path.join(LOG_HANDLER.baseFilename, '..', '..', 'Plex Media Server.log')
         path = os.path.abspath(path)
 
         Activity['logging'].add_hint(path)
@@ -130,30 +128,10 @@ class Main(object):
 
         # TODO update account with new authorization
 
-    @classmethod
-    def update_config(cls, valid=None):
-        preferences = Dict['preferences'] or {}
-
-        # If no validation provided, use last stored result or assume true
-        if valid is None:
-            valid = preferences.get('valid', True)
-
-        preferences['valid'] = valid
-
-        Configuration.process(preferences)
-
-        # Ensure preferences dictionary is stored
-        Dict['preferences'] = preferences
-        Dict.Save()
-
-        # Update plex.metadata.py `Matcher` preferences
-        Matcher.set_caper(preferences['matcher'] == 'plex_extended')
-        Matcher.set_extend(preferences['matcher'] == 'plex_extended')
-
-        log.info('Preferences updated %s', preferences)
-        # TODO EventManager.fire('preferences.updated', preferences)
-
     def start(self):
+        self.thread.start()
+
+    def run(self):
         # Check for authentication token
         log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
 
@@ -176,4 +154,8 @@ class Main(object):
         ModuleManager.start()
 
         # Start plex.activity.py
-        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
+        Activity.start(ACTIVITY_MODE.get(Preferences.get('activity.mode')))
+
+    @staticmethod
+    def on_configuration_changed():
+        update_loggers()

@@ -37,7 +37,7 @@ IDENTIFIERS = {
 
 class Mapper(object):
     @staticmethod
-    def get_ids(media, item):
+    def get_ids(media, item, parent=None):
         if not item:
             return None, []
 
@@ -56,7 +56,10 @@ class Mapper(object):
             keys.insert(0, item.get('number'))
 
         if media == 'episode':
-            keys.insert(0, (item.get('season'), item.get('number')))
+            keys.insert(0, (
+                item.get('season') or parent.pk,
+                item.get('number')
+            ))
 
         if not len(keys):
             return None, []

@@ -2,22 +2,35 @@
 # Environment
 # ------------------------------------------------
 from plugin.core.environment import Environment
+import locale
+import os
 
 Environment.setup(Core, Dict, Prefs)
+
+# plex.database.py
+os.environ['LIBRARY_DB'] = os.path.join(
+    Environment.path.plugin_support, 'Databases',
+    'com.plexapp.plugins.library.db'
+)
+
+# locale
+try:
+    Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
+except Exception, ex:
+    Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
 import core
-import data
-import sync
 import interface
 # ------------------------------------------------
 # Handlers
 # ------------------------------------------------
-from interface.main_menu import MainMenu
+from interface.m_main import MainMenu
+from interface.resources import Cover, Thumb
 # ------------------------------------------------
 
-# Check "apsw" availability, log any errors
+# Check "apsw" availability
 try:
     import apsw
 
@@ -25,15 +38,23 @@ try:
 except Exception, ex:
     Log.Error('Unable to import "apsw": %s', ex)
 
+# Check "llist" availability
+try:
+    import llist
+
+    Log.Debug('llist: available')
+except Exception, ex:
+    Log.Warn('Unable to import "llist": %s', ex)
+
 # Local imports
 from core.logger import Logger
-from core.helpers import spawn, get_pref
+from core.helpers import spawn
 from core.plugin import ART, NAME, ICON
 from main import Main
 
 from plugin.api.core.manager import ApiManager
-from plugin.core.configuration import Configuration
 from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.preferences import Preferences
 
 from plex import Plex
 import time
@@ -70,13 +91,18 @@ def Api(*args, **kwargs):
 
 
 def ValidatePrefs():
-    for key in Configuration.handlers.keys():
-        Configuration.process(key, Prefs[key])
+    # Retrieve current activity mode
+    last_activity_mode = Preferences.get('activity.mode')
 
-    last_activity_mode = get_pref('activity_mode')
+    if Request.Headers.get('X-Disable-Preference-Migration', '0') == '0':
+        # Migrate preferences to database
+        Preferences.migrate(account=1)
+        Preferences.migrate()
+    else:
+        log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
-    if Prefs['activity_mode'] != last_activity_mode:
+    if Preferences.get('activity.mode') != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
 
         def restart():
@@ -89,7 +115,7 @@ def ValidatePrefs():
         spawn(restart)
         return MessageContainer("Success", "Success")
 
-    # Re-initialize modules
-    Main.init_logging()
+    # Fire configuration changed callback
+    spawn(Main.on_configuration_changed)
 
     return MessageContainer("Success", "Success")

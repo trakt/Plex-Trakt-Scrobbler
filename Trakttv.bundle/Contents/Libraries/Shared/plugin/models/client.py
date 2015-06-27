@@ -12,7 +12,7 @@ class Client(Model):
     account = ForeignKeyField(Account, 'clients', null=True)
 
     # Identification
-    machine_identifier = CharField(unique=True)
+    key = CharField(unique=True)
     name = CharField(null=True)
 
     # Device
@@ -34,3 +34,6 @@ class Client(Model):
     @property
     def account_id(self):
         return self._data.get('account')
+
+    def __repr__(self):
+        return '<Client id: %r, key: %r>' % (self.id, self.key)

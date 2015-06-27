@@ -8,6 +8,7 @@ from plugin.models import Session
 from plex import Plex
 import apsw
 import logging
+import peewee
 
 
 log = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class GetWSession(Get):
             self.manager.update(obj, info, fetch)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing object
             return self(info)
 
@@ -84,9 +85,19 @@ class UpdateWSession(UpdateSession):
             log.warn('Unable to retrieve guid/metadata for session %r', session_key)
             return result
 
-        # Store client + user in `result`
-        result['client'] = ClientManager.get.or_create(p_item.session.player, fetch=True)
-        result['user'] = UserManager.get.or_create(p_item.session.user, fetch=True)
+        # Create/Retrieve `Client` for session
+        result['client'] = ClientManager.get.or_create(
+            p_item.session.player,
+            fetch=True,
+            match=True
+        )
+
+        # Create/Retrieve `User` for session
+        result['user'] = UserManager.get.or_create(
+            p_item.session.user,
+            fetch=True,
+            match=True
+        )
 
         return merge(result, {
             # Pick account from `client` or `user` objects

@@ -1,3 +1,4 @@
+from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.models import Client, ClientRule
@@ -5,6 +6,7 @@ from plugin.models import Client, ClientRule
 from plex import Plex
 import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -14,37 +16,43 @@ class GetClient(Get):
         player = self.manager.parse_player(player)
 
         return super(GetClient, self).__call__(
-            Client.machine_identifier == player['machine_identifier']
+            Client.key == player['key']
         )
 
-    def or_create(self, player, fetch=False):
+    def or_create(self, player, fetch=False, match=False):
         player = self.manager.parse_player(player)
 
         try:
             # Create new client
             obj = self.manager.create(
-                machine_identifier=player['machine_identifier']
+                key=player['key']
             )
 
             # Update newly created object
-            self.manager.update(obj, player, fetch)
+            self.manager.update(obj, player, fetch=fetch, match=match)
 
             return obj
-        except apsw.ConstraintError:
+        except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing user
-            return self(player)
+            obj = self(player)
+
+            if fetch or match:
+                # Update existing `User`
+                self.manager.update(obj, player, fetch=fetch, match=match)
+
+            return obj
 
 
 class UpdateClient(Update):
-    def __call__(self, obj, player, fetch=False):
+    def __call__(self, obj, player, fetch=False, match=False):
         player = self.manager.parse_player(player)
-        data = self.to_dict(obj, player, fetch)
+        data = self.to_dict(obj, player, fetch=fetch, match=match)
 
         return super(UpdateClient, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, player, fetch=False):
+    def to_dict(self, obj, player, fetch=False, match=False):
         result = {
             'name': player['title']
         }
@@ -56,48 +64,71 @@ class UpdateClient(Update):
         if player.get('product'):
             result['product'] = player['product']
 
-        if not fetch:
-            # Return simple update
-            return result
+        client = None
 
+        if fetch or match:
+            # Fetch client from plex server
+            result, client = self.fetch(result, player)
+
+        if match:
+            # Try match client against a rule
+            result = self.match(result, client, player)
+
+        return result
+
+    @staticmethod
+    def fetch(result, player):
         # Fetch client details
-        client = Plex.clients().get(player['machine_identifier'])
+        client = Plex.clients().get(player['key'])
 
-        if client:
-            # Merge client details from plex API
-            result = merge(result, dict([
-                (key, getattr(client, key)) for key in [
-                    'device_class',
-                    'product',
-                    'version',
+        if not client:
+            log.info('Unable to find client with key %r', player['key'])
+            return result, None
 
-                    'host',
-                    'address',
-                    'port',
+        # Merge client details from plex API
+        result = merge(result, dict([
+            (key, getattr(client, key)) for key in [
+                'device_class',
+                'product',
+                'version',
 
-                    'protocol',
-                    'protocol_capabilities',
-                    'protocol_version'
-                ] if getattr(client, key)
-            ]))
-        else:
-            log.info('Unable to find client with machine_identifier %r', player['machine_identifier'])
+                'host',
+                'address',
+                'port',
+
+                'protocol',
+                'protocol_capabilities',
+                'protocol_version'
+            ] if getattr(client, key)
+        ]))
+
+        return result, client
+
+    @staticmethod
+    def match(result, client, player):
+        # Apply global filters
+        if not Filters.is_valid_client(player) or\
+           not Filters.is_valid_address(client):
+            # Client didn't pass filters, update `account` attribute and return
+            result['account'] = None
+
+            return result
 
         # Find matching `ClientRule`
         address = client['address'] if client else None
 
         query = ClientRule.select().where((
-            (ClientRule.machine_identifier == player['machine_identifier']) | (ClientRule.machine_identifier == None) &
+            (ClientRule.key == player['key']) | (ClientRule.key == None) &
             (ClientRule.name == player['title']) | (ClientRule.name == None) &
             (ClientRule.address == address) | (ClientRule.address == None)
         ))
 
         rules = list(query.execute())
 
-        if len(rules) != 1:
-            return result
-
-        result['account'] = rules[0].account_id
+        if len(rules) == 1:
+            result['account'] = rules[0].account_id
+        else:
+            result['account'] = None
 
         return result
 
@@ -115,7 +146,7 @@ class ClientManager(Manager):
 
         # Build user dict from object
         return {
-            'machine_identifier': player.machine_identifier,
+            'key': player.machine_identifier,
             'title': player.title,
 
             'platform': player.platform,

@@ -1,7 +1,7 @@
 from plugin.core.constants import ACTIVITY_MODE
-from plugin.core.environment import Environment
 from plugin.core.helpers.thread import module
 from plugin.core.method_manager import MethodManager
+from plugin.preferences import Preferences
 from plugin.scrobbler.methods import Logging, WebSocket
 
 
@@ -13,10 +13,9 @@ class Scrobbler(object):
     ])
     started = []
 
-
     @classmethod
     def start(cls, blocking=False):
-        enabled = ACTIVITY_MODE.get(Environment.prefs['activity_mode'])
+        enabled = ACTIVITY_MODE.get(Preferences.get('activity.mode'))
 
         # Start methods
         cls.started = cls.methods.start(enabled)

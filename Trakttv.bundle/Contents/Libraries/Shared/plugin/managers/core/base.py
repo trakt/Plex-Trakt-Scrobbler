@@ -4,6 +4,7 @@ from plugin.models import db
 import apsw
 import inspect
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,12 @@ class Method(object):
 
 class Get(Method):
     def __call__(self, *query):
-        return self.model.get(*query)
+        obj = self.model.get(*query)
+
+        if obj:
+            obj._created = False
+
+        return obj
 
     def all(self):
         return self.model.select()
@@ -30,10 +36,13 @@ class Get(Method):
     def or_create(self, *query, **kwargs):
         try:
             return self.manager.create(**kwargs)
-        except apsw.ConstraintError, ex:
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
             log.debug('or_create() - ex: %r', ex)
 
         return self(*query)
+
+    def where(self, *query):
+        return self.model.select().where(*query)
 
 
 class Create(Method):
@@ -42,7 +51,13 @@ class Create(Method):
             raise Exception('Manager %r has no "model" attribute defined' % self.manager)
 
         with db.transaction():
-            return self.model.create(**kwargs)
+            obj = self.model.create(**kwargs)
+
+        if obj:
+            # Set flag
+            obj._created = True
+
+        return obj
 
 
 class Update(Method):
@@ -107,8 +122,6 @@ class ManagerMeta(type):
 
             if not value or not inspect.isclass(value):
                 continue
-
-            log.debug('Constructing manager method %r for %r', value, cls)
 
             # Construct method
             setattr(cls, key, value(cls))

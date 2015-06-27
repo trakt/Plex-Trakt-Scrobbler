@@ -11,7 +11,7 @@ class ClientRule(Model):
 
     account = ForeignKeyField(Account, 'client_rules')
 
-    machine_identifier = CharField(null=True)
+    key = CharField(null=True)
     name = CharField(null=True)
     address = CharField(null=True)
 
@@ -26,7 +26,7 @@ class ClientRule(Model):
             'id': self.id,
             'priority': self.priority,
 
-            'machine_identifier': self.machine_identifier,
+            'key': self.key,
             'name': self.name,
             'address': self.address
         }

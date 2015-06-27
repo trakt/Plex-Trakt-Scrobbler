@@ -13,7 +13,7 @@ class OAuthInterface(Interface):
             raise ValueError('"client.id" configuration parameter is required to generate the OAuth authorization url')
 
         return build_url(
-            self.client.base_url,
+            self.client.site_url,
             self.path, 'authorize',
 
             client_id=client_id,

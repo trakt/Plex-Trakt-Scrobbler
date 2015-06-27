@@ -1,3 +1,3 @@
-from plugin.models.core.database import db, db_path, migrations_path
+from plugin.models.core.database import db, migrations_path
 
-__all__ = ['db', 'db_path', 'migrations_path']
+__all__ = ['db', 'migrations_path']
