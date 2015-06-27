@@ -25,9 +25,24 @@ class HttpClient(object):
         self.configuration = ContextStack()
         self.session = None
 
+        self._proxies = {}
         self._validate_oauth_lock = Lock()
 
         self.rebuild()
+
+    @property
+    def proxies(self):
+        if self.session and self.session.proxies:
+            return self.session.proxies
+
+        return self._proxies
+
+    @proxies.setter
+    def proxies(self, proxies):
+        if self.session:
+            self.session.proxies = proxies
+
+        self._proxies = proxies
 
     def configure(self, path=None):
         self.configuration.push(base_path=path)
@@ -113,6 +128,9 @@ class HttpClient(object):
 
         # Build the connection pool
         self.session = requests.Session()
+        self.session.proxies = self.proxies
+
+        # Mount adapters
         self.session.mount('http://', HTTPAdapter(**self.adapter_kwargs))
         self.session.mount('https://', HTTPAdapter(**self.adapter_kwargs))
 

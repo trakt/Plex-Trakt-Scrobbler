@@ -1,5 +1,5 @@
 from plugin.core.environment import Environment
-from plugin.modules.base import Module
+from plugin.modules.core.base import Module
 from plugin.modules.backup.exceptions import PatchException
 from plugin.modules.backup.packer import Packer
 from plugin.modules.backup.revision import Revision

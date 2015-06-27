@@ -1,0 +1,2 @@
+ignore-patterns:
+ - ^Trakttv\.bundle/Contents/Libraries/Shared/(?!plugin).*$

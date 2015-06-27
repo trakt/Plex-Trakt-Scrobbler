@@ -1,0 +1,4 @@
+[run]
+source =
+    Code
+    Libraries/Shared/plugin

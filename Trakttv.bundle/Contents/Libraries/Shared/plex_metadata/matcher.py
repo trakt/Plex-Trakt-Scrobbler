@@ -4,32 +4,63 @@ from plex_metadata.core.helpers import try_convert
 
 import hashlib
 import logging
-import os
 
 log = logging.getLogger(__name__)
 
 
 class Matcher(object):
-    def __init__(self):
+    def __init__(self, cache=None, client=None):
+        self._cache = cache
+        self._client = client
+
+        # Construct `Caper` parser
         self._caper = self._construct_caper()
         self._caper_enabled = True
 
         self._extend_enabled = True
 
-    def _construct_caper(self):
-        # Caper (optional import)
-        try:
-            from caper import Caper
-            return Caper()
-        except ImportError as ex:
-            log.info('Caper not available - "%s"', ex)
-            return None
+    def configure(self, cache=None, client=None, caper_enabled=True, extend_enabled=True):
+        self.cache = cache
+        self.client = client
+
+        self.caper_enabled = caper_enabled
+        self.extend_enabled = extend_enabled
+
+    #
+    # Properties
+    #
 
     @property
     def cache(self):
+        if self._cache is not None:
+            return self._cache
+
+        if self._client:
+            return self._client.configuration.get('cache.matcher')
+
         return Plex.configuration.get('cache.matcher')
 
-    def set_caper(self, enabled):
+    @cache.setter
+    def cache(self, value):
+        self._cache = value
+
+    @property
+    def client(self):
+        if self._client:
+            return self._client
+
+        return Plex.client
+
+    @client.setter
+    def client(self, value):
+        self._client = value
+
+    @property
+    def caper_enabled(self):
+        return self._caper_enabled
+
+    @caper_enabled.setter
+    def caper_enabled(self, enabled):
         if self._caper_enabled == enabled:
             # state hasn't changed
             return
@@ -44,7 +75,12 @@ class Matcher(object):
 
         log.info('"caper" feature has been %s', 'enabled' if enabled else 'disabled')
 
-    def set_extend(self, enabled):
+    @property
+    def extend_enabled(self):
+        return self._extend_enabled
+
+    @extend_enabled.setter
+    def extend_enabled(self, enabled):
         if self._extend_enabled == enabled:
             # state hasn't changed
             return
@@ -53,14 +89,25 @@ class Matcher(object):
 
         log.info('"extend" feature has been %s', 'enabled' if enabled else 'disabled')
 
+    @staticmethod
+    def _construct_caper():
+        # Caper (optional import)
+        try:
+            from caper import Caper
+            return Caper()
+        except ImportError as ex:
+            log.info('Caper not available - "%s"', ex)
+            return None
+
     def parse(self, file_name):
+        cache = self.cache
         identifier = None
 
         file_hash = self.md5(file_name)
 
-        if self.cache is not None:
+        if cache is not None:
             # Try lookup identifier in cache
-            identifier = self.cache.get(file_hash)
+            identifier = cache.get(file_hash)
 
         # Parse new file_name
         if identifier is None and self._caper:
@@ -75,13 +122,14 @@ class Matcher(object):
             # Get best identifier match from result
             identifier = chain.info.get('identifier', []) if chain else []
 
-            if self.cache is not None:
+            if cache is not None:
                 # Update cache
-                self.cache[file_hash] = identifier
+                cache[file_hash] = identifier
 
         return identifier
 
-    def md5(self, value):
+    @staticmethod
+    def md5(value):
         if isinstance(value, six.text_type):
             value = value.encode('utf-8')
 
@@ -89,6 +137,23 @@ class Matcher(object):
         m.update(value)
 
         return m.hexdigest()
+
+    @staticmethod
+    def name(path):
+        left = path.rfind('\\')
+
+        if left < 0:
+            left = path.rfind('/')
+
+        if left < 0:
+            return None
+
+        right = path.rfind('.', left)
+
+        if right < 0:
+            return None
+
+        return path[left + 1:right]
 
     def process(self, metadata):
         if metadata.type == 'episode':
@@ -111,7 +176,7 @@ class Matcher(object):
 
         if episode.media and episode.media.parts and self._extend_enabled:
             # Add extended episodes
-            c_episodes.extend(self.extend_episode(episode.media.parts, (p_season, p_episode)))
+            c_episodes.extend(self.extend_episode(episode.media.parts[0].file, (p_season, p_episode)))
 
             # Remove any episode identifiers that are more than 1 away
             c_episodes = self.remove_distant(c_episodes, p_episode)
@@ -120,14 +185,14 @@ class Matcher(object):
 
         return p_season, c_episodes
 
-    def extend_episode(self, parts, p_identifier):
-        if not parts:
+    def extend_episode(self, file, p_identifier):
+        if not file:
             return []
 
         _, p_episode = p_identifier
 
         # Get just the name of the first part (without full path and extension)
-        file_name = os.path.splitext(os.path.basename(parts[0].file))[0]
+        file_name = self.name(file)
 
         # Parse file_name with caper (or get cached result)
         c_identifiers = self.parse(file_name)

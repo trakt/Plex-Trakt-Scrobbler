@@ -40,6 +40,17 @@ class PlexRequest(object):
         query = self.kwargs.get('query')
 
         if query:
+            # Dict -> List
+            if type(query) is dict:
+                query = query.items()
+
+            # Remove items with `None` value
+            query = [
+                (k, v) for (k, v) in query
+                if v is not None
+            ]
+
+            # Encode query, append to URL
             url += '?' + urlencode(query)
 
         return url
@@ -71,8 +82,28 @@ class PlexRequest(object):
     def transform_headers(self):
         self.headers = self.kwargs.get('headers') or {}
 
-        # Set 'X-Plex-Token' header
+        # Authentication
         self.headers['X-Plex-Token'] = self.client.configuration['authentication.token']
+
+        # Client
+        self.headers['X-Plex-Client-Identifier'] = self.client.configuration['client.identifier']
+
+        self.headers['X-Plex-Product'] = self.client.configuration['client.product']
+        self.headers['X-Plex-Version'] = self.client.configuration['client.version']
+
+        # Device
+        self.headers['X-Device'] = self.client.configuration['device.system']
+        self.headers['X-Device-Name'] = self.client.configuration['device.name']
+
+        # Platform
+        self.headers['X-Platform'] = self.client.configuration['platform.name']
+        self.headers['X-Platform-Version'] = self.client.configuration['platform.version']
+
+        # Update with extra headers from configuration
+        c_headers = self.client.configuration['headers']
+
+        if c_headers:
+            self.headers.update(c_headers)
 
         # Only return headers with valid values
         return dict([

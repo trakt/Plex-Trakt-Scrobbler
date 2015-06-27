@@ -16,10 +16,14 @@ class HttpClient(object):
         self.client = client
 
         self.configuration = ContextStack()
-        self.session = requests.Session()
+
+        self.session = None
 
         # Private
         self._lock = Condition()
+
+        # Build requests session
+        self._build()
 
     @property
     def cache(self):
@@ -79,7 +83,7 @@ class HttpClient(object):
 
             log.warn('Encountered socket.gaierror (code: 8)')
 
-            response = self._rebuild().send(prepared)
+            response = self._build().send(prepared)
 
         # Store response in cache
         self._cache_store(prepared, response)
@@ -98,8 +102,9 @@ class HttpClient(object):
     def delete(self, path=None, params=None, query=None, data=None, **kwargs):
         return self.request('DELETE', path, params, query, data, **kwargs)
 
-    def _rebuild(self):
-        log.info('Rebuilding session and connection pools...')
+    def _build(self):
+        if self.session:
+            log.info('Rebuilding session and connection pools...')
 
         # Rebuild the connection pool (old pool has stale connections)
         self.session = requests.Session()

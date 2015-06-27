@@ -16,8 +16,8 @@ def from_iso8601(value):
     # Convert to UTC
     dt = dt.to('UTC')
 
-    # Return naive datetime object
-    return dt.naive
+    # Return datetime object
+    return dt.datetime
 
 
 def to_iso8601(value):
