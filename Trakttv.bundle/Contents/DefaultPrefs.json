@@ -33,6 +33,13 @@
         "default": "latest"
     },
     {
+        "id": "sync_playback",
+        "type": "enum",
+        "label": "Sync - Playback Progress",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
         "id": "sync_collection",
         "type": "enum",
         "label": "Sync - Collection",

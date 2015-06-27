@@ -16,7 +16,7 @@ class SyncPlayback(Option):
     group = ('Sync', 'Playback')
     label = 'Mode'
 
-    # preference = 'sync_playback'
+    preference = 'sync_playback'
 
     def on_plex_changed(self, value, account=None):
         if value not in MODE_KEYS_BY_LABEL:
