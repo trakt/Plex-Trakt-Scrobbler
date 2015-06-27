@@ -65,8 +65,8 @@ class SyncArtifacts(object):
 
         log.info('trakt.tv profile has been updated')
 
-    @staticmethod
-    def send_action(data, action, **kwargs):
+    @classmethod
+    def send_action(cls, data, action, **kwargs):
         # Ensure items exist in `kwargs`
         if not kwargs:
             return False
@@ -75,11 +75,7 @@ class SyncArtifacts(object):
             return False
 
         # Try retrieve interface for `data`
-        interface = Cache.Data.get_interface(data)
-
-        if interface == 'sync/watched':
-            # Watched add/remove functions are on the "sync/history" interface
-            interface = 'sync/history'
+        interface = cls._get_interface(data)
 
         if interface is None:
             log.warn('[%s](%s) Unknown data type', data, action)
@@ -103,9 +99,35 @@ class SyncArtifacts(object):
 
     def log_actions(self):
         for data, action, request in self.flatten():
+            # Try retrieve interface for `data`
+            interface = self._get_interface(data)
+
+            if interface is None:
+                log.warn('[%s](%s) Unknown data type', data, action)
+                continue
+
             # Log request items
-            for key, value in request.items():
-                log.info('[%s][%s][%s] %r', data, action, key, value)
+            for media, items in request.items():
+                if not items:
+                    continue
+
+                # Log each item
+                for item in items:
+                    if not item:
+                        continue
+
+                    log.info('[%s:%s](%s) %r (%r)', interface, action, media, item.get('title'), item.get('year'))
+
+    @staticmethod
+    def _get_interface(data):
+        # Try retrieve interface for `data`
+        interface = Cache.Data.get_interface(data)
+
+        if interface == 'sync/watched':
+            # Watched add/remove functions are on the "sync/history" interface
+            return 'sync/history'
+
+        return interface
 
     #
     # Artifact storage
