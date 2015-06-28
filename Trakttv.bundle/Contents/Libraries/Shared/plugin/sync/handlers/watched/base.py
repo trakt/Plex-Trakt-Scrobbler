@@ -4,7 +4,16 @@ from plugin.sync.handlers.core import MediaHandler
 class WatchedHandler(MediaHandler):
     @staticmethod
     def get_operands(p_item, t_item):
-        p_viewed_at = p_item.get('settings', {}).get('last_viewed_at')
+        # Retrieve plex `viewed_at` from item
+        p_settings = p_item.get('settings', {})
+        p_view_count = p_settings.get('view_count', 0)
+
+        if p_view_count > 0:
+            # Item completely watched in plex
+            p_viewed_at = p_settings.get('last_viewed_at')
+        else:
+            # Item partially watched in plex
+            p_viewed_at = None
 
         # Retrieve trakt `viewed_at` from item
         if type(t_item) is dict:
