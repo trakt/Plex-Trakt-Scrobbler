@@ -1,3 +1,5 @@
+from plugin.preferences import Preferences
+
 from threading import Lock
 import logging
 
@@ -43,6 +45,10 @@ class ApiManager(object):
     @classmethod
     def process(cls, method, headers, body, key, *args, **kwargs):
         log.debug('Handling API %s request %r - args: %r, kwargs: %r', method, key, args, kwargs)
+
+        if not Preferences.get('api.enabled'):
+            log.debug('Unable to process request, API is currently disabled')
+            return cls.build_error('disabled', 'Unable to process request, API is currently disabled')
 
         k_service, k_method = key.rsplit('.', 1)
 
