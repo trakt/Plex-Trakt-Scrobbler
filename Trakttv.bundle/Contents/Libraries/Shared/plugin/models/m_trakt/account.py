@@ -60,7 +60,7 @@ class TraktAccount(Model):
         # OAuth
         oauth = self.oauth
 
-        if oauth:
+        if oauth and oauth.is_valid():
             return self.oauth_authorization(oauth)
 
         # Basic (legacy)

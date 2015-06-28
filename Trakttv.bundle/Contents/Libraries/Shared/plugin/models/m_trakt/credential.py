@@ -50,6 +50,9 @@ class TraktOAuthCredential(Model):
     token_type = CharField(null=True)
     scope = CharField(null=True)
 
+    def is_valid(self):
+        return self.access_token is not None
+
     def to_json(self):
         result = {
             'valid': self.access_token is not None
