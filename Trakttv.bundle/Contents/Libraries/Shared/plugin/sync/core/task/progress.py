@@ -42,6 +42,9 @@ class SyncProgress(object):
         if self._maximum is None or self._current is None:
             return None
 
+        if self._maximum < 1:
+            return None
+
         return (float(self._current) / self._maximum) * 100
 
     @property
