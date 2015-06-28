@@ -5,6 +5,7 @@ from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionM
 #
 
 ACTION_MODE_LABELS_BY_KEY = {
+    None:                   'Default',
     SyncActionMode.Update:  'Update',
     SyncActionMode.Log:     'Log'
 }

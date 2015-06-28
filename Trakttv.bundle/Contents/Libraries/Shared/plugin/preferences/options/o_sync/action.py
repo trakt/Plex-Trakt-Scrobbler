@@ -8,8 +8,18 @@ class SyncActionModeOption(Option):
     type = 'enum'
 
     choices = ACTION_MODE_LABELS_BY_KEY
-    default = SyncActionMode.Log  # TODO set to `SyncActionMode.Update` on release
+    default = None
     scope = 'server'
 
     group = ('Sync', 'Advanced')
     label = 'Action Mode'
+
+    @property
+    def value(self):
+        value = super(SyncActionModeOption, self).value
+
+        if value is None:
+            return SyncActionMode.Update
+
+        return value
+

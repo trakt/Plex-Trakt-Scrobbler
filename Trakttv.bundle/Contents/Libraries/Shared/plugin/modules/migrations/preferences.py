@@ -19,6 +19,3 @@ class PreferencesMigration(Migration):
         # Migrate preferences to database
         Preferences.migrate(account=1)
         Preferences.migrate()
-
-        # Enable sync updates
-        Preferences.update('sync.action.mode', SyncActionMode.Update)
