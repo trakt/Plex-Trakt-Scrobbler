@@ -129,7 +129,7 @@ class MediaHandler(object):
         func = self.__handlers.get(self.current.mode, {}).get(action)
 
         if func is None:
-            log.debug('Unable to find handler for mode %r, action %r', self.current.mode, action)
+            #log.debug('Unable to find handler for mode %r, action %r', self.current.mode, action)
             return False
 
         # Execute action
