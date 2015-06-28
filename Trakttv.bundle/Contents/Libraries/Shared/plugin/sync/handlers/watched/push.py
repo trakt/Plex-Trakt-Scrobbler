@@ -16,7 +16,11 @@ class Movies(Base):
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
     def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
-        log.debug('Movies.on_added(%r, ...)', key)
+        # Retrieve plex `view_count`
+        p_settings = p_item.get('settings', {})
+        p_view_count = p_settings.get('view_count', 0)
+
+        log.debug('Movies.on_added(%r, ...) - p_view_count: %r, p_value: %r, t_value: %r', key, p_view_count, p_value, t_value)
 
         if t_value:
             return
@@ -35,8 +39,12 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, p_guid, identifier, p_show, p_value, t_value, **kwargs):
-        log.debug('Episodes.on_added(%r, ...)', key)
+    def on_added(self, key, p_guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
+        # Retrieve plex `view_count`
+        p_settings = p_item.get('settings', {})
+        p_view_count = p_settings.get('view_count', 0)
+
+        log.debug('Episodes.on_added(%r, ...) - p_view_count: %r, p_value: %r, t_value: %r', key, p_view_count, p_value, t_value)
 
         if t_value:
             return
