@@ -221,6 +221,7 @@ class MovieLibrary(LibraryBase):
         if account:
             fields += [
                 MetadataItemSettings.rating,
+                MetadataItemSettings.view_count,
                 MetadataItemSettings.view_offset,
                 MetadataItemSettings.last_viewed_at
             ]
@@ -512,6 +513,7 @@ class EpisodeLibrary(LibraryBase):
             MediaPart.file,
 
             MetadataItemSettings.rating,
+            MetadataItemSettings.view_count,
             MetadataItemSettings.view_offset,
             MetadataItemSettings.last_viewed_at
         ] + fields
