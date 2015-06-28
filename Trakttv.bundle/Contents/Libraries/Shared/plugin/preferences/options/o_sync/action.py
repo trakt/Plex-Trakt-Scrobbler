@@ -3,7 +3,7 @@ from plugin.preferences.options.o_sync.constants import ACTION_MODE_LABELS_BY_KE
 from plugin.sync.core.enums import SyncActionMode
 
 
-class SyncActionModeOption(Option):
+class SyncActionOption(Option):
     key = 'sync.action.mode'
     type = 'enum'
 
@@ -16,7 +16,7 @@ class SyncActionModeOption(Option):
 
     @property
     def value(self):
-        value = super(SyncActionModeOption, self).value
+        value = super(SyncActionOption, self).value
 
         if value is None:
             return SyncActionMode.Update
