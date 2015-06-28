@@ -108,15 +108,33 @@ class SyncArtifacts(object):
 
             # Log request items
             for media, items in request.items():
-                if not items:
-                    continue
+                self.log_items(interface, action, media, items)
 
-                # Log each item
-                for item in items:
-                    if not item:
-                        continue
+    def log_items(self, interface, action, media, items):
+        if not items:
+            return
 
-                    log.info('[%s:%s](%s) %r (%r)', interface, action, media, item.get('title'), item.get('year'))
+            # Log each item
+        for item in items:
+            if not item:
+                continue
+
+            log.info('[%s:%s](%s) %r (%r)', interface, action, media, item.get('title'), item.get('year'))
+
+            if media == 'shows':
+                # Log each episode
+                self.log_episodes(item)
+
+    def log_episodes(self, item):
+        for season in item.get('seasons', []):
+            episodes = season.get('episodes')
+
+            if episodes is None:
+                log.info('    S%02d', season.get('number'))
+                continue
+
+            for episode in episodes:
+                log.info('    S%02dE%02d', season.get('number'), episode.get('number'))
 
     @staticmethod
     def _get_interface(data):
