@@ -86,7 +86,7 @@ class Option(object):
         return self._clone(option)
 
     def on_database_changed(self, value, account=None):
-        raise NotImplementedError
+        pass
 
     def on_plex_changed(self, value, account=None):
         raise NotImplementedError

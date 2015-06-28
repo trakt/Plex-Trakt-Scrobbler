@@ -1,10 +1,7 @@
 from plugin.models import Account
 from plugin.modules.migrations.core.base import Migration
 from plugin.preferences import Preferences
-
-import logging
-
-log = logging.getLogger(__name__)
+from plugin.sync.core.enums import SyncActionMode
 
 
 class PreferencesMigration(Migration):
@@ -22,3 +19,6 @@ class PreferencesMigration(Migration):
         # Migrate preferences to database
         Preferences.migrate(account=1)
         Preferences.migrate()
+
+        # Enable sync updates
+        Preferences.update('sync.action.mode', SyncActionMode.Update)
