@@ -5,7 +5,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Scrobble(Option):
+class ScrobbleOption(Option):
     key = 'scrobble.enabled'
     type = 'boolean'
 

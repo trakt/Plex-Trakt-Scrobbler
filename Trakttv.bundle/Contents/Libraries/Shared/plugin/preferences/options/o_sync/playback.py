@@ -6,7 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncPlayback(Option):
+class SyncPlaybackOption(Option):
     key = 'sync.playback.mode'
     type = 'enum'
 

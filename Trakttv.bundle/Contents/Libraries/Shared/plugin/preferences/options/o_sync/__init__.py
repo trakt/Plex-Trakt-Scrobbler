@@ -1,5 +1,5 @@
-from plugin.preferences.options.o_sync.action import SyncActionModeOption
-from plugin.preferences.options.o_sync.collection import SyncCollection, SyncCleanCollection
-from plugin.preferences.options.o_sync.playback import SyncPlayback
-from plugin.preferences.options.o_sync.ratings import SyncRatings, SyncRatingsConflict
-from plugin.preferences.options.o_sync.watched import SyncWatched
+from plugin.preferences.options.o_sync.action import SyncActionOption
+from plugin.preferences.options.o_sync.collection import SyncCollectionOption, SyncCleanCollectionOption
+from plugin.preferences.options.o_sync.playback import SyncPlaybackOption
+from plugin.preferences.options.o_sync.ratings import SyncRatingsOption, SyncRatingsConflictOption
+from plugin.preferences.options.o_sync.watched import SyncWatchedOption

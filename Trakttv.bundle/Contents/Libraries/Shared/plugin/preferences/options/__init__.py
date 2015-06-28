@@ -1,26 +1,26 @@
 from plugin.preferences.options.o_sync import *
 
-from plugin.preferences.options.activity import Activity
-from plugin.preferences.options.matcher import Matcher
-from plugin.preferences.options.pin import Pin
-from plugin.preferences.options.scrobble import Scrobble
+from plugin.preferences.options.activity import ActivityOption
+from plugin.preferences.options.matcher import MatcherOption
+from plugin.preferences.options.pin import PinOption
+from plugin.preferences.options.scrobble import ScrobbleOption
 
 OPTIONS = [
-    Activity,
-    Matcher,
-    Pin,
-    Scrobble,
+    ActivityOption,
+    MatcherOption,
+    PinOption,
+    ScrobbleOption,
 
     # Sync
-    SyncActionModeOption,
+    SyncActionOption,
 
-    SyncCollection,
-    SyncCleanCollection,
+    SyncCollectionOption,
+    SyncCleanCollectionOption,
 
-    SyncPlayback,
+    SyncPlaybackOption,
 
-    SyncRatings,
-    SyncRatingsConflict,
+    SyncRatingsOption,
+    SyncRatingsConflictOption,
 
-    SyncWatched
+    SyncWatchedOption
 ]

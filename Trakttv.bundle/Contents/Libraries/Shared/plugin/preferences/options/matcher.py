@@ -8,7 +8,7 @@ import plex_metadata
 log = logging.getLogger(__name__)
 
 
-class Matcher(Option):
+class MatcherOption(Option):
     key = 'matcher.mode'
     type = 'enum'
 

@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Pin(Option):
+class PinOption(Option):
     type = 'string'
 
     group = ('Authentication', )

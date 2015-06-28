@@ -6,7 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncCollection(Option):
+class SyncCollectionOption(Option):
     key = 'sync.collection.mode'
     type = 'enum'
 
@@ -42,7 +42,7 @@ class SyncCollection(Option):
         return value
 
 
-class SyncCleanCollection(Option):
+class SyncCleanCollectionOption(Option):
     key = 'sync.collection.clean'
     type = 'boolean'
 

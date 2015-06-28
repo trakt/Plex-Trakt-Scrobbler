@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Activity(Option):
+class ActivityOption(Option):
     key = 'activity.mode'
     type = 'enum'
 

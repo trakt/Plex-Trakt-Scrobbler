@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncRatings(Option):
+class SyncRatingsOption(Option):
     key = 'sync.ratings.mode'
     type = 'enum'
 
@@ -44,7 +44,7 @@ class SyncRatings(Option):
         return value
 
 
-class SyncRatingsConflict(Option):
+class SyncRatingsConflictOption(Option):
     key = 'sync.ratings.conflict'
     type = 'enum'
 

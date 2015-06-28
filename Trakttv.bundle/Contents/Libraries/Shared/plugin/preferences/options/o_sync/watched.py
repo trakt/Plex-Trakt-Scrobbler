@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncWatched(Option):
+class SyncWatchedOption(Option):
     key = 'sync.watched.mode'
     type = 'enum'
 
