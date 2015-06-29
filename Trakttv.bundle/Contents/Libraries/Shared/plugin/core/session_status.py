@@ -29,8 +29,6 @@ class SessionStatus(object):
 
     @classmethod
     def _create(cls, session):
-        session_key = cls._get_session_key(session)
-
         # Store session
         cls._store(session)
 
@@ -60,6 +58,9 @@ class SessionStatus(object):
 
     @classmethod
     def _get_session_key(cls, session):
+        if session.session_key is None:
+            return None
+
         try:
             return int(session.session_key)
         except ValueError:
@@ -83,7 +84,11 @@ class SessionStatus(object):
         # Retrieve parameters
         account_id = session.account_id
         rating_key = session.rating_key
+
         session_key = cls._get_session_key(session)
+
+        if session_key is None:
+            return
 
         # Ensure account exists in `active`
         if account_id not in cls._active:
@@ -98,6 +103,9 @@ class SessionStatus(object):
     @classmethod
     def _update(cls, session):
         session_key = cls._get_session_key(session)
+
+        if session_key is None:
+            return
 
         # Check if session exists
         if session_key not in cls._active_by_id:
