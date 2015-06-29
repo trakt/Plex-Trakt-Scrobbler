@@ -1,0 +1,22 @@
+build:
+    dependencies:
+        before:
+            - pip install -r Trakttv.bundle/Contents/Tests/requirements.txt
+    environment:
+        python: 2.7.7
+    tests:
+        override:
+            -
+                command: py.test --cov Trakttv.bundle Trakttv.bundle/Contents/Tests
+                coverage:
+                    file: .coverage
+                    config: .coveragerc
+                    format: py-cc
+checks:
+    python:
+        code_rating: true
+        duplicate_code: true
+filter:
+    paths:
+        - Trakttv.bundle/Contents/Code/*
+        - Trakttv.bundle/Contents/Libraries/Shared/plugin/*
