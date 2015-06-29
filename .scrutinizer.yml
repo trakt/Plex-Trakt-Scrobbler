@@ -7,10 +7,9 @@ build:
     tests:
         override:
             -
-                command: py.test --cov Trakttv.bundle Trakttv.bundle/Contents/Tests
+                command: py.test --cov Trakttv.bundle/Contents/ Trakttv.bundle/Contents/Tests
                 coverage:
                     file: .coverage
-                    config: .coveragerc
                     format: py-cc
 checks:
     python:
