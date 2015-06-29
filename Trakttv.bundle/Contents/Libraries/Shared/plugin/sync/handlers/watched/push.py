@@ -1,3 +1,4 @@
+from plugin.core.session_status import SessionStatus
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, PushHandler, bind
 from plugin.sync.handlers.watched.base import WatchedHandler
@@ -8,7 +9,17 @@ log = logging.getLogger(__name__)
 
 
 class Base(PushHandler, WatchedHandler):
-    pass
+    def push(self, p_item, t_item, key, **kwargs):
+        # Ensure item isn't currently being watched in plex
+        if SessionStatus.is_watching(self.current.account.id, key):
+            log.debug('Item %r is currently being watched, ignoring push watched handler', key)
+            return
+
+        super(Base, self).push(
+            p_item, t_item,
+            key=key,
+            **kwargs
+        )
 
 
 class Movies(Base):

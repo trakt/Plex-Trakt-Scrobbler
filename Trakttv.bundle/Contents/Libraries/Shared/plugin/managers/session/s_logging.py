@@ -1,4 +1,5 @@
 from plugin.core.helpers.variable import to_integer, merge
+from plugin.core.session_status import SessionStatus
 from plugin.managers.core.base import Manager, Get
 from plugin.managers.client import ClientManager
 from plugin.managers.session.base import UpdateSession
@@ -41,6 +42,9 @@ class GetLSession(Get):
             # Update newly created object
             self.manager.update(obj, info, fetch)
 
+            # Update active sessions
+            SessionStatus.on_created(obj)
+
             return obj
         except (apsw.ConstraintError, peewee.IntegrityError):
             # Return existing object
@@ -51,9 +55,12 @@ class UpdateLSession(UpdateSession):
     def __call__(self, obj, info, fetch=False):
         data = self.to_dict(obj, info, fetch)
 
-        return super(UpdateLSession, self).__call__(
+        success = super(UpdateLSession, self).__call__(
             obj, data
         )
+
+        SessionStatus.on_updated(obj)
+        return success
 
     def to_dict(self, obj, info, fetch=False):
         view_offset = to_integer(info.get('time'))
