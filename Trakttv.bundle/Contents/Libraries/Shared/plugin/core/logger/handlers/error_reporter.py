@@ -1,4 +1,5 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.logger.filters import RequestsFilter
 from plugin.managers import ExceptionManager
 
 from raven import Client
@@ -96,7 +97,8 @@ class ErrorReporter(SentryHandler):
 
         return self.client.capture(
             event_type, stack=stack, data=data,
-            extra=extra, date=date, **kwargs)
+            extra=extra, date=date, **kwargs
+        )
 
 
 # Build client
@@ -127,3 +129,4 @@ RAVEN = Client(**PARAMS)
 
 # Construct logging handler
 ERROR_REPORTER_HANDLER = ErrorReporter(RAVEN, level=logging.ERROR)
+ERROR_REPORTER_HANDLER.addFilter(RequestsFilter())
