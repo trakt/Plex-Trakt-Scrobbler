@@ -95,29 +95,23 @@ class Clean(Migration):
         (
             'delete_file', [
                 # /core
+                'core/action.py',
+                'core/configuration.py',
                 'core/environment.py',
                 'core/eventing.py',
+                'core/logging_handler.py',
+                'core/logging_reporter.py',
+                'core/method_manager.py',
                 'core/model.py',
                 'core/network.py',
+                'core/numeric.py',
+                'core/task.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
 
-                # /data
-                'data/client.py',
-                'data/dict_object.py',
-                'data/model.py',
-                'data/user.py',
-
-                # /pts
-                'pts/activity.py',
-                'pts/activity_logging.py',
-                'pts/activity_websocket.py',
-
-                # /sync
-                'sync/base.py',
-                'sync/legacy.py',
-                'sync/manager.py',
-                'sync/task.py',
+                # /interface
+                'interface/main_menu.py',
+                'interface/sync_menu.py',
 
                 # /
                 'sync.py'
@@ -125,7 +119,10 @@ class Clean(Migration):
         ),
         (
             'delete_directory', [
-                'plex'
+                'data',
+                'plex',
+                'pts',
+                'sync'
             ], os.path.isdir
         )
     ]
@@ -133,6 +130,13 @@ class Clean(Migration):
     tasks_lib = [
         (
             'delete_file', [
+                # plugin
+                'Shared/plugin/core/event.py',
+                'Shared/plugin/core/io.py',
+                'Shared/plugin/core/jsonw.py',
+                'Shared/plugin/modules/base.py',
+                'Shared/plugin/modules/manager.py',
+
                 # asio
                 'Shared/asio.py',
                 'Shared/asio_base.py',
@@ -140,10 +144,11 @@ class Clean(Migration):
                 'Shared/asio_windows.py',
                 'Shared/asio_windows_interop.py',
 
-                # plex
+                # plex.py
                 'Shared/plex/core/compat.py',
                 'Shared/plex/core/event.py',
                 'Shared/plex/interfaces/library.py',
+                'Shared/plex/interfaces/plugin.py',
 
                 # plex.metadata.py
                 'Shared/plex_metadata/core/cache.py',
@@ -163,6 +168,10 @@ class Clean(Migration):
         ),
         (
             'delete_directory', [
+                # plugin
+                'Shared/plugin/core/collections',
+                'Shared/plugin/data',
+
                 # trakt.py
                 'Shared/trakt/interfaces/movie',
                 'Shared/trakt/interfaces/show',
