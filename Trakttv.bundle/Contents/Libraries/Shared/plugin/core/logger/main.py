@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.environment import Environment
-from plugin.core.logger.filters import FrameworkFilter
+from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter
 from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
 from plugin.core.logger.handlers.error_storage import ERROR_STORAGE_HANDLER
 
@@ -118,6 +118,7 @@ def update_loggers():
 
 # Get the logging file handler
 LOG_HANDLER = get_handler()
+LOG_HANDLER.addFilter(AuthorizationFilter())
 
 # Setup logger
 setup()
