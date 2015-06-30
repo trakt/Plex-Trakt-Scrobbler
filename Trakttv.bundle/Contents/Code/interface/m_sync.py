@@ -163,8 +163,6 @@ def Pull(account_id=1, refresh=None):
 
 
 def Trigger(account_id, mode, data=SyncData.All, media=SyncMedia.All, **kwargs):
-    # TODO implement options to change `SyncData` option per `Account`
-
     try:
         Sync.queue(account_id, mode, data, media, **kwargs)
     except QueueError, ex:
