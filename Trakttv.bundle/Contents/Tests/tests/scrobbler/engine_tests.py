@@ -57,6 +57,9 @@ def test_duplication():
     assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000})], [('stop',)])
     assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000})], [])
 
+    # media change
+    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1000})], [('start',)])
+
 
 def test_finished():
     engine = SessionEngine()
