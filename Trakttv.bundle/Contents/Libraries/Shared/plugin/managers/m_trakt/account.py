@@ -17,25 +17,30 @@ class UpdateAccount(Update):
         if not super(UpdateAccount, self).from_dict(account, changes):
             return False
 
-        # Update `TraktBasicCredential`
-        TraktBasicCredentialManager.update.from_dict(
-            lambda: TraktBasicCredentialManager.get.or_create(
-                TraktBasicCredential.account == account,
-                account=account
-            ),
-            changes.get('authorization', {}).get('basic', {})
-        )
+        # Update credentials
+        authorization = changes.get('authorization', {})
 
-        # Update `TraktOAuthCredential`
-        TraktOAuthCredentialManager.update.from_dict(
-            lambda: TraktOAuthCredentialManager.get.or_create(
-                TraktOAuthCredential.account == account,
-                account=account
-            ),
-            changes.get('authorization', {}).get('oauth', {})
-        )
+        # Update `TraktBasicCredential` (if there are changes)
+        if 'basic' in authorization:
+            TraktBasicCredentialManager.update.from_dict(
+                lambda: TraktBasicCredentialManager.get.or_create(
+                    TraktBasicCredential.account == account,
+                    account=account
+                ),
+                authorization['basic']
+            )
 
-        return False
+        # Update `TraktOAuthCredential` (if there are changes)
+        if 'oauth' in authorization:
+            TraktOAuthCredentialManager.update.from_dict(
+                lambda: TraktOAuthCredentialManager.get.or_create(
+                    TraktOAuthCredential.account == account,
+                    account=account
+                ),
+                authorization['oauth']
+            )
+
+        return True
 
     def from_pin(self, account, pin):
         if not pin:

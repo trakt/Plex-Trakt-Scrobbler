@@ -8,6 +8,8 @@ from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, update_loggers
 from plugin.core.logger.handlers.error_reporter import RAVEN
+from plugin.managers import TraktAccountManager
+from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
 
@@ -126,7 +128,40 @@ class Main(object):
     def on_token_refreshed(cls, authorization):
         log.debug('Authentication - PIN authorization refreshed')
 
-        # TODO update account with new authorization
+        # Retrieve trakt account matching this `authorization`
+        with Trakt.configuration.oauth(token=authorization.get('access_token')):
+            settings = Trakt['users/settings'].get()
+
+        if not settings:
+            log.warn('Authentication - Unable to retrieve account details for authorization')
+            return
+
+        # Retrieve trakt account username from `settings`
+        username = settings.get('user', {}).get('username')
+
+        if not username:
+            log.warn('Authentication - Unable to retrieve username for authorization')
+            return None
+
+        # Find matching trakt account
+        trakt_account = (TraktAccount
+            .select()
+            .where(
+                TraktAccount.username == username
+            )
+        ).first()
+
+        if not trakt_account:
+            log.warn('Authentication - Unable to find TraktAccount with the username %r', username)
+
+        # Update oauth credential
+        TraktAccountManager.update.from_dict(trakt_account, {
+            'authorization': {
+                'oauth': authorization
+            }
+        })
+
+        log.info('Authentication - Updated OAuth credential for %r', trakt_account)
 
     def start(self):
         self.thread.start()
