@@ -32,7 +32,8 @@ class AccountMigration(Migration):
             Account.get(Account.id == 0)
         except Account.DoesNotExist:
             Account.create(
-                id=0
+                id=0,
+                name=''
             )
 
     @classmethod
