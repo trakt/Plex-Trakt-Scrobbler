@@ -19,6 +19,15 @@ log = logging.getLogger(__name__)
 class AccountMigration(Migration):
     def run(self):
         # Ensure server `Account` exists
+        self.create_server_account()
+
+        # Ensure administrator `Account` exists
+        self.create_administrator_account()
+
+        return True
+
+    @classmethod
+    def create_server_account(cls):
         try:
             Account.get(Account.id == 0)
         except Account.DoesNotExist:
@@ -26,35 +35,41 @@ class AccountMigration(Migration):
                 id=0
             )
 
-        # Ensure administrator `Account` exists
+    @classmethod
+    def create_administrator_account(cls):
+        username = cls.get_trakt_username()
+
+        if username is None:
+            log.debug('Unable to migrate administrator account, no previous trakt username found')
+            return
+
         try:
             account = Account.get(Account.id == 1)
         except Account.DoesNotExist:
             account = Account.create(
                 id=1,
-                name=self.get_trakt_username()
+                name=username
             )
 
             # Create default rules for account
-            self.create_rules(account)
+            cls.create_rules(account)
 
         # Ensure plex account details exist
-        plex_account = self.create_plex_account(account)
+        plex_account = cls.create_plex_account(account)
 
-        self.create_plex_basic_credential(plex_account)
+        cls.create_plex_basic_credential(plex_account)
 
         # Ensure trakt account details exist
-        created, trakt_account = self.create_trakt_account(account)
+        created, trakt_account = cls.create_trakt_account(account, username)
 
-        self.create_trakt_basic_credential(trakt_account)
-        self.create_trakt_oauth_credential(trakt_account)
+        cls.create_trakt_basic_credential(trakt_account)
+        cls.create_trakt_oauth_credential(trakt_account)
 
         # Refresh trakt account details
         trakt_account.refresh(force=created)
 
-        return True
-
-    def create_rules(self, account):
+    @classmethod
+    def create_rules(cls, account):
         ClientRule.create(account=account, priority=1)
         UserRule.create(account=account, priority=1)
 
@@ -122,11 +137,11 @@ class AccountMigration(Migration):
     #
 
     @classmethod
-    def create_trakt_account(cls, account):
+    def create_trakt_account(cls, account, username):
         try:
             return True, TraktAccount.create(
                 account=account,
-                username=cls.get_trakt_username()
+                username=username
             )
         except (apsw.ConstraintError, peewee.IntegrityError):
             return False, TraktAccount.get(
@@ -177,4 +192,4 @@ class AccountMigration(Migration):
         if Environment.dict['trakt.username']:
             return Environment.dict['trakt.username']
 
-        raise NotImplementedError()
+        return None
