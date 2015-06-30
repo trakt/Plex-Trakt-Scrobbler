@@ -129,7 +129,7 @@ class Main(object):
         log.debug('Authentication - PIN authorization refreshed')
 
         # Retrieve trakt account matching this `authorization`
-        with Trakt.configuration.oauth(token=authorization.get('access_token')):
+        with Trakt.configuration.http(retry=True).oauth(token=authorization.get('access_token')):
             settings = Trakt['users/settings'].get()
 
         if not settings:

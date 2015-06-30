@@ -97,7 +97,7 @@ class TraktAccount(Model):
                 return
 
         # Fetch trakt account details
-        with self.authorization():
+        with self.authorization().http(retry=force):
             settings = Trakt['users/settings'].get()
 
         # Update user details
