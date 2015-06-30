@@ -20,7 +20,9 @@ class LibraryInterface(Interface):
                 'Video': {
                     'episode':  'Episode',
                     'movie':    'Movie'
-                }
+                },
+
+                'Track': 'Track'
             }))
         }))
 
@@ -72,6 +74,17 @@ class LibraryInterface(Interface):
     def scrobble(self, key):
         response = self.http.get(
             '/:/scrobble',
+            query={
+                'identifier': 'com.plexapp.plugins.library',
+                'key': key
+            }
+        )
+
+        return response.status_code == 200
+
+    def unscrobble(self, key):
+        response = self.http.get(
+            '/:/unscrobble',
             query={
                 'identifier': 'com.plexapp.plugins.library',
                 'key': key

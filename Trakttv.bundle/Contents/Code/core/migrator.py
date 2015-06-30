@@ -95,25 +95,23 @@ class Clean(Migration):
         (
             'delete_file', [
                 # /core
+                'core/action.py',
+                'core/configuration.py',
+                'core/environment.py',
                 'core/eventing.py',
+                'core/logging_handler.py',
+                'core/logging_reporter.py',
+                'core/method_manager.py',
                 'core/model.py',
                 'core/network.py',
+                'core/numeric.py',
+                'core/task.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
 
-                # /data
-                'data/client.py',
-                'data/dict_object.py',
-                'data/model.py',
-                'data/user.py',
-
-                # /pts
-                'pts/activity.py',
-                'pts/activity_logging.py',
-                'pts/activity_websocket.py',
-
-                # /sync
-                'sync/manager.py',
+                # /interface
+                'interface/main_menu.py',
+                'interface/sync_menu.py',
 
                 # /
                 'sync.py'
@@ -121,7 +119,10 @@ class Clean(Migration):
         ),
         (
             'delete_directory', [
-                'plex'
+                'data',
+                'plex',
+                'pts',
+                'sync'
             ], os.path.isdir
         )
     ]
@@ -129,29 +130,48 @@ class Clean(Migration):
     tasks_lib = [
         (
             'delete_file', [
-                # asio
-                'Shared/asio.py',                           'Shared/asio.pyc',
-                'Shared/asio_base.py',                      'Shared/asio_base.pyc',
-                'Shared/asio_posix.py',                     'Shared/asio_posix.pyc',
-                'Shared/asio_windows.py',                   'Shared/asio_windows.pyc',
-                'Shared/asio_windows_interop.py',           'Shared/asio_windows_interop.pyc',
+                # plugin
+                'Shared/plugin/core/event.py',
+                'Shared/plugin/core/io.py',
+                'Shared/plugin/core/jsonw.py',
+                'Shared/plugin/modules/base.py',
+                'Shared/plugin/modules/manager.py',
 
-                # plex
-                'Shared/plex/core/compat.py',               'Shared/plex/core/compat.pyc',
-                'Shared/plex/core/event.py',                'Shared/plex/core/event.pyc',
+                # asio
+                'Shared/asio.py',
+                'Shared/asio_base.py',
+                'Shared/asio_posix.py',
+                'Shared/asio_windows.py',
+                'Shared/asio_windows_interop.py',
+
+                # plex.py
+                'Shared/plex/core/compat.py',
+                'Shared/plex/core/event.py',
+                'Shared/plex/interfaces/library.py',
+                'Shared/plex/interfaces/plugin.py',
 
                 # plex.metadata.py
-                'Shared/plex_metadata/core/cache.py',       'Shared/plex_metadata/core/cache.pyc',
+                'Shared/plex_metadata/core/cache.py',
+
+                # requests
+                'Shared/requests/packages/urllib3/util.py',
 
                 # trakt.py
-                'Shared/trakt/interfaces/base/media.py',    'Shared/trakt/interfaces/base/media.pyc',
-                'Shared/trakt/interfaces/account.py',       'Shared/trakt/interfaces/account.pyc',
-                'Shared/trakt/interfaces/rate.py',          'Shared/trakt/interfaces/rate.pyc',
-                'Shared/trakt/request.py',                  'Shared/trakt/request.pyc',
+                'Shared/trakt/core/context.py',
+                'Shared/trakt/interfaces/base/media.py',
+                'Shared/trakt/interfaces/account.py',
+                'Shared/trakt/interfaces/rate.py',
+                'Shared/trakt/interfaces/sync/base.py',
+                'Shared/trakt/media_mapper.py',
+                'Shared/trakt/request.py'
             ], os.path.isfile
         ),
         (
             'delete_directory', [
+                # plugin
+                'Shared/plugin/core/collections',
+                'Shared/plugin/data',
+
                 # trakt.py
                 'Shared/trakt/interfaces/movie',
                 'Shared/trakt/interfaces/show',
@@ -186,8 +206,13 @@ class Clean(Migration):
                 path = os.path.join(base_path, path)
                 path = os.path.abspath(path)
 
+                # Remove file
                 if m(path, conditions):
                     log.info('(%s) %s: "%s"', name, action, path)
+
+                # Remove .pyc files as-well
+                if path.endswith('.py') and m(path + 'c', conditions):
+                    log.info('(%s) %s: "%s"', name, action, path + 'c')
 
 
 class ForceLegacy(Migration):

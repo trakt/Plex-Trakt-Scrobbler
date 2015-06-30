@@ -14,16 +14,22 @@ class Detail(Container):
     platform = Property
     platform_version = Property('platformVersion')
 
-    multiuser = Property(type=bool)
+    allow_camera_upload = Property('allowCameraUpload', [int, bool])
+    allow_channel_access = Property('allowChannelAccess', [int, bool])
+    allow_sync = Property('allowSync', [int, bool])
+
+    certificate = Property(type=[int, bool])
+    multiuser = Property(type=[int, bool])
+    sync = Property(type=[int, bool])
+
     start_state = Property('startState')
-    sync = Property(type=bool)
 
-    silverlight = Property('silverlightInstalled', bool)
-    soundflower = Property('soundflowerInstalled', bool)
-    flash = Property('flashInstalled', bool)
-    webkit = Property(type=bool)
+    silverlight = Property('silverlightInstalled', [int, bool])
+    soundflower = Property('soundflowerInstalled', [int, bool])
+    flash = Property('flashInstalled', [int, bool])
+    webkit = Property(type=[int, bool])
 
-    cookie_parameters = Property('requestParametersInCookie', bool)
+    cookie_parameters = Property('requestParametersInCookie', [int, bool])
 
     @staticmethod
     def construct_myplex(client, node):
@@ -42,12 +48,12 @@ class MyPlexDetail(Descriptor):
     mapping_state = Property('myPlexMappingState')
     signin_state = Property('myPlexSigninState')
 
-    subscription = Property('myPlexSubscription', bool)
+    subscription = Property('myPlexSubscription', [int, bool])
 
 
 class TranscoderDetail(Descriptor):
-    audio = Property('transcoderAudio', bool)
-    video = Property('transcoderVideo', bool)
+    audio = Property('transcoderAudio', [int, bool])
+    video = Property('transcoderVideo', [int, bool])
 
     video_bitrates = Property('transcoderVideoBitrates')
     video_qualities = Property('transcoderVideoQualities')

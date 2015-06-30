@@ -1,5 +1,7 @@
 from requests import Request
+from six.moves.urllib_parse import urlencode
 import json
+import six
 
 
 class TraktRequest(object):
@@ -13,6 +15,7 @@ class TraktRequest(object):
         # Parsed Attributes
         self.path = None
         self.params = None
+        self.query = None
 
         self.data = None
         self.method = None
@@ -46,8 +49,11 @@ class TraktRequest(object):
         # Transform `params` into list
         self.params = self.kwargs.get('params') or []
 
-        if isinstance(self.params, basestring):
+        if isinstance(self.params, six.string_types):
             self.params = [self.params]
+
+        # Transform `query`
+        self.query = self.kwargs.get('query') or {}
 
     def transform_method(self):
         self.method = self.kwargs.get('method')
@@ -88,8 +94,14 @@ class TraktRequest(object):
         return self.kwargs.get('data') or None
 
     def construct_url(self):
-        """Construct a full trakt request URI, with `api_key` and `params`."""
+        """Construct a full trakt request URI, with `params` and `query`."""
         path = [self.path]
         path.extend(self.params)
 
-        return self.client.base_url + '/'.join(x for x in path if x)
+        url = self.client.base_url + '/'.join(x for x in path if x)
+
+        # Append `query` to URL
+        if self.query:
+            url += '?' + urlencode(self.query)
+
+        return url

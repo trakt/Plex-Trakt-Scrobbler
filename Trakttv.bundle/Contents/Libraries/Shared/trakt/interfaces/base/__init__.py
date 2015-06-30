@@ -1,7 +1,6 @@
 from trakt.core.errors import ERRORS
 from trakt.core.exceptions import ServerError, ClientError
 from trakt.helpers import setdefault
-from trakt.media_mapper import MediaMapper
 
 from functools import wraps
 import logging
@@ -12,8 +11,7 @@ log = logging.getLogger(__name__)
 def authenticated(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-        if args and isinstance(args[0], Interface):
-            interface = args[0]
+        kwargs['authenticated'] = True
 
         return func(*args, **kwargs)
 
@@ -46,7 +44,7 @@ class Interface(object):
         if hasattr(self, name):
             return getattr(self, name)
 
-        raise ValueError('Unknown action "%s" on %s', name, self)
+        raise ValueError('Unknown action "%s" on %s' % (name, self))
 
     @property
     def http(self):
@@ -65,15 +63,17 @@ class Interface(object):
             return response
 
         # Parse response, return data
-        if response.headers['content-type'].startswith('application/json'):
+        content_type = response.headers.get('content-type')
+
+        if content_type and content_type.startswith('application/json'):
             # Try parse json response
             try:
                 data = response.json()
-            except Exception, e:
+            except Exception as e:
                 log.warning('unable to parse JSON response: %s', e)
                 return None
         else:
-            log.debug('response returned "%s" content, falling back to raw data', response.headers['content-type'])
+            log.debug('response returned content-type: %r, falling back to raw data', content_type)
 
             # Fallback to raw content
             data = response.content
@@ -102,24 +102,6 @@ class Interface(object):
             return None
 
         return data
-
-    @staticmethod
-    def media_mapper(store, media, items, **kwargs):
-        if items is None:
-            return
-
-        if store is None:
-            store = {}
-
-        mapper = MediaMapper(store)
-
-        for item in items:
-            result = mapper.process(media, item, **kwargs)
-
-            if result is None:
-                log.warn('Unable to map item: %s', item)
-
-        return store
 
 
 class InterfaceProxy(object):

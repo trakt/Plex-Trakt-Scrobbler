@@ -1,45 +1,53 @@
-# Plex Trakt Scrobbler
+# trakt (for Plex)
 
-[![](https://badge.waffle.io/trakt/Plex-Trakt-Scrobbler.png?label=Ready)](http://waffle.io/trakt/Plex-Trakt-Scrobbler)
+[![](https://img.shields.io/scrutinizer/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)]() [![](https://img.shields.io/scrutinizer/coverage/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)]() [![](https://img.shields.io/scrutinizer/build/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)]() [![](https://img.shields.io/github/issues/trakt/Plex-Trakt-Scrobbler.svg?style=flat-square)](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) [![](https://img.shields.io/github/release/trakt/Plex-Trakt-Scrobbler.svg?style=flat-square)](https://github.com/trakt/Plex-Trakt-Scrobbler/releases)
 
-**WARNING:** If you have multiple users on your server, please ensure you have filters setup (the *only scrobble* options in the settings).
-The default setup will scrobble all media playing from your server to your trakt.tv account.
+### Links
+
+ - [Configuration](https://github.com/fuzeman/Plex-Trakt-Scrobbler/wiki/Configuration) *(outdated - some options might be renamed or missing)*
+ - [Contributors](https://github.com/trakt/Plex-Trakt-Scrobbler/graphs/contributors)
+ - [Credits](Trakttv.bundle/CREDITS.md) *(for other resources)*
+ - [Issues](https://github.com/trakt/Plex-Trakt-Scrobbler/issues)
 
 ## Installation
 
-### Unsupported Appstore  
+### Download
 
-The latest stable version of the plugin is available from the [Unsupported Appstore](http://forums.plexapp.com/index.php/topic/25523-unsupported-appstore/)
-
-### Manual
-
-**Download** the plugin from one of the following branches
+Download the plugin from one of the following branches
 
  * **[master (stable)](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/master.zip)**
  * [beta](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/beta.zip)
  * *[develop](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/develop.zip)*
 
-**Install** the bundle by extracting the zip and copying the `Trakttv.bundle` folder to your Plex Media server plugin folder
+### Install
 
- * **OS X** `~/Library/Application Support/Plex Media Server/Plug-ins`
+Install the bundle by extracting the zip and copying the `Trakttv.bundle` folder to your Plex Media server `Plug-ins` folder
 
- * **Linux** `/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins`
+**OS X**
+```
+~/Library/Application Support/Plex Media Server/Plug-ins
+```
 
- * **Windows XP** `C:\Documents and Settings\[username]\Local Settings\Application Data\Plex Media Server\Plug-ins`
+**Linux**
+```
+/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins
+```
 
- * **Windows Vista (and later)** `C:\Users\[username]\AppData\Local\Plex Media Server\Plug-ins`
+**Windows XP**
+```
+C:\Documents and Settings\[username]\Local Settings\Application Data\Plex Media Server\Plug-ins
+```
 
-## Configuration
+**Windows Vista (and later)**
+```
+C:\Users\[username]\AppData\Local\Plex Media Server\Plug-ins
+```
 
-1. In Plex/Web, navigate to `Channels` -> `Trakt.tv` -> `Settings`
-2. Enter your [trakt.tv](http://trakt.tv) username and password, and tick the *Scrobble* option to   enable automatic scrobbling.
+### Setup
 
-## Issues
-
-The plugin is still work in progress so there may be bugs.
-
-**Please report all bugs to the issue tracker on this repository [here](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) (please try searching first)** 
-
-Support is also available via IRC at [#trakt-plex](irc://chat.freenode.net/trakt-plex) (on [freenode](http://freenode.net/)).
-
-Code contributions are also welcome. Submit pull requests via GitHub and they will be reviewed and merged in.
+1. In Plex/Web, navigate to `Channels -> trakt -> Settings`
+2. Authentication
+    1. Visit https://trakt.tv/pin/478, login to trakt.tv and approve the application
+    2. Enter the displayed pin into the ```Authentication PIN``` option
+3. Enable automatic scrobbling by ticking the ```Scrobble``` option
+3. *(optional) If you have multiple users on your server, enter your plex.tv username in ```Global Filter - Users``` to ensure only your watching activity is scrobbled*

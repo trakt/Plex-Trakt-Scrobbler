@@ -1,4 +1,5 @@
 from trakt.interfaces.base import authenticated, Interface
+from trakt.mapper.sync import SyncMapper
 
 
 class Get(Interface):
@@ -12,7 +13,9 @@ class Get(Interface):
             r_params.extend(params)
 
         response = self.http.get(
-            params=r_params
+            params=r_params,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         items = self.get_data(response, **kwargs)
@@ -20,8 +23,8 @@ class Get(Interface):
         if type(items) is not list:
             return None
 
-        return self.media_mapper(
-            store, media, items,
+        return SyncMapper.process(
+            store, items, media,
             **self.flags
         )
 
@@ -46,7 +49,9 @@ class Add(Interface):
     @authenticated
     def add(self, items, **kwargs):
         response = self.http.post(
-            data=items
+            data=items,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         return self.get_data(response, **kwargs)
@@ -57,7 +62,9 @@ class Remove(Interface):
     def remove(self, items, **kwargs):
         response = self.http.post(
             'remove',
-            data=items
+            data=items,
+
+            authenticated=kwargs.pop('authenticated', None)
         )
 
         return self.get_data(response, **kwargs)

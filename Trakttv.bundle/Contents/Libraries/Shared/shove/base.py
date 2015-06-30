@@ -43,14 +43,18 @@ class Base(object):
             value = compress(value, 9 if compression is True else compression)
         return value
 
-    def loads(self, value):
+    def loads(self, value, key=None):
         '''Deserializes and optionally decompresses object `value`.'''
         if self._compress:
             try:
                 value = decompress(value)
             except error:
                 pass
-        return loads(value)
+
+        try:
+            return loads(value)
+        except EOFError:
+            raise KeyError(key)
 
 
 class Mapping(Base):
@@ -96,7 +100,7 @@ class FileBase(Base):
         # (per Larry Meyn)
         try:
             with open(self._key_to_file(key), 'rb') as item:
-                return self.loads(item.read())
+                return self.loads(item.read(), key)
         except (IOError, OSError):
             raise KeyError(key)
 
@@ -129,12 +133,12 @@ class FileBase(Base):
         # creates the store directory
         try:
             makedirs(self._dir)
-        except OSError:
-            raise EnvironmentError(
-                'cache directory "{0}" does not exist and could not be '
-                'created'.format(self._dir)
-            )
+        except OSError as ex:
+            raise EnvironmentError('cache directory %r does not exist and could not be created - %s' % (self._dir, ex))
 
     def _key_to_file(self, key):
+        # ensure `key` is a string
+        key = str(key)
+
         # gives the filesystem path for a key
         return join(self._dir, quote_plus(key))

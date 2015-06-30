@@ -56,7 +56,7 @@ class ObjectManager(object):
         for path, name in cls.discover():
             try:
                 mod = __import__(name, fromlist=['*'])
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to import "%s" - %s', name, ex)
                 continue
 

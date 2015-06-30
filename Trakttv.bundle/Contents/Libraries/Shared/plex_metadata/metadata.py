@@ -2,6 +2,7 @@ from plex import Plex
 from plex.core.helpers import synchronized
 from plex_activity import Activity
 from plex_metadata.core.defaults import DEFAULT_TYPES
+from plex_metadata.core.helpers import urlparse
 
 from threading import Condition
 import logging
@@ -37,7 +38,7 @@ class Metadata(object):
         try:
             # Try retrieve item from cache (if it exists)
             value = self._cache_get(key)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve item "%s" from cache - %s', key, ex, exc_info=True)
             value = None
 
@@ -52,7 +53,7 @@ class Metadata(object):
         try:
             # Invalidate item in cache
             self._cache_invalidate(key)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to invalidate item "%s" from cache - %s', key, ex, exc_info=True)
 
     @synchronized
@@ -63,7 +64,7 @@ class Metadata(object):
         try:
             # Store in cache
             self._cache_store(key, value)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to store item "%s" in cache - %s', key, ex, exc_info=True)
 
         return value
@@ -81,8 +82,12 @@ class Metadata(object):
         if value is None:
             return None
 
+        if not value:
+            # Unsupported media (False)
+            return value
+
         # Validate item
-        if not value.guid:
+        if not self._valid(value.guid):
             self._cache_invalidate(key)
             return None
 
@@ -101,10 +106,25 @@ class Metadata(object):
         if self.cache is None:
             return
 
-        if not value or not value.guid:
+        if value is None:
+            return
+
+        if value and not self._valid(value.guid):
             return
 
         self.cache[key] = value
+
+    @staticmethod
+    def _valid(guid):
+        if not guid:
+            return False
+
+        agent, uri = urlparse(guid)
+
+        if agent in ['local', 'none']:
+            return False
+
+        return True
 
     #
     # Event handlers
@@ -131,7 +151,7 @@ class Metadata(object):
         if item.type not in self.types:
             # TODO set flag to ignore future refresh requests
             log.warn('Item %s with type "%s" has been ignored', key, item.type)
-            return None
+            return False
 
         return item
 

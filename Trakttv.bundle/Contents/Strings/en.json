@@ -5,16 +5,17 @@
     "PhotosTitle"                                 : "trakt",
     "ApplicationsTitle"                           : "trakt",
 
-    "interface.sync_menu:sync_menu:title"         : "Sync",
+    "interface.m_sync:accounts:title"          : "Accounts",
+    "interface.m_sync:controls:title"          : "Sync (%s)",
 
-    "interface.sync_menu:trigger_success:title"   : "Syncing task triggered",
-    "interface.sync_menu:trigger_success:message" : "%s has been triggered and will continue in the background",
-    "interface.sync_menu:trigger_failure:title"   : "Unable to trigger sync",
+    "interface.m_sync:trigger_success:title"   : "Syncing task triggered",
+    "interface.m_sync:trigger_success:message" : "%s has been triggered and will continue in the background",
+    "interface.m_sync:trigger_failure:title"   : "Unable to trigger sync",
 
-    "interface.sync_menu:cancel_success:title"    : "Syncing task cancelled",
-    "interface.sync_menu:cancel_success:message"  : "Syncing task has been notified to cancel",
-    "interface.sync_menu:cancel_failure:title"    : "Unable to cancel sync",
-    "interface.sync_menu:cancel_failure:message"  : "There is no syncing task running",
+    "interface.m_sync:cancel_success:title"    : "Syncing task cancelled",
+    "interface.m_sync:cancel_success:message"  : "Syncing task has been notified to cancel",
+    "interface.m_sync:cancel_failure:title"    : "Unable to cancel sync",
+    "interface.m_sync:cancel_failure:message"  : "There is no syncing task running",
 
     "sync.manager:not_initialized"                : "Sync manager has not been initialized",
     "sync.manager:already_running"                : "Sync task already running",

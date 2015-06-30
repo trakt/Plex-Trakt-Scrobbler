@@ -20,5 +20,5 @@ class Source(Emitter):
     def _run_wrapper(self):
         try:
             self.run()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in "%s" activity source: %s', self.name, ex, exc_info=True)
