@@ -37,7 +37,7 @@ def assert_events(engine, session, events, expected):
         pytest.fail("Returned actions %r doesn't match the expected actions %r" % (actions, expected))
 
 
-def test_duplication():
+def test_event_duplication():
     engine = SessionEngine()
     session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
 
@@ -59,6 +59,22 @@ def test_duplication():
 
     # media change
     assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1000})], [('start',)])
+
+
+def test_finished_duplication():
+    engine = SessionEngine()
+    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+
+    # playing
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1000})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 2000})], [])
+
+    # stopped
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 50 * 1000})], [('stop',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 51 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 52 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 53 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 54 * 1000})], [])
 
 
 def test_finished():

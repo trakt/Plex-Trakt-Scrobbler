@@ -15,11 +15,16 @@ class PlayingHandler(SessionHandler):
             if session.state != 'stop':
                 yield 'stop', session.payload
         elif cls.has_finished(session, payload):
-            yield 'stop', payload
+            # Only yield a "stop" action if the session hasn't already been stopped
+            if session.state != 'stop':
+                yield 'stop', payload
+
+            # No action required
             return
         elif session.state == 'start':
             # Duplicate action, just update the current data
             yield None, payload
+
             return
 
         # Create new 'start' event
