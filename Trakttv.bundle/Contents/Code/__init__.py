@@ -19,6 +19,12 @@ try:
 except Exception, ex:
     Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
+# Libraries
+# ------------------------------------------------
+from libraries import setup_libraries
+
+setup_libraries()
+# ------------------------------------------------
 # Modules
 # ------------------------------------------------
 import core
