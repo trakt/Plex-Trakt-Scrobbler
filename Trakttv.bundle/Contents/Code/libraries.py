@@ -30,6 +30,7 @@ def get_architecture():
     Log.Info('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
     return None
 
+
 def setup_libraries():
     system = platform.system()
     architecture = get_architecture()
@@ -39,11 +40,18 @@ def setup_libraries():
 
     Log.Debug('System: %r, Architecture: %r', system, architecture)
 
-    libraries_path = os.path.join(Environment.path.libraries, system, architecture)
+    if architecture == 'i686':
+        insert_path(system, 'i386')
 
-    if libraries_path in sys.path:
+    insert_path(system, architecture)
+
+
+def insert_path(system, architecture):
+    path = os.path.join(Environment.path.libraries, system, architecture)
+
+    if path in sys.path:
         return
 
-    Log.Debug('Using %r for compiled libraries', libraries_path)
+    sys.path.insert(0, path)
 
-    sys.path.insert(0, libraries_path)
+    Log.Debug('Inserted path: %r (for compiled libraries)', path)
