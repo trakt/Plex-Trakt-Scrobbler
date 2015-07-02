@@ -16,6 +16,10 @@ class PathEnvironment(object):
         return self._core.code_path
 
     @property
+    def libraries(self):
+        return os.path.abspath(os.path.join(self.code, '..', 'Libraries'))
+
+    @property
     def plugin_caches(self):
         return os.path.join(self.plugin_support, 'Caches', PLUGIN_IDENTIFIER)
 
