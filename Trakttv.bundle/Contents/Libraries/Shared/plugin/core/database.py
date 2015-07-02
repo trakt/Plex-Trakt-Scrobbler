@@ -1,6 +1,6 @@
 from plugin.core.environment import Environment
 
-from multiprocessing.synchronize import RLock
+from threading import RLock
 from playhouse.apsw_ext import APSWDatabase
 import apsw
 import logging
