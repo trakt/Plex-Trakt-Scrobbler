@@ -5,7 +5,7 @@ from plugin.core.environment import Environment
 import locale
 import os
 
-Environment.setup(Core, Dict, Prefs)
+Environment.setup(Core, Dict, Platform, Prefs)
 
 # plex.database.py
 os.environ['LIBRARY_DB'] = os.path.join(
