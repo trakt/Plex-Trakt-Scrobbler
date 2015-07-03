@@ -65,6 +65,7 @@ from plugin.modules.migrations.account import AccountMigration
 from plugin.preferences import Preferences
 
 from plex import Plex
+import json
 import time
 
 
@@ -86,13 +87,15 @@ def Start():
 @expose
 def Api(*args, **kwargs):
     try:
-        return ApiManager.process(
+        data = ApiManager.process(
             Request.Method,
             Request.Headers,
             Request.Body,
 
             *args, **kwargs
         )
+
+        return json.dumps(data)
     except Exception, ex:
         Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
         return None
