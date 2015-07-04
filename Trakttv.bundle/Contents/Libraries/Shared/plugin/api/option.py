@@ -6,8 +6,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class PreferencesService(Service):
-    __key__ = 'preferences'
+class Option(Service):
+    __key__ = 'option'
 
     @expose
     def list(self, account=None):
@@ -40,10 +40,4 @@ class PreferencesService(Service):
                 # Yield option
                 yield data
 
-        options = list(retrieve())
-
-        log.debug(options)
-
-        return {
-            'options': options
-        }
+        return list(retrieve())
