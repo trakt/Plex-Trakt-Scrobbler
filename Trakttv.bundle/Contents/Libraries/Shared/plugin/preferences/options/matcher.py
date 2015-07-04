@@ -16,7 +16,7 @@ class MatcherOption(Option):
     default = MatcherMode.PlexExtended
     scope = 'server'
 
-    group = ('Matcher',)
+    group = ('Advanced', 'Matcher')
     label = 'Mode'
 
     preference = 'matcher'
