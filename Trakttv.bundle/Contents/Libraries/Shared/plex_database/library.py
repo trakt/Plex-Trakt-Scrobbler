@@ -419,17 +419,17 @@ class EpisodeLibrary(LibraryBase):
         def episodes_iterator():
             for sh_id, se_id, ep_id, ep_index, episode in episodes:
                 # Retrieve parents
-                guid, show = shows.get(sh_id)
-
-                if show is None:
+                if sh_id not in shows:
                     log.debug('Unable to find show by id: %r', sh_id)
                     continue
 
-                season = seasons.get(se_id)
+                guid, show = shows[sh_id]
 
-                if season is None:
+                if se_id not in seasons:
                     log.debug('Unable to find season by id: %r', se_id)
                     continue
+
+                season = seasons[se_id]
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
