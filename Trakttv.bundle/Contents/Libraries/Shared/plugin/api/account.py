@@ -1,12 +1,32 @@
 from plugin.api.core.base import Service, expose
+from plugin.api.core.exceptions import ApiError
 from plugin.managers import AccountManager
+
+import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
 
+class NameConflictError(ApiError):
+    code = 'account.name_conflict'
+    message = 'Name conflicts with an existing account'
+
+
 class Account(Service):
     __key__ = 'account'
+
+    @expose
+    def create(self, name):
+        try:
+            AccountManager.create(
+                name=name
+            )
+        except (apsw.ConstraintError, peewee.IntegrityError):
+            raise NameConflictError
+
+        return True
 
     @expose
     def get(self, full=False, **kwargs):
