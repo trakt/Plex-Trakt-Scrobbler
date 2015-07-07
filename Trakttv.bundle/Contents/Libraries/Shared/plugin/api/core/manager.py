@@ -75,7 +75,7 @@ class ApiManager(object):
         try:
             result = cls.call(method, headers, body, func, args, kwargs)
         except ApiError, ex:
-            log.error('Error returned while handling request %r: %s', key, ex, exc_info=True)
+            log.warn('Error returned while handling request %r: %s', key, ex, exc_info=True)
             return cls.build_error('error.%s' % ex.code, ex.message)
         except Exception, ex:
             log.error('Exception raised while handling request %r: %s', key, ex, exc_info=True)
