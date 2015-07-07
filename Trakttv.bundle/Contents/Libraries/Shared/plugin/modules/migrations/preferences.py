@@ -1,21 +1,21 @@
 from plugin.models import Account
 from plugin.modules.migrations.core.base import Migration
 from plugin.preferences import Preferences
-from plugin.sync.core.enums import SyncActionMode
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class PreferencesMigration(Migration):
     def run(self):
-        # Ensure "server" account exists
-        try:
-            Account.get(Account.id == 1)
-        except Account.DoesNotExist:
-            Account.create()
-
-        # Initialize preferences for administrator
-        Preferences.initialize(account=1)
+        # Migrate server preferences
         Preferences.initialize()
-
-        # Migrate preferences to database
-        Preferences.migrate(account=1)
         Preferences.migrate()
+
+        # Try migrate administrator preferences
+        try:
+            Preferences.initialize(account=1)
+            Preferences.migrate(account=1)
+        except Account.DoesNotExist:
+            log.debug('Unable to migrate administrator preferences, no account found')

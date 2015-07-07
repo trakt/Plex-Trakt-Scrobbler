@@ -19,6 +19,12 @@ try:
 except Exception, ex:
     Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
+# Libraries
+# ------------------------------------------------
+from libraries import setup_libraries
+
+setup_libraries()
+# ------------------------------------------------
 # Modules
 # ------------------------------------------------
 import core
@@ -54,6 +60,8 @@ from main import Main
 
 from plugin.api.core.manager import ApiManager
 from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.models.account import Account
+from plugin.modules.migrations.account import AccountMigration
 from plugin.preferences import Preferences
 
 from plex import Plex
@@ -95,9 +103,19 @@ def ValidatePrefs():
     last_activity_mode = Preferences.get('activity.mode')
 
     if Request.Headers.get('X-Disable-Preference-Migration', '0') == '0':
-        # Migrate preferences to database
-        Preferences.migrate(account=1)
+        # Run account migration
+        am = AccountMigration()
+        am.run()
+
+        # Migrate server preferences
         Preferences.migrate()
+
+        # Try migrate administrator preferences
+        try:
+            Preferences.initialize(account=1)
+            Preferences.migrate(account=1)
+        except Account.DoesNotExist:
+            log.debug('Unable to migrate administrator preferences, no account found')
     else:
         log.debug('Ignoring preference migration (disabled by header)')
 

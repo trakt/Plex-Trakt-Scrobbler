@@ -30,7 +30,7 @@ def MainMenu():
     #
 
     oc.add(DirectoryObject(
-        key=Callback(AccountsMenu if Accounts.count() > 1 else ControlsMenu),
+        key=Callback(ControlsMenu if Accounts.count() == 1 else AccountsMenu),
         title=L("Sync"),
         summary=L("Sync the Plex library with trakt.tv"),
         thumb=R("icon-sync.png")

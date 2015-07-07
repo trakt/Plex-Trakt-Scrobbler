@@ -2,7 +2,7 @@ from plex_database.matcher import Default as Matcher
 from plex_database.models import *
 from plex_metadata.guid import Guid
 
-from peewee import JOIN_LEFT_OUTER, DateTimeField
+from peewee import JOIN_LEFT_OUTER, DateTimeField, FieldProxy
 from stash.algorithms.core.prime_context import PrimeContext
 import logging
 
@@ -152,6 +152,9 @@ class LibraryBase(object):
 
     @staticmethod
     def _parse_field(field, value):
+        if type(field) is FieldProxy:
+            field = field.field_instance
+
         if type(field) is DateTimeField and value:
             if value.tzinfo:
                 # `tzinfo` provided, ignore conversion
@@ -419,17 +422,17 @@ class EpisodeLibrary(LibraryBase):
         def episodes_iterator():
             for sh_id, se_id, ep_id, ep_index, episode in episodes:
                 # Retrieve parents
-                guid, show = shows.get(sh_id)
-
-                if show is None:
+                if sh_id not in shows:
                     log.debug('Unable to find show by id: %r', sh_id)
                     continue
 
-                season = seasons.get(se_id)
+                guid, show = shows[sh_id]
 
-                if season is None:
+                if se_id not in seasons:
                     log.debug('Unable to find season by id: %r', se_id)
                     continue
+
+                season = seasons[se_id]
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:

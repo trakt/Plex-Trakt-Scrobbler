@@ -2,7 +2,7 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem, MediaItem
+from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem, MediaItem, Episode
 import logging
 
 log = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class Shows(Base):
                 MediaItem.height,
                 MediaItem.interlaced,
 
-                MetadataItem.added_at
+                Episode.added_at
             ]),
             account=self.current.account.plex.id,
             parse_guid=True
