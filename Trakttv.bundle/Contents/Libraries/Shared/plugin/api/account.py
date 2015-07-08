@@ -55,8 +55,6 @@ class Account(Service):
 
     @expose
     def update(self, id, data):
-        log.debug('update(%r, %r)', id, data)
-
         # Retrieve current account
         account = AccountManager.get.by_id(id)
 

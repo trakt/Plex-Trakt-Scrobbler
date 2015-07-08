@@ -85,8 +85,6 @@ class Update(Method):
         return True
 
     def from_dict(self, obj, changes):
-        log.debug('from_dict(%r, %r)', obj, changes)
-
         if not changes:
             return False
 
