@@ -19,8 +19,8 @@ class Method(object):
 
 
 class Get(Method):
-    def __call__(self, *query):
-        obj = self.model.get(*query)
+    def __call__(self, *query, **kwargs):
+        obj = self.model.get(*query, **kwargs)
 
         if obj:
             obj._created = False
