@@ -14,6 +14,11 @@ class NameConflictError(ApiError):
     message = 'Name conflicts with an existing account'
 
 
+class UpdateFailedError(ApiError):
+    code = 'account.update_failed'
+    message = 'Unable to update account'
+
+
 class Account(Service):
     __key__ = 'account'
 
@@ -57,8 +62,7 @@ class Account(Service):
 
         # Update `account` with changes
         if not AccountManager.update.from_dict(account, data):
-            # Unable to update account
-            return None
+            raise UpdateFailedError
 
         # Return updated `account`
         return account.to_json(full=True)

@@ -2,6 +2,7 @@ from plugin.managers.core.base import Manager, Update
 from plugin.managers.m_plex.credential import PlexBasicCredentialManager
 from plugin.models import PlexAccount, PlexBasicCredential
 
+import inspect
 import logging
 
 
@@ -12,6 +13,10 @@ class UpdateAccount(Update):
     keys = ['username']
 
     def from_dict(self, account, changes):
+        # Resolve `account`
+        if inspect.isfunction(account):
+            account = account()
+
         # Update `PlexAccount`
         if not super(UpdateAccount, self).from_dict(account, changes):
             return False
