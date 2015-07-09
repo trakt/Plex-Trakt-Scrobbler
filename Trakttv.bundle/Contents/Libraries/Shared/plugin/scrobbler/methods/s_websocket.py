@@ -33,7 +33,11 @@ class WebSocket(Base):
 
         for action, payload in actions:
             # Build request for the event
-            request = self.build_request(session, rating_key=payload.get('rating_key'))
+            request = self.build_request(
+                session,
+                rating_key=payload.get('rating_key'),
+                view_offset=payload.get('view_offset')
+            )
 
             if not request:
                 continue

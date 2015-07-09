@@ -1,6 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
+from plugin.managers.session.base import UpdateSession
 
 from plex.objects.library.metadata.episode import Episode
 from plex.objects.library.metadata.movie import Movie
@@ -14,16 +15,25 @@ class Base(object):
     name = None
 
     @classmethod
-    def build_request(cls, session, rating_key=None):
-        metadata = Metadata.get(rating_key or session.rating_key)
+    def build_request(cls, session, rating_key=None, view_offset=None):
+        # Retrieve metadata for session
+        if rating_key is None:
+            rating_key = session.rating_key
 
+        metadata = Metadata.get(rating_key)
+
+        if not metadata:
+            log.warn('Unable to retrieve metadata for rating_key %r', rating_key)
+            return None
+
+        # Apply library/section filter
         if not Filters.is_valid_section(metadata):
             return None
 
+        # Parse guid
         guid = Guid.parse(metadata.guid)
 
-        result = None
-
+        # Build request from guid/metadata
         if type(metadata) is Movie:
             result = cls.build_movie(metadata, guid)
         elif type(metadata) is Episode:
@@ -34,8 +44,17 @@ class Base(object):
         if not result:
             return None
 
+        # Retrieve media progress
+        if view_offset is not None:
+            # Calculate progress from `view_offset` parameter
+            progress = UpdateSession.get_progress(metadata.duration, view_offset)
+        else:
+            # Use session progress
+            progress = session.progress
+
+        # Merge progress into request
         return merge(result, {
-            'progress': session.progress
+            'progress': progress
         })
 
     @staticmethod
