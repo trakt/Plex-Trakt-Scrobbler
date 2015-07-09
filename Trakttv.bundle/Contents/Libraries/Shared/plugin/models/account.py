@@ -56,11 +56,30 @@ class Account(Model):
 
         return thumb
 
-    def build_thumb(self):
+    def refresh(self, save=True):
+        # Retrieve trakt/plex accounts
         p = self.plex
+        t = self.trakt
+
+        # Set `name` to trakt username (if `name` isn't already set)
+        if self.name is None:
+            self.name = t.username
+
+        # Update account thumb
+        self.thumb = self.build_thumb(
+            plex=p,
+            trakt=t
+        )
+
+        # Store changes in database
+        if save:
+            self.save()
+
+    def build_thumb(self, plex=None, trakt=None):
+        p = plex or self.plex
         p_thumb = p.thumb_url() if p else None
 
-        t = self.trakt
+        t = trakt or self.trakt
         t_thumb = t.thumb_url(p_thumb) if t else None
 
         if t_thumb:

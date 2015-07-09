@@ -3,6 +3,7 @@ from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, Trak
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
 from trakt import Trakt
+import inspect
 import logging
 
 
@@ -12,9 +13,13 @@ log = logging.getLogger(__name__)
 class UpdateAccount(Update):
     keys = ['username']
 
-    def from_dict(self, account, changes):
+    def from_dict(self, t_account, changes):
+        # Resolve `account`
+        if inspect.isfunction(t_account):
+            t_account = t_account()
+
         # Update `TraktAccount`
-        if not super(UpdateAccount, self).from_dict(account, changes):
+        if not super(UpdateAccount, self).from_dict(t_account, changes):
             return False
 
         # Update credentials
@@ -24,8 +29,8 @@ class UpdateAccount(Update):
         if 'basic' in authorization:
             TraktBasicCredentialManager.update.from_dict(
                 lambda: TraktBasicCredentialManager.get.or_create(
-                    TraktBasicCredential.account == account,
-                    account=account
+                    TraktBasicCredential.account == t_account,
+                    account=t_account
                 ),
                 authorization['basic']
             )
@@ -34,30 +39,34 @@ class UpdateAccount(Update):
         if 'oauth' in authorization:
             TraktOAuthCredentialManager.update.from_dict(
                 lambda: TraktOAuthCredentialManager.get.or_create(
-                    TraktOAuthCredential.account == account,
-                    account=account
+                    TraktOAuthCredential.account == t_account,
+                    account=t_account
                 ),
                 authorization['oauth']
             )
 
+        # Refresh details
+        t_account.refresh()
+        t_account.account.refresh()
+
         return True
 
-    def from_pin(self, account, pin):
+    def from_pin(self, t_account, pin):
         if not pin:
             log.debug('"pin" parameter is empty, ignoring account authorization update')
-            return account
+            return t_account
 
         # Retrieve current account `OAuthCredential`
-        oauth = account.oauth_credentials.first()
+        oauth = t_account.oauth_credentials.first()
 
         if oauth and oauth.code == pin:
             log.debug("PIN hasn't changed, ignoring account authorization update")
-            return account
+            return t_account
 
         if not oauth:
             # Create new `OAuthCredential` for the account
             oauth = TraktOAuthCredential(
-                account=account
+                account=t_account
             )
 
         # Update `OAuthCredential`
@@ -66,7 +75,7 @@ class UpdateAccount(Update):
             return None
 
         # Validate the account authorization
-        with account.oauth_authorization(oauth):
+        with t_account.oauth_authorization(oauth):
             settings = Trakt['users/settings'].get()
 
         if not settings:
@@ -79,14 +88,22 @@ class UpdateAccount(Update):
             log.warn('Unable to retrieve username for authorization')
             return None
 
-        self(account, {'username': username}, save=False)
+        self(t_account, {'username': username}, save=False)
+
+        t_account.refresh(
+            force=True, save=False,
+            settings=settings
+        )
 
         # Save `OAuthCredential` and `Account`
         oauth.save()
-        account.save()
+        t_account.save()
 
-        log.info('Updated account authorization for %r', account)
-        return account
+        # Refresh `Account`
+        t_account.account.refresh()
+
+        log.info('Updated account authorization for %r', t_account)
+        return t_account
 
 
 class TraktAccountManager(Manager):

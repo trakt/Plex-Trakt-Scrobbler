@@ -40,10 +40,6 @@ class AccountMigration(Migration):
     def create_administrator_account(cls):
         username = cls.get_trakt_username()
 
-        if username is None:
-            log.debug('Unable to migrate administrator account, no previous trakt username found')
-            return
-
         try:
             account = Account.get(Account.id == 1)
         except Account.DoesNotExist:
@@ -66,8 +62,11 @@ class AccountMigration(Migration):
         cls.create_trakt_basic_credential(trakt_account)
         cls.create_trakt_oauth_credential(trakt_account)
 
-        # Refresh trakt account details
-        trakt_account.refresh(force=created)
+        try:
+            # Refresh trakt account details
+            trakt_account.refresh(force=created)
+        except:
+            log.info('Unable to refresh trakt account (not authenticated?)', exc_info=True)
 
     @classmethod
     def create_rules(cls, account):
