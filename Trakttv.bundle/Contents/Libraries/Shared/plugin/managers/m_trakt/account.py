@@ -25,6 +25,13 @@ class UpdateAccount(Update):
         # Update credentials
         authorization = changes.get('authorization', {})
 
+        if 'username' in changes:
+            # Provide username change in basic authorization update
+            if 'basic' not in authorization:
+                authorization['basic'] = {}
+
+            authorization['basic']['username'] = changes['username']
+
         # Update `TraktBasicCredential` (if there are changes)
         if 'basic' in authorization:
             TraktBasicCredentialManager.update.from_dict(
