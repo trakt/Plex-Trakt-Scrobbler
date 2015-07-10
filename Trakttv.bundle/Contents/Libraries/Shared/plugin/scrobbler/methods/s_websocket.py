@@ -22,6 +22,15 @@ class WebSocket(Base):
         # Create or retrieve existing session
         session = WSessionManager.get.or_create(info, fetch=True)
 
+        # Validate session
+        if session.duration is None or session.view_offset is None:
+            # Update session
+            WSessionManager.update(session, info, fetch=lambda s, i: (
+                s.rating_key != to_integer(i.get('ratingKey')) or
+                s.duration is None
+            ))
+            return
+
         # Parse `info` to events
         events = self.to_events(session, info)
 
@@ -46,7 +55,9 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        WSessionManager.update(session, info, fetch=lambda s, i: s.rating_key != to_integer(i.get('ratingKey')))
+        WSessionManager.update(session, info, fetch=lambda s, i: (
+            s.rating_key != to_integer(i.get('ratingKey'))
+        ))
 
     @classmethod
     def to_events(cls, session, info):
