@@ -88,9 +88,15 @@ class UpdateWSession(UpdateSession):
         # Retrieve metadata and guid
         p_metadata, p_guid = self.get_metadata(p_item.rating_key)
 
-        if not p_metadata or not p_guid:
-            log.warn('Unable to retrieve guid/metadata for session %r', session_key)
+        if not p_metadata:
+            log.warn('Unable to retrieve metadata for rating_key %r', p_item.rating_key)
             return result
+
+        if not p_guid:
+            return merge(result, {
+                'duration': p_metadata.duration,
+                'progress': self.get_progress(p_metadata.duration, view_offset)
+            })
 
         # Create/Retrieve `Client` for session
         result['client'] = ClientManager.get.or_create(

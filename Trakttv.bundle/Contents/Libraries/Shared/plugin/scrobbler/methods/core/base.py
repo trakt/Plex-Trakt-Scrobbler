@@ -26,6 +26,10 @@ class Base(object):
             log.warn('Unable to retrieve metadata for rating_key %r', rating_key)
             return None
 
+        if metadata.type not in ['movie', 'episode']:
+            log.info('Ignoring session with type %r for rating_key %r', metadata.type, rating_key)
+            return None
+
         # Apply library/section filter
         if not Filters.is_valid_section(metadata):
             return None

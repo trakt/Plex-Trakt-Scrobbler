@@ -26,6 +26,10 @@ class UpdateSession(Update):
             log.debug('%r, ignoring session', e.message)
             return None, None
 
+        if metadata.type not in ['movie', 'episode']:
+            log.info('Ignoring metadata with type %r for rating_key %r', metadata.type, rating_key)
+            return metadata, None
+
         # Parse guid
         guid = Guid.parse(metadata.guid)
 
