@@ -151,7 +151,7 @@ class Metadata(object):
         if item.type not in self.types:
             # TODO set flag to ignore future refresh requests
             log.warn('Item %s with type "%s" has been ignored', key, item.type)
-            return False
+            return None
 
         return item
 
