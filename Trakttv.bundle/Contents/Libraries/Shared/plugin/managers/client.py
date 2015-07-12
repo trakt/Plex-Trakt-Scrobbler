@@ -1,6 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.managers.core.base import Get, Manager, Update
+from plugin.managers.core.exceptions import ClientFilteredException
 from plugin.models import Client, ClientRule
 
 from plex import Plex
@@ -19,7 +20,7 @@ class GetClient(Get):
             Client.key == player['key']
         )
 
-    def or_create(self, player, fetch=False, match=False):
+    def or_create(self, player, fetch=False, match=False, filtered_exception=False):
         player = self.manager.parse_player(player)
 
         try:
@@ -38,21 +39,33 @@ class GetClient(Get):
 
             if fetch or match:
                 # Update existing `User`
-                self.manager.update(obj, player, fetch=fetch, match=match)
+                self.manager.update(
+                    obj, player,
+
+                    fetch=fetch,
+                    match=match,
+                    filtered_exception=filtered_exception
+                )
 
             return obj
 
 
 class UpdateClient(Update):
-    def __call__(self, obj, player, fetch=False, match=False):
+    def __call__(self, obj, player, fetch=False, match=False, filtered_exception=False):
         player = self.manager.parse_player(player)
-        data = self.to_dict(obj, player, fetch=fetch, match=match)
+        data = self.to_dict(
+            obj, player,
+
+            fetch=fetch,
+            match=match,
+            filtered_exception=filtered_exception
+        )
 
         return super(UpdateClient, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, player, fetch=False, match=False):
+    def to_dict(self, obj, player, fetch=False, match=False, filtered_exception=False):
         result = {
             'name': player['title']
         }
@@ -72,7 +85,10 @@ class UpdateClient(Update):
 
         if match:
             # Try match client against a rule
-            result = self.match(result, client, player)
+            result = self.match(
+                result, client, player,
+                filtered_exception=filtered_exception
+            )
 
         return result
 
@@ -105,12 +121,15 @@ class UpdateClient(Update):
         return result, client
 
     @staticmethod
-    def match(result, client, player):
+    def match(result, client, player, filtered_exception=False):
         # Apply global filters
         if not Filters.is_valid_client(player) or\
            not Filters.is_valid_address(client):
             # Client didn't pass filters, update `account` attribute and return
             result['account'] = None
+
+            if filtered_exception:
+                raise ClientFilteredException
 
             return result
 

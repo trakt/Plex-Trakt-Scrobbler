@@ -8,12 +8,30 @@ log = logging.getLogger(__name__)
 
 class UpdateSession(Update):
     @staticmethod
-    def get_account(client, user):
-        if client and client.account_id:
-            return client.account_id
+    def get_account(result):
+        # Try retrieve account from client
+        client = result.get('client')
 
-        if user and user.account_id:
-            return user.account_id
+        try:
+            client_account_id = client.account_id if client else None
+        except KeyError:
+            client_account_id = None
+
+        if client_account_id:
+            # Valid account found
+            return client_account_id
+
+        # Try retrieve account from user
+        user = result.get('user')
+
+        try:
+            user_account_id = user.account_id if user else None
+        except KeyError:
+            user_account_id = None
+
+        if user_account_id:
+            # Valid account found
+            return user_account_id
 
         return None
 

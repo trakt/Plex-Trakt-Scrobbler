@@ -38,8 +38,12 @@ class ActionManager(Manager):
         account_id = None
 
         if session:
-            account_id = session.account_id
-        elif account:
+            try:
+                account_id = session.account_id
+            except KeyError:
+                account_id = None
+
+        if account_id is None and account:
             account_id = account.id
 
         if account_id is None:

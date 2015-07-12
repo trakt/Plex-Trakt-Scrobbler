@@ -2,6 +2,7 @@ from plugin.core.helpers.variable import to_integer, merge
 from plugin.core.session_status import SessionStatus
 from plugin.managers.core.base import Manager, Get
 from plugin.managers.client import ClientManager
+from plugin.managers.core.exceptions import FilteredException
 from plugin.managers.session.base import UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
@@ -90,21 +91,27 @@ class UpdateLSession(UpdateSession):
                 'progress': self.get_progress(p_metadata.duration, view_offset)
             })
 
-        # Store client + user in `result`
-        result['client'] = ClientManager.get.or_create({
-            'key': info.get('machineIdentifier'),
-            'title': info.get('client')
-        }, fetch=True)
+        try:
+            # Create/Retrieve `Client` for session
+            result['client'] = ClientManager.get.or_create({
+                'key': info.get('machineIdentifier'),
+                'title': info.get('client')
+            }, fetch=True)
 
-        result['user'] = UserManager.get.or_create({
-            'key': to_integer(info.get('user_id')),
-            'title': info.get('user_name')
-        }, fetch=True)
+            # Create/Retrieve `User` for session
+            result['user'] = UserManager.get.or_create({
+                'key': to_integer(info.get('user_id')),
+                'title': info.get('user_name')
+            }, fetch=True)
+
+            # Pick account from `client` or `user` objects
+            result['account'] = self.get_account(result)
+        except FilteredException:
+            log.debug('Activity has been filtered by the global filters')
+
+            result['account'] = None
 
         return merge(result, {
-            # Pick account from `client` or `user` objects
-            'account': self.get_account(result['client'], result['user']),
-
             'duration': p_metadata.duration,
             'progress': self.get_progress(p_metadata.duration, view_offset)
         })

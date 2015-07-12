@@ -2,6 +2,7 @@ from plugin.core.helpers.variable import to_integer, merge, resolve
 from plugin.core.session_status import SessionStatus
 from plugin.managers.core.base import Get, Manager
 from plugin.managers.client import ClientManager
+from plugin.managers.core.exceptions import FilteredException
 from plugin.managers.session.base import UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
@@ -98,24 +99,33 @@ class UpdateWSession(UpdateSession):
                 'progress': self.get_progress(p_metadata.duration, view_offset)
             })
 
-        # Create/Retrieve `Client` for session
-        result['client'] = ClientManager.get.or_create(
-            p_item.session.player,
-            fetch=True,
-            match=True
-        )
+        try:
+            # Create/Retrieve `Client` for session
+            result['client'] = ClientManager.get.or_create(
+                p_item.session.player,
 
-        # Create/Retrieve `User` for session
-        result['user'] = UserManager.get.or_create(
-            p_item.session.user,
-            fetch=True,
-            match=True
-        )
+                fetch=True,
+                match=True,
+                filtered_exception=True
+            )
+
+            # Create/Retrieve `User` for session
+            result['user'] = UserManager.get.or_create(
+                p_item.session.user,
+
+                fetch=True,
+                match=True,
+                filtered_exception=True
+            )
+
+            # Pick account from `client` or `user` objects
+            result['account'] = self.get_account(result)
+        except FilteredException:
+            log.debug('Activity has been filtered by the global filters')
+
+            result['account'] = None
 
         return merge(result, {
-            # Pick account from `client` or `user` objects
-            'account': self.get_account(result['client'], result['user']),
-
             'duration': p_metadata.duration,
             'progress': self.get_progress(p_metadata.duration, view_offset)
         })
