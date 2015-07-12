@@ -35,7 +35,13 @@ class GetUser(Get):
             )
 
             # Update newly created object
-            self.manager.update(obj, user, fetch=fetch, match=match)
+            self.manager.update(
+                obj, user,
+
+                fetch=fetch,
+                match=match,
+                filtered_exception=filtered_exception
+            )
 
             return obj
         except (apsw.ConstraintError, peewee.IntegrityError):

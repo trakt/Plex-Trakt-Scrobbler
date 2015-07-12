@@ -30,7 +30,13 @@ class GetClient(Get):
             )
 
             # Update newly created object
-            self.manager.update(obj, player, fetch=fetch, match=match)
+            self.manager.update(
+                obj, player,
+
+                fetch=fetch,
+                match=match,
+                filtered_exception=filtered_exception
+            )
 
             return obj
         except (apsw.ConstraintError, peewee.IntegrityError):
