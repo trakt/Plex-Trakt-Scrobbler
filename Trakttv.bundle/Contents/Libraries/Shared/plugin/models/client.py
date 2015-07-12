@@ -35,5 +35,25 @@ class Client(Model):
     def account_id(self):
         return self._data.get('account')
 
+    def to_json(self, full=False):
+        result = {
+            'id': self.id,
+
+            'key': self.key,
+            'name': self.name,
+            'address': self.address
+        }
+
+        if not full:
+            return result
+
+        # Select account
+        account = self.account
+
+        if account:
+            result['account'] = account.to_json()
+
+        return result
+
     def __repr__(self):
         return '<Client id: %r, key: %r>' % (self.id, self.key)

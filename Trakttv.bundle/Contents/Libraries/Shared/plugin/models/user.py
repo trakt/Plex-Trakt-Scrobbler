@@ -21,5 +21,24 @@ class User(Model):
     def account_id(self):
         return self._data.get('account')
 
+    def to_json(self, full=False):
+        result = {
+            'id': self.id,
+
+            'key': self.key,
+            'name': self.name
+        }
+
+        if not full:
+            return result
+
+        # Select account
+        account = self.account
+
+        if account:
+            result['account'] = account.to_json()
+
+        return result
+
     def __repr__(self):
         return '<User id: %r, key: %r>' % (self.id, self.key)
