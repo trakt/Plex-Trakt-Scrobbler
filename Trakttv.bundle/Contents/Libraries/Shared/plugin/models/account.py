@@ -1,7 +1,6 @@
 from plugin.models.core import db
 
 from playhouse.apsw_ext import *
-from urlparse import urlparse
 import logging
 
 log = logging.getLogger(__name__)
