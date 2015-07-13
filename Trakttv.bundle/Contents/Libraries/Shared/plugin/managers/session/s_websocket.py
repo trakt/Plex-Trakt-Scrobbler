@@ -1,9 +1,9 @@
 from plugin.core.helpers.variable import to_integer, merge, resolve
 from plugin.core.session_status import SessionStatus
-from plugin.managers.core.base import Get, Manager
+from plugin.managers.core.base import Manager
 from plugin.managers.client import ClientManager
 from plugin.managers.core.exceptions import FilteredException
-from plugin.managers.session.base import UpdateSession
+from plugin.managers.session.base import GetSession, UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
 
@@ -16,12 +16,12 @@ import peewee
 log = logging.getLogger(__name__)
 
 
-class GetWSession(Get):
+class GetWSession(GetSession):
     def __call__(self, info):
         session_key = to_integer(info.get('sessionKey'))
 
         return super(GetWSession, self).__call__(
-            Session.session_key == session_key
+            Session.session_key == self.build_session_key(session_key)
         )
 
     def or_create(self, info, fetch=False):
@@ -31,7 +31,7 @@ class GetWSession(Get):
             # Create new session
             obj = self.manager.create(
                 rating_key=to_integer(info.get('ratingKey')),
-                session_key=session_key,
+                session_key=self.build_session_key(session_key),
 
                 state='create'
             )

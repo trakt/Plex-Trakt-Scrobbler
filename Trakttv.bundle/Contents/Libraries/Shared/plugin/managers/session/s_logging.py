@@ -1,9 +1,9 @@
 from plugin.core.helpers.variable import to_integer, merge
 from plugin.core.session_status import SessionStatus
-from plugin.managers.core.base import Manager, Get
+from plugin.managers.core.base import Manager
 from plugin.managers.client import ClientManager
 from plugin.managers.core.exceptions import FilteredException
-from plugin.managers.session.base import UpdateSession
+from plugin.managers.session.base import GetSession, UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
 
@@ -14,7 +14,7 @@ import peewee
 log = logging.getLogger(__name__)
 
 
-class GetLSession(Get):
+class GetLSession(GetSession):
     def __call__(self, info):
         machine_identifier = info.get('machineIdentifier')
 
