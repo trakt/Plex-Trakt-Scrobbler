@@ -13,8 +13,8 @@ class Stash(MutableMapping):
 
         self.key_transform = key_transform or (lambda key: key, lambda key: key)
 
-    def compact(self):
-        return self.algorithm.compact()
+    def compact(self, force=False):
+        return self.algorithm.compact(force=force)
 
     def delete(self, keys):
         return self.algorithm.delete(keys)

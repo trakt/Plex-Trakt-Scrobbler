@@ -5,7 +5,7 @@ from stash.serializers import *
 
 from stash.main import Stash
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 __all__ = [
     'Stash',
