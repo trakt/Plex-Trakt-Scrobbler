@@ -3,6 +3,7 @@ from plugin.managers import ActionManager, WSessionManager
 from plugin.scrobbler.core.engine import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 
+from datetime import datetime, timedelta
 from plex import Plex
 from plex_activity import Activity
 import logging
@@ -23,6 +24,11 @@ class WebSocket(Base):
         session = WSessionManager.get.or_create(info, fetch=True)
 
         # Validate session
+        if session.updated_at is None or (datetime.utcnow() - session.updated_at) > timedelta(minutes=5):
+            log.info('Updating session, last update was over 5 minutes ago')
+            WSessionManager.update(session, info, fetch=True)
+            return
+
         if session.duration is None or session.view_offset is None:
             # Update session
             WSessionManager.update(session, info, fetch=lambda s, i: (

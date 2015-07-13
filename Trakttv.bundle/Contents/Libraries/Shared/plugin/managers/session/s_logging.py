@@ -7,6 +7,7 @@ from plugin.managers.session.base import GetSession, UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
 
+from datetime import datetime
 import apsw
 import logging
 import peewee
@@ -68,7 +69,9 @@ class UpdateLSession(UpdateSession):
         rating_key = info.get('ratingKey')
 
         result = {
-            'view_offset': view_offset
+            'view_offset': view_offset,
+
+            'updated_at': datetime.utcnow()
         }
 
         if not fetch:

@@ -7,6 +7,7 @@ from plugin.managers.session.base import GetSession, UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
 
+from datetime import datetime
 from plex import Plex
 import apsw
 import logging
@@ -66,7 +67,9 @@ class UpdateWSession(UpdateSession):
 
         result = {
             'rating_key': to_integer(info.get('ratingKey')),
-            'view_offset': view_offset
+            'view_offset': view_offset,
+
+            'updated_at': datetime.utcnow()
         }
 
         if not fetch:
