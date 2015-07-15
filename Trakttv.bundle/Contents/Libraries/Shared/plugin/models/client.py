@@ -37,11 +37,14 @@ class Client(Model):
 
     def to_json(self, full=False):
         result = {
-            'id': self.id,
+            'id':       self.id,
 
-            'key': self.key,
-            'name': self.name,
-            'address': self.address
+            'key':      self.key,
+            'name':     self.name,
+            'address':  self.address,
+
+            'platform': self.platform,
+            'product':  self.product
         }
 
         if not full:
