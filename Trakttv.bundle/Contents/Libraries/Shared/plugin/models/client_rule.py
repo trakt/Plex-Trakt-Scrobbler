@@ -9,7 +9,8 @@ class ClientRule(Model):
         database = db
         db_table = 'session.client.rule'
 
-    account = ForeignKeyField(Account, 'client_rules')
+    account = ForeignKeyField(Account, 'client_rules', null=True)
+    account_function = CharField(null=True)
 
     key = CharField(null=True)
     name = CharField(null=True)
@@ -19,7 +20,10 @@ class ClientRule(Model):
 
     @property
     def account_id(self):
-        return self._data['account']
+        try:
+            return self._data['account']
+        except KeyError:
+            return None
 
     def to_json(self, full=False):
         result = {
@@ -31,7 +35,7 @@ class ClientRule(Model):
             'address': self.address
         }
 
-        if full:
+        if full and self.account_id:
             result['account'] = self.account.to_json()
 
         return result
