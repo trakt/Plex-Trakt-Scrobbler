@@ -113,7 +113,7 @@ class UpdateUser(Update):
 
         # Find matching `UserRule`
         query = UserRule.select().where((
-            (UserRule.name == user['title']) | (UserRule.name == None)
+            (UserRule.name == user['title']) | (UserRule.name << ['*', None])
         ))
 
         rules = list(query.execute())

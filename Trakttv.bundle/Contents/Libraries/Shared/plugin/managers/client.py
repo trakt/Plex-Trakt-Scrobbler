@@ -143,9 +143,9 @@ class UpdateClient(Update):
         address = client['address'] if client else None
 
         query = ClientRule.select().where((
-            (ClientRule.key == player['key']) | (ClientRule.key == None) &
-            (ClientRule.name == player['title']) | (ClientRule.name == None) &
-            (ClientRule.address == address) | (ClientRule.address == None)
+            (ClientRule.key == player['key']) | (ClientRule.key << ['*', None]) &
+            (ClientRule.name == player['title']) | (ClientRule.name << ['*', None]) &
+            (ClientRule.address == address) | (ClientRule.address << ['*', None])
         ))
 
         rules = list(query.execute())
