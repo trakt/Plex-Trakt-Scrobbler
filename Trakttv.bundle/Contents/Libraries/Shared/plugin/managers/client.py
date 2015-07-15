@@ -166,14 +166,19 @@ class ClientManager(Manager):
 
     @classmethod
     def parse_player(cls, player):
-        if type(player) is dict:
-            return player
+        if type(player) is not dict:
+            # Build user dict from object
+            player = {
+                'key': player.machine_identifier,
+                'title': player.title,
 
-        # Build user dict from object
-        return {
-            'key': player.machine_identifier,
-            'title': player.title,
+                'platform': player.platform,
+                'product': player.product
+            }
 
-            'platform': player.platform,
-            'product': player.product
-        }
+        # Strip "_Video" suffix from the `key`
+        if player.get('key') and player['key'].endswith('_Video'):
+            # Update player key
+            player['key'] = player['key'].rstrip('_Video')
+
+        return player
