@@ -59,19 +59,24 @@ class GetClient(Get):
 class UpdateClient(Update):
     def __call__(self, obj, player, fetch=False, match=False, filtered_exception=False):
         player = self.manager.parse_player(player)
-        data = self.to_dict(
+
+        filtered, data = self.to_dict(
             obj, player,
 
             fetch=fetch,
-            match=match,
-            filtered_exception=filtered_exception
+            match=match
         )
 
-        return super(UpdateClient, self).__call__(
+        updated = super(UpdateClient, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, player, fetch=False, match=False, filtered_exception=False):
+        if filtered and filtered_exception:
+            raise ClientFilteredException
+
+        return updated
+
+    def to_dict(self, obj, player, fetch=False, match=False):
         result = {
             'name': player['title']
         }
@@ -84,6 +89,7 @@ class UpdateClient(Update):
             result['product'] = player['product']
 
         client = None
+        filtered = False
 
         if fetch or match:
             # Fetch client from plex server
@@ -91,12 +97,11 @@ class UpdateClient(Update):
 
         if match:
             # Try match client against a rule
-            result = self.match(
-                result, client, player,
-                filtered_exception=filtered_exception
+            filtered, result = self.match(
+                result, client, player
             )
 
-        return result
+        return filtered, result
 
     @staticmethod
     def fetch(result, player):
@@ -127,17 +132,14 @@ class UpdateClient(Update):
         return result, client
 
     @staticmethod
-    def match(result, client, player, filtered_exception=False):
+    def match(result, client, player):
         # Apply global filters
         if not Filters.is_valid_client(player) or\
            not Filters.is_valid_address(client):
             # Client didn't pass filters, update `account` attribute and return
             result['account'] = None
 
-            if filtered_exception:
-                raise ClientFilteredException
-
-            return result
+            return True, result
 
         # Find matching `ClientRule`
         address = client['address'] if client else None
@@ -155,7 +157,7 @@ class UpdateClient(Update):
         else:
             result['account'] = None
 
-        return result
+        return False, result
 
 
 class ClientManager(Manager):
