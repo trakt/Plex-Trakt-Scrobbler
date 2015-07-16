@@ -94,7 +94,7 @@ class TraktAccount(Model):
             since_refresh = datetime.utcnow() - self.refreshed_at
 
             if since_refresh < REFRESH_INTERVAL:
-                return
+                return False
 
         if settings is None:
             # Fetch trakt account details
@@ -118,6 +118,8 @@ class TraktAccount(Model):
         # Store changes in database
         if save:
             self.save()
+
+        return True
 
     def thumb_url(self, default=None, rating='pg', size=256):
         if not self.thumb:

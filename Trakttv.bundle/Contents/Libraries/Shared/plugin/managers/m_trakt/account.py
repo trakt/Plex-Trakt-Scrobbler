@@ -65,11 +65,9 @@ class UpdateAccount(Update):
 
         # Refresh `TraktAccount`
         t_account.refresh(
-            force=True, save=False,
+            force=True,
             settings=settings
         )
-
-        t_account.save()
 
         # Refresh `Account`
         t_account.account.refresh()
@@ -108,17 +106,17 @@ class UpdateAccount(Update):
             log.warn('Unable to retrieve account details for authorization')
             return None
 
+        # Save oauth credential changes
+        oauth.save()
+
         # Update `TraktAccount` username
         self.update_username(t_account, settings, save=False)
 
         # Refresh `TraktAccount`
         t_account.refresh(
-            force=True, save=False,
+            force=True,
             settings=settings
         )
-
-        oauth.save()
-        t_account.save()
 
         # Refresh `Account`
         t_account.account.refresh()
