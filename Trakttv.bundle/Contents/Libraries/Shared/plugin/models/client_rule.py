@@ -35,8 +35,14 @@ class ClientRule(Model):
             'address': self.address
         }
 
-        if full and self.account_id:
+        if not full:
+            return result
+
+        # Update `result` with account details
+        if self.account_id:
             result['account'] = self.account.to_json()
+        else:
+            result['account_function'] = self.account_function
 
         return result
 
