@@ -52,10 +52,29 @@ class UpdateAccount(Update):
                 authorization['oauth']
             )
 
-        # Refresh details
-        t_account.refresh()
+        # Validate the account authorization
+        with t_account.authorization().http(retry=True):
+            settings = Trakt['users/settings'].get()
+
+        if not settings:
+            log.warn('Unable to retrieve account details for authorization')
+            return None
+
+        # Update `TraktAccount` username
+        self.update_username(t_account, settings, save=False)
+
+        # Refresh `TraktAccount`
+        t_account.refresh(
+            force=True, save=False,
+            settings=settings
+        )
+
+        t_account.save()
+
+        # Refresh `Account`
         t_account.account.refresh()
 
+        log.info('Updated account authorization for %r', t_account)
         return True
 
     def from_pin(self, t_account, pin):
@@ -82,27 +101,22 @@ class UpdateAccount(Update):
             return None
 
         # Validate the account authorization
-        with t_account.oauth_authorization(oauth):
+        with t_account.oauth_authorization(oauth).http(retry=True):
             settings = Trakt['users/settings'].get()
 
         if not settings:
             log.warn('Unable to retrieve account details for authorization')
             return None
 
-        username = settings.get('user', {}).get('username')
+        # Update `TraktAccount` username
+        self.update_username(t_account, settings, save=False)
 
-        if not username:
-            log.warn('Unable to retrieve username for authorization')
-            return None
-
-        self(t_account, {'username': username}, save=False)
-
+        # Refresh `TraktAccount`
         t_account.refresh(
             force=True, save=False,
             settings=settings
         )
 
-        # Save `OAuthCredential` and `Account`
         oauth.save()
         t_account.save()
 
@@ -111,6 +125,18 @@ class UpdateAccount(Update):
 
         log.info('Updated account authorization for %r', t_account)
         return t_account
+
+    def update_username(self, t_account, settings, save=True):
+        username = settings.get('user', {}).get('username')
+
+        if not username:
+            log.warn('Unable to retrieve username for authorization')
+            return
+
+        if t_account.username == username:
+            return
+
+        self(t_account, {'username': username}, save=save)
 
 
 class TraktAccountManager(Manager):
