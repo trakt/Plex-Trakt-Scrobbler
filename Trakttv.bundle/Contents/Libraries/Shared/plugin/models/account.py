@@ -97,7 +97,9 @@ class Account(Model):
     def to_json(self, full=False):
         result = {
             'id': self.id,
-            'name': self.name
+            'name': self.name,
+
+            'thumb_url': self.thumb_url()
         }
 
         if not full:
