@@ -35,3 +35,10 @@ class UserRule(Model):
             result['account'] = self.account.to_json()
 
         return result
+
+    def __repr__(self):
+        return '<UserRule priority: %r, account: %s, name: %r>' % (
+            self.priority,
+            repr(self.account_id) if self.account_id else self.account_function,
+            self.name
+        )

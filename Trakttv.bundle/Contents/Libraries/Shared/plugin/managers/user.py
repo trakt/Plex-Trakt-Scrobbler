@@ -114,18 +114,25 @@ class UpdateUser(Update):
             return True, result
 
         # Find matching `UserRule`
-        query = UserRule.select().where((
-            (UserRule.name == user['title']) | (UserRule.name << ['*', None])
-        ))
+        rule = (UserRule
+            .select()
+            .where((
+                (UserRule.name == user['title']) | (UserRule.name << ['*', None])
+            ))
+            .order_by(
+                UserRule.priority.asc()
+            )
+            .first()
+        )
 
-        rules = list(query.execute())
+        log.debug('Activity matched against rule: %r', rule)
 
-        if len(rules) == 1:
+        if rule:
             # Process rule
-            if rules[0].account_function is not None:
-                result['account'] = cls.account_function(user, rules[0])
+            if rule.account_function is not None:
+                result['account'] = cls.account_function(user, rule)
             else:
-                result['account'] = rules[0].account_id
+                result['account'] = rule.account_id
         else:
             result['account'] = None
 

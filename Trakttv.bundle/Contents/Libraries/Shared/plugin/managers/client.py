@@ -144,16 +144,23 @@ class UpdateClient(Update):
         # Find matching `ClientRule`
         address = client['address'] if client else None
 
-        query = ClientRule.select().where((
-            (ClientRule.key == player['key']) | (ClientRule.key << ['*', None]) &
-            (ClientRule.name == player['title']) | (ClientRule.name << ['*', None]) &
-            (ClientRule.address == address) | (ClientRule.address << ['*', None])
-        ))
+        rule = (ClientRule
+            .select()
+            .where((
+                (ClientRule.key == player['key']) | (ClientRule.key << ['*', None]) &
+                (ClientRule.name == player['title']) | (ClientRule.name << ['*', None]) &
+                (ClientRule.address == address) | (ClientRule.address << ['*', None])
+            ))
+            .order_by(
+                ClientRule.priority.asc()
+            )
+            .first()
+        )
 
-        rules = list(query.execute())
+        log.debug('Activity matched against rule: %r', rule)
 
-        if len(rules) == 1:
-            result['account'] = rules[0].account_id
+        if rule:
+            result['account'] = rule.account_id
         else:
             result['account'] = None
 
