@@ -40,8 +40,8 @@ def AccountsMenu(refresh=None):
             key=Callback(ControlsMenu, account_id=account.id),
             title=account.name,
 
-            art=function_path('Cover.png', account_id=account.id),
-            thumb=function_path('Thumb.png', account_id=account.id)
+            art=function_path('Cover.png', account_id=account.id, refresh=timestamp()),
+            thumb=function_path('Thumb.png', account_id=account.id, refresh=timestamp())
         ))
 
     return oc
@@ -56,7 +56,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
         title2=LF('controls:title', account.name),
         no_cache=True,
 
-        art=function_path('Cover.png', account_id=account.id)
+        art=function_path('Cover.png', account_id=account.id, refresh=timestamp())
     )
 
     # Start result message
