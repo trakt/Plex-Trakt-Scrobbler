@@ -2,7 +2,7 @@ from plugin.core.filters import Filters
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.managers.core.exceptions import UserFilteredException
-from plugin.models import User, UserRule
+from plugin.models import User, UserRule, PlexAccount
 
 import apsw
 import logging
@@ -104,8 +104,8 @@ class UpdateUser(Update):
 
         return filtered, result
 
-    @staticmethod
-    def match(result, user):
+    @classmethod
+    def match(cls, result, user):
         # Apply global filters
         if not Filters.is_valid_user(user):
             # User didn't pass filters, update `account` attribute and return
@@ -121,11 +121,33 @@ class UpdateUser(Update):
         rules = list(query.execute())
 
         if len(rules) == 1:
-            result['account'] = rules[0].account_id
+            # Process rule
+            if rules[0].account_function is not None:
+                result['account'] = cls.account_function(user, rules[0])
+            else:
+                result['account'] = rules[0].account_id
         else:
             result['account'] = None
 
         return False, result
+
+    @staticmethod
+    def account_function(user, rule):
+        func = rule.account_function
+
+        # Map
+        if func == '@':
+            # Try find matching `PlexAccount`
+            plex_account = (PlexAccount
+                .select()
+                .where(PlexAccount.username == user['title'])
+                .first()
+            )
+
+            log.debug('Mapped user %r to account %r', user['title'], plex_account.account_id)
+            return plex_account.account_id
+
+        return None
 
 
 class UserManager(Manager):

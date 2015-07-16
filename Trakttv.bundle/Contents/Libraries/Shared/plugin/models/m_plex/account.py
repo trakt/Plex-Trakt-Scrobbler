@@ -25,6 +25,10 @@ class PlexAccount(Model):
         self._basic_credential = None
 
     @property
+    def account_id(self):
+        return self._data.get('account')
+
+    @property
     def basic(self):
         if self._basic_credential:
             return self._basic_credential
