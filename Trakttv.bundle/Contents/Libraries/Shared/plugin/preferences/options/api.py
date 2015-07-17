@@ -20,6 +20,6 @@ class ApiOption(Option):
         value = super(ApiOption, self).value
 
         if value is None:
-            return False
+            return True
 
         return value
