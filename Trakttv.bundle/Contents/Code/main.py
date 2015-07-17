@@ -12,6 +12,7 @@ from plugin.managers import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
+from plugin.scrobbler.core.session_prefix import SessionPrefix
 
 from plex import Plex
 from plex_activity import Activity
@@ -170,6 +171,9 @@ class Main(object):
         # Check for authentication token
         log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
 
+        # Process server startup state
+        self.process_server_state()
+
         # Start new-style modules
         module_start()
 
@@ -190,6 +194,30 @@ class Main(object):
 
         # Start plex.activity.py
         Activity.start(ACTIVITY_MODE.get(Preferences.get('activity.mode')))
+
+    @classmethod
+    def process_server_state(cls):
+        # Check startup state
+        server = Plex.detail()
+
+        if server is None:
+            log.info('Unable to check startup state, detail request failed')
+            return
+
+        # Check server startup state
+        if server.start_state is None:
+            return
+
+        if server.start_state == 'startingPlugins':
+            return cls.on_starting_plugins()
+
+        log.error('Unhandled server start state %r', server.start_state)
+
+    @staticmethod
+    def on_starting_plugins():
+        log.debug('on_starting_plugins')
+
+        SessionPrefix.increment()
 
     @staticmethod
     def on_configuration_changed():

@@ -5,11 +5,13 @@ log = logging.getLogger(__name__)
 
 KEYS = [
     'access_token',
-    'refresh_token'
+    'refresh_token',
+    'token'
 ]
 
 LOGGERS = [
     'trakt.core.emitter',
+    'plugin.api.core.manager',
     'plugin.managers.core.base'
 ]
 

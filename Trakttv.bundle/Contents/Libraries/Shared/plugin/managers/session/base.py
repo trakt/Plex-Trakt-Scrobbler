@@ -1,5 +1,5 @@
-from plugin.core.environment import Environment
 from plugin.managers.core.base import Get, Update
+from plugin.scrobbler.core.session_prefix import SessionPrefix
 
 from plex_metadata import Metadata, Guid
 import logging
@@ -8,38 +8,13 @@ log = logging.getLogger(__name__)
 
 
 class Base(object):
-    @staticmethod
-    def get_session_prefix(session_key):
-        # Retrieve session prefix
-        session_prefix = Environment.dict['session.prefix']
-
-        if session_prefix is None:
-            # Set initial prefix
-            session_prefix = 1
-        elif session_key < Environment.dict['session.previous.key']:
-            # Increment prefix
-            session_prefix += 1
-        else:
-            # Set last session key
-            Environment.dict['session.previous.key'] = session_key
-
-            # Return current prefix
-            return session_prefix
-
-        # Set last session key
-        Environment.dict['session.previous.key'] = session_key
-
-        # Update prefix
-        Environment.dict['session.prefix'] = session_prefix
-        return session_prefix
-
     @classmethod
     def build_session_key(cls, session_key):
         if type(session_key) is str:
             return session_key
 
         # Prepend session prefix
-        session_prefix = cls.get_session_prefix(session_key)
+        session_prefix = SessionPrefix.get()
 
         return '%s:%s' % (
             session_prefix,

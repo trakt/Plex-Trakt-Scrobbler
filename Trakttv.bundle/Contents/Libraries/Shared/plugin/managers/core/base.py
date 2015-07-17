@@ -19,8 +19,8 @@ class Method(object):
 
 
 class Get(Method):
-    def __call__(self, *query):
-        obj = self.model.get(*query)
+    def __call__(self, *query, **kwargs):
+        obj = self.model.get(*query, **kwargs)
 
         if obj:
             obj._created = False
@@ -85,8 +85,6 @@ class Update(Method):
         return True
 
     def from_dict(self, obj, changes):
-        log.debug('from_dict(%r, %r)', obj, changes)
-
         if not changes:
             return False
 

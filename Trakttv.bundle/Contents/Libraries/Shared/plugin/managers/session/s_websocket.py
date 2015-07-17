@@ -126,6 +126,9 @@ class UpdateWSession(UpdateSession):
         except FilteredException:
             log.debug('Activity has been filtered by the global filters')
 
+            result['client'] = None
+            result['user'] = None
+
             result['account'] = None
 
         return merge(result, {

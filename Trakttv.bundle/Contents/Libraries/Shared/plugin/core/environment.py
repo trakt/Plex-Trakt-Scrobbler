@@ -45,15 +45,25 @@ class PathEnvironment(object):
         self._plugin_support = path
 
 
+class PlatformEnvironment(object):
+    def __init__(self, platform):
+        self._platform = platform
+
+    @property
+    def machine_identifier(self):
+        return self._platform.MachineIdentifier
+
+
 class Environment(object):
     dict = None
     path = None
     prefs = None
 
     @classmethod
-    def setup(cls, core, dict, prefs):
+    def setup(cls, core, dict, platform, prefs):
         cls.path = PathEnvironment(core)
         cls.dict = dict
+        cls.platform = PlatformEnvironment(platform)
         cls.prefs = prefs
 
     @classmethod

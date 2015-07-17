@@ -28,16 +28,14 @@ class System(Service):
         if not serializer:
             raise Exception('Serializer not available')
 
-        # Validate `plex_token` via plex.tv
-        response = requests.get('https://plex.tv/users/account', headers={
-            'X-Plex-Token': plex_token
-        })
+        # Retrieve account details
+        account = self._get_account(plex_token)
 
-        if response.status_code != 200:
-            raise Exception('Validation request failed')
+        # Ensure account is an administrator
+        server = self._get_server(plex_token)
 
-        # Parse response
-        account = ElementTree.fromstring(response.content)
+        if server.get('owned') != '1':
+            raise Exception('Only server administrators have access to the API')
 
         # Construct token
         header, token = self._generate_token(serializer, {
@@ -101,3 +99,36 @@ class System(Service):
         token = signer.sign(serializer.dump_payload(header, data))
 
         return header, token
+
+    @staticmethod
+    def _get_account(plex_token):
+        response = requests.get('https://plex.tv/users/account', headers={
+            'X-Plex-Token': plex_token
+        })
+
+        # Parse response
+        if response.status_code != 200:
+            raise Exception('Unable to retrieve account details')
+
+        return ElementTree.fromstring(response.content)
+
+    @staticmethod
+    def _get_server(plex_token):
+        response = requests.get('https://plex.tv/api/resources?includeHttps=1', headers={
+            'X-Plex-Token': plex_token
+        })
+
+        # Parse response
+        if response.status_code != 200:
+            raise Exception('Validation request failed')
+
+        servers = ElementTree.fromstring(response.content)
+
+        # Find local server
+        for server in servers.findall('Device'):
+            if server.get('clientIdentifier') != Environment.platform.machine_identifier:
+                continue
+
+            return server
+
+        raise Exception('Unable to retrieve server details')

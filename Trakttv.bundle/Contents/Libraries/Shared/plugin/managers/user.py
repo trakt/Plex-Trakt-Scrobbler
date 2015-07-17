@@ -2,7 +2,7 @@ from plugin.core.filters import Filters
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.core.base import Get, Manager, Update
 from plugin.managers.core.exceptions import UserFilteredException
-from plugin.models import User, UserRule
+from plugin.models import User, UserRule, PlexAccount
 
 import apsw
 import logging
@@ -68,19 +68,23 @@ class UpdateUser(Update):
         if not user:
             return None
 
-        data = self.to_dict(
+        filtered, data = self.to_dict(
             obj, user,
 
             fetch=fetch,
-            match=match,
-            filtered_exception=filtered_exception
+            match=match
         )
 
-        return super(UpdateUser, self).__call__(
+        updated = super(UpdateUser, self).__call__(
             obj, data
         )
 
-    def to_dict(self, obj, user, fetch=False, match=False, filtered_exception=False):
+        if filtered and filtered_exception:
+            raise UserFilteredException
+
+        return updated
+
+    def to_dict(self, obj, user, fetch=False, match=False):
         result = {}
 
         # Fill `result` with available fields
@@ -90,40 +94,67 @@ class UpdateUser(Update):
         if user.get('thumb'):
             result['thumb'] = user['thumb']
 
+        filtered = False
+
         if match:
             # Try match `User` against rules
-            result = self.match(
-                result, user,
-                filtered_exception=filtered_exception
+            filtered, result = self.match(
+                result, user
             )
 
-        return result
+        return filtered, result
 
-    @staticmethod
-    def match(result, user, filtered_exception=False):
+    @classmethod
+    def match(cls, result, user):
         # Apply global filters
         if not Filters.is_valid_user(user):
             # User didn't pass filters, update `account` attribute and return
             result['account'] = None
 
-            if filtered_exception:
-                raise UserFilteredException
-
-            return result
+            return True, result
 
         # Find matching `UserRule`
-        query = UserRule.select().where((
-            (UserRule.name == user['title']) | (UserRule.name == None)
-        ))
+        rule = (UserRule
+            .select()
+            .where((
+                (UserRule.name == user['title']) | (UserRule.name << ['*', None])
+            ))
+            .order_by(
+                UserRule.priority.asc()
+            )
+            .first()
+        )
 
-        rules = list(query.execute())
+        log.debug('Activity matched against rule: %r', rule)
 
-        if len(rules) == 1:
-            result['account'] = rules[0].account_id
+        if rule:
+            # Process rule
+            if rule.account_function is not None:
+                result['account'] = cls.account_function(user, rule)
+            else:
+                result['account'] = rule.account_id
         else:
             result['account'] = None
 
-        return result
+        return False, result
+
+    @staticmethod
+    def account_function(user, rule):
+        func = rule.account_function
+
+        # Map
+        if func == '@':
+            # Try find matching `PlexAccount`
+            plex_account = (PlexAccount
+                .select()
+                .where(PlexAccount.username == user['title'])
+                .first()
+            )
+
+            log.debug('Mapped user %r to account %r', user['title'], plex_account.account_id)
+            return plex_account.account_id
+
+        return None
 
 
 class UserManager(Manager):

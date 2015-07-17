@@ -2,6 +2,7 @@ from plugin.models.core import db
 
 from playhouse.apsw_ext import *
 import logging
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -75,34 +76,30 @@ class Account(Model):
             self.save()
 
     def build_thumb(self, plex=None, trakt=None):
+        # Check if trakt thumbnail exists
+        t = trakt or self.trakt
+        t_thumb = t.thumb_url('404') if t else None
+
+        if t_thumb:
+            response = requests.get(t_thumb)
+
+            # Check response is valid
+            if 200 <= response.status_code < 300:
+                log.debug('Using trakt account thumbnail')
+                return t.thumb_url()
+
+        # Return plex thumbnail
         p = plex or self.plex
         p_thumb = p.thumb_url() if p else None
 
-        t = trakt or self.trakt
-        t_thumb = t.thumb_url(p_thumb) if t else None
-
-        if t_thumb:
-            # Trakt gravatar (with built-in fallback to plex thumb)
-            return t_thumb
-
-        if p_thumb:
-            # Plex gravatar
-            return p_thumb
-
-        if t and t.thumb:
-            # Trakt raw
-            return t.thumb
-
-        if p:
-            # Plex raw
-            return p.thumb
-
-        return None
+        return p_thumb
 
     def to_json(self, full=False):
         result = {
             'id': self.id,
-            'name': self.name
+            'name': self.name,
+
+            'thumb_url': self.thumb_url()
         }
 
         if not full:

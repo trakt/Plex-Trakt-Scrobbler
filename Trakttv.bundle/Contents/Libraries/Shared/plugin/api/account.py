@@ -1,12 +1,37 @@
 from plugin.api.core.base import Service, expose
+from plugin.api.core.exceptions import ApiError
 from plugin.managers import AccountManager
+
+import apsw
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
 
 
+class NameConflictError(ApiError):
+    code = 'account.name_conflict'
+    message = 'Name conflicts with an existing account'
+
+
+class UpdateFailedError(ApiError):
+    code = 'account.update_failed'
+    message = 'Unable to update account'
+
+
 class Account(Service):
     __key__ = 'account'
+
+    @expose
+    def create(self, name):
+        try:
+            AccountManager.create(
+                name=name
+            )
+        except (apsw.ConstraintError, peewee.IntegrityError):
+            raise NameConflictError
+
+        return True
 
     @expose
     def get(self, full=False, **kwargs):
@@ -30,15 +55,12 @@ class Account(Service):
 
     @expose
     def update(self, id, data):
-        log.debug('update(%r, %r)', id, data)
-
         # Retrieve current account
         account = AccountManager.get.by_id(id)
 
         # Update `account` with changes
         if not AccountManager.update.from_dict(account, data):
-            # Unable to update account
-            return None
+            raise UpdateFailedError
 
         # Return updated `account`
         return account.to_json(full=True)

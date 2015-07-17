@@ -2,6 +2,7 @@ from plugin.managers.core.base import Manager, Update
 from plugin.models import TraktBasicCredential, TraktOAuthCredential
 
 from trakt import Trakt
+import inspect
 import logging
 
 log = logging.getLogger(__name__)
@@ -11,6 +12,19 @@ class UpdateBasicCredential(Update):
     keys = ['password', 'token']
 
     def from_dict(self, basic_credential, changes):
+        # Resolve `basic_credential`
+        if inspect.isfunction(basic_credential):
+            basic_credential = basic_credential()
+
+        # Request new token on credential changes
+        if 'username' in changes or 'password' in changes:
+            # Retrieve credentials
+            username = changes.get('username', basic_credential.account.username)
+            password = changes.get('password', basic_credential.password)
+
+            # Retrieve new token
+            changes['token'] = Trakt['auth'].login(username, password)
+
         # Update `TraktBasicCredential`
         if not super(UpdateBasicCredential, self).from_dict(basic_credential, changes):
             return False
