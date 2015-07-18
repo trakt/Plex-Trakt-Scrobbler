@@ -19,6 +19,7 @@ class LibraryInterface(Interface):
                 },
                 'Video': {
                     'episode':  'Episode',
+                    'clip':     'Clip',
                     'movie':    'Movie'
                 },
 

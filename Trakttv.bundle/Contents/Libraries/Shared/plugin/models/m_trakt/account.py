@@ -88,17 +88,18 @@ class TraktAccount(Model):
 
         return Trakt.configuration.oauth.from_response(oauth_credential.to_response(), refresh=True)
 
-    def refresh(self, force=False):
+    def refresh(self, force=False, save=True, settings=None):
         if not force and self.refreshed_at:
             # Only refresh account every `REFRESH_INTERVAL`
             since_refresh = datetime.utcnow() - self.refreshed_at
 
             if since_refresh < REFRESH_INTERVAL:
-                return
+                return False
 
-        # Fetch trakt account details
-        with self.authorization().http(retry=force):
-            settings = Trakt['users/settings'].get()
+        if settings is None:
+            # Fetch trakt account details
+            with self.authorization().http(retry=force):
+                settings = Trakt['users/settings'].get()
 
         # Update user details
         user = settings.get('user', {})
@@ -115,7 +116,10 @@ class TraktAccount(Model):
         self.refreshed_at = datetime.utcnow()
 
         # Store changes in database
-        self.save()
+        if save:
+            self.save()
+
+        return True
 
     def thumb_url(self, default=None, rating='pg', size=256):
         if not self.thumb:

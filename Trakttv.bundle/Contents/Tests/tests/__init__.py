@@ -34,7 +34,7 @@ from plugin.core.constants import PLUGIN_IDENTIFIER
 # Setup environment
 Environment.setup(Core(CODE_DIR), {
     'trakt.token': 'trakt.token'
-}, {
+}, None, {
     'username': 'username',
     'password': 'password'
 })

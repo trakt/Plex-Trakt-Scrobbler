@@ -57,6 +57,13 @@ class SessionStatus(object):
         return True
 
     @classmethod
+    def _get_session_account_id(cls, session):
+        try:
+            return session.account_id
+        except KeyError:
+            return None
+
+    @classmethod
     def _get_session_key(cls, session):
         if session.session_key is None:
             return None
@@ -81,10 +88,14 @@ class SessionStatus(object):
         if session.state not in ['create', 'start', 'pause']:
             return
 
-        # Retrieve parameters
-        account_id = session.account_id
+        # Retrieve session parameters
+        account_id = cls._get_session_account_id(session)
         rating_key = session.rating_key
 
+        if account_id is None:
+            return
+
+        # Build session key
         session_key = cls._get_session_key(session)
 
         if session_key is None:
@@ -102,6 +113,13 @@ class SessionStatus(object):
 
     @classmethod
     def _update(cls, session):
+        # Retrieve session parameters
+        s_account_id = cls._get_session_account_id(session)
+
+        if s_account_id is None:
+            return
+
+        # Build session key
         session_key = cls._get_session_key(session)
 
         if session_key is None:
@@ -115,7 +133,7 @@ class SessionStatus(object):
         # Check if an update is required
         account_id, rating_key = cls._active_by_id[session_key]
 
-        if account_id != session.account_id or rating_key != session.rating_key:
+        if account_id != s_account_id or rating_key != session.rating_key:
             # Replace session details
             cls._replace(account_id,  rating_key, session_key, session)
         elif session.state == 'stop':

@@ -1,9 +1,15 @@
-from plugin.api.core.manager import ApiError, ApiManager
+from plugin.api.core.exceptions import ApiError
+from plugin.api.core.manager import ApiManager
 from plugin.core.helpers import decorator
 
 import logging
 
 log = logging.getLogger(__name__)
+
+
+class AuthenticationRequiredError(ApiError):
+    code = 'authentication.required'
+    message = 'API authentication required'
 
 
 class ServiceMeta(type):
@@ -36,7 +42,7 @@ def expose(authenticated=True):
     def outer(func):
         def inner(self, *args, **kwargs):
             if authenticated and self.context.token is None:
-                raise ApiError('Authentication required')
+                raise AuthenticationRequiredError
 
             return func(self, *args, **kwargs)
 

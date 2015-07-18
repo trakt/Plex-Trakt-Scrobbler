@@ -1,8 +1,13 @@
 from stash.archives.core.base import Archive
+from stash.lib import six as six
 
 from contextlib import closing
 import apsw
 import collections
+
+if six.PY3:
+    def buffer(value):
+        return value
 
 
 class ApswArchive(Archive):

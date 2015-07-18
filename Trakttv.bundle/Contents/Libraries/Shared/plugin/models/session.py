@@ -24,6 +24,8 @@ class Session(Model):
     duration = IntegerField(null=True)
     view_offset = IntegerField(null=True)
 
+    updated_at = DateTimeField(null=True)
+
     @property
     def account_id(self):
         return self._data.get('account')

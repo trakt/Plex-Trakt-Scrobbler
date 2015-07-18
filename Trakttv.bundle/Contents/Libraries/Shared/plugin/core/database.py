@@ -8,6 +8,8 @@ import os
 
 log = logging.getLogger(__name__)
 
+BUSY_TIMEOUT = 3000
+
 
 class Database(object):
     _cache = {
@@ -33,9 +35,10 @@ class Database(object):
             if path not in cache:
                 # Connect to new database
                 if type == 'peewee':
-                    cache[path] = APSWDatabase(path, autorollback=True, journal_mode='WAL')
+                    cache[path] = APSWDatabase(path, autorollback=True, journal_mode='WAL', timeout=BUSY_TIMEOUT)
                 elif type == 'raw':
                     cache[path] = apsw.Connection(path, flags=apsw.SQLITE_OPEN_READWRITE | apsw.SQLITE_OPEN_CREATE | apsw.SQLITE_OPEN_WAL)
+                    cache[path].setbusytimeout(BUSY_TIMEOUT)
 
                 log.debug('Connected to database at %r', path)
 

@@ -1,4 +1,4 @@
-import thread
+from stash.lib.six.moves import _thread
 
 
 class PrimeContext(object):
@@ -14,13 +14,13 @@ class PrimeContext(object):
         if self._algorithm is None:
             return
 
-        self._algorithm._buffers[thread.get_ident()] = self._buffer
+        self._algorithm._buffers[_thread.get_ident()] = self._buffer
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._algorithm is None:
             return
 
         try:
-            del self._algorithm._buffers[thread.get_ident()]
+            del self._algorithm._buffers[_thread.get_ident()]
         except KeyError:
             pass

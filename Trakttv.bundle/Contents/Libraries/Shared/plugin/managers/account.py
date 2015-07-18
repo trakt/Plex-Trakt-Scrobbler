@@ -9,8 +9,6 @@ log = logging.getLogger(__name__)
 
 class UpdateAccount(Update):
     def from_dict(self, account, changes):
-        log.debug('from_api(%r, %r)', account, changes)
-
         if not changes:
             return False
 
@@ -20,9 +18,8 @@ class UpdateAccount(Update):
         if 'name' in changes:
             data['name'] = changes['name']
 
-        if data and not self(account, data):
-            # Unable to update `Account`
-            return False
+        if data and self(account, data):
+            log.debug('Updated account')
 
         # Update `PlexAccount`
         PlexAccountManager.update.from_dict(

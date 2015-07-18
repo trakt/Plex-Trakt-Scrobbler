@@ -6,12 +6,10 @@ from plugin.models import (
 )
 from plugin.modules.migrations.core.base import Migration
 
-from xml.etree import ElementTree
 import apsw
 import logging
 import os
 import peewee
-import requests
 
 log = logging.getLogger(__name__)
 
@@ -40,10 +38,6 @@ class AccountMigration(Migration):
     def create_administrator_account(cls):
         username = cls.get_trakt_username()
 
-        if username is None:
-            log.debug('Unable to migrate administrator account, no previous trakt username found')
-            return
-
         try:
             account = Account.get(Account.id == 1)
         except Account.DoesNotExist:
@@ -56,18 +50,33 @@ class AccountMigration(Migration):
             cls.create_rules(account)
 
         # Ensure plex account details exist
-        plex_account = cls.create_plex_account(account)
+        p_created, p_account = cls.create_plex_account(account)
 
-        cls.create_plex_basic_credential(plex_account)
+        cls.create_plex_basic_credential(p_account)
+
+        # Refresh plex account details
+        try:
+            p_refreshed = p_account.refresh(force=p_created)
+        except:
+            log.info('Unable to refresh plex account (not authenticated?)', exc_info=True)
+            p_refreshed = False
 
         # Ensure trakt account details exist
-        created, trakt_account = cls.create_trakt_account(account, username)
+        t_created, t_account = cls.create_trakt_account(account, username)
 
-        cls.create_trakt_basic_credential(trakt_account)
-        cls.create_trakt_oauth_credential(trakt_account)
+        cls.create_trakt_basic_credential(t_account)
+        cls.create_trakt_oauth_credential(t_account)
 
         # Refresh trakt account details
-        trakt_account.refresh(force=created)
+        try:
+            t_refreshed = t_account.refresh(force=t_created)
+        except:
+            log.info('Unable to refresh trakt account (not authenticated?)', exc_info=True)
+            t_refreshed = False
+
+        # Refresh account
+        if p_refreshed or t_refreshed:
+            account.refresh()
 
     @classmethod
     def create_rules(cls, account):
@@ -81,30 +90,13 @@ class AccountMigration(Migration):
     @classmethod
     def create_plex_account(cls, account):
         try:
-            return PlexAccount.get(
+            return True, PlexAccount.create(
                 account=account
             )
-        except PlexAccount.DoesNotExist:
-            pass
-
-        token = os.environ.get('PLEXTOKEN')
-
-        username = None
-        thumb = None
-
-        if token:
-            user = cls.get_plex_account(token)
-
-            username = user.attrib.get('username')
-            thumb = user.attrib.get('thumb')
-
-        return PlexAccount.create(
-            id=1,  # administrator account id
-            account=account,
-
-            username=username,
-            thumb=thumb
-        )
+        except (apsw.ConstraintError, peewee.IntegrityError):
+            return False, PlexAccount.get(
+                account=account
+            )
 
     @classmethod
     def create_plex_basic_credential(cls, plex_account):
@@ -124,14 +116,6 @@ class AccountMigration(Migration):
             return False
 
         return True
-
-    @classmethod
-    def get_plex_account(cls, token):
-        response = requests.get('https://plex.tv/users/account', headers={
-            'X-Plex-Token': token
-        })
-
-        return ElementTree.fromstring(response.content)
 
     #
     # Trakt

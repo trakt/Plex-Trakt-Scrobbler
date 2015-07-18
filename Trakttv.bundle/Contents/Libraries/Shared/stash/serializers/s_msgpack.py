@@ -1,5 +1,7 @@
 from stash.serializers.core.base import Serializer
 
+import stash.lib.six as six
+
 try:
     import msgpack
 except ImportError:
@@ -16,7 +18,7 @@ class MessagePackSerializer(Serializer):
         # Dump object
         value = msgpack.dumps(value)
 
-        value = unicode(value, 'raw_unicode_escape')
+        value = six.text_type(value, 'raw_unicode_escape')
 
         # Return UTF-8 string
         return value.encode('utf-8')

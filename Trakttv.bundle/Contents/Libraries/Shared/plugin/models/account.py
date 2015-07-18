@@ -1,8 +1,8 @@
 from plugin.models.core import db
 
 from playhouse.apsw_ext import *
-from urlparse import urlparse
 import logging
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -56,35 +56,50 @@ class Account(Model):
 
         return thumb
 
-    def build_thumb(self):
+    def refresh(self, save=True):
+        # Retrieve trakt/plex accounts
         p = self.plex
-        p_thumb = p.thumb_url() if p else None
-
         t = self.trakt
-        t_thumb = t.thumb_url(p_thumb) if t else None
+
+        # Set `name` to trakt username (if `name` isn't already set)
+        if self.name is None:
+            self.name = t.username
+
+        # Update account thumb
+        self.thumb = self.build_thumb(
+            plex=p,
+            trakt=t
+        )
+
+        # Store changes in database
+        if save:
+            self.save()
+
+    def build_thumb(self, plex=None, trakt=None):
+        # Check if trakt thumbnail exists
+        t = trakt or self.trakt
+        t_thumb = t.thumb_url('404') if t else None
 
         if t_thumb:
-            # Trakt gravatar (with built-in fallback to plex thumb)
-            return t_thumb
+            response = requests.get(t_thumb)
 
-        if p_thumb:
-            # Plex gravatar
-            return p_thumb
+            # Check response is valid
+            if 200 <= response.status_code < 300:
+                log.debug('Using trakt account thumbnail')
+                return t.thumb_url()
 
-        if t and t.thumb:
-            # Trakt raw
-            return t.thumb
+        # Return plex thumbnail
+        p = plex or self.plex
+        p_thumb = p.thumb_url() if p else None
 
-        if p:
-            # Plex raw
-            return p.thumb
-
-        return None
+        return p_thumb
 
     def to_json(self, full=False):
         result = {
             'id': self.id,
-            'name': self.name
+            'name': self.name,
+
+            'thumb_url': self.thumb_url()
         }
 
         if not full:

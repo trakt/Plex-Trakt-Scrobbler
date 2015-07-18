@@ -11,7 +11,7 @@ class SyncActionOption(Option):
     default = None
     scope = 'server'
 
-    group = ('Sync', 'Advanced')
+    group = ('Advanced', 'Sync')
     label = 'Action Mode'
 
     @property

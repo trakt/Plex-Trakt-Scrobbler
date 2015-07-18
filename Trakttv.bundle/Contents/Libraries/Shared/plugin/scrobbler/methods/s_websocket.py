@@ -3,6 +3,7 @@ from plugin.managers import ActionManager, WSessionManager
 from plugin.scrobbler.core.engine import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 
+from datetime import datetime, timedelta
 from plex import Plex
 from plex_activity import Activity
 import logging
@@ -22,6 +23,20 @@ class WebSocket(Base):
         # Create or retrieve existing session
         session = WSessionManager.get.or_create(info, fetch=True)
 
+        # Validate session
+        if session.updated_at is None or (datetime.utcnow() - session.updated_at) > timedelta(minutes=5):
+            log.info('Updating session, last update was over 5 minutes ago')
+            WSessionManager.update(session, info, fetch=True)
+            return
+
+        if session.duration is None or session.view_offset is None:
+            # Update session
+            WSessionManager.update(session, info, fetch=lambda s, i: (
+                s.rating_key != to_integer(i.get('ratingKey')) or
+                s.duration is None
+            ))
+            return
+
         # Parse `info` to events
         events = self.to_events(session, info)
 
@@ -33,7 +48,11 @@ class WebSocket(Base):
 
         for action, payload in actions:
             # Build request for the event
-            request = self.build_request(session, rating_key=payload.get('rating_key'))
+            request = self.build_request(
+                session,
+                rating_key=payload.get('rating_key'),
+                view_offset=payload.get('view_offset')
+            )
 
             if not request:
                 continue
@@ -42,7 +61,9 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        WSessionManager.update(session, info, fetch=lambda s, i: s.rating_key != to_integer(i.get('ratingKey')))
+        WSessionManager.update(session, info, fetch=lambda s, i: (
+            s.rating_key != to_integer(i.get('ratingKey'))
+        ))
 
     @classmethod
     def to_events(cls, session, info):

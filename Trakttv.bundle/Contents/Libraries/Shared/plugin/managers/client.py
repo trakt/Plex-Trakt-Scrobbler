@@ -1,6 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.managers.core.base import Get, Manager, Update
+from plugin.managers.core.exceptions import ClientFilteredException
 from plugin.models import Client, ClientRule
 
 from plex import Plex
@@ -19,7 +20,7 @@ class GetClient(Get):
             Client.key == player['key']
         )
 
-    def or_create(self, player, fetch=False, match=False):
+    def or_create(self, player, fetch=False, match=False, filtered_exception=False):
         player = self.manager.parse_player(player)
 
         try:
@@ -29,7 +30,13 @@ class GetClient(Get):
             )
 
             # Update newly created object
-            self.manager.update(obj, player, fetch=fetch, match=match)
+            self.manager.update(
+                obj, player,
+
+                fetch=fetch,
+                match=match,
+                filtered_exception=filtered_exception
+            )
 
             return obj
         except (apsw.ConstraintError, peewee.IntegrityError):
@@ -38,19 +45,36 @@ class GetClient(Get):
 
             if fetch or match:
                 # Update existing `User`
-                self.manager.update(obj, player, fetch=fetch, match=match)
+                self.manager.update(
+                    obj, player,
+
+                    fetch=fetch,
+                    match=match,
+                    filtered_exception=filtered_exception
+                )
 
             return obj
 
 
 class UpdateClient(Update):
-    def __call__(self, obj, player, fetch=False, match=False):
+    def __call__(self, obj, player, fetch=False, match=False, filtered_exception=False):
         player = self.manager.parse_player(player)
-        data = self.to_dict(obj, player, fetch=fetch, match=match)
 
-        return super(UpdateClient, self).__call__(
+        filtered, data = self.to_dict(
+            obj, player,
+
+            fetch=fetch,
+            match=match
+        )
+
+        updated = super(UpdateClient, self).__call__(
             obj, data
         )
+
+        if filtered and filtered_exception:
+            raise ClientFilteredException
+
+        return updated
 
     def to_dict(self, obj, player, fetch=False, match=False):
         result = {
@@ -65,6 +89,7 @@ class UpdateClient(Update):
             result['product'] = player['product']
 
         client = None
+        filtered = False
 
         if fetch or match:
             # Fetch client from plex server
@@ -72,9 +97,11 @@ class UpdateClient(Update):
 
         if match:
             # Try match client against a rule
-            result = self.match(result, client, player)
+            filtered, result = self.match(
+                result, client, player
+            )
 
-        return result
+        return filtered, result
 
     @staticmethod
     def fetch(result, player):
@@ -112,25 +139,40 @@ class UpdateClient(Update):
             # Client didn't pass filters, update `account` attribute and return
             result['account'] = None
 
-            return result
+            return True, result
 
         # Find matching `ClientRule`
         address = client['address'] if client else None
 
-        query = ClientRule.select().where((
-            (ClientRule.key == player['key']) | (ClientRule.key == None) &
-            (ClientRule.name == player['title']) | (ClientRule.name == None) &
-            (ClientRule.address == address) | (ClientRule.address == None)
-        ))
+        rule = (ClientRule
+            .select()
+            .where(
+                (ClientRule.key == player['key']) |
+                (ClientRule.key == '*') |
+                (ClientRule.key == None),
 
-        rules = list(query.execute())
+                (ClientRule.name == player['title']) |
+                (ClientRule.name == '*') |
+                (ClientRule.name == None),
 
-        if len(rules) == 1:
-            result['account'] = rules[0].account_id
+                (ClientRule.address == address) |
+                (ClientRule.address == '*') |
+                (ClientRule.address == None)
+            )
+            .order_by(
+                ClientRule.priority.asc()
+            )
+            .first()
+        )
+
+        log.debug('Activity matched against rule: %r', rule)
+
+        if rule:
+            result['account'] = rule.account_id
         else:
             result['account'] = None
 
-        return result
+        return False, result
 
 
 class ClientManager(Manager):
@@ -141,14 +183,19 @@ class ClientManager(Manager):
 
     @classmethod
     def parse_player(cls, player):
-        if type(player) is dict:
-            return player
+        if type(player) is not dict:
+            # Build user dict from object
+            player = {
+                'key': player.machine_identifier,
+                'title': player.title,
 
-        # Build user dict from object
-        return {
-            'key': player.machine_identifier,
-            'title': player.title,
+                'platform': player.platform,
+                'product': player.product
+            }
 
-            'platform': player.platform,
-            'product': player.product
-        }
+        # Strip "_Video" suffix from the `key`
+        if player.get('key') and player['key'].endswith('_Video'):
+            # Update player key
+            player['key'] = player['key'].rstrip('_Video')
+
+        return player

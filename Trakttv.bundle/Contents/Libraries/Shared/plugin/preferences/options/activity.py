@@ -15,8 +15,8 @@ class ActivityOption(Option):
     default = ActivityMode.Automatic
     scope = 'server'
 
-    group = ('Activity',)
-    label = 'Mode'
+    group = ('Advanced', 'Activity')
+    label = 'Method'
 
     preference = 'activity_mode'
 

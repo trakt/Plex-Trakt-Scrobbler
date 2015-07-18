@@ -1,7 +1,7 @@
 from stash.algorithms.core.base import Algorithm
 from stash.algorithms.core.prime_context import PrimeContext
 from stash.core.helpers import to_integer
-from stash.lib.six.moves import xrange
+from stash.lib.six.moves import xrange, _thread
 
 try:
     from llist import dllist
@@ -10,7 +10,6 @@ except ImportError:
 
 import collections
 import logging
-import thread
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ class LruAlgorithm(Algorithm):
     def __getitem__(self, key):
         # Try retrieve value from `prime_buffer`
         try:
-            buffer = self._buffers.get(thread.get_ident())
+            buffer = self._buffers.get(_thread.get_ident())
 
             if buffer is not None:
                 return buffer[key]

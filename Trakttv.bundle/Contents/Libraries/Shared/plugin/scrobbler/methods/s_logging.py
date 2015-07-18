@@ -4,6 +4,7 @@ from plugin.scrobbler.core import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 from plugin.managers.session import LSessionManager
 
+from datetime import datetime, timedelta
 from plex_activity import Activity
 import logging
 
@@ -23,6 +24,20 @@ class Logging(Base):
         # Create or retrieve existing session
         session = LSessionManager.get.or_create(info, fetch=True)
 
+        # Validate session
+        if session.updated_at is None or (datetime.utcnow() - session.updated_at) > timedelta(minutes=5):
+            log.info('Updating session, last update was over 5 minutes ago')
+            LSessionManager.update(session, info, fetch=True)
+            return
+
+        if session.duration is None or session.view_offset is None:
+            # Update session
+            LSessionManager.update(session, info, fetch=lambda s, i: (
+                s.rating_key != to_integer(i.get('ratingKey')) or
+                s.duration is None
+            ))
+            return
+
         # Parse `info` to events
         events = self.to_events(session, info)
 
@@ -34,7 +49,11 @@ class Logging(Base):
 
         for action, payload in actions:
             # Build request for the event
-            request = self.build_request(session, rating_key=payload.get('rating_key'))
+            request = self.build_request(
+                session,
+                rating_key=payload.get('rating_key'),
+                view_offset=payload.get('view_offset')
+            )
 
             if not request:
                 continue

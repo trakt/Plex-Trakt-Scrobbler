@@ -1,13 +1,10 @@
+from plugin.api.core.exceptions import ApiError
 from plugin.preferences import Preferences
 
 from threading import Lock
 import logging
 
 log = logging.getLogger(__name__)
-
-
-class ApiError(Exception):
-    pass
 
 
 class ApiContext(object):
@@ -77,6 +74,9 @@ class ApiManager(object):
         # Execute request handler
         try:
             result = cls.call(method, headers, body, func, args, kwargs)
+        except ApiError, ex:
+            log.warn('Error returned while handling request %r: %s', key, ex, exc_info=True)
+            return cls.build_error('error.%s' % ex.code, ex.message)
         except Exception, ex:
             log.error('Exception raised while handling request %r: %s', key, ex, exc_info=True)
             return cls.build_error('exception', 'Exception raised while handling the request')
