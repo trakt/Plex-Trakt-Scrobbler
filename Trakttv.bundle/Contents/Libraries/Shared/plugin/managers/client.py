@@ -154,7 +154,7 @@ class UpdateClient(Update):
                 (ClientRule.name == player['title']) |
                 (ClientRule.name == '*') |
                 (ClientRule.name == None),
-            
+
                 (ClientRule.address == address) |
                 (ClientRule.address == '*') |
                 (ClientRule.address == None)
