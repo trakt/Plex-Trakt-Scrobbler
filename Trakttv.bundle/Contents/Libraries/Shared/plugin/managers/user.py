@@ -116,9 +116,11 @@ class UpdateUser(Update):
         # Find matching `UserRule`
         rule = (UserRule
             .select()
-            .where((
-                (UserRule.name == user['title']) | (UserRule.name << ['*', None])
-            ))
+            .where(
+                (UserRule.name == user['title']) |
+                (UserRule.name == '*') |
+                (UserRule.name == None)
+            )
             .order_by(
                 UserRule.priority.asc()
             )

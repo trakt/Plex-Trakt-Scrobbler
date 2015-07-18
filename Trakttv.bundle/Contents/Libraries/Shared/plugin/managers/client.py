@@ -146,11 +146,19 @@ class UpdateClient(Update):
 
         rule = (ClientRule
             .select()
-            .where((
-                (ClientRule.key == player['key']) | (ClientRule.key << ['*', None]) &
-                (ClientRule.name == player['title']) | (ClientRule.name << ['*', None]) &
-                (ClientRule.address == address) | (ClientRule.address << ['*', None])
-            ))
+            .where(
+                (ClientRule.key == player['key']) |
+                (ClientRule.key == '*') |
+                (ClientRule.key == None),
+
+                (ClientRule.name == player['title']) |
+                (ClientRule.name == '*') |
+                (ClientRule.name == None),
+            
+                (ClientRule.address == address) |
+                (ClientRule.address == '*') |
+                (ClientRule.address == None)
+            )
             .order_by(
                 ClientRule.priority.asc()
             )
