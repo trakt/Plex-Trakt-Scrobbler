@@ -118,12 +118,7 @@ class Cache(object):
         # Execute `func` (fetch data from trakt.tv)
         log.info('Fetching "%s"', '/'.join([interface, method]))
 
-        try:
-            return func(exceptions=True)
-        except Exception, ex:
-            print type(ex), ex
-
-        return None
+        return func(exceptions=True)
 
     @staticmethod
     def fetch_func(data, media):
