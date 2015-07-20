@@ -9,6 +9,7 @@ from plugin.sync.core.task.state import SyncState
 from datetime import datetime
 from peewee import JOIN_LEFT_OUTER
 import logging
+import time
 
 log = logging.getLogger(__name__)
 
@@ -38,9 +39,11 @@ class SyncTask(object):
 
         self.exceptions = []
 
-        self._abort = False
+        self.finished = False
         self.started = False
         self.success = None
+
+        self._abort = False
 
     @property
     def id(self):
@@ -56,9 +59,19 @@ class SyncTask(object):
 
         return (datetime.utcnow() - self.result.started_at).total_seconds()
 
-    def abort(self):
+    def abort(self, timeout=None):
         # Set `abort` flag, thread will abort on the next `checkpoint()`
         self._abort = True
+
+        if timeout is None:
+            return
+
+        # Wait `timeout` seconds for task to finish
+        for x in xrange(timeout):
+            if self.finished:
+                return
+
+            time.sleep(1)
 
     def checkpoint(self):
         # Check if an abort has been requested
@@ -82,6 +95,9 @@ class SyncTask(object):
 
         # Flush caches to archives
         self.state.flush()
+
+        # Mark finished
+        self.finished = True
 
     @staticmethod
     def store_exception(result, exc_info):

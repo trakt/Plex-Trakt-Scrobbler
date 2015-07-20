@@ -181,16 +181,16 @@ class Main(object):
 
         if current is None:
             # No active sync task
-            return False
+            return True
 
         if current.id != id:
             # Active task doesn't match `id`
             return False
 
         # Request task abort
-        current.abort()
+        current.abort(timeout=10)
 
-        log.info('(%r) Abort', self.current.mode)
+        log.info('(%r) Abort', current.mode)
         return True
 
 
