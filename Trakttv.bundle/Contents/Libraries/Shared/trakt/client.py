@@ -6,7 +6,7 @@ from trakt.interfaces.base import InterfaceProxy
 
 import logging
 
-__version__ = '2.3.0'
+__version__ = '2.4.0'
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +43,19 @@ class TraktClient(Emitter):
         parts = path.strip('/').split('/')
 
         cur = self.__interfaces
+        parameters = []
 
         while parts and type(cur) is dict:
             key = parts.pop(0)
 
             if key not in cur:
+                if '*' in cur:
+                    if key != '*':
+                        parameters.append(key)
+
+                    cur = cur['*']
+                    continue
+
                 return None
 
             cur = cur[key]
@@ -56,6 +64,9 @@ class TraktClient(Emitter):
             cur = cur.get(None)
 
         if parts:
-            return InterfaceProxy(cur, parts)
+            parameters.extend(parts)
+
+        if parameters:
+            return InterfaceProxy(cur, parameters)
 
         return cur

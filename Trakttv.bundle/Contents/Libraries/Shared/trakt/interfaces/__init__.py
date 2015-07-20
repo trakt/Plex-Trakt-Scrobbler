@@ -34,7 +34,11 @@ INTERFACES = [
 
     # /users/
     UsersInterface,
-    UsersSettingsInterface
+    UsersSettingsInterface,
+
+    # /users/lists/
+    UsersListsInterface,
+    UsersListInterface
 ]
 
 

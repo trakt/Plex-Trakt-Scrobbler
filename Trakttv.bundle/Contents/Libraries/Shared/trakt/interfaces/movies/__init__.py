@@ -12,5 +12,16 @@ class MoviesInterface(Interface):
 
         # Parse response
         return SummaryMapper.movie(
+            self.client,
+            self.get_data(response)
+        )
+
+    def trending(self):
+        response = self.http.get(
+            'trending'
+        )
+
+        return SummaryMapper.movies(
+            self.client,
             self.get_data(response)
         )

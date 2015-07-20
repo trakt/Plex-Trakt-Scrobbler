@@ -11,6 +11,17 @@ class ShowsInterface(Interface):
         )
 
         return SummaryMapper.show(
+            self.client,
+            self.get_data(response)
+        )
+
+    def trending(self):
+        response = self.http.get(
+            'trending'
+        )
+
+        return SummaryMapper.shows(
+            self.client,
             self.get_data(response)
         )
 
@@ -20,6 +31,7 @@ class ShowsInterface(Interface):
         ])
 
         return SummaryMapper.seasons(
+            self.client,
             self.get_data(response)
         )
 
@@ -29,6 +41,7 @@ class ShowsInterface(Interface):
         ])
 
         return SummaryMapper.episodes(
+            self.client,
             self.get_data(response)
         )
 
@@ -39,5 +52,6 @@ class ShowsInterface(Interface):
         ])
 
         return SummaryMapper.episode(
+            self.client,
             self.get_data(response)
         )
