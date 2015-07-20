@@ -1,5 +1,6 @@
 from plugin.managers import ExceptionManager
 from plugin.models import *
+from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.progress import SyncProgress
@@ -37,8 +38,16 @@ class SyncTask(object):
 
         self.exceptions = []
 
+        self._abort = False
         self.started = False
         self.success = None
+
+    @property
+    def id(self):
+        if self.result is None:
+            return None
+
+        return self.result.id
 
     @property
     def elapsed(self):
@@ -46,6 +55,17 @@ class SyncTask(object):
             return None
 
         return (datetime.utcnow() - self.result.started_at).total_seconds()
+
+    def abort(self):
+        # Set `abort` flag, thread will abort on the next `checkpoint()`
+        self._abort = True
+
+    def checkpoint(self):
+        # Check if an abort has been requested
+        if not self._abort:
+            return
+
+        raise SyncAbort()
 
     def finish(self):
         # Update result in database

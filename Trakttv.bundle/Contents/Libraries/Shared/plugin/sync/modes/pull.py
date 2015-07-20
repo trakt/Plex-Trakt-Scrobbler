@@ -82,6 +82,9 @@ class Movies(Base):
                 # Increment one step
                 self.step(pending, data, pk)
 
+            # Task checkpoint
+            self.checkpoint()
+
         # Task stopped
         log.debug('Pending: %r', pending)
 
@@ -177,6 +180,9 @@ class Shows(Base):
 
                 # Increment one step
                 self.step(pending, data, (pk, season_num, episode_num))
+
+            # Task checkpoint
+            self.checkpoint()
 
         # Task stopped
         log.debug('Pending: %r', pending)

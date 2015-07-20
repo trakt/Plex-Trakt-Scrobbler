@@ -77,6 +77,12 @@ class Mode(object):
     def run(self):
         raise NotImplementedError
 
+    def checkpoint(self):
+        if self.current is None:
+            return
+
+        self.current.checkpoint()
+
     def execute_children(self):
         for c in self.children:
             c.run()

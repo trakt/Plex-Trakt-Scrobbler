@@ -59,6 +59,9 @@ class SyncArtifacts(object):
 
                 self.task.state.trakt.invalidate(data, media)
 
+            # Task checkpoint
+            self.task.checkpoint()
+
         if not changes:
             log.info('trakt.tv profile is up-to-date')
             return
