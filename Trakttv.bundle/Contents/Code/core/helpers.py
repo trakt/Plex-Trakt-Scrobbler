@@ -326,9 +326,26 @@ def function_path(name, ext=None, **kwargs):
 
 
 def redirect(path, **kwargs):
-    url = PLUGIN_PREFIX + path
+    location = PLUGIN_PREFIX + path
 
     if kwargs:
-        url += '?' + urllib.urlencode(kwargs)
+        location += '?' + urllib.urlencode(kwargs)
 
-    return Redirect(url)
+    try:
+        request = Core.sandbox.context.request
+
+        # Retrieve protocol
+        protocol = request.protocol
+
+        if request.host.endswith('.plex.direct:32400'):
+            # Secure connection
+            protocol = 'https'
+
+        # Build URL
+        if request and request.host and location[0] == "/":
+            location = protocol + "://" + request.host + location
+    except Exception, ex:
+        log.warn('Redirect - %s', str(ex), exc_info=True)
+
+    # Return redirect response
+    return Redirect(location)
