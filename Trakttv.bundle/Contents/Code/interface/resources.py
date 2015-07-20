@@ -2,7 +2,6 @@ from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers import AccountManager
 from plugin.models import Account
 
-from requests import RequestException
 import logging
 import requests
 
@@ -19,7 +18,7 @@ def Cover(account_id, refresh=None):
     try:
         # Refresh trakt account details
         account.trakt.refresh()
-    except RequestException:
+    except Exception:
         log.warn('Unable to refresh trakt account details', exc_info=True)
         return Redirect(R('art-default.png'))
 
@@ -29,7 +28,7 @@ def Cover(account_id, refresh=None):
     try:
         # Request cover image
         response = requests.get(account.trakt.cover)
-    except RequestException:
+    except Exception:
         log.warn('Unable to retrieve account cover', exc_info=True)
         return Redirect(R('art-default.png'))
 
@@ -49,7 +48,7 @@ def Thumb(account_id, refresh=None):
 
     try:
         response = requests.get(account.thumb_url())
-    except RequestException:
+    except Exception:
         log.warn('Unable to retrieve account thumbnail', exc_info=True)
         return Redirect(R('icon-default.png'))
 
