@@ -18,6 +18,14 @@ class Rating(object):
         r.timestamp = from_iso8601(info.get('rated_at'))
         return r
 
+    def __getstate__(self):
+        state = self.__dict__
+
+        if hasattr(self, '_client'):
+            del state['_client']
+
+        return state
+
     def __eq__(self, other):
         if not isinstance(other, Rating):
             return NotImplemented
