@@ -144,19 +144,30 @@ class UpdateUser(Update):
     def account_function(user, rule):
         func = rule.account_function
 
-        # Map
+        # Handle account function
+        account_id = None
+
         if func == '@':
-            # Try find matching `PlexAccount`
+            # Map, try automatically finding matching `PlexAccount`
             plex_account = (PlexAccount
                 .select()
                 .where(PlexAccount.username == user['title'])
                 .first()
             )
 
-            log.debug('Mapped user %r to account %r', user['title'], plex_account.account_id)
-            return plex_account.account_id
+            if plex_account:
+                account_id = plex_account.account_id
+        else:
+            log.warn('Unknown account function: %r', func)
+            return None
 
-        return None
+        # Ensure `account_id` is valid
+        if account_id is None:
+            log.info('Unable to match user %r against any account', user['title'])
+            return None
+
+        log.debug('Matched user %r to account %r', user['title'], account_id)
+        return account_id
 
 
 class UserManager(Manager):
