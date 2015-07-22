@@ -9,9 +9,9 @@ log = logging.getLogger(__name__)
 class UpdateBasicCredential(Update):
     keys = ['password', 'token']
 
-    def from_dict(self, basic_credential, changes):
+    def from_dict(self, basic_credential, changes, save=True):
         # Update `PlexBasicCredential`
-        if not super(UpdateBasicCredential, self).from_dict(basic_credential, changes):
+        if not super(UpdateBasicCredential, self).from_dict(basic_credential, changes, save=save):
             return False
 
         return True
