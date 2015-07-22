@@ -114,7 +114,7 @@ class PlexAccount(Model):
 
         # Merge authorization details
         result['authorization'] = {
-            'basic': {'valid': False}
+            'basic': {'state': 'empty'}
         }
 
         # - Basic credentials

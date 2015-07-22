@@ -154,8 +154,8 @@ class TraktAccount(Model):
 
         # Merge authorization details
         result['authorization'] = {
-            'basic': {'valid': False},
-            'oauth': {'valid': False}
+            'basic': {'state': 'empty'},
+            'oauth': {'state': 'empty'}
         }
 
         # - Basic credentials

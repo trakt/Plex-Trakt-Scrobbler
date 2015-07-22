@@ -16,9 +16,19 @@ class PlexBasicCredential(Model):
     # Authorization
     token = CharField(null=True)
 
+    @property
+    def state(self):
+        if self.token is not None:
+            return 'valid'
+
+        if self.password is not None:
+            return 'warning'
+
+        return 'empty'
+
     def to_json(self, account):
         result = {
-            'valid': self.token is not None,
+            'state': self.state,
 
             'username': account.username
         }
