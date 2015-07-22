@@ -24,7 +24,7 @@ class Get(Interface):
             return None
 
         return SyncMapper.process(
-            store, items, media,
+            self.client, store, items, media,
             **self.flags
         )
 

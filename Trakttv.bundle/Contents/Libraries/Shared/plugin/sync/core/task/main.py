@@ -1,5 +1,6 @@
 from plugin.managers import ExceptionManager
 from plugin.models import *
+from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.progress import SyncProgress
@@ -8,6 +9,7 @@ from plugin.sync.core.task.state import SyncState
 from datetime import datetime
 from peewee import JOIN_LEFT_OUTER
 import logging
+import time
 
 log = logging.getLogger(__name__)
 
@@ -37,8 +39,18 @@ class SyncTask(object):
 
         self.exceptions = []
 
+        self.finished = False
         self.started = False
         self.success = None
+
+        self._abort = False
+
+    @property
+    def id(self):
+        if self.result is None:
+            return None
+
+        return self.result.id
 
     @property
     def elapsed(self):
@@ -46,6 +58,27 @@ class SyncTask(object):
             return None
 
         return (datetime.utcnow() - self.result.started_at).total_seconds()
+
+    def abort(self, timeout=None):
+        # Set `abort` flag, thread will abort on the next `checkpoint()`
+        self._abort = True
+
+        if timeout is None:
+            return
+
+        # Wait `timeout` seconds for task to finish
+        for x in xrange(timeout):
+            if self.finished:
+                return
+
+            time.sleep(1)
+
+    def checkpoint(self):
+        # Check if an abort has been requested
+        if not self._abort:
+            return
+
+        raise SyncAbort()
 
     def finish(self):
         # Update result in database
@@ -62,6 +95,9 @@ class SyncTask(object):
 
         # Flush caches to archives
         self.state.flush()
+
+        # Mark finished
+        self.finished = True
 
     @staticmethod
     def store_exception(result, exc_info):

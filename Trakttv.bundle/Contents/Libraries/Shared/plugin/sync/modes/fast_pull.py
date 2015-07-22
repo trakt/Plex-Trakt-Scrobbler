@@ -93,6 +93,9 @@ class Movies(Mode):
                     # Increment one step
                     self.current.progress.step()
 
+            # Task checkpoint
+            self.checkpoint()
+
         # Task stopped
         self.current.progress.stop()
 
@@ -198,6 +201,9 @@ class Shows(Mode):
 
                     # Increment one step
                     self.current.progress.step()
+
+            # Task checkpoint
+            self.checkpoint()
 
         # Task stopped
         self.current.progress.stop()

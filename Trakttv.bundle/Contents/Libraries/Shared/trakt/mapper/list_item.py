@@ -1,7 +1,7 @@
 from trakt.mapper.core.base import Mapper
 
 
-class SearchMapper(Mapper):
+class ListItemMapper(Mapper):
     @classmethod
     def process(cls, client, item, media=None, **kwargs):
         if media is None:
@@ -42,6 +42,14 @@ class SearchMapper(Mapper):
         return movie
 
     @classmethod
+    def list(cls, client, item, **kwargs):
+        return None
+
+    @classmethod
+    def officiallist(cls, client, item, **kwargs):
+        return None
+
+    @classmethod
     def show(cls, client, item, **kwargs):
         if 'show' in item:
             i_show = item['show']
@@ -62,6 +70,31 @@ class SearchMapper(Mapper):
             show._update(item)
 
         return show
+
+    @classmethod
+    def seasons(cls, client, items, **kwargs):
+        return [cls.season(client, item, **kwargs) for item in items]
+
+    @classmethod
+    def season(cls, client, item, **kwargs):
+        if 'season' in item:
+            i_season = item['season']
+        else:
+            i_season = item
+
+        # Retrieve item keys
+        pk, keys = cls.get_ids('season', i_season)
+
+        if pk is None:
+            return None
+
+        # Create object
+        season = cls.construct(client, 'season', i_season, keys, **kwargs)
+
+        if 'show' in item:
+            season.show = cls.show(client, item['show'])
+
+        return season
 
     @classmethod
     def episodes(cls, client, items, **kwargs):

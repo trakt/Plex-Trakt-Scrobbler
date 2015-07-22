@@ -116,14 +116,14 @@ class Cache(object):
             return None
 
         # Execute `func` (fetch data from trakt.tv)
-        log.info('Fetching "%s"', '/'.join([interface, method]))
+        path = '/'.join([interface, method])
+
+        log.info('Fetching "%s"', path)
 
         try:
             return func(exceptions=True)
-        except Exception, ex:
-            print type(ex), ex
-
-        return None
+        except NotImplementedError:
+            log.warn('Unable to fetch "%s", not implemented', path)
 
     @staticmethod
     def fetch_func(data, media):

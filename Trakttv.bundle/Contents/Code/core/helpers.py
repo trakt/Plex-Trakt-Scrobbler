@@ -8,6 +8,7 @@ import hashlib
 import inspect
 import sys
 import threading
+import thread
 import time
 import urllib
 
@@ -240,10 +241,10 @@ def spawn(func, *args, **kwargs):
         except Exception, ex:
             log.error('Thread "%s" raised an exception: %s', thread_name, ex, exc_info=True)
 
-    thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
+    th = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
 
     try:
-        thread.start()
+        th.start()
         log.debug("Spawned thread with name '%s'" % thread_name)
     except thread.error, ex:
         log.error('Unable to spawn thread: %s', ex, exc_info=True, extra={
@@ -253,7 +254,7 @@ def spawn(func, *args, **kwargs):
         })
         return None
 
-    return thread
+    return th
 
 
 def schedule(func, seconds, *args, **kwargs):
@@ -326,9 +327,26 @@ def function_path(name, ext=None, **kwargs):
 
 
 def redirect(path, **kwargs):
-    url = PLUGIN_PREFIX + path
+    location = PLUGIN_PREFIX + path
 
     if kwargs:
-        url += '?' + urllib.urlencode(kwargs)
+        location += '?' + urllib.urlencode(kwargs)
 
-    return Redirect(url)
+    try:
+        request = Core.sandbox.context.request
+
+        # Retrieve protocol
+        protocol = request.protocol
+
+        if request.host.endswith('.plex.direct:32400'):
+            # Secure connection
+            protocol = 'https'
+
+        # Build URL
+        if request and request.host and location[0] == "/":
+            location = protocol + "://" + request.host + location
+    except Exception, ex:
+        log.warn('Redirect - %s', str(ex), exc_info=True)
+
+    # Return redirect response
+    return Redirect(location)

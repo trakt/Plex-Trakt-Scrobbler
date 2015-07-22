@@ -45,6 +45,9 @@ class SyncStateTrakt(object):
         log.debug('Invalidated trakt cache (%r, %r) for account: %r', media, data, username)
 
     def refresh(self):
+        # Task checkpoint
+        self.task.checkpoint()
+
         # Refresh cache for account, store changes
         self.changes = self.cache.refresh(self.task.account.trakt.username)
 
@@ -83,6 +86,9 @@ class SyncStateTrakt(object):
                         continue
 
                     self.table[key] = pk
+
+            # Task checkpoint
+            self.task.checkpoint()
 
         log.debug('Built table with %d keys', len(self.table))
 

@@ -172,17 +172,16 @@ def Trigger(account_id, mode, data=SyncData.All, media=SyncMedia.All, **kwargs):
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
-def Cancel():
-    if not Sync.cancel():
-        return MessageContainer(
-            L('cancel_failure:title'),
-            L('cancel_failure:message'),
-        )
+def Cancel(account_id, id):
+    id = int(id)
 
-    return MessageContainer(
-        L('cancel_success:title'),
-        L('cancel_success:message')
-    )
+    # Cancel sync task
+    if not Sync.cancel(id):
+        # Unable to cancel task
+        return redirect('/sync', account_id=account_id, title='Error', message='Unable to cancel current sync')
+
+    # Success
+    return redirect('/sync', account_id=account_id)
 
 
 class Accounts(object):
@@ -271,7 +270,7 @@ class Active(object):
     @classmethod
     def build_cancel(cls, current, title):
         return DirectoryObject(
-            key=Callback(Cancel, account_id=current.account.id),
+            key=Callback(Cancel, account_id=current.account.id, id=current.id),
             title=pad_title('%s - Cancel' % title)
         )
 

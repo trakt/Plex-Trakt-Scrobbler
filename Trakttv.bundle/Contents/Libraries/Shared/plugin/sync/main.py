@@ -167,8 +167,8 @@ class Main(object):
 
         self.modes[self.current.mode].run()
 
-    def cancel(self):
-        """Trigger a currently running sync to cancel
+    def cancel(self, id):
+        """Trigger a currently running sync to abort
 
         Note: A sync will only cancel at the next "safe" cancel point, this will not
         force a thread to end immediately.
@@ -177,7 +177,21 @@ class Main(object):
                  `False` if there was no sync to cancel.
         :rtype: bool
         """
-        raise NotImplementedError
+        current = self.current
+
+        if current is None:
+            # No active sync task
+            return True
+
+        if current.id != id:
+            # Active task doesn't match `id`
+            return False
+
+        # Request task abort
+        current.abort(timeout=10)
+
+        log.info('(%r) Abort', current.mode)
+        return True
 
 
 Sync = Main()

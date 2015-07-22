@@ -63,6 +63,9 @@ class Movies(Base):
                     t_item=t_movie
                 )
 
+            # Task checkpoint
+            self.checkpoint()
+
 
 class Shows(Base):
     def run(self):
@@ -125,6 +128,9 @@ class Shows(Base):
                     t_show=t_show,
                     t_item=t_episode
                 )
+
+            # Task checkpoint
+            self.checkpoint()
 
     @staticmethod
     def t_objects(collection, pk, season_num, episode_num):
