@@ -84,7 +84,7 @@ class Update(Method):
 
         return True
 
-    def from_dict(self, obj, changes):
+    def from_dict(self, obj, changes, save=True):
         if not changes:
             return False
 
@@ -101,7 +101,7 @@ class Update(Method):
 
             data[key] = changes[key]
 
-        if data and not self(obj, data):
+        if data and not self(obj, data, save=save):
             log.debug('Unable to update %r (nothing changed?)', obj)
 
         return True
