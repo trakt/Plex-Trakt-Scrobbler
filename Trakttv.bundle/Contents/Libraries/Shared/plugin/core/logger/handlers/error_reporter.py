@@ -105,7 +105,7 @@ class ErrorReporter(SentryHandler):
 VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 
 PARAMS = {
-    'dsn': 'requests+http://a0dce89447214883a04e0425c35d7d52:4bc77af5e264442f90df0a93f0e5a633@sentry.skipthe.net/1',
+    'dsn': 'requests+http://01208ce5a8f24b99a32222fb58e5c542:d8ecc53a159a42e3a564ac18435529e5@sentry.skipthe.net/1',
 
     'processors': [
         'raven.processors.RemoveStackLocalsProcessor',
