@@ -114,7 +114,7 @@ class Filters(object):
         )
 
     @classmethod
-    def is_valid_section(cls, metadata):
+    def is_valid_metadata_section(cls, metadata):
         return cls.match(
             'filter_sections',
             f_current=lambda: metadata.section.title,
