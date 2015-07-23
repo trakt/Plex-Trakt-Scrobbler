@@ -144,12 +144,16 @@ class Mode(object):
             LibrarySection.name
         ).tuples()
 
+        result = []
+
         for id, name in p_sections:
             # Apply section filter
             if not Filters.is_valid_section_name(name):
                 continue
 
-            yield (id,)
+            result.append((id,))
+
+        return result
 
 
 def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):
