@@ -31,7 +31,7 @@ class Base(object):
             return None
 
         # Apply library/section filter
-        if not Filters.is_valid_section(metadata):
+        if not Filters.is_valid_metadata_section(metadata):
             return None
 
         # Parse guid

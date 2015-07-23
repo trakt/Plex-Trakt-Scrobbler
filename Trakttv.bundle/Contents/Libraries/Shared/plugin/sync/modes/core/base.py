@@ -1,5 +1,7 @@
+from plugin.core.filters import Filters
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
+from plex_database.models import LibrarySection
 import itertools
 import logging
 
@@ -112,7 +114,7 @@ class Mode(object):
             yield data
 
     def is_data_enabled(self, data):
-        key = DATA_PREFERENCE_MAP[data]
+        key = DATA_PREFERENCE_MAP.get(data)
 
         if not key:
             log.warn('Unknown data: %r', data)
@@ -133,6 +135,25 @@ class Mode(object):
             return False
 
         return True
+
+    def sections(self, section_type):
+        # Retrieve sections
+        p_sections = self.plex.library.sections(
+            section_type,
+            LibrarySection.id,
+            LibrarySection.name
+        ).tuples()
+
+        result = []
+
+        for id, name in p_sections:
+            # Apply section filter
+            if not Filters.is_valid_section_name(name):
+                continue
+
+            result.append((id,))
+
+        return result
 
 
 def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):
