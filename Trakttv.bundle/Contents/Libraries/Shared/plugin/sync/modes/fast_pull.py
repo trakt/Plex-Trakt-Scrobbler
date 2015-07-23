@@ -2,7 +2,7 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType, LibrarySection
+from plex_database.models import LibrarySectionType
 from trakt_sync.cache.main import Cache
 import logging
 
@@ -14,10 +14,7 @@ class Movies(Mode):
 
     def run(self):
         # Retrieve movie sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Movie,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Movie)
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
@@ -105,10 +102,7 @@ class Shows(Mode):
 
     def run(self):
         # Retrieve show sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Show,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Show)
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(

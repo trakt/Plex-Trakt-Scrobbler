@@ -129,6 +129,20 @@ class Filters(object):
         )
 
     @classmethod
+    def is_valid_section_name(cls, section_name):
+        return cls.match(
+            'filter_sections',
+            f_current=lambda: section_name,
+            f_validate=lambda value, f_allow, f_deny: (
+                (f_allow and value not in f_allow) or
+                value in f_deny
+            ),
+            f_check=lambda: (
+                not section_name
+            )
+        )
+
+    @classmethod
     def is_valid_address(cls, client):
         def f_current():
             if not client or not client['address']:
