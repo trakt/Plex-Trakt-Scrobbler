@@ -114,7 +114,7 @@ class Mode(object):
             yield data
 
     def is_data_enabled(self, data):
-        key = DATA_PREFERENCE_MAP[data]
+        key = DATA_PREFERENCE_MAP.get(data)
 
         if not key:
             log.warn('Unknown data: %r', data)
