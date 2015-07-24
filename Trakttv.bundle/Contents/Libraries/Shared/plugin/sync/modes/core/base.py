@@ -124,7 +124,7 @@ class Mode(object):
         mode = self.configuration[key]
 
         if mode == SyncMode.Full:
-            mode = [SyncMode.FastPull, SyncMode.Push]
+            mode = [SyncMode.FastPull, SyncMode.Pull, SyncMode.Push]
         elif mode is not None:
             mode = [mode]
         else:

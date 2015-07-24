@@ -405,8 +405,6 @@ class EpisodeLibrary(LibraryBase):
         guids = {}
 
         def shows_iterator():
-            x = 0
-
             for sh_id, (guid, show) in shows.items():
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
@@ -415,8 +413,7 @@ class EpisodeLibrary(LibraryBase):
 
                     guid = guids[sh_id]
 
-                yield x, guid, show
-                x += 1
+                yield sh_id, guid, show
 
         # Episode iterator, parse guid (if enabled)
         def episodes_iterator():

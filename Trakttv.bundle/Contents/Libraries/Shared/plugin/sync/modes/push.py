@@ -87,12 +87,37 @@ class Shows(Base):
         )
 
         # Task started
-
-        # TODO process shows, seasons
-
-        # Process episodes
         unsupported_shows = {}
 
+        # TODO process seasons
+
+        # Process shows
+        for sh_id, p_guid, p_show in p_shows:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                continue
+
+            key = (p_guid.agent, p_guid.sid)
+
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            for data in self.get_data(SyncMedia.Shows):
+                t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
+
+                # Execute show handlers
+                self.execute_handlers(
+                    SyncMedia.Shows, data,
+
+                    key=sh_id,
+
+                    p_guid=p_guid,
+                    p_item=p_show,
+
+                    t_item=t_show
+                )
+
+        # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
@@ -109,6 +134,7 @@ class Shows(Base):
                     season_num, episode_num
                 )
 
+                # Execute episode handlers
                 self.execute_handlers(
                     SyncMedia.Episodes, data,
 
