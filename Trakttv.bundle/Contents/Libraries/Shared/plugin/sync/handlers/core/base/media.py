@@ -159,6 +159,9 @@ class MediaHandler(object):
     # Artifacts
     #
 
+    def store_show(self, action, p_guid, p_show, **kwargs):
+        return self.current.artifacts.store_show(self.parent.data, action, p_guid, p_show, **kwargs)
+
     def store_episode(self, action, p_guid, identifier, p_show, **kwargs):
         return self.current.artifacts.store_episode(self.parent.data, action, p_guid, identifier, p_show, **kwargs)
 
