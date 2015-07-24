@@ -87,11 +87,16 @@ class Shows(Base):
         )
 
         # Task started
+        unsupported_shows = {}
 
         # TODO process seasons
 
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                continue
+
             key = (p_guid.agent, p_guid.sid)
 
             # Try retrieve `pk` for `key`
@@ -114,8 +119,6 @@ class Shows(Base):
                 )
 
         # Process episodes
-        unsupported_shows = {}
-
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
