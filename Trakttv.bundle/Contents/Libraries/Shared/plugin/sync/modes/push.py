@@ -103,10 +103,9 @@ class Shows(Base):
             pk = self.trakt.table.get(key)
 
             for data in self.get_data(SyncMedia.Shows):
-                # Retrieve trakt show
                 t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
 
-                # Execute episode handlers
+                # Execute show handlers
                 self.execute_handlers(
                     SyncMedia.Shows, data,
 

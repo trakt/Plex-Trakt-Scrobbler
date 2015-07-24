@@ -64,6 +64,10 @@ class Movies(Base):
     media = SyncMedia.Movies
 
 
+class Shows(Base):
+    media = SyncMedia.Shows
+
+
 class Episodes(Base):
     media = SyncMedia.Episodes
 
@@ -74,5 +78,7 @@ class Pull(DataHandler):
 
     children = [
         Movies,
+
+        Shows,
         Episodes
     ]
