@@ -40,14 +40,23 @@ def Cover(account_id, refresh=None):
 
 @route(PLUGIN_PREFIX + '/resources/thumb')
 def Thumb(account_id, refresh=None):
+    # Retrieve account
     account = AccountManager.get(Account.id == account_id)
 
     if not account.trakt:
         # TODO better account placeholder image
         return Redirect(R('icon-default.png'))
 
+    # Retrieve thumb url
+    thumb_url = account.thumb_url()
+
+    if not thumb_url:
+        # TODO better account placeholder image
+        return Redirect(R('icon-default.png'))
+
+    # Request thumb
     try:
-        response = requests.get(account.thumb_url())
+        response = requests.get(thumb_url)
     except Exception:
         log.warn('Unable to retrieve account thumbnail', exc_info=True)
         return Redirect(R('icon-default.png'))
