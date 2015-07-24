@@ -5,8 +5,19 @@ from plugin.managers import AccountManager
 import apsw
 import logging
 import peewee
+from plugin.managers.core.exceptions import TraktAccountExistsException, PlexAccountExistsException
 
 log = logging.getLogger(__name__)
+
+
+class TraktAccountExistsError(ApiError):
+    code = 'account.trakt.account_exists'
+    message = 'Trakt account is already in use'
+
+
+class PlexAccountExistsError(ApiError):
+    code = 'account.plex.account_exists'
+    message = 'Plex account is already in use'
 
 
 class NameConflictError(ApiError):
@@ -58,9 +69,16 @@ class Account(Service):
         # Retrieve current account
         account = AccountManager.get.by_id(id)
 
-        # Update `account` with changes
-        if not AccountManager.update.from_dict(account, data):
-            raise UpdateFailedError
+        try:
+            # Update `account` with changes
+            if not AccountManager.update.from_dict(account, data):
+                raise UpdateFailedError
+        except PlexAccountExistsException:
+            # Raise as an API-safe error
+            raise PlexAccountExistsError
+        except TraktAccountExistsException:
+            # Raise as an API-safe error
+            raise TraktAccountExistsError
 
         # Return updated `account`
         return account.to_json(full=True)

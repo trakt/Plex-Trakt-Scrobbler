@@ -1,10 +1,13 @@
 from plugin.managers.core.base import Manager, Update
+from plugin.managers.core.exceptions import TraktAccountExistsException
 from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, TraktBasicCredentialManager
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
 from trakt import Trakt
+import apsw
 import inspect
 import logging
+import peewee
 
 
 log = logging.getLogger(__name__)
@@ -32,24 +35,32 @@ class UpdateAccount(Update):
 
             authorization['basic']['username'] = changes['username']
 
+        # Retrieve `TraktBasicCredential`
+        t_account.basic = TraktBasicCredentialManager.get.or_create(
+            TraktBasicCredential.account == t_account,
+            account=t_account
+        )
+
         # Update `TraktBasicCredential` (if there are changes)
         if 'basic' in authorization:
             TraktBasicCredentialManager.update.from_dict(
-                lambda: TraktBasicCredentialManager.get.or_create(
-                    TraktBasicCredential.account == t_account,
-                    account=t_account
-                ),
-                authorization['basic']
+                t_account.basic,
+                authorization['basic'],
+                save=False
             )
+
+        # Retrieve `TraktOAuthCredential`
+        t_account.oauth = TraktOAuthCredentialManager.get.or_create(
+            TraktOAuthCredential.account == t_account,
+            account=t_account
+        )
 
         # Update `TraktOAuthCredential` (if there are changes)
         if 'oauth' in authorization:
             TraktOAuthCredentialManager.update.from_dict(
-                lambda: TraktOAuthCredentialManager.get.or_create(
-                    TraktOAuthCredential.account == t_account,
-                    account=t_account
-                ),
-                authorization['oauth']
+                t_account.oauth,
+                authorization['oauth'],
+                save=False
             )
 
         # Validate the account authorization
@@ -61,13 +72,25 @@ class UpdateAccount(Update):
             return None
 
         # Update `TraktAccount` username
-        self.update_username(t_account, settings, save=False)
+        try:
+            self.update_username(t_account, settings)
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+            log.debug('Trakt account already exists - %s', ex, exc_info=True)
+
+            raise TraktAccountExistsException('Trakt account already exists')
 
         # Refresh `TraktAccount`
         t_account.refresh(
             force=True,
             settings=settings
         )
+
+        # Save credentials
+        if 'basic' in authorization:
+            t_account.basic.save()
+
+        if 'oauth' in authorization:
+            t_account.oauth.save()
 
         # Refresh `Account`
         t_account.account.refresh()
@@ -106,11 +129,16 @@ class UpdateAccount(Update):
             log.warn('Unable to retrieve account details for authorization')
             return None
 
+        # Update `TraktAccount` username
+        try:
+            self.update_username(t_account, settings)
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+            log.debug('Trakt account already exists - %s', ex, exc_info=True)
+
+            raise TraktAccountExistsException('Trakt account already exists')
+
         # Save oauth credential changes
         oauth.save()
-
-        # Update `TraktAccount` username
-        self.update_username(t_account, settings, save=False)
 
         # Refresh `TraktAccount`
         t_account.refresh(

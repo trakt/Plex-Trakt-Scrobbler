@@ -1,8 +1,8 @@
 from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
-from plugin.sync.modes.core.base import Mode, TRAKT_DATA_MAP, log_unsupported_guid
+from plugin.sync.modes.core.base import Mode, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType, LibrarySection, MetadataItem, MediaItem, Episode
+from plex_database.models import LibrarySectionType, MetadataItem, MediaItem, Episode
 import logging
 
 log = logging.getLogger(__name__)
@@ -15,10 +15,7 @@ class Base(Mode):
 class Movies(Base):
     def run(self):
         # Retrieve movie sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Movie,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Movie)
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
@@ -70,10 +67,7 @@ class Movies(Base):
 class Shows(Base):
     def run(self):
         # Retrieve movie sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Show,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Show)
 
         # Fetch movies with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
@@ -93,12 +87,37 @@ class Shows(Base):
         )
 
         # Task started
-
-        # TODO process shows, seasons
-
-        # Process episodes
         unsupported_shows = {}
 
+        # TODO process seasons
+
+        # Process shows
+        for sh_id, p_guid, p_show in p_shows:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                continue
+
+            key = (p_guid.agent, p_guid.sid)
+
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            for data in self.get_data(SyncMedia.Shows):
+                t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
+
+                # Execute show handlers
+                self.execute_handlers(
+                    SyncMedia.Shows, data,
+
+                    key=sh_id,
+
+                    p_guid=p_guid,
+                    p_item=p_show,
+
+                    t_item=t_show
+                )
+
+        # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
@@ -115,6 +134,7 @@ class Shows(Base):
                     season_num, episode_num
                 )
 
+                # Execute episode handlers
                 self.execute_handlers(
                     SyncMedia.Episodes, data,
 

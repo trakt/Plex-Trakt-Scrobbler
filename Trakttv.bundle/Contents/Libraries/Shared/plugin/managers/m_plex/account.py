@@ -1,9 +1,12 @@
 from plugin.managers.core.base import Manager, Update
+from plugin.managers.core.exceptions import PlexAccountExistsException
 from plugin.managers.m_plex.credential import PlexBasicCredentialManager
 from plugin.models import PlexAccount, PlexBasicCredential
 
+import apsw
 import inspect
 import logging
+import peewee
 
 
 log = logging.getLogger(__name__)
@@ -18,27 +21,53 @@ class UpdateAccount(Update):
             p_account = p_account()
 
         # Update `PlexAccount`
+        username = changes.pop('username', None)
+
         if not super(UpdateAccount, self).from_dict(p_account, changes):
             return False
 
+        # Update credentials
+        authorization = changes.get('authorization', {})
+
         # Update `PlexBasicCredential`
-        PlexBasicCredentialManager.update.from_dict(
-            lambda: PlexBasicCredentialManager.get.or_create(
-                PlexBasicCredential.account == p_account,
-                account=p_account
-            ),
-            changes.get('authorization', {}).get('basic', {})
+        p_account.basic = PlexBasicCredentialManager.get.or_create(
+            PlexBasicCredential.account == p_account,
+            account=p_account
         )
+
+        # Update `TraktBasicCredential` (if there are changes)
+        if 'basic' in authorization:
+            PlexBasicCredentialManager.update.from_dict(
+                p_account.basic,
+                authorization['basic'],
+                save=False
+            )
+
+        # Update `PlexAccount` username
+        try:
+            self.update_username(p_account, username)
+        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+            log.debug('Plex account already exists - %s', ex, exc_info=True)
+
+            raise PlexAccountExistsException('Plex account already exists')
 
         # Refresh `TraktAccount`
         p_account.refresh(
             force=True
         )
 
+        # Save credentials
+        if 'basic' in authorization:
+            p_account.basic.save()
+
         # Refresh `Account`
         p_account.account.refresh()
 
+        log.info('Updated account authorization for %r', p_account)
         return True
+
+    def update_username(self, p_account, username, save=True):
+        self(p_account, {'username': username}, save=save)
 
 
 class PlexAccountManager(Manager):

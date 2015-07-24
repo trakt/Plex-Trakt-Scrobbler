@@ -27,6 +27,22 @@ class Movies(Base):
         )
 
 
+class Shows(Base):
+    media = SyncMedia.Shows
+
+    @bind('added', [SyncMode.Full, SyncMode.Push])
+    def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
+        log.debug('Shows.on_added(%r, ...)', key)
+
+        if t_value:
+            return
+
+        self.store_show('add', p_guid,
+            p_item,
+            rating=p_value
+        )
+
+
 class Episodes(Base):
     media = SyncMedia.Episodes
 
@@ -49,5 +65,7 @@ class Push(DataHandler):
 
     children = [
         Movies,
+
+        Shows,
         Episodes
     ]

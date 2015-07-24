@@ -114,7 +114,7 @@ class Filters(object):
         )
 
     @classmethod
-    def is_valid_section(cls, metadata):
+    def is_valid_metadata_section(cls, metadata):
         return cls.match(
             'filter_sections',
             f_current=lambda: metadata.section.title,
@@ -125,6 +125,20 @@ class Filters(object):
             f_check=lambda: (
                 not metadata or
                 not metadata.section.title
+            )
+        )
+
+    @classmethod
+    def is_valid_section_name(cls, section_name):
+        return cls.match(
+            'filter_sections',
+            f_current=lambda: section_name,
+            f_validate=lambda value, f_allow, f_deny: (
+                (f_allow and value not in f_allow) or
+                value in f_deny
+            ),
+            f_check=lambda: (
+                not section_name
             )
         )
 

@@ -1,3 +1,11 @@
+class PlexAccountExistsException(Exception):
+    pass
+
+
+class TraktAccountExistsException(Exception):
+    pass
+
+
 class FilteredException(Exception):
     pass
 

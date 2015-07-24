@@ -2,7 +2,7 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType, LibrarySection
+from plex_database.models import LibrarySectionType
 from trakt_sync.cache.main import Cache
 import logging
 
@@ -14,10 +14,7 @@ class Movies(Mode):
 
     def run(self):
         # Retrieve movie sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Movie,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Movie)
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
@@ -105,10 +102,7 @@ class Shows(Mode):
 
     def run(self):
         # Retrieve show sections
-        p_sections = self.plex.library.sections(
-            LibrarySectionType.Show,
-            LibrarySection.id
-        ).tuples()
+        p_sections = self.sections(LibrarySectionType.Show)
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
@@ -117,7 +111,7 @@ class Shows(Mode):
             parse_guid=True
         )
 
-        # TODO process shows, seasons
+        # TODO process seasons
 
         # Calculate total number of episode changes
         total = 0
@@ -136,6 +130,54 @@ class Shows(Mode):
         unsupported_shows = {}
 
         self.current.progress.start(total)
+
+        # Process shows
+        for sh_id, p_guid, p_show in p_shows:
+            if p_guid.agent not in GUID_AGENTS:
+                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                continue
+
+            key = (p_guid.agent, p_guid.sid)
+
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            if pk is None:
+                # No `pk` found
+                continue
+
+            for (media, data), result in self.trakt.changes:
+                if media != SyncMedia.Shows:
+                    # Ignore changes that aren't for episodes
+                    continue
+
+                if not self.is_data_enabled(data):
+                    # Data type has been disabled
+                    continue
+
+                data_name = Cache.Data.get(data)
+
+                if data_name not in result.changes:
+                    # No changes for collection
+                    continue
+
+                for action, shows in result.changes[data_name].items():
+                    t_show = shows.get(pk)
+
+                    if t_show is None:
+                        # Unable to find matching show in trakt data
+                        continue
+
+                    # Execute show handlers
+                    self.execute_handlers(
+                        SyncMedia.Shows, data,
+                        action=action,
+
+                        key=sh_id,
+
+                        p_item=p_show,
+                        t_item=t_show
+                    )
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:

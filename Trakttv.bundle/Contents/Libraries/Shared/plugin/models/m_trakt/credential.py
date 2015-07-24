@@ -16,9 +16,19 @@ class TraktBasicCredential(Model):
     # Authorization
     token = CharField(null=True)
 
+    @property
+    def state(self):
+        if self.token is not None:
+            return 'valid'
+
+        if self.password is not None:
+            return 'warning'
+
+        return 'empty'
+
     def to_json(self, account):
         result = {
-            'valid': self.token is not None,
+            'state': self.state,
 
             'username': account.username
         }
@@ -50,12 +60,23 @@ class TraktOAuthCredential(Model):
     token_type = CharField(null=True)
     scope = CharField(null=True)
 
+    @property
+    def state(self):
+        if self.is_valid():
+            return 'valid'
+
+        if self.code is not None:
+            return 'warning'
+
+        return 'empty'
+
     def is_valid(self):
+        # TODO check token hasn't expired
         return self.access_token is not None
 
     def to_json(self):
         result = {
-            'valid': self.access_token is not None
+            'state': self.state
         }
 
         if self.code:
