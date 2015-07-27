@@ -287,7 +287,8 @@ def Start():
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
 
-    Singleton.acquire()
+    if not Singleton.acquire():
+        log.warn('Unable to acquire plugin instance')
 
     main = Main()
     main.start()

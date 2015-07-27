@@ -16,6 +16,14 @@ class Singleton(object):
 
     @classmethod
     def acquire(cls):
+        try:
+            return cls._acquire()
+        except Exception, ex:
+            log.error('Exception raised in _acquire(): %s', ex, exc_info=True)
+            return False
+
+    @classmethod
+    def _acquire(cls):
         # Start singleton server
         if cls._start():
             return True
@@ -42,6 +50,7 @@ class Singleton(object):
         response = client.recv(128).strip()
 
         if response != 'OK':
+            log.debug('Release failed: %r', response)
             return False
 
         log.info('Existing plugin instance has been shutdown')
@@ -75,7 +84,7 @@ class Singleton(object):
         try:
             cls._server.serve_forever()
         except Exception, ex:
-            log.warn('Server exception raised: %s', ex, exc_info=True)
+            log.error('Server exception raised: %s', ex, exc_info=True)
 
         log.info('Server exited')
 
@@ -85,7 +94,7 @@ class SingletonHandler(StreamRequestHandler):
         try:
             self.process()
         except Exception, ex:
-            log.warn('Exception raised in process(): %s', ex, exc_info=True)
+            log.error('Exception raised in process(): %s', ex, exc_info=True)
 
     def process(self):
         command = self.rfile.readline().strip()
@@ -100,11 +109,9 @@ class SingletonHandler(StreamRequestHandler):
         try:
             handler()
         except Exception, ex:
-            log.warn('Handler raised an exception: %s', ex, exc_info=True)
+            log.error('Handler raised an exception: %s', ex, exc_info=True)
 
     def on_shutdown(self):
-        # TODO ensure another plugin process exists
-
         self.wfile.write('OK\n')
 
         log.info('Exit')
