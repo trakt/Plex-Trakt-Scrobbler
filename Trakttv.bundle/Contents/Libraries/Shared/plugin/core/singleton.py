@@ -64,15 +64,22 @@ class Singleton(object):
 
         # Request shutdown
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.setblocking(0)
+        client.settimeout(1.0)
+
         client.connect((cls.host, cls.port))
 
         client.sendall('shutdown\n')
 
-        # Read response
-        response = client.recv(128).strip()
+        try:
+            # Read response
+            response = client.recv(128).strip()
+        except socket.timeout, ex:
+            log.info('Release timeout', exc_info=True)
+            return False
 
         if response != 'ok':
-            log.debug('Release failed: %r', response)
+            log.info('Release failed: %r', response)
             return False
 
         log.info('Existing plugin instance has been shutdown')
