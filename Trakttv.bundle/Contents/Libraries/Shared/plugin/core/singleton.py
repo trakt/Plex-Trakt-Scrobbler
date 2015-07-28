@@ -1,3 +1,5 @@
+from plugin.core.environment import Environment
+
 from SocketServer import TCPServer, StreamRequestHandler
 from threading import Thread
 import logging
@@ -7,9 +9,29 @@ import time
 
 log = logging.getLogger(__name__)
 
+PORT_DEFAULT = 35374
+PORT_PATH = os.path.join(Environment.path.plugin_data, 'Singleton')
+
+
+def get_port():
+    if not os.path.exists(PORT_PATH):
+        return PORT_DEFAULT
+
+    # Read data from file
+    with open(PORT_PATH, 'r') as fp:
+        data = fp.read()
+
+    # Parse data
+    try:
+        return int(data.strip())
+    except Exception, ex:
+        log.warn('Unable to parse integer from %r: %s', PORT_PATH, ex, exc_info=True)
+        return PORT_DEFAULT
+
 
 class Singleton(object):
-    port = 35374
+    host = '127.0.0.1'
+    port = get_port()
 
     _server = None
     _thread = None
@@ -24,7 +46,7 @@ class Singleton(object):
 
     @classmethod
     def _acquire(cls):
-        # Start singleton server
+        # Start server
         if cls._start():
             return True
 
@@ -33,23 +55,23 @@ class Singleton(object):
             log.warn('Unable to shutdown existing plugin instance')
             return False
 
-        # Try start singleton server
+        # Try start server again
         return cls._start()
 
     @classmethod
     def release(cls):
-        log.debug('Attempting to shutdown the existing plugin instance...')
+        log.debug('Attempting to shutdown the existing plugin instance (port: %s)...', cls.port)
 
         # Request shutdown
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('127.0.0.1', cls.port))
+        client.connect((cls.host, cls.port))
 
         client.sendall('shutdown\n')
 
         # Read response
         response = client.recv(128).strip()
 
-        if response != 'OK':
+        if response != 'ok':
             log.debug('Release failed: %r', response)
             return False
 
@@ -60,11 +82,11 @@ class Singleton(object):
 
     @classmethod
     def _start(cls):
-        log.debug('Starting singleton server...')
+        log.debug('Starting server (port: %s)...', cls.port)
 
         try:
             # Construct server
-            cls._server = TCPServer(('127.0.0.1', cls.port), SingletonHandler)
+            cls._server = TCPServer((cls.host, cls.port), SingletonHandler)
         except socket.error, ex:
             if ex.errno != 10048:
                 raise ex
@@ -112,13 +134,7 @@ class SingletonHandler(StreamRequestHandler):
             log.error('Handler raised an exception: %s', ex, exc_info=True)
 
     def on_shutdown(self):
-        self.wfile.write('OK\n')
+        self.wfile.write('ok\n')
 
         log.info('Exit')
         os._exit(1)
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-
-    Singleton.acquire()
