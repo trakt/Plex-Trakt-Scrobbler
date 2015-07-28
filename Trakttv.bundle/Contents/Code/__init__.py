@@ -31,6 +31,7 @@ from core.plugin import ART, NAME, ICON
 from core.update_checker import UpdateChecker
 from interface.main_menu import MainMenu
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from plugin.core.singleton import Singleton
 from plugin.modules.manager import ModuleManager
 from pts.action_manager import ActionManager
 from pts.scrobbler import Scrobbler
@@ -285,6 +286,9 @@ def Start():
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
+
+    if not Singleton.acquire():
+        log.warn('Unable to acquire plugin instance')
 
     main = Main()
     main.start()
