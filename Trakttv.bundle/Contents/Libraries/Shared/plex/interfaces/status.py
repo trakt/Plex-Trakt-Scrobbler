@@ -14,6 +14,7 @@ class StatusInterface(Interface):
 
                 'Video': {
                     'episode':  'Episode',
+                    'clip':     'Clip',
                     'movie':    'Movie'
                 }
             }))

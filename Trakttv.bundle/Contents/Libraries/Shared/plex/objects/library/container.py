@@ -1,4 +1,4 @@
-from plex.core.helpers import to_iterable
+from plex.core.helpers import flatten, to_iterable
 from plex.objects.core.base import Property
 from plex.objects.container import Container
 from plex.objects.library.section import Section
@@ -61,8 +61,8 @@ class SectionContainer(MediaContainer):
         titles = to_iterable(titles)
 
         if titles:
-            # Normalize titles
-            titles = [x.lower() for x in titles]
+            # Flatten titles
+            titles = [flatten(x) for x in titles]
 
         for section in self:
             if not self.filter_passes(types, section.type):
@@ -71,7 +71,7 @@ class SectionContainer(MediaContainer):
             if not self.filter_passes(keys, section.key):
                 continue
 
-            if not self.filter_passes(titles, section.title.lower()):
+            if not self.filter_passes(titles, flatten(section.title)):
                 continue
 
             yield section
