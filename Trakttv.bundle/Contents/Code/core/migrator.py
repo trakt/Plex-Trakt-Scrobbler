@@ -144,6 +144,7 @@ class Clean(Migration):
                 'Shared/plex/core/compat.py',
                 'Shared/plex/core/event.py',
                 'Shared/plex/interfaces/library.py',
+                'Shared/plex/interfaces/plugin.py',
 
                 # plex.metadata.py
                 'Shared/plex_metadata/core/cache.py',

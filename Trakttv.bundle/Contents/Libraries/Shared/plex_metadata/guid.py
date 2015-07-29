@@ -25,6 +25,9 @@ class Guid(object):
 
         agent, uri = urlparse(guid)
 
+        if not agent or not uri or not uri.netloc:
+            return None
+
         result = Guid(agent, uri.netloc, uri.query)
 
         # Nothing more to parse, return now
@@ -48,7 +51,7 @@ class Guid(object):
             if len(path_fragments) >= 2:
                 guid.episode = try_convert(path_fragments[1], int)
         else:
-            log.warn('Unable to completely parse guid "%s"', guid)
+            log.warn('Unable to completely parse guid (agent: %r)', guid.agent)
 
     @classmethod
     def map_guid(cls, guid):
