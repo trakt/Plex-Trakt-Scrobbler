@@ -1,6 +1,6 @@
 from plugin.preferences.options.constants import MATCHER_LABELS_BY_KEY, MatcherMode, MATCHER_KEYS_BY_LABEL, \
     MATCHER_IDS_BY_KEY
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 
 import logging
 import plex_metadata
@@ -8,7 +8,7 @@ import plex_metadata
 log = logging.getLogger(__name__)
 
 
-class MatcherOption(Option):
+class MatcherOption(SimpleOption):
     key = 'matcher.mode'
     type = 'enum'
 

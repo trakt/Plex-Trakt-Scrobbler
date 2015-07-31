@@ -1,11 +1,11 @@
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class ScrobbleOption(Option):
+class ScrobbleOption(SimpleOption):
     key = 'scrobble.enabled'
     type = 'boolean'
 

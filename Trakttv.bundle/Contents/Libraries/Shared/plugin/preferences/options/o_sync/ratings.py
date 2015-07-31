@@ -1,4 +1,4 @@
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
     RESOLUTION_LABELS_BY_KEY, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
 from plugin.sync.core.enums import SyncConflictResolution, SyncMode
@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncRatingsOption(Option):
+class SyncRatingsOption(SimpleOption):
     key = 'sync.ratings.mode'
     type = 'enum'
 
@@ -44,7 +44,7 @@ class SyncRatingsOption(Option):
         return value
 
 
-class SyncRatingsConflictOption(Option):
+class SyncRatingsConflictOption(SimpleOption):
     key = 'sync.ratings.conflict'
     type = 'enum'
 
