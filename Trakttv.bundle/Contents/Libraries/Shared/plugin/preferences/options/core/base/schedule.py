@@ -56,18 +56,27 @@ class SchedulerOption(Option):
         )
 
         # Update job
-        if job.trigger != value:
-            # Update `trigger` and `due_at` properties
-            job.trigger = value
-
-            if value is not None:
-                job.due_at = job.next_at
-            else:
-                job.due_at = None
-
-            # Save changes
-            job.save()
+        self.update_trigger(job, value)
 
         # Emit database change to handler (if enabled)
         if emit:
             self._preferences.on_database_changed(self.key, value, account=account)
+
+    def update_trigger(self, job, value):
+        if job.trigger == value:
+            # Trigger hasn't changed
+            return
+
+        # Update `trigger` and `due_at` properties
+        job.trigger = value
+        job.due_at = self.get_next(job)
+
+        # Save changes
+        job.save()
+
+    @classmethod
+    def get_next(cls, job):
+        if job.trigger is None:
+            return None
+
+        return job.next_at()

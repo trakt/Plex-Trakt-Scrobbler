@@ -22,14 +22,13 @@ class SchedulerJob(Model):
     ran_at = DateTimeField(null=True)
     due_at = DateTimeField(null=True)
 
-    @property
-    def next_at(self):
+    def next_at(self, ran_at=None):
         if not self.trigger:
             return None
 
         cron = croniter(
             self.trigger,
-            self.ran_at or datetime.utcnow()
+            ran_at or self.ran_at or datetime.utcnow()
         )
 
         # Calculate next due date
