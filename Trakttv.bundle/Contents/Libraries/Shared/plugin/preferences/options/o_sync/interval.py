@@ -50,7 +50,10 @@ class SyncIntervalOption(SchedulerOption):
             return None
 
         return (SyncResult
-            .select(SyncResult.ended_at)
+            .select(
+                SyncResult.started_at,
+                SyncResult.ended_at
+            )
             .where(
                 SyncResult.status == status
             )
@@ -69,4 +72,4 @@ class SyncIntervalOption(SchedulerOption):
         if last_result is None:
             return job.next_at()
 
-        return job.next_at(last_result.ended_at)
+        return job.next_at(last_result.started_at)

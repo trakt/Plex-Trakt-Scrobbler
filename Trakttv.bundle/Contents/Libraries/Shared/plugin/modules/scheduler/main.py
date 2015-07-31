@@ -55,9 +55,41 @@ class Scheduler(Module):
         log.info('Processing %s job(s)', len(jobs))
 
         for job in jobs:
-            self.process_job(job)
+            # Process job
+            update = self.process_job(job)
+
+            # Update job status
+            self.finish(job, update)
 
         log.info('Complete')
 
     def process_job(self, job):
         log.debug('Processing job: %r', job)
+
+        # Retrieve handler for job
+        handler = self.handlers.get(job.task_key)
+
+        if handler is None:
+            log.warn('Unknown job with key: %r', job.task_key)
+            return False
+
+        # Run handler
+        try:
+            h = handler()
+
+            return h.run(job)
+        except Exception, ex:
+            log.error('Exception raised in job handler: %s', ex, exc_info=True)
+            return True
+
+    @staticmethod
+    def finish(job, update=True):
+        if not update:
+            return
+
+        # Update status
+        job.ran_at = datetime.utcnow()
+        job.due_at = job.next_at()
+
+        # Save changes
+        job.save()

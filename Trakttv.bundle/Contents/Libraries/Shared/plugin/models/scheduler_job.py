@@ -22,6 +22,14 @@ class SchedulerJob(Model):
     ran_at = DateTimeField(null=True)
     due_at = DateTimeField(null=True)
 
+    @property
+    def account_id(self):
+        return self._data.get('account')
+
+    @property
+    def task_key(self):
+        return self._data.get('task')
+
     def next_at(self, ran_at=None):
         if not self.trigger:
             return None
