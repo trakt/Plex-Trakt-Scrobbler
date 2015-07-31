@@ -1,4 +1,5 @@
 from threading import Thread
+from plugin.models import SyncResult
 from plugin.sync.core.task import SyncTask
 from plugin.sync.handlers import *
 from plugin.sync.modes import *
@@ -58,7 +59,7 @@ class Main(object):
 
             yield key, cls(self)
 
-    def queue(self, account, mode, data, media, priority=10, **kwargs):
+    def queue(self, account, mode, data, media, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
         """Queue a sync for the provided account
 
         Note: if a sync is already queued for the provided account a `SyncError` will be raised.
@@ -80,7 +81,7 @@ class Main(object):
         """
         try:
             # Create new task
-            task = SyncTask.create(account, mode, data, media, **kwargs)
+            task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
         except Exception, ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
             raise QueueError("Error", "Unable to construct task")

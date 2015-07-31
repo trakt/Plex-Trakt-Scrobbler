@@ -27,7 +27,10 @@ class SchedulerJob(Model):
         if not self.trigger:
             return None
 
-        start = self.ran_at or datetime.utcnow()
-        cron = croniter(self.trigger, start)
+        cron = croniter(
+            self.trigger,
+            self.ran_at or datetime.utcnow()
+        )
 
+        # Calculate next due date
         return cron.get_next(datetime)
