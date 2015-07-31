@@ -45,7 +45,7 @@ class Scheduler(Module):
         now = datetime.utcnow()
 
         jobs = list(SchedulerJob.select().where(
-            SchedulerJob.due_at >= now
+            SchedulerJob.due_at <= now
         ))
 
         if len(jobs) < 1:
