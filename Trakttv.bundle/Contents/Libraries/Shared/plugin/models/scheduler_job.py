@@ -17,10 +17,10 @@ class SchedulerJob(Model):
     account = ForeignKeyField(Account, 'scheduler_jobs')
     task = ForeignKeyField(SchedulerTask, 'scheduler_jobs')
 
-    trigger = TextField()
+    trigger = TextField(null=True)
 
     ran_at = DateTimeField(null=True)
-    due_at = DateTimeField()
+    due_at = DateTimeField(null=True)
 
     @property
     def next_at(self):
