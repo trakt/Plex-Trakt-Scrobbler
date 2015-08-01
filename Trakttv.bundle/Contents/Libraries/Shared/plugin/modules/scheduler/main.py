@@ -49,7 +49,6 @@ class Scheduler(Module):
         ))
 
         if len(jobs) < 1:
-            log.debug('No jobs found')
             return
 
         log.debug('Processing %s job(s)', len(jobs))

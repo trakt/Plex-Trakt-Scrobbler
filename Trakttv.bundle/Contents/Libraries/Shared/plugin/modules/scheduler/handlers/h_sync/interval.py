@@ -2,6 +2,7 @@ from plugin.models import SyncResult
 from plugin.modules.scheduler.handlers.core.base import Handler
 from plugin.preferences.options import SyncIntervalOption
 from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.exceptions import QueueError
 from plugin.sync.main import Sync
 
 from datetime import datetime
@@ -39,12 +40,18 @@ class SyncIntervalHandler(Handler):
         if not self.check(job):
             return False
 
-        Sync.queue(
-            account=job.account,
-            mode=SyncMode.Full,
+        try:
+            # Queue sync
+            Sync.queue(
+                account=job.account,
+                mode=SyncMode.Full,
 
-            priority=100,
-            trigger=SyncResult.Trigger.Schedule
-        )
+                priority=100,
+                trigger=SyncResult.Trigger.Schedule
+            )
+        except QueueError, ex:
+            log.info('Queue error: %s', ex)
+        except Exception, ex:
+            log.error('Unable to queue sync: %s', ex, exc_info=True)
 
         return True
