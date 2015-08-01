@@ -1,5 +1,6 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
-from plugin.models import ConfigurationOption, Account
+from plugin.models import ConfigurationOption
+from plugin.preferences.options.core.base.base import Option
 
 from plex import Plex
 import logging
@@ -15,41 +16,7 @@ TYPE_MAP = {
 }
 
 
-class Option(object):
-    key = None
-    type = None
-
-    choices = None  # enum
-    default = None
-    scope = 'account'
-
-    # Display
-    group = None
-    label = None
-
-    # Plex
-    preference = None
-
-    def __init__(self, preferences, option=None):
-        # Validate class
-        if not self.group or not self.label:
-            raise ValueError('Missing "group" or "label" attribute on %r', self.__class__)
-
-        if not self.type:
-            raise ValueError('Missing "type" attribute on %r', self.__class__)
-
-        if self.type == 'enum' and self.choices is None:
-            raise ValueError('Missing enum "choices" attribute on %r', self.__class__)
-
-        if self.scope not in ['account', 'server']:
-            raise ValueError('Unknown value for scope: %r', self.scope)
-
-        # Private attributes
-        self._option = option
-        self._preferences = preferences
-
-        self._value = None
-
+class SimpleOption(Option):
     @property
     def value(self):
         if self._option is None:
@@ -63,6 +30,7 @@ class Option(object):
         return self._value
 
     def get(self, account=None):
+        # Verify get() call is valid
         if self.scope == 'account':
             if account is None:
                 raise ValueError('Account option requires the "account" parameter')
@@ -84,15 +52,6 @@ class Option(object):
         )
 
         return self._clone(option)
-
-    def on_database_changed(self, value, account=None):
-        pass
-
-    def on_plex_changed(self, value, account=None):
-        raise NotImplementedError
-
-    def on_changed(self, value, account=None):
-        pass
 
     def update(self, value, account=None, emit=True):
         if self.scope == 'account':
@@ -134,19 +93,6 @@ class Option(object):
             Plex[':/plugins/%s/prefs' % PLUGIN_IDENTIFIER].set(cls.preference, value)
 
         return value
-
-    @staticmethod
-    def _validate_account(account):
-        if type(account) is int and account < 1:
-            return False
-
-        if type(account) is Account and account.id < 1:
-            return False
-
-        return True
-
-    def _clone(self, option):
-        return self.__class__(self._preferences, option)
 
     @classmethod
     def _pack(cls, value):

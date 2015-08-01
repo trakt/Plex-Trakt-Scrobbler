@@ -19,6 +19,9 @@ OPTIONS = [
     SyncCollectionOption,
     SyncCleanCollectionOption,
 
+    SyncIntervalOption,
+    SyncLibraryUpdateOption,
+
     SyncPlaybackOption,
 
     SyncRatingsOption,

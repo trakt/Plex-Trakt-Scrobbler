@@ -6,12 +6,23 @@ from plugin.models.message import Message
 from playhouse.apsw_ext import *
 
 
+class SyncResultTrigger(object):
+    Manual          = 0x00
+
+    LibraryUpdate   = 0x01
+    Schedule        = 0x02
+
+
 class SyncResult(Model):
+    Trigger = SyncResultTrigger
+
     class Meta:
         database = db
         db_table = 'sync.result'
 
     status = ForeignKeyField(SyncStatus, 'history')
+
+    trigger = IntegerField(default=SyncResultTrigger.Manual)
 
     # Timestamps
     started_at = DateTimeField(null=True)

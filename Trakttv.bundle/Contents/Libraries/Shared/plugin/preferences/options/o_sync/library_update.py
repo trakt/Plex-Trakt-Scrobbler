@@ -5,16 +5,16 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class ScrobbleOption(SimpleOption):
-    key = 'scrobble.enabled'
+class SyncLibraryUpdateOption(SimpleOption):
+    key = 'sync.library_update'
     type = 'boolean'
 
-    default = True
+    default = False
 
-    group = ('Scrobble',)
-    label = 'Enabled'
+    group = ('Sync', 'Triggers')
+    label = 'After library updates'
 
-    preference = 'start_scrobble'
+    preference = 'sync_run_library'
 
     def on_database_changed(self, value, account=None):
         # Update preference

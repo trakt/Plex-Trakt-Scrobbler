@@ -1,12 +1,6 @@
-from plugin.modules.backup.main import Backup
-
 import logging
 
 log = logging.getLogger(__name__)
-
-MODULES = [
-    Backup
-]
 
 
 class ModuleManagerMeta(type):
@@ -24,10 +18,26 @@ class ModuleManager(object):
         cls.modules = dict(cls.construct())
 
     @classmethod
+    def discover(cls):
+        from plugin.modules.backup.main import Backup
+        from plugin.modules.scheduler.main import Scheduler
+
+        return [
+            Backup,
+            Scheduler
+        ]
+
+    @classmethod
     def construct(cls):
+        try:
+            available = cls.discover()
+        except Exception, ex:
+            log.error('Unable to import modules: %s', ex, exc_info=True)
+            return
+
         constructed = []
 
-        for module in MODULES:
+        for module in available:
             try:
                 if module.__key__ is None:
                     # Automatically set module `__key__` (if one isn't specified)

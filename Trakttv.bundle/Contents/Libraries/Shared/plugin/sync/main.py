@@ -1,7 +1,11 @@
 from threading import Thread
+from plugin.models import SyncResult
+from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.exceptions import QueueError
 from plugin.sync.core.task import SyncTask
 from plugin.sync.handlers import *
 from plugin.sync.modes import *
+from plugin.sync.triggers import LibraryUpdateTrigger
 
 from threading import Lock
 import logging
@@ -25,15 +29,6 @@ MODES = [
     Push
 ]
 
-class SyncError(Exception):
-    pass
-
-
-class QueueError(Exception):
-    def __init__(self, title, message=None):
-        self.title = title
-        self.message = message
-
 
 class Main(object):
     def __init__(self):
@@ -48,6 +43,9 @@ class Main(object):
         self._spawn_lock = Lock()
         self._thread = None
 
+        # Triggers
+        self._library_update = LibraryUpdateTrigger(self)
+
     def _construct_modules(self, modules, attribute):
         for cls in modules:
             key = getattr(cls, attribute, None)
@@ -58,7 +56,7 @@ class Main(object):
 
             yield key, cls(self)
 
-    def queue(self, account, mode, data, media, priority=10, **kwargs):
+    def queue(self, account, mode, data=SyncData.All, media=SyncMedia.All, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
         """Queue a sync for the provided account
 
         Note: if a sync is already queued for the provided account a `SyncError` will be raised.
@@ -80,7 +78,7 @@ class Main(object):
         """
         try:
             # Create new task
-            task = SyncTask.create(account, mode, data, media, **kwargs)
+            task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
         except Exception, ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
             raise QueueError("Error", "Unable to construct task")

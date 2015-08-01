@@ -167,6 +167,6 @@ def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):
     year = p_item.get('year')
 
     if title and year:
-        logger.info('[%r] GUID agent %r is not supported on: %r (%r)', rating_key, p_guid.agent, title, year)
+        logger.info('[%r] GUID agent %r is not supported on: %r (%r)', rating_key, p_guid.agent if p_guid else None, title, year)
     else:
-        logger.info('[%r] GUID agent %r is not supported', rating_key, p_guid.agent)
+        logger.info('[%r] GUID agent %r is not supported', rating_key, p_guid.agent if p_guid else None)

@@ -1,13 +1,13 @@
 from plugin.managers import TraktAccountManager
 from plugin.models import TraktAccount
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class PinOption(Option):
+class PinOption(SimpleOption):
     type = 'string'
 
     group = ('Authentication', )
