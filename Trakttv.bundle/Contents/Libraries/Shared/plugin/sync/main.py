@@ -1,9 +1,11 @@
 from threading import Thread
 from plugin.models import SyncResult
 from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.exceptions import QueueError
 from plugin.sync.core.task import SyncTask
 from plugin.sync.handlers import *
 from plugin.sync.modes import *
+from plugin.sync.triggers import LibraryUpdateTrigger
 
 from threading import Lock
 import logging
@@ -27,15 +29,6 @@ MODES = [
     Push
 ]
 
-class SyncError(Exception):
-    pass
-
-
-class QueueError(Exception):
-    def __init__(self, title, message=None):
-        self.title = title
-        self.message = message
-
 
 class Main(object):
     def __init__(self):
@@ -49,6 +42,9 @@ class Main(object):
 
         self._spawn_lock = Lock()
         self._thread = None
+
+        # Triggers
+        self._library_update = LibraryUpdateTrigger(self)
 
     def _construct_modules(self, modules, attribute):
         for cls in modules:

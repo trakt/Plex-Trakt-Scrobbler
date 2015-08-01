@@ -20,6 +20,7 @@ OPTIONS = [
     SyncCleanCollectionOption,
 
     SyncIntervalOption,
+    SyncLibraryUpdateOption,
 
     SyncPlaybackOption,
 
