@@ -1,12 +1,24 @@
 from plugin.models import SchedulerTask, SchedulerJob
 from plugin.preferences.options.core.base.base import Option
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class SchedulerOption(Option):
     def __init__(self, preferences, task=None, job=None):
         super(SchedulerOption, self).__init__(preferences, job)
 
         self._task = task
+
+    @property
+    def value(self):
+        if self._option is None:
+            log.warn('Tried to retrieve value from an option without "get()"')
+            return None
+
+        return self._option.trigger
 
     def get(self, account=None):
         # Verify get() call is valid

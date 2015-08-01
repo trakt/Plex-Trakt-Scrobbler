@@ -52,7 +52,7 @@ class Scheduler(Module):
             log.debug('No jobs found')
             return
 
-        log.info('Processing %s job(s)', len(jobs))
+        log.debug('Processing %s job(s)', len(jobs))
 
         for job in jobs:
             # Process job
@@ -61,10 +61,10 @@ class Scheduler(Module):
             # Update job status
             self.finish(job, update)
 
-        log.info('Complete')
+        log.debug('Complete')
 
     def process_job(self, job):
-        log.debug('Processing job: %r', job)
+        log.info('Running job: %r', job)
 
         # Retrieve handler for job
         handler = self.handlers.get(job.task_key)

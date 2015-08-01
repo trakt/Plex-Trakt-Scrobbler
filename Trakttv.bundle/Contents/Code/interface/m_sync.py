@@ -162,9 +162,9 @@ def Pull(account_id=1, refresh=None):
     return Trigger(int(account_id), SyncMode.Pull)
 
 
-def Trigger(account_id, mode, data=SyncData.All, media=SyncMedia.All, **kwargs):
+def Trigger(account_id, mode, **kwargs):
     try:
-        Sync.queue(account_id, mode, data, media, **kwargs)
+        Sync.queue(account_id, mode, **kwargs)
     except QueueError, ex:
         return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
 

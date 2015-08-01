@@ -1,6 +1,8 @@
+from plugin.models import SyncResult
 from plugin.modules.scheduler.handlers.core.base import Handler
 from plugin.preferences.options import SyncIntervalOption
 from plugin.sync.core.enums import SyncMode
+from plugin.sync.main import Sync
 
 from datetime import datetime
 import logging
@@ -13,8 +15,6 @@ class SyncIntervalHandler(Handler):
 
     def check(self, job):
         last_result = SyncIntervalOption.get_last_result(job.account, SyncMode.Full)
-
-        log.debug('last_result.started_at: %r, job.due_at: %r', last_result.started_at, job.due_at)
 
         if last_result.started_at <= job.due_at:
             return True
@@ -39,6 +39,12 @@ class SyncIntervalHandler(Handler):
         if not self.check(job):
             return False
 
-        log.debug('run: %r', job)
+        Sync.queue(
+            account=job.account,
+            mode=SyncMode.Full,
+
+            priority=100,
+            trigger=SyncResult.Trigger.Schedule
+        )
 
         return True
