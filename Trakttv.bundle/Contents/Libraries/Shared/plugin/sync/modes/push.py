@@ -37,7 +37,7 @@ class Movies(Base):
         unsupported_movies = {}
 
         for rating_key, p_guid, p_item in p_items:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
                 continue
 
@@ -93,7 +93,7 @@ class Shows(Base):
 
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
                 continue
 
@@ -119,7 +119,7 @@ class Shows(Base):
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
                 continue
 
