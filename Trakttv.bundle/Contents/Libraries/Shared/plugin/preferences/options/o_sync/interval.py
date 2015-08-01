@@ -1,6 +1,6 @@
 from plugin.models import SyncStatus, SyncResult
 from plugin.preferences.options.core.base import SchedulerOption
-from plugin.preferences.options.o_sync.constants import INTERVAL_IDS_BY_KEY, INTERVAL_KEYS_BY_LABEL
+from plugin.preferences.options.o_sync.constants import INTERVAL_LABELS_BY_KEY, INTERVAL_KEYS_BY_LABEL
 from plugin.sync.core.enums import SyncMode
 
 import logging
@@ -12,7 +12,7 @@ class SyncIntervalOption(SchedulerOption):
     key = 'sync.interval'
     type = 'enum'
 
-    choices = INTERVAL_IDS_BY_KEY
+    choices = INTERVAL_LABELS_BY_KEY
     default = None
 
     group = ('Sync', 'Triggers')

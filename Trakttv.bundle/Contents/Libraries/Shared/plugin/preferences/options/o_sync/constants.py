@@ -38,6 +38,7 @@ RESOLUTION_LABELS_BY_KEY = {
 
 INTERVAL_IDS_BY_KEY = {
     None:               0,
+
     SyncInterval.M15:   1,
     SyncInterval.M30:   2,
 
@@ -52,6 +53,7 @@ INTERVAL_IDS_BY_KEY = {
 
 INTERVAL_KEYS_BY_LABEL = {
     'Disabled':         None,
+
     '15 Minutes':       SyncInterval.M15,
     '30 Minutes':       SyncInterval.M30,
 
@@ -62,6 +64,21 @@ INTERVAL_KEYS_BY_LABEL = {
 
     'Day':              SyncInterval.D1,
     'Week':             SyncInterval.D7
+}
+
+INTERVAL_LABELS_BY_KEY = {
+    None:               'Disabled',
+
+    SyncInterval.M15:   '15 Minutes',
+    SyncInterval.M30:   '30 Minutes',
+
+    SyncInterval.H1:    'Hour',
+    SyncInterval.H3:    '3 Hours',
+    SyncInterval.H6:    '6 Hours',
+    SyncInterval.H12:   '12 Hours',
+
+    SyncInterval.D1:    'Day',
+    SyncInterval.D7:    'Week'
 }
 
 #
