@@ -15,6 +15,7 @@ class SyncCollectionOption(SimpleOption):
 
     group = ('Sync', 'Collection')
     label = 'Mode'
+    order = 230
 
     preference = 'sync_collection'
 
@@ -50,6 +51,7 @@ class SyncCleanCollectionOption(SimpleOption):
 
     group = ('Sync', 'Collection')
     label = 'Clean collection'
+    order = 231
 
     preference = 'sync_clean_collection'
 

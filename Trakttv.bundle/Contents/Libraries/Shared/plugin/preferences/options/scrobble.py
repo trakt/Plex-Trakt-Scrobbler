@@ -13,6 +13,7 @@ class ScrobbleOption(SimpleOption):
 
     group = ('Scrobble',)
     label = 'Enabled'
+    order = 100
 
     preference = 'start_scrobble'
 

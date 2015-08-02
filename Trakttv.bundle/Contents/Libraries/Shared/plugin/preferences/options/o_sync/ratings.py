@@ -17,6 +17,7 @@ class SyncRatingsOption(SimpleOption):
 
     group = ('Sync', 'Ratings')
     label = 'Mode'
+    order = 210
 
     preference = 'sync_ratings'
 
@@ -53,6 +54,7 @@ class SyncRatingsConflictOption(SimpleOption):
 
     group = ('Sync', 'Ratings')
     label = 'Conflict resolution'
+    order = 211
 
     preference = 'sync_ratings_conflict'
 

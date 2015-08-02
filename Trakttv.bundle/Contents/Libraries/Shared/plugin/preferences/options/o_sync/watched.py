@@ -16,6 +16,7 @@ class SyncWatchedOption(SimpleOption):
 
     group = ('Sync', 'Watched')
     label = 'Mode'
+    order = 200
 
     preference = 'sync_watched'
 

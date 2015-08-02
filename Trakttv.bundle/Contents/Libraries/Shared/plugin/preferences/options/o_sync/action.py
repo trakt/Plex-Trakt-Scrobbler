@@ -13,6 +13,7 @@ class SyncActionOption(SimpleOption):
 
     group = ('Advanced', 'Sync')
     label = 'Action Mode'
+    order = 120
 
     @property
     def value(self):

@@ -14,6 +14,7 @@ class ApiOption(SimpleOption):
 
     group = ('API',)
     label = 'Enabled'
+    order = 200
 
     @property
     def value(self):

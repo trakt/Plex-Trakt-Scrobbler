@@ -12,6 +12,7 @@ class Option(object):
     # Display
     group = None
     label = None
+    order = 0
 
     # Plex
     preference = None
@@ -54,6 +55,25 @@ class Option(object):
 
     def on_changed(self, value, account=None):
         pass
+
+    def to_dict(self):
+        data = {
+            'key':      self.key,
+            'type':     self.type,
+
+            'default':  self.default,
+
+            'group':    self.group,
+            'label':    self.label,
+            'order':    self.order,
+
+            'value':    self.value
+        }
+
+        if self.type == 'enum':
+            data['choices'] = self.choices
+
+        return data
 
     #
     # Private functions

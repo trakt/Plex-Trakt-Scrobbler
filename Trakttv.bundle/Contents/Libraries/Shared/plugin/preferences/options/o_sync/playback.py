@@ -15,6 +15,7 @@ class SyncPlaybackOption(SimpleOption):
 
     group = ('Sync', 'Playback')
     label = 'Mode'
+    order = 220
 
     preference = 'sync_playback'
 

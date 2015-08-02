@@ -18,6 +18,7 @@ class MatcherOption(SimpleOption):
 
     group = ('Advanced', 'Matcher')
     label = 'Mode'
+    order = 110
 
     preference = 'matcher'
 

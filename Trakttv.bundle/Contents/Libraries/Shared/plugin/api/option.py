@@ -42,24 +42,8 @@ class Option(Service):
                 # Retrieve option details from database
                 option = option.get(account)
 
-                # Build option details
-                data = {
-                    'key': key,
-                    'type': option.type,
-
-                    'default': option.default,
-
-                    'group': option.group,
-                    'label': option.label,
-
-                    'value': option.value
-                }
-
-                if option.type == 'enum':
-                    data['choices'] = option.choices
-
-                # Yield option
-                yield data
+                # Convert option to dictionary
+                yield option.to_dict()
 
         return list(retrieve())
 

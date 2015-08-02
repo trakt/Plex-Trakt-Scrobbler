@@ -17,6 +17,7 @@ class ActivityOption(SimpleOption):
 
     group = ('Advanced', 'Activity')
     label = 'Method'
+    order = 100
 
     preference = 'activity_mode'
 
