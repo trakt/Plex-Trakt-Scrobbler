@@ -64,7 +64,7 @@ class AccountMigration(Migration):
         try:
             p_refreshed = p_account.refresh(force=p_created)
         except:
-            log.info('Unable to refresh plex account (not authenticated?)', exc_info=True)
+            log.warn('Unable to refresh plex account (not authenticated?)', exc_info=True)
             p_refreshed = False
 
         # Ensure trakt account details exist
@@ -77,7 +77,7 @@ class AccountMigration(Migration):
         try:
             t_refreshed = t_account.refresh(force=t_created)
         except:
-            log.info('Unable to refresh trakt account (not authenticated?)', exc_info=True)
+            log.warn('Unable to refresh trakt account (not authenticated?)', exc_info=True)
             t_refreshed = False
 
         # Refresh account

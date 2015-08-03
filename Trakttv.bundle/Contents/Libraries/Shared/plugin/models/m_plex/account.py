@@ -3,6 +3,7 @@ from plugin.models.account import Account
 
 from datetime import datetime, timedelta
 from playhouse.apsw_ext import *
+from plex import Plex
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl
 from xml.etree import ElementTree
@@ -48,26 +49,66 @@ class PlexAccount(Model):
     def basic(self, value):
         self._basic_credential = value
 
+    def authorization(self):
+        # Basic
+        basic = self.basic
+
+        if basic:
+            return self.basic_authorization(basic)
+
+        # No account authorization available
+        raise Exception("Account hasn't been authenticated")
+
+    def basic_authorization(self, basic_credential=None):
+        if basic_credential is None:
+            basic_credential = self.basic
+
+        # Ensure token exists
+        if basic_credential.token_server is None:
+            raise Exception("Account hasn't been authenticated")
+
+        log.debug('Using basic authorization for %r', self)
+
+        # Return authorization context
+        return Plex.configuration.authentication(basic_credential.token_server)
+
     def refresh(self, force=False, save=True):
-        # Check if refresh is required
-        if self.key is None:
-            force = True
-
-        if not force and self.refreshed_at:
-            # Only refresh account every `REFRESH_INTERVAL`
-            since_refresh = datetime.utcnow() - self.refreshed_at
-
-            if since_refresh < REFRESH_INTERVAL:
-                return False
-
-        # Fetch account details
+        # Retrieve credentials
         basic = self.basic
 
         if not basic:
             return False
 
+        # Check if refresh is required
+        if self.refresh_required(basic):
+            force = True
+
+        # Only refresh account every `REFRESH_INTERVAL`
+        if not force and self.refreshed_at:
+            since_refresh = datetime.utcnow() - self.refreshed_at
+
+            if since_refresh < REFRESH_INTERVAL:
+                return False
+
+        # Refresh account details
+        if not self.refresh_details(basic):
+            return False
+
+        if not basic.refresh():
+            return False
+
+        # Store changes in database
+        self.refreshed_at = datetime.utcnow()
+
+        if save:
+            self.save()
+
+        return True
+
+    def refresh_details(self, basic):
+        # Fetch account details
         response = requests.get('https://plex.tv/users/account', headers={
-            'X-Plex-Token': basic.token
+            'X-Plex-Token': basic.token_plex
         })
 
         if not (200 <= response.status_code < 300):
@@ -93,13 +134,16 @@ class PlexAccount(Model):
 
         self.thumb = user.attrib.get('thumb')
 
-        self.refreshed_at = datetime.utcnow()
-
-        # Store changes in database
-        if save:
-            self.save()
-
         return True
+
+    def refresh_required(self, basic):
+        if self.key is None:
+            return True
+
+        if basic.token_server is None:
+            return True
+
+        return False
 
     def thumb_url(self, default=None, rating='pg', size=256):
         if not self.thumb:
