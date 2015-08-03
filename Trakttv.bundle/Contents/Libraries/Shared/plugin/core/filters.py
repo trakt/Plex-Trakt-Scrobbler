@@ -67,7 +67,7 @@ class Filters(object):
 
         # Wildcard
         if f_allow is None and f_deny is None:
-            log.debug('[%s] wildcard', key)
+            log.debug('[%s] %r - wildcard', key, value)
             return True
 
         if f_transform:
@@ -75,12 +75,10 @@ class Filters(object):
             f_allow = [f_transform(x) for x in f_allow]
             f_deny = [f_transform(x) for x in f_deny]
 
-        log.debug('[%s] validate - value: %s, allow: %s, deny: %s', key, repr(value), f_allow, f_deny)
+        log.debug('[%s] validate - value: %r, allow: %s, deny: %s', key, value, f_allow, f_deny)
 
         if f_validate(value, f_allow, f_deny):
-            log.info('[%s] filtered %r' % (
-                key, f_current()
-            ))
+            log.info('[%s] %r - filtered', key, value)
             return False
 
         return True
