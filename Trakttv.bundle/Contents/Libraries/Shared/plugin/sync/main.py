@@ -130,9 +130,11 @@ class Main(object):
             self.current.started = True
 
             try:
-                # Run in trakt authorization context
-                with self.current.account.trakt.authorization():
-                    self.run()
+                # Run in plex authorization context
+                with self.current.account.plex.authorization():
+                    # Run in trakt authorization context
+                    with self.current.account.trakt.authorization():
+                        self.run()
 
                 self.current.success = True
             except Exception, ex:

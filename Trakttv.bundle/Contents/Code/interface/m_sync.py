@@ -113,7 +113,9 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
     # Push
     #
 
-    sections = Plex['library'].sections()
+    with account.plex.authorization():
+        sections = Plex['library'].sections()
+
     section_keys = []
 
     f_allow, f_deny = Filters.get('filter_sections')

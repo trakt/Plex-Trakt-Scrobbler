@@ -1,7 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
-from plex_database.models import LibrarySection
+from plex import Plex
 import itertools
 import logging
 
@@ -137,21 +137,26 @@ class Mode(object):
         return True
 
     def sections(self, section_type):
-        # Retrieve sections
-        p_sections = self.plex.library.sections(
-            section_type,
-            LibrarySection.id,
-            LibrarySection.name
-        ).tuples()
+        p_sections = Plex['library'].sections()
 
+        if p_sections is None:
+            return None
+
+        # Retrieve sections
         result = []
 
-        for id, name in p_sections:
-            # Apply section filter
-            if not Filters.is_valid_section_name(name):
+        for section in p_sections.filter(section_type):
+            # Apply section name filter
+            if not Filters.is_valid_section_name(section.title):
                 continue
 
-            result.append((id,))
+            try:
+                key = int(section.key)
+            except Exception, ex:
+                log.warn('Unable to cast section key %r to integer: %s', section.key, ex, exc_info=True)
+                continue
+
+            result.append((key,))
 
         return result
 

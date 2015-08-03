@@ -15,7 +15,7 @@ class Base(Mode):
 class Movies(Base):
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections(LibrarySectionType.Movie)
+        p_sections = self.sections('movie')
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
@@ -67,7 +67,7 @@ class Movies(Base):
 class Shows(Base):
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections(LibrarySectionType.Show)
+        p_sections = self.sections('show')
 
         # Fetch movies with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
