@@ -21,7 +21,9 @@ class PlexAccount(Model):
 
     account = ForeignKeyField(Account, 'plex_accounts', unique=True)
 
+    key = IntegerField(null=True, unique=True)
     username = CharField(null=True, unique=True)
+
     thumb = TextField(null=True)
 
     refreshed_at = DateTimeField(null=True)
@@ -47,6 +49,10 @@ class PlexAccount(Model):
         self._basic_credential = value
 
     def refresh(self, force=False, save=True):
+        # Check if refresh is required
+        if self.key is None:
+            force = True
+
         if not force and self.refreshed_at:
             # Only refresh account every `REFRESH_INTERVAL`
             since_refresh = datetime.utcnow() - self.refreshed_at
@@ -71,6 +77,20 @@ class PlexAccount(Model):
         user = ElementTree.fromstring(response.content)
 
         # Update user details
+        if self.id == 1:
+            # Use administrator `key`
+            self.key = 1
+        else:
+            # Retrieve user id from plex.tv details
+            try:
+                user_id = int(user.attrib.get('id'))
+            except Exception, ex:
+                log.warn('Unable to cast user id to integer: %s', ex, exc_info=True)
+                user_id = None
+
+            # Update `key`
+            self.key = user_id
+
         self.thumb = user.attrib.get('thumb')
 
         self.refreshed_at = datetime.utcnow()
