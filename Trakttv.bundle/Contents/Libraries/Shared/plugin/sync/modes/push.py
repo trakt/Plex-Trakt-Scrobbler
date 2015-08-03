@@ -29,7 +29,7 @@ class Movies(Base):
                 MediaItem.height,
                 MediaItem.interlaced
             ],
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -82,7 +82,7 @@ class Shows(Base):
 
                 Episode.added_at
             ]),
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 

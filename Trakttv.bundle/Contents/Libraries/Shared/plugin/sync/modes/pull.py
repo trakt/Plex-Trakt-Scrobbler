@@ -30,7 +30,7 @@ class Movies(Base):
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -96,7 +96,7 @@ class Shows(Base):
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
