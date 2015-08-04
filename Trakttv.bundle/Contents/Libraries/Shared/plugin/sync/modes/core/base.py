@@ -34,7 +34,8 @@ DATA_PREFERENCE_MAP = {
     SyncData.Collection:    'sync.collection.mode',
     SyncData.Playback:      'sync.playback.mode',
     SyncData.Ratings:       'sync.ratings.mode',
-    SyncData.Watched:       'sync.watched.mode'
+    SyncData.Watched:       'sync.watched.mode',
+    SyncData.Watchlist:     False,
 }
 
 class Mode(object):
@@ -116,8 +117,12 @@ class Mode(object):
     def is_data_enabled(self, data):
         key = DATA_PREFERENCE_MAP.get(data)
 
-        if not key:
+        if key is None:
             log.warn('Unknown data: %r', data)
+            return False
+
+        if key is False:
+            # Unsupported data type
             return False
 
         # Parse preference
