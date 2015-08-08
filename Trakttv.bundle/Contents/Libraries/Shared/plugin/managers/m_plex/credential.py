@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class UpdateBasicCredential(Update):
-    keys = ['password', 'token']
+    keys = ['password', 'token_plex']
 
     def from_dict(self, basic_credential, changes, save=True):
         # Update `PlexBasicCredential`
