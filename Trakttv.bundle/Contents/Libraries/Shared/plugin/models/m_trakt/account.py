@@ -146,7 +146,9 @@ class TraktAccount(Model):
     def to_json(self, full=False):
         result = {
             'id': self.id,
-            'username': self.username
+            'username': self.username,
+
+            'thumb_url': self.thumb_url()
         }
 
         if not full:

@@ -22,6 +22,12 @@ class AccountMigration(Migration):
         # Ensure administrator `Account` exists
         self.create_administrator_account()
 
+        # Refresh extra accounts
+        accounts = Account.select().where(Account.id > 1)
+
+        for account in accounts:
+            self.refresh_account(account)
+
         return True
 
     @classmethod
@@ -58,7 +64,7 @@ class AccountMigration(Migration):
         try:
             p_refreshed = p_account.refresh(force=p_created)
         except:
-            log.info('Unable to refresh plex account (not authenticated?)', exc_info=True)
+            log.warn('Unable to refresh plex account (not authenticated?)', exc_info=True)
             p_refreshed = False
 
         # Ensure trakt account details exist
@@ -71,8 +77,41 @@ class AccountMigration(Migration):
         try:
             t_refreshed = t_account.refresh(force=t_created)
         except:
-            log.info('Unable to refresh trakt account (not authenticated?)', exc_info=True)
+            log.warn('Unable to refresh trakt account (not authenticated?)', exc_info=True)
             t_refreshed = False
+
+        # Refresh account
+        if p_refreshed or t_refreshed:
+            account.refresh()
+
+    @classmethod
+    def refresh_account(cls, account):
+        if not account:
+            return
+
+        log.debug('Refreshing account: %r', account)
+
+        # Refresh plex account details
+        p_account = account.plex
+        p_refreshed = False
+
+        if p_account:
+            try:
+                p_refreshed = p_account.refresh()
+            except:
+                log.info('Unable to refresh plex account (not authenticated?)', exc_info=True)
+                p_refreshed = False
+
+        # Refresh trakt account details
+        t_account = account.trakt
+        t_refreshed = False
+
+        if t_account:
+            try:
+                t_refreshed = t_account.refresh()
+            except:
+                log.info('Unable to refresh trakt account (not authenticated?)', exc_info=True)
+                t_refreshed = False
 
         # Refresh account
         if p_refreshed or t_refreshed:

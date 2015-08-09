@@ -2,6 +2,7 @@ class SyncActionMode(object):
     Update  = 0x00
     Log     = 0x01
 
+
 class SyncConflictResolution(object):
     Latest  = 0x00
     Trakt   = 0x01
@@ -32,6 +33,19 @@ class SyncData(object):
             }
 
         return cls.__titles__.get(value)
+
+
+class SyncInterval(object):
+    M15     = '*/15 * * * *'
+    M30     = '*/30 * * * *'
+
+    H1      = '0 * * * *'
+    H3      = '0 */3 * * *'
+    H6      = '0 */6 * * *'
+    H12     = '0 */12 * * *'
+
+    D1      = '0 0 * * *'
+    D7      = '0 0 */7 * *'
 
 
 class SyncMedia(object):

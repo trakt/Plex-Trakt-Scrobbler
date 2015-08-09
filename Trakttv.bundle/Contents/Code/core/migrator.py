@@ -136,6 +136,7 @@ class Clean(Migration):
                 'Shared/plugin/core/jsonw.py',
                 'Shared/plugin/modules/base.py',
                 'Shared/plugin/modules/manager.py',
+                'Shared/plugin/preferences/options/core/base.py',
 
                 # asio
                 'Shared/asio.py',

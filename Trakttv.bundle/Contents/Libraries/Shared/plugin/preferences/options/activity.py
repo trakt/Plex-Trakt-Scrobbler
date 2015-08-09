@@ -1,13 +1,13 @@
 from plugin.preferences.options.constants import ACTIVITY_LABELS_BY_KEY, ActivityMode, ACTIVITY_KEYS_BY_LABEL, \
     ACTIVITY_IDS_BY_KEY
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class ActivityOption(Option):
+class ActivityOption(SimpleOption):
     key = 'activity.mode'
     type = 'enum'
 
@@ -17,6 +17,7 @@ class ActivityOption(Option):
 
     group = ('Advanced', 'Activity')
     label = 'Method'
+    order = 100
 
     preference = 'activity_mode'
 

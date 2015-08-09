@@ -257,8 +257,8 @@ class SyncArtifacts(object):
             log.warn('Invalid GUID attribute on <%r (%r)>', p_item.get('title'), p_item.get('year'))
             return None
 
-        if p_guid.agent not in GUID_AGENTS:
-            log.warn('GUID agent %r is not supported on <%r (%r)>', p_guid.agent, p_item.get('title'), p_item.get('year'))
+        if not p_guid or p_guid.agent not in GUID_AGENTS:
+            log.warn('GUID agent %r is not supported on <%r (%r)>', p_guid.agent if p_guid else None, p_item.get('title'), p_item.get('year'))
             return None
 
         # Build request

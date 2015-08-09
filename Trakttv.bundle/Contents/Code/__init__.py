@@ -60,6 +60,7 @@ from main import Main
 
 from plugin.api.core.manager import ApiManager
 from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.core.singleton import Singleton
 from plugin.models.account import Account
 from plugin.modules.migrations.account import AccountMigration
 from plugin.preferences import Preferences
@@ -79,6 +80,9 @@ def Start():
     DirectoryObject.art = R(ART)
     PopupDirectoryObject.thumb = R(ICON)
     PopupDirectoryObject.art = R(ART)
+
+    if not Singleton.acquire():
+        log.warn('Unable to acquire plugin instance')
 
     m = Main()
     m.start()

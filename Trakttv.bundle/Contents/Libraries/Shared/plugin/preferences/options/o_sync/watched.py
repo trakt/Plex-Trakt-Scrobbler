@@ -1,4 +1,4 @@
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 from plugin.sync.core.enums import SyncMode
 
@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SyncWatchedOption(Option):
+class SyncWatchedOption(SimpleOption):
     key = 'sync.watched.mode'
     type = 'enum'
 
@@ -16,6 +16,7 @@ class SyncWatchedOption(Option):
 
     group = ('Sync', 'Watched')
     label = 'Mode'
+    order = 200
 
     preference = 'sync_watched'
 

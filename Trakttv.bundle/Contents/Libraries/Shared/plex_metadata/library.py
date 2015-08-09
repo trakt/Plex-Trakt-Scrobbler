@@ -94,7 +94,7 @@ class Library(object):
         guid = Guid.parse(item.guid)
 
         if not guid:
-            log.warn('Unable to map item "%s" - invalid/missing "guid" property', item.rating_key)
+            log.warn('Unable to map item "%s" - invalid/missing "guid" property (guid: %r)', item.rating_key, item.guid)
             return False
 
         # Build key

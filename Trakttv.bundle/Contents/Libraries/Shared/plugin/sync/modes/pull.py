@@ -25,12 +25,12 @@ class Base(Mode):
 class Movies(Base):
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections(LibrarySectionType.Movie)
+        p_sections = self.sections('movie')
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -52,7 +52,7 @@ class Movies(Base):
         self.current.progress.start(total)
 
         for rating_key, p_guid, p_item in p_items:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
                 continue
 
@@ -91,12 +91,12 @@ class Movies(Base):
 class Shows(Base):
     def run(self):
         # Retrieve show sections
-        p_sections = self.sections(LibrarySectionType.Show)
+        p_sections = self.sections('show')
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -128,7 +128,7 @@ class Shows(Base):
 
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
                 continue
 
@@ -155,7 +155,7 @@ class Shows(Base):
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
                 continue
 

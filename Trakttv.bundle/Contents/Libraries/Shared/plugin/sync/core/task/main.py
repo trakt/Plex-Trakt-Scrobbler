@@ -116,7 +116,7 @@ class SyncTask(object):
         )
 
     @classmethod
-    def create(cls, account, mode, data, media, **kwargs):
+    def create(cls, account, mode, data, media, trigger, **kwargs):
         # Get account
         if type(account) is int:
             # TODO Move account retrieval/join to `Account` class
@@ -126,8 +126,10 @@ class SyncTask(object):
                     Account.name,
 
                     PlexAccount.id,
+                    PlexAccount.key,
                     PlexAccount.username,
-                    PlexBasicCredential.token,
+                    PlexBasicCredential.token_plex,
+                    PlexBasicCredential.token_server,
 
                     TraktAccount.username,
                     TraktBasicCredential.token,
@@ -181,6 +183,8 @@ class SyncTask(object):
         # Create sync result
         result = SyncResult.create(
             status=status,
+            trigger=trigger,
+
             started_at=datetime.utcnow()
         )
 

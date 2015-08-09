@@ -1,9 +1,9 @@
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import ACTION_MODE_LABELS_BY_KEY
 from plugin.sync.core.enums import SyncActionMode
 
 
-class SyncActionOption(Option):
+class SyncActionOption(SimpleOption):
     key = 'sync.action.mode'
     type = 'enum'
 
@@ -13,6 +13,7 @@ class SyncActionOption(Option):
 
     group = ('Advanced', 'Sync')
     label = 'Action Mode'
+    order = 120
 
     @property
     def value(self):

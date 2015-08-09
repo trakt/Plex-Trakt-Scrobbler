@@ -57,6 +57,7 @@ class PlatformEnvironment(object):
 class Environment(object):
     dict = None
     path = None
+    platform = None
     prefs = None
 
     @classmethod

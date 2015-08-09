@@ -2,7 +2,6 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType
 from trakt_sync.cache.main import Cache
 import logging
 
@@ -14,12 +13,12 @@ class Movies(Mode):
 
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections(LibrarySectionType.Movie)
+        p_sections = self.sections('movie')
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -43,7 +42,7 @@ class Movies(Mode):
 
         # Process movies
         for rating_key, p_guid, p_item in p_items:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
                 continue
 
@@ -102,12 +101,12 @@ class Shows(Mode):
 
     def run(self):
         # Retrieve show sections
-        p_sections = self.sections(LibrarySectionType.Show)
+        p_sections = self.sections('show')
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
             p_sections,
-            account=self.current.account.plex.id,
+            account=self.current.account.plex.key,
             parse_guid=True
         )
 
@@ -133,7 +132,7 @@ class Shows(Mode):
 
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
                 continue
 
@@ -181,7 +180,7 @@ class Shows(Mode):
 
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if p_guid.agent not in GUID_AGENTS:
+            if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
                 continue
 

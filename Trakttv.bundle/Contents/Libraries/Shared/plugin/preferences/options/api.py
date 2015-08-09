@@ -1,11 +1,11 @@
-from plugin.preferences.options.core.base import Option
+from plugin.preferences.options.core.base import SimpleOption
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class ApiOption(Option):
+class ApiOption(SimpleOption):
     key = 'api.enabled'
     type = 'boolean'
 
@@ -14,6 +14,7 @@ class ApiOption(Option):
 
     group = ('API',)
     label = 'Enabled'
+    order = 200
 
     @property
     def value(self):

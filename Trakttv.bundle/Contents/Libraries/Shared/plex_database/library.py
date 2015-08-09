@@ -85,7 +85,7 @@ class LibraryBase(object):
             yield model
 
     @classmethod
-    def _join(cls, query, models, account, where, exclude=None):
+    def _join(cls, query, models, account, exclude=None):
         if exclude is None:
             exclude = []
 
@@ -97,7 +97,7 @@ class LibraryBase(object):
                 continue
 
             if model == MetadataItemSettings:
-                query = cls._join_settings(query, account, where)
+                query = cls._join_settings(query, account)
             elif model == MediaItem:
                 query = query.join(
                     MediaItem, JOIN_LEFT_OUTER,
@@ -109,17 +109,16 @@ class LibraryBase(object):
         return query
 
     @staticmethod
-    def _join_settings(query, account, where, metadata_model=None):
+    def _join_settings(query, account, metadata_model=None):
         if metadata_model is None:
             metadata_model = MetadataItem
 
         query = query.join(
             MetadataItemSettings, JOIN_LEFT_OUTER,
-            on=(MetadataItemSettings.guid == metadata_model.guid).alias('settings')
-        )
-
-        where.append(
-            (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
+            on=(
+                (MetadataItemSettings.guid == metadata_model.guid) &
+                (MetadataItemSettings.account == account)
+            ).alias('settings')
         )
 
         return query
@@ -201,7 +200,7 @@ class MovieLibrary(LibraryBase):
         query = self._join(
             MetadataItem.select(*fields),
             self._models(fields, account),
-            account, where
+            account
         ).where(
             *where
         )
@@ -284,7 +283,7 @@ class ShowLibrary(LibraryBase):
         query = self._join(
             MetadataItem.select(*fields),
             self._models(fields, account),
-            account, where
+            account
         ).where(
             *where
         )
@@ -297,7 +296,7 @@ class ShowLibrary(LibraryBase):
 
 
 class SeasonLibrary(LibraryBase):
-    def __call__(self, sections, account=None, fields=None):
+    def __call__(self, sections, fields=None, account=None, where=None):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
@@ -305,36 +304,38 @@ class SeasonLibrary(LibraryBase):
         # Map `Section` list to ids
         section_ids = [id for (id, ) in sections]
 
-        # Set defaults for `fields`
-        if not fields:
-            fields = [
-                MetadataItem.id,
-                MetadataItem.index
-            ]
+        # Build `select()` query
+        if fields is None:
+            fields = []
 
-            if account:
-                fields.extend([
-                    MetadataItemSettings.rating
-                ])
+        fields = [
+            MetadataItem.id,
+            MetadataItem.index
+        ] + fields
 
         # Build `where()` query
-        query = [
+        if where is None:
+            where = []
+
+        where += [
             MetadataItem.metadata_type == MetadataItemType.Season,
             MetadataItem.library_section << section_ids
         ]
 
-        if account:
-            query.append(
-                (MetadataItemSettings.id >> None) | (MetadataItemSettings.account == account)
-            )
+        # Build query
+        query = self._join(
+            MetadataItem.select(*fields),
+            self._models(fields, account),
+            account
+        ).where(
+            *where
+        )
 
-            return MetadataItem.select(*fields).join(
-                MetadataItemSettings, JOIN_LEFT_OUTER, (
-                    MetadataItemSettings.guid == MetadataItem.guid
-                ).alias('settings')
-            ).where(*query)
-
-        return MetadataItem.select(*fields).where(*query)
+        # Parse rows
+        return [
+            self._parse(fields, row, offset=1)
+            for row in query.tuples().iterator()
+        ]
 
 
 class EpisodeLibrary(LibraryBase):
@@ -368,7 +369,7 @@ class EpisodeLibrary(LibraryBase):
         query = self._join(
             MetadataItem.select(*fields),
             self._models(fields, account),
-            account, where
+            account
         ).where(
             *where
         )
@@ -482,19 +483,16 @@ class EpisodeLibrary(LibraryBase):
             fields = []
 
         fields = [
-            MetadataItem.id,
-            MetadataItem.index,
-
             MetadataItemSettings.rating
         ] + fields
 
         # Retrieve seasons
-        seasons = Library.seasons(sections, account, fields)
+        seasons = Library.seasons(sections, fields, account)
 
-        # Map shows by `id`
+        # Map seasons by `id`
         return dict([
-            (id, {'index': index, 'settings': self.settings_directory(rating)})
-            for (id, index, rating) in seasons.tuples().iterator()
+            (id, show)
+            for (id, show) in seasons
         ])
 
     def mapped_episodes(self, sections, fields=None, account=None, where=None):
@@ -537,12 +535,12 @@ class EpisodeLibrary(LibraryBase):
         )
 
         # Join settings
-        query = self._join_settings(query, account, where, Episode)
+        query = self._join_settings(query, account, Episode)
 
         # Join extra models
         models = self._models(fields, account)
 
-        query = self._join(query, models, account, where, [
+        query = self._join(query, models, account, [
             MetadataItemSettings,
             MediaItem,
             MediaPart
