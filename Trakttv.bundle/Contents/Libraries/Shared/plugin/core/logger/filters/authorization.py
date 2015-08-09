@@ -9,7 +9,9 @@ KEYS = [
 
     'token',
     'token_plex',
-    'token_server'
+    'token_server',
+
+    'password'
 ]
 
 LOGGERS = [
@@ -18,7 +20,7 @@ LOGGERS = [
     'plugin.managers.core.base'
 ]
 
-NOTICE = '[*** authorization token ***]'
+NOTICE = '[*** sensitive ***]'
 
 
 class AuthorizationFilter(Filter):
