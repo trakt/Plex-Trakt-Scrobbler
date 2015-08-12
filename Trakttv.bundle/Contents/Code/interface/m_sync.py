@@ -48,7 +48,7 @@ def AccountsMenu(refresh=None):
 
 
 @route(PLUGIN_PREFIX + '/sync')
-def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
+def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False):
     account = AccountManager.get(Account.id == account_id)
 
     # Build sync controls menu
@@ -66,6 +66,9 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
             title=pad_title(title),
             summary=message
         ))
+
+        if message_only:
+            return oc
 
     # Active sync status
     Active.create(
@@ -113,8 +116,28 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None):
     # Push
     #
 
-    with account.plex.authorization():
-        sections = Plex['library'].sections()
+    p_account = account.plex
+
+    try:
+        # Retrieve account libraries/sections
+        with p_account.authorization():
+            sections = Plex['library'].sections()
+    except Exception, ex:
+        # Build message
+        if p_account is None:
+            message = "Plex account hasn't been authenticated"
+        else:
+            message = str(ex.message or ex)
+
+        # Redirect to error message
+        log.warn('Unable to retrieve account libraries/sections: %s', message, exc_info=True)
+
+        return redirect('/sync',
+            account_id=account_id,
+            title='Error',
+            message=message,
+            message_only=True
+        )
 
     section_keys = []
 

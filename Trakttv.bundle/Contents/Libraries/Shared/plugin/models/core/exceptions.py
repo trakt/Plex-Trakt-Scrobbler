@@ -1,0 +1,2 @@
+class AccountAuthenticationError(Exception):
+    pass

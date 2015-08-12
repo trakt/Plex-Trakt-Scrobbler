@@ -1,4 +1,5 @@
 from plugin.models.core import db
+from plugin.models.core.exceptions import AccountAuthenticationError
 from plugin.models.account import Account
 
 from datetime import datetime, timedelta
@@ -57,7 +58,7 @@ class PlexAccount(Model):
             return self.basic_authorization(basic)
 
         # No account authorization available
-        raise Exception("Account hasn't been authenticated")
+        raise AccountAuthenticationError("Plex account hasn't been authenticated")
 
     def basic_authorization(self, basic_credential=None):
         if basic_credential is None:
@@ -65,7 +66,7 @@ class PlexAccount(Model):
 
         # Ensure token exists
         if basic_credential.token_server is None:
-            raise Exception("Account hasn't been authenticated")
+            raise AccountAuthenticationError("Plex account is missing the server token")
 
         log.debug('Using basic authorization for %r', self)
 
@@ -117,7 +118,11 @@ class PlexAccount(Model):
 
         user = ElementTree.fromstring(response.content)
 
-        # Update user details
+        # Update details
+        self.username = user.attrib.get('username')
+        self.thumb = user.attrib.get('thumb')
+
+        # Update `key`
         if self.id == 1:
             # Use administrator `key`
             self.key = 1
@@ -132,12 +137,13 @@ class PlexAccount(Model):
             # Update `key`
             self.key = user_id
 
-        self.thumb = user.attrib.get('thumb')
-
         return True
 
     def refresh_required(self, basic):
         if self.key is None:
+            return True
+
+        if self.username is None:
             return True
 
         if basic.token_server is None:

@@ -17,7 +17,7 @@ class SyncIntervalHandler(Handler):
     def check(self, job):
         last_result = SyncIntervalOption.get_last_result(job.account, SyncMode.Full)
 
-        if last_result.started_at <= job.due_at:
+        if last_result is None or last_result.started_at <= job.due_at:
             return True
 
         # Re-schedule job

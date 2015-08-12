@@ -139,19 +139,31 @@ class AccountMigration(Migration):
 
     @classmethod
     def create_plex_basic_credential(cls, plex_account):
-        token = os.environ.get('PLEXTOKEN')
+        token_plex = os.environ.get('PLEXTOKEN')
 
-        if not token:
+        if not token_plex:
             return False
 
         try:
             PlexBasicCredential.create(
                 account=plex_account,
 
-                token=token
+                token_plex=token_plex
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
-            log.debug('BasicCredential for %r already exists - %s', plex_account, ex, exc_info=True)
+            # Ensure basic credential has a token
+            rows_updated = PlexBasicCredential.update(
+                token_plex=token_plex
+            ).where(
+                PlexBasicCredential.account == plex_account,
+                PlexBasicCredential.token_plex >> None
+            ).execute()
+
+            # Check if basic credential was updated
+            if rows_updated:
+                return True
+
+            log.debug('Ignoring basic credential update for %r, already exists (%s)', plex_account, ex)
             return False
 
         return True
@@ -185,7 +197,7 @@ class AccountMigration(Migration):
                 token=Environment.dict['trakt.token']
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
-            log.debug('BasicCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            log.debug('Ignoring basic credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 
         return True
@@ -203,7 +215,7 @@ class AccountMigration(Migration):
                 **Environment.dict['trakt.pin.authorization']
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
-            log.debug('OAuthCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            log.debug('Ignoring oauth credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 
         return True
