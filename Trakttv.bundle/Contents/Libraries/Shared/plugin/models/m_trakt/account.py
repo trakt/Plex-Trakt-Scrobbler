@@ -1,4 +1,5 @@
 from plugin.models.core import db
+from plugin.models.core.exceptions import AccountAuthenticationError
 from plugin.models.account import Account
 
 from datetime import datetime, timedelta
@@ -70,7 +71,7 @@ class TraktAccount(Model):
             return self.basic_authorization(basic)
 
         # No account authorization available
-        raise Exception("Account hasn't been authenticated")
+        raise AccountAuthenticationError("Trakt account hasn't been authenticated")
 
     def basic_authorization(self, basic_credential=None):
         if basic_credential is None:
