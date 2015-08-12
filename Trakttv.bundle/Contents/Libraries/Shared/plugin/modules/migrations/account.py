@@ -163,7 +163,7 @@ class AccountMigration(Migration):
             if rows_updated:
                 return True
 
-            log.debug('BasicCredential for %r already exists - %s', plex_account, ex, exc_info=True)
+            log.debug('Ignoring basic credential update for %r, already exists (%s)', plex_account, ex)
             return False
 
         return True
@@ -197,7 +197,7 @@ class AccountMigration(Migration):
                 token=Environment.dict['trakt.token']
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
-            log.debug('BasicCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            log.debug('Ignoring basic credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 
         return True
@@ -215,7 +215,7 @@ class AccountMigration(Migration):
                 **Environment.dict['trakt.pin.authorization']
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
-            log.debug('OAuthCredential for %r already exists - %s', trakt_account, ex, exc_info=True)
+            log.debug('Ignoring oauth credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 
         return True
