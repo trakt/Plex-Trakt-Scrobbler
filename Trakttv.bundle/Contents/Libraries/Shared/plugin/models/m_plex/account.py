@@ -117,7 +117,11 @@ class PlexAccount(Model):
 
         user = ElementTree.fromstring(response.content)
 
-        # Update user details
+        # Update details
+        self.username = user.attrib.get('username')
+        self.thumb = user.attrib.get('thumb')
+
+        # Update `key`
         if self.id == 1:
             # Use administrator `key`
             self.key = 1
@@ -132,12 +136,13 @@ class PlexAccount(Model):
             # Update `key`
             self.key = user_id
 
-        self.thumb = user.attrib.get('thumb')
-
         return True
 
     def refresh_required(self, basic):
         if self.key is None:
+            return True
+
+        if self.username is None:
             return True
 
         if basic.token_server is None:

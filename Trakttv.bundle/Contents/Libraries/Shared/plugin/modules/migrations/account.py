@@ -139,18 +139,30 @@ class AccountMigration(Migration):
 
     @classmethod
     def create_plex_basic_credential(cls, plex_account):
-        token = os.environ.get('PLEXTOKEN')
+        token_plex = os.environ.get('PLEXTOKEN')
 
-        if not token:
+        if not token_plex:
             return False
 
         try:
             PlexBasicCredential.create(
                 account=plex_account,
 
-                token=token
+                token_plex=token_plex
             )
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
+            # Ensure basic credential has a token
+            rows_updated = PlexBasicCredential.update(
+                token_plex=token_plex
+            ).where(
+                PlexBasicCredential.account == plex_account,
+                PlexBasicCredential.token_plex >> None
+            ).execute()
+
+            # Check if basic credential was updated
+            if rows_updated:
+                return True
+
             log.debug('BasicCredential for %r already exists - %s', plex_account, ex, exc_info=True)
             return False
 
