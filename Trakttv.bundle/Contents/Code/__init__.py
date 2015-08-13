@@ -106,13 +106,20 @@ def Api(*args, **kwargs):
 
 
 def ValidatePrefs():
+    # Retrieve plex token
+    token_plex = os.environ.get('PLEXTOKEN')
+
+    if not token_plex:
+        log.debug('No plex token found in environment, using request token')
+        token_plex = Request.Headers.get('X-Plex-Token')
+
     # Retrieve current activity mode
     last_activity_mode = Preferences.get('activity.mode')
 
     if Request.Headers.get('X-Disable-Preference-Migration', '0') == '0':
         # Run account migration
         am = AccountMigration()
-        am.run()
+        am.run(token_plex)
 
         # Migrate server preferences
         Preferences.migrate()
