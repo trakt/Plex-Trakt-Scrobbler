@@ -61,9 +61,9 @@ class Account(Model):
         p = self.plex
         t = self.trakt
 
-        # Set `name` to trakt username (if `name` isn't already set)
+        # Set `name` to trakt/plex username (if `name` isn't already set)
         if self.name is None:
-            self.name = t.username
+            self.name = t.username or p.username
 
         # Update account thumb
         self.thumb = self.build_thumb(

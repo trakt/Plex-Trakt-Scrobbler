@@ -122,6 +122,3 @@ LOG_HANDLER.addFilter(AuthorizationFilter())
 
 # Setup logger
 setup()
-
-# Update logger levels
-update_loggers()

@@ -35,6 +35,8 @@ class Main(object):
     def __init__(self):
         Header.show(self)
 
+        update_loggers()
+
         self.init_trakt()
         self.init_plex()
         self.init()
