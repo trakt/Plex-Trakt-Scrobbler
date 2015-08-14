@@ -112,8 +112,13 @@ class SyncManager(object):
 
     @classmethod
     def acquire(cls):
+        if cls.current is None:
+            log.warn('No work available, ignored acquire()')
+            return False
+
         cls.lock.acquire()
         log.debug('Acquired work: %s' % cls.current)
+        return True
 
     @classmethod
     def release(cls):
@@ -136,7 +141,8 @@ class SyncManager(object):
         if since_run < interval:
             return False
 
-        return cls.trigger_synchronize()
+        success, _ = cls.trigger_synchronize()
+        return success
 
     @classmethod
     def run(cls):
@@ -151,7 +157,8 @@ class SyncManager(object):
                 time.sleep(3)
                 continue
 
-            cls.acquire()
+            if not cls.acquire():
+                continue
 
             if not cls.run_work():
                 if cls.current.stopping:

@@ -38,6 +38,7 @@ from pts.scrobbler import Scrobbler
 from pts.session_manager import SessionManager
 from sync.sync_manager import SyncManager
 
+from datetime import datetime
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata, Matcher
@@ -47,6 +48,8 @@ import logging
 import os
 import time
 
+# http://bugs.python.org/issue7980
+datetime.strptime('', '')
 
 log = Logger()
 
