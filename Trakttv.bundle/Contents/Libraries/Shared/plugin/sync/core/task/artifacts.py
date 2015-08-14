@@ -263,9 +263,6 @@ class SyncArtifacts(object):
 
         # Build request
         request = {
-            'title': p_item['title'],
-            'year': p_item['year'],
-
             'ids': {}
         }
 
