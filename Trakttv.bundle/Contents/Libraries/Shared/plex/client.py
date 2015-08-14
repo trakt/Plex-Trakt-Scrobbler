@@ -41,7 +41,9 @@ class PlexClient(object):
         while parts and type(cur) is dict:
             key = parts.pop(0)
 
-            if key not in cur:
+            if key == '*':
+                key = None
+            elif key not in cur:
                 if None in cur:
                     parameters.append(key)
 
@@ -52,7 +54,7 @@ class PlexClient(object):
 
             cur = cur[key]
 
-        if type(cur) is dict:
+        while type(cur) is dict:
             cur = cur.get(None)
 
         if parts:

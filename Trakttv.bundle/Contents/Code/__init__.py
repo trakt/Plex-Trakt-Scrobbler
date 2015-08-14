@@ -65,10 +65,13 @@ from plugin.models.account import Account
 from plugin.modules.migrations.account import AccountMigration
 from plugin.preferences import Preferences
 
+from datetime import datetime
 from plex import Plex
 import json
 import time
 
+# http://bugs.python.org/issue7980
+datetime.strptime('', '')
 
 log = Logger()
 
