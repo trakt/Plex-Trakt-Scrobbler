@@ -189,18 +189,18 @@ class Base(SyncBase):
                     for season in show['seasons']:
                         if not season.get('episodes'):
                             # Print season that is missing
-                            log.warn('[%s](%s) Unable to find %r S%02d', path, media, show.get('title'), season.get('number'))
+                            log.warn('[%s](%s) Unable to find %r S%02d', path, media, show.get('ids'), season.get('number'))
                             continue
 
                         # Print season episodes that are missing
-                        log.warn('[%s](%s) Unable to find %r S%02d %s', path, media, show.get('title'), season.get('number'), ', '.join([
+                        log.warn('[%s](%s) Unable to find %r S%02d %s', path, media, show.get('ids'), season.get('number'), ', '.join([
                             'E%02d' % episode.get('number')
                             for episode in season.get('episodes')
                         ]))
             elif media == 'movies':
                 # Print missing movies
                 for item in items:
-                    log.warn('[%s](%s) Unable to find %r', path, media, item.get('title'))
+                    log.warn('[%s](%s) Unable to find %r', path, media, item.get('ids'))
             else:
                 # Print missing items
                 for item in items:

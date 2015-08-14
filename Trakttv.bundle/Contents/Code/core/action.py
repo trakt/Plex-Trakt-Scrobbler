@@ -27,15 +27,6 @@ class PlexHelper(object):
         if type(p_item) is Movie or type(p_item) is Show:
             p_root = cls.get_root(p_item)
 
-            data['title'] = p_root.title
-
-            if year:
-                data['year'] = year
-            elif p_root.year is not None:
-                data['year'] = p_root.year
-            elif p_item.year is not None:
-                data['year'] = p_item.year
-
             # Set identifier on movie/show objects
             return ActionHelper.set_identifier(data, guid or p_root.guid, strict=strict)
 
