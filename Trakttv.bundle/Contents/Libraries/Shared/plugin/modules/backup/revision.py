@@ -169,8 +169,14 @@ class Revision(object):
         if match is None:
             return None
 
-        # Create timestamp from fragments
-        timestamp = datetime.strptime('-'.join([directory, match.group('timestamp')]), '%y-%m-%d_%H-%M-%S')
+        name = '-'.join([directory, match.group('timestamp')])
+
+        try:
+            # Create timestamp from fragments
+            timestamp = datetime.strptime(name, '%y-%m-%d_%H-%M-%S')
+        except ValueError:
+            log.warn('Unable to parse backup revision: %r', name)
+            return None
 
         # Get `include` parameter from match
         include = match.group('include')
