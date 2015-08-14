@@ -5,6 +5,7 @@ import inspect
 import re
 import sys
 import threading
+import thread
 import time
 import unicodedata
 
@@ -237,10 +238,10 @@ def spawn(func, *args, **kwargs):
         except Exception, ex:
             log.error('Thread "%s" raised an exception: %s', thread_name, ex, exc_info=True)
 
-    thread = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
+    th = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
 
     try:
-        thread.start()
+        th.start()
         log.debug("Spawned thread with name '%s'" % thread_name)
     except thread.error, ex:
         log.error('Unable to spawn thread: %s', ex, exc_info=True, extra={
@@ -250,7 +251,7 @@ def spawn(func, *args, **kwargs):
         })
         return None
 
-    return thread
+    return th
 
 
 def schedule(func, seconds, *args, **kwargs):
