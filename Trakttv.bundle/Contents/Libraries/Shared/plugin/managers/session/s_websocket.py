@@ -129,7 +129,7 @@ class UpdateWSession(UpdateSession):
             # Pick account from `client` or `user` objects
             result['account'] = self.get_account(result)
         except FilteredException:
-            log.debug('Activity has been filtered by the global filters')
+            log.debug('Activity has been filtered')
 
             result['client'] = None
             result['user'] = None

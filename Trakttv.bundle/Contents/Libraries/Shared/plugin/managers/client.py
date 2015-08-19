@@ -168,7 +168,11 @@ class UpdateClient(Update):
         log.debug('Activity matched against rule: %r', rule)
 
         if rule:
-            result['account'] = rule.account_id
+            # Process rule
+            if rule.account_id is not None:
+                result['account'] = rule.account_id
+            else:
+                return True, result
         else:
             result['account'] = None
 
