@@ -78,9 +78,14 @@ class UpdateWSession(UpdateSession):
                 'progress': self.get_progress(obj.duration, view_offset)
             })
 
-        # Retrieve session
+        # Retrieve session key
         session_key = to_integer(info.get('sessionKey'))
 
+        if not session_key:
+            log.warn('Missing session key, unable to fetch session details')
+            return result
+
+        # Retrieve session details
         log.debug('Fetching details for session #%s', session_key)
 
         p_item = Plex['status'].sessions().get(session_key)
