@@ -26,6 +26,7 @@ class PlexAccount(Model):
     key = IntegerField(null=True, unique=True)
     username = CharField(null=True, unique=True)
 
+    title = CharField(null=True)
     thumb = TextField(null=True)
 
     refreshed_at = DateTimeField(null=True)
@@ -119,7 +120,9 @@ class PlexAccount(Model):
         user = ElementTree.fromstring(response.content)
 
         # Update details
-        self.username = user.attrib.get('username')
+        self.username = user.attrib.get('username') or None
+
+        self.title = user.attrib.get('title')
         self.thumb = user.attrib.get('thumb')
 
         # Update `key`
@@ -144,6 +147,9 @@ class PlexAccount(Model):
             return True
 
         if self.username is None:
+            return True
+
+        if self.title is None:
             return True
 
         if basic.token_server is None:
@@ -178,6 +184,7 @@ class PlexAccount(Model):
             'id': self.id,
             'username': self.username,
 
+            'title': self.title,
             'thumb_url': self.thumb_url()
         }
 
