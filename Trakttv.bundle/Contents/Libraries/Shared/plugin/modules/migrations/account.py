@@ -140,8 +140,12 @@ class AccountMigration(Migration):
     @classmethod
     def create_plex_basic_credential(cls, plex_account, token_plex=None):
         if token_plex is None:
-            log.debug('No plex token provided, using environment token')
             token_plex = os.environ.get('PLEXTOKEN')
+
+            if token_plex:
+                log.debug('No plex token provided, using environment token')
+            else:
+                log.warn('No plex token available, unable to authenticate plex account')
 
         if not token_plex:
             return False
