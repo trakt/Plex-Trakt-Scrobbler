@@ -163,6 +163,9 @@ class PlexAccount(Model):
 
         thumb = urlparse(self.thumb)
 
+        if thumb.netloc.endswith('plex.tv'):
+            return self.thumb
+
         if not thumb.netloc.endswith('gravatar.com'):
             return None
 
