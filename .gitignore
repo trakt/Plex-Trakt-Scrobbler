@@ -1,5 +1,6 @@
 /.coverage
 /.idea
+/htmlcov
 /out
 
 .idea/

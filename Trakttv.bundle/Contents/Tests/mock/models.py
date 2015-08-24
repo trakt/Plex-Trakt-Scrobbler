@@ -1,3 +1,13 @@
+class LibraryMetadata(object):
+    def __init__(self, section=None):
+        self.section = section
+
+
+class LibrarySection(object):
+    def __init__(self, title=None):
+        self.title = title
+
+
 class Session(object):
     def __init__(self, **kwargs):
         self.duration = None

@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(LIBRARIES_DIR, 'Windows'))
 # Environment
 #
 
-from tests.core.mock.framework import Core
+from mock.framework import Core
 from plugin.core.environment import Environment
 from plugin.core.constants import PLUGIN_IDENTIFIER
 
