@@ -7,7 +7,7 @@ build:
     tests:
         override:
             -
-                command: py.test --cov Trakttv.bundle/Contents/ Trakttv.bundle/Contents/Tests
+                command: ./run_tests.sh
                 coverage:
                     file: .coverage
                     format: py-cc
