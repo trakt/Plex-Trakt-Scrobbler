@@ -48,6 +48,12 @@ os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Databases'))
 
 Environment.path.plugin_support = PLUGIN_SUPPORT
 
+# Configure plex.database.py
+os.environ['LIBRARY_DB'] = os.path.join(
+    Environment.path.plugin_support, 'Databases',
+    'com.plexapp.plugins.library.db'
+)
+
 #
 # Modules
 #
