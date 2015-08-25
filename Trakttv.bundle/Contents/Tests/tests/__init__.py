@@ -21,7 +21,7 @@ TEMP_DIR = tempfile.mkdtemp()
 
 # Update `sys.path`
 sys.path.insert(0, os.path.join(LIBRARIES_DIR, 'Shared'))
-sys.path.insert(0, os.path.join(LIBRARIES_DIR, 'Windows'))
+sys.path.insert(0, CODE_DIR)
 
 #
 # Environment
@@ -38,6 +38,11 @@ Environment.setup(Core(CODE_DIR), {
     'username': 'username',
     'password': 'password'
 })
+
+# Setup native libraries
+from libraries import setup_libraries
+
+setup_libraries()
 
 # Build directory structure for "Plug-in Support"
 PLUGIN_SUPPORT = os.path.join(TEMP_DIR, 'Plug-in Support')
