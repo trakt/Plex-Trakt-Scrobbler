@@ -151,7 +151,10 @@ class UpdateUser(Update):
             # Map, try automatically finding matching `PlexAccount`
             plex_account = (PlexAccount
                 .select()
-                .where(PlexAccount.username == user['title'])
+                .where(
+                    (PlexAccount.username == user['title']) |
+                    (PlexAccount.title == user['title'])
+                )
                 .first()
             )
 
