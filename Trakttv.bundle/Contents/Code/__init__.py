@@ -21,9 +21,9 @@ except Exception, ex:
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
-from libraries import setup_libraries
+from libraries import Libraries
 
-setup_libraries()
+Libraries.setup(cache=True)
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
