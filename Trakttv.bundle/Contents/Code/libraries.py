@@ -5,14 +5,6 @@ import platform
 import sys
 
 
-# Retrieve `contents_path`
-try:
-    code_path = Core.code_path
-except NameError:
-    code_path = os.path.dirname(__file__)
-
-contents_path = os.path.abspath(os.path.join(code_path, '..'))
-
 # Create dummy `Log`
 try:
     Log.Debug('Using framework "Log" handler')
@@ -21,6 +13,10 @@ except NameError:
 
     Log = Logger()
     Log.Debug('Using dummy "Log" handler')
+
+# Retrieve `contents_path`
+code_path = Environment.path.code
+contents_path = os.path.abspath(os.path.join(code_path, '..'))
 
 # Constants/Maps
 bits_map = {
