@@ -5,8 +5,20 @@ import platform
 import sys
 
 
-contents_path = os.path.abspath(os.path.join(Core.code_path, '..'))
+# Create dummy `Log`
+try:
+    Log.Debug('Using framework "Log" handler')
+except NameError:
+    from mock.framework import Logger
 
+    Log = Logger()
+    Log.Debug('Using dummy "Log" handler')
+
+# Retrieve `contents_path`
+code_path = Environment.path.code
+contents_path = os.path.abspath(os.path.join(code_path, '..'))
+
+# Constants/Maps
 bits_map = {
     '32bit': 'i386',
     '64bit': 'x86_64'

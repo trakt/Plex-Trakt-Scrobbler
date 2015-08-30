@@ -46,6 +46,9 @@ class Base(PushHandler, CollectionHandler):
 
     @staticmethod
     def get_audio_codec(codec):
+        if codec is None:
+            return None
+
         for key, regex in AUDIO_CODECS.items():
             if key == codec:
                 return key

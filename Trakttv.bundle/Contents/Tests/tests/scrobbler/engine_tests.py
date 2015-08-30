@@ -1,4 +1,4 @@
-from tests.core.mock.models import Session
+from mock.models import Session
 from plugin.scrobbler.core import SessionEngine
 
 import pytest

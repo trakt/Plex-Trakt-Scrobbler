@@ -11,7 +11,15 @@ import re
 import sys
 import traceback
 
-BASE_PATH = __file__[:__file__.lower().index('plug-ins')]
+def get_base_path():
+    file_path = __file__.lower()
+
+    if 'plug-ins' not in file_path:
+        return None
+
+    return __file__[:file_path.index('plug-ins')]
+
+BASE_PATH = get_base_path()
 VERSION_BASE = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 VERSION_BRANCH = PLUGIN_VERSION_BRANCH
 
