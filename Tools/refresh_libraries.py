@@ -2,7 +2,7 @@ from subprocess import call
 import os
 import shutil
 
-BASE_PATH = 'Trakttv.bundle\Contents\Libraries\Shared'
+BASE_PATH = 'Trakttv.bundle\\Contents\\Libraries\\Shared'
 
 DELETE_DIRECTORIES = [
     'futures',
