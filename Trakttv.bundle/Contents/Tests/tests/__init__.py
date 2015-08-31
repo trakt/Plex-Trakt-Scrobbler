@@ -40,9 +40,9 @@ Environment.setup(Core(CODE_DIR), {
 })
 
 # Setup native libraries
-from libraries import setup_libraries
+from libraries import Libraries
 
-setup_libraries()
+Libraries.setup()
 
 # Build directory structure for "Plug-in Support"
 PLUGIN_SUPPORT = os.path.join(TEMP_DIR, 'Plug-in Support')
