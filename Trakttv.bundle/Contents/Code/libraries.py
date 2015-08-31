@@ -4,10 +4,9 @@ import os
 import platform
 import shutil
 import sys
-import tempfile
 
 
-# Create dummy `Log`
+# Create dummy `Log` (for tests)
 try:
     Log.Debug('Using framework "Log" handler')
 except NameError:
@@ -16,68 +15,28 @@ except NameError:
     Log = Logger()
     Log.Debug('Using dummy "Log" handler')
 
-# Retrieve `contents_path`
-code_path = Environment.path.code
-contents_path = os.path.abspath(os.path.join(code_path, '..'))
-
-# Constants/Maps
-bits_map = {
-    '32bit': 'i386',
-    '64bit': 'x86_64'
-}
-
-machine_map = {
-    ('32bit', 'i686'): 'i686'
-}
-
-system_map = {
-    'Darwin': 'MacOSX'
-}
-
-unicode_map = {
-    65535:      'ucs2',
-    1114111:    'ucs4'
-}
-
-native_directories = [
-    'Libraries\\FreeBSD',
-    'Libraries\\Linux',
-    'Libraries\\MacOSX',
-    'Libraries\\Windows'
-]
-
-def get_architecture():
-    bits, _ = platform.architecture()
-    machine = platform.machine()
-
-    # Check (bits, machine) map
-    machine_key = (bits, machine)
-
-    if machine_key in machine_map:
-        return machine_map[machine_key]
-
-    # Check (bits) map
-    if bits in bits_map:
-        return bits_map[bits]
-
-    Log.Info('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
-    return None
-
-
-def get_system():
-    system = platform.system()
-
-    # Apply system map
-    if system in system_map:
-        system = system_map[system]
-
-    return system
 
 class Libraries(object):
+    contents_path = os.path.abspath(os.path.join(Environment.path.code, '..'))
+
+    native_directories = [
+        'Libraries\\FreeBSD',
+        'Libraries\\Linux',
+        'Libraries\\MacOSX',
+        'Libraries\\Windows'
+    ]
+
+    unicode_map = {
+        65535:      'ucs2',
+        1114111:    'ucs4'
+    }
+
     @classmethod
     def cache(cls):
+        """Cache native libraries into the plugin data directory"""
+
         # Retrieve library platforms
-        libraries_path = os.path.join(contents_path, 'Libraries')
+        libraries_path = os.path.join(cls.contents_path, 'Libraries')
         platforms = os.listdir(libraries_path)
 
         if 'Shared' in platforms:
@@ -87,42 +46,55 @@ class Libraries(object):
         destination = os.path.join(Environment.path.plugin_data, 'Libraries')
 
         # Ensure destination exists
-        cls.create_directories(destination)
+        StorageHelper.create_directories(destination)
 
         # Delete existing libraries
         for name in os.listdir(destination):
             path = os.path.join(destination, name)
 
-            cls.delete_tree(path)
+            StorageHelper.delete_tree(path)
 
         # Copy libraries to directory
         for name in platforms:
             p_source = os.path.join(libraries_path, name)
             p_destination = os.path.join(destination, name)
 
-            if not cls.copy_tree(p_source, p_destination):
+            if not StorageHelper.copy_tree(p_source, p_destination):
                 return None
 
-        Log.Debug('Cached native libraries to %r', cls.relative_path(destination))
+        Log.Debug('Cached native libraries to %r', StorageHelper.to_relative_path(destination))
         return destination
 
     @classmethod
-    def setup(cls, cache=False):
-        # Retrieve libraries path
-        libraries_path = Environment.path.libraries
+    def get_libraries_path(cls, cache=False):
+        """Retrieve the native libraries base directory (and caching the libraries if enabled)"""
 
-        if cache:
+        if not cache:
+            return Environment.path.libraries
+
+        # Cache native libraries
+        libraries_path = cls.cache()
+
+        if libraries_path:
             # Reset native library directories in `sys.path`
             cls.reset()
 
-            # Cache native libraries
-            libraries_path = cls.cache()
+            return libraries_path
 
-        Log.Info('Using native libraries at %r', cls.relative_path(libraries_path))
+        return Environment.path.libraries
+
+    @classmethod
+    def setup(cls, cache=False):
+        """Setup native library directories"""
+
+        # Retrieve libraries path
+        libraries_path = cls.get_libraries_path(cache)
+
+        Log.Info('Using native libraries at %r', StorageHelper.to_relative_path(libraries_path))
 
         # Retrieve system details
-        system = get_system()
-        system_architecture = get_architecture()
+        system = SystemHelper.name()
+        system_architecture = SystemHelper.architecture()
 
         if not system_architecture:
             return
@@ -137,114 +109,215 @@ class Libraries(object):
 
         for architecture in reversed(architectures + ['universal']):
             # Common
-            cls.insert_path(libraries_path, system, architecture)
+            PathHelper.insert(libraries_path, system, architecture)
 
             # UCS
-            if sys.maxunicode in unicode_map:
-                cls.insert_path(libraries_path, system, architecture, unicode_map[sys.maxunicode])
+            if sys.maxunicode in cls.unicode_map:
+                PathHelper.insert(libraries_path, system, architecture, cls.unicode_map[sys.maxunicode])
 
         # Log library paths
         for path in sys.path:
             path = os.path.abspath(path)
-            path_lower = path.lower()
 
-            if 'trakttv.bundle' not in path_lower and 'plug-in support' not in path_lower:
+            if not StorageHelper.is_relative_path(path):
                 continue
 
-            Log.Debug('[PATH] %s', cls.relative_path(path))
+            Log.Info('[PATH] %s', StorageHelper.to_relative_path(path))
 
     @classmethod
     def reset(cls):
+        """Remove all the native library directives from `sys.path`"""
+
         for path in sys.path:
             path = os.path.abspath(path)
 
-            if not path.lower().startswith(contents_path.lower()):
+            if not path.lower().startswith(cls.contents_path.lower()):
                 continue
 
             # Convert to relative path
-            path_rel = os.path.relpath(path, contents_path)
+            path_rel = os.path.relpath(path, cls.contents_path)
 
             # Take the first two fragments
             path_rel = os.path.sep.join(path_rel.split(os.path.sep)[:2])
 
             # Ignore non-native library directories
-            if path_rel not in native_directories:
+            if path_rel not in cls.native_directories:
                 continue
 
             # Remove from `sys.path`
-            cls.remove_path(path)
+            PathHelper.remove(path)
 
+
+class PathHelper(object):
     @classmethod
-    def insert_path(cls, base, system, architecture, *args):
+    def insert(cls, base, system, architecture, *args):
+        """Insert a new path into `sys.path` if it passes basic validation"""
+
         path = os.path.join(base, system, architecture, *args)
 
         if path in sys.path:
-            return
+            return False
 
         if not os.path.exists(path):
-            return
+            return False
 
         sys.path.insert(0, path)
 
-        Log.Debug('Inserted path: %r', cls.relative_path(path))
+        Log.Debug('Inserted path: %r', StorageHelper.to_relative_path(path))
+        return True
 
     @classmethod
-    def remove_path(cls, path):
+    def remove(cls, path):
+        """Remove path from `sys.path` if it exists"""
+
+        if path not in sys.path:
+            return False
+
         sys.path.remove(path)
 
-        Log.Debug('Removed path: %r', cls.relative_path(path))
+        Log.Debug('Removed path: %r', StorageHelper.to_relative_path(path))
+        return True
+
+
+class StorageHelper(object):
+    base_names = [
+        'plug-ins',
+        'plug-in support',
+        'trakttv.bundle'
+    ]
 
     @classmethod
     def create_directories(cls, path, *args, **kwargs):
+        """Create directory at `path` include any parent directories"""
+
         try:
             os.makedirs(path, *args, **kwargs)
             return True
         except OSError, ex:
             if ex.errno == 17:
-                return False
+                # Directory already exists
+                return True
 
-            Log.Warn('Unable to create directories: %r - (%s) %s', cls.relative_path(path), ex.errno, ex)
+            Log.Warn('Unable to create directories: %r - (%s) %s', cls.to_relative_path(path), ex.errno, ex)
         except Exception, ex:
-            Log.Warn('Unable to create directories: %r - (%s) %s', cls.relative_path(path), type(ex), ex)
+            Log.Warn('Unable to create directories: %r - (%s) %s', cls.to_relative_path(path), type(ex), ex)
 
         return False
 
     @classmethod
     def copy_tree(cls, source, destination):
+        """Copy the directory at `source` to `destination`"""
+
         try:
             shutil.copytree(source, destination)
 
-            Log.Debug('Copied %r to %r', cls.relative_path(source), cls.relative_path(destination))
+            Log.Debug('Copied %r to %r', cls.to_relative_path(source), cls.to_relative_path(destination))
             return True
         except Exception, ex:
-            Log.Warn('Unable to copy %r to %r - %s', cls.relative_path(source), cls.relative_path(destination), ex)
+            Log.Warn('Unable to copy %r to %r - %s', cls.to_relative_path(source), cls.to_relative_path(destination), ex)
 
         return False
 
     @classmethod
     def delete_tree(cls, path):
+        """Delete the directory (at `path`"""
+
         try:
             shutil.rmtree(path)
 
-            Log.Debug('Deleted %r', cls.relative_path(path))
+            Log.Debug('Deleted %r', cls.to_relative_path(path))
             return True
         except Exception, ex:
-            Log.Warn('Unable to delete directory: %r - %s', cls.relative_path(path), ex)
+            Log.Warn('Unable to delete directory: %r - %s', cls.to_relative_path(path), ex)
 
         return False
 
-    @staticmethod
-    def relative_path(path):
+    @classmethod
+    def to_relative_path(cls, path):
+        """Convert `path` to be relative to `StorageHelper.base_names`"""
+
         path_lower = path.lower()
 
-        if 'plug-ins' in path_lower:
-            base_path = path[:path_lower.find('plug-ins')]
-        elif 'plug-in support' in path_lower:
-            base_path = path[:path_lower.find('plug-in support')]
-        elif 'trakttv.bundle' in path_lower:
-            base_path = path[:path_lower.find('trakttv.bundle')]
-        else:
+        # Find base path
+        base_path = None
+
+        for base in cls.base_names:
+            if base not in path_lower:
+                continue
+
+            base_path = path[:path_lower.find(base)]
+            break
+
+        # Check if `base_path` was found
+        if not base_path:
             Log.Warn('Unable to find base path in %r', path)
             return path
 
+        # Return relative path
         return os.path.relpath(path, base_path)
+
+    @classmethod
+    def is_relative_path(cls, path):
+        """Check if `path` is relative to `StorageHelper.base_names`"""
+
+        path_lower = path.lower()
+
+        # Ignore framework paths
+        if 'framework.bundle' in path_lower:
+            return False
+
+        # Find base path
+        for base in cls.base_names:
+            if base not in path_lower:
+                continue
+
+            return True
+
+        return False
+
+
+class SystemHelper(object):
+    bits_map = {
+        '32bit': 'i386',
+        '64bit': 'x86_64'
+    }
+
+    machine_map = {
+        ('32bit', 'i686'): 'i686'
+    }
+
+    name_map = {
+        'Darwin': 'MacOSX'
+    }
+
+    @classmethod
+    def architecture(cls):
+        """Retrieve system architecture (i386, i686, x86_64)"""
+
+        bits, _ = platform.architecture()
+        machine = platform.machine()
+
+        # Check (bits, machine) map
+        machine_key = (bits, machine)
+
+        if machine_key in cls.machine_map:
+            return cls.machine_map[machine_key]
+
+        # Check (bits) map
+        if bits in cls.bits_map:
+            return cls.bits_map[bits]
+
+        Log.Info('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
+        return None
+
+    @classmethod
+    def name(cls):
+        """Retrieve system name (Windows, Linux, FreeBSD, MacOSX)"""
+
+        system = platform.system()
+
+        # Apply system map
+        if system in cls.name_map:
+            system = cls.name_map[system]
+
+        return system
