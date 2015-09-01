@@ -2,8 +2,12 @@ from stash.archives.core.base import Archive
 from stash.lib import six as six
 
 from contextlib import closing
-import apsw
 import collections
+
+try:
+    import apsw
+except ImportError:
+    apsw = None
 
 if six.PY3:
     def buffer(value):
@@ -15,6 +19,9 @@ class ApswArchive(Archive):
 
     def __init__(self, db, table):
         super(ApswArchive, self).__init__()
+
+        if apsw is None:
+            raise Exception('Unable to construct apsw:// - "apsw" module is not available')
 
         self.db = apsw.Connection(db) if type(db) is str else db
         self.table = table

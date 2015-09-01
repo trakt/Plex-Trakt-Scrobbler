@@ -31,7 +31,7 @@ except ImportError:
         return decorating_function
 
 version = sys.version_info
-if version[0] == 3 and version[1] > 1:
+if version[0] == 3 and version[1] > 2:
     from collections import Counter
 else:
     from heapq import nlargest

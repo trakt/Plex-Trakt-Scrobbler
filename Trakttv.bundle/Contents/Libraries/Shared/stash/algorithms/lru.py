@@ -6,7 +6,10 @@ from stash.lib.six.moves import xrange, _thread
 try:
     from llist import dllist
 except ImportError:
-    from pyllist import dllist
+    try:
+        from pyllist import dllist
+    except ImportError:
+        dllist = None
 
 import collections
 import logging
@@ -19,6 +22,9 @@ class LruAlgorithm(Algorithm):
 
     def __init__(self, capacity=100, compact='auto', compact_threshold=200):
         super(LruAlgorithm, self).__init__()
+
+        if dllist is None:
+            raise Exception('Unable to construct lru:// - "llist" and "pyllist" modules are not available')
 
         self.capacity = to_integer(capacity, 100)
 

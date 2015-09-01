@@ -268,10 +268,6 @@ def merge_dict(source, overrides):
     merged.update(overrides)
     return merged
 
-def pythonify_name(name):
-    name = re.sub('([a-z_])([A-Z][_a-z])', '\\1 \\2', name)
-    return re.sub('[^\w+]', '_', name.lower())
-
 def returns_clone(func):
     """
     Method decorator that will "clone" the object before applying the given
@@ -465,48 +461,6 @@ class Node(object):
     def concat(self, rhs):
         return Expression(self, OP.CONCAT, rhs)
 
-class Expression(Node):
-    """A binary expression, e.g `foo + 1` or `bar < 7`."""
-    _node_type = 'expression'
-
-    def __init__(self, lhs, op, rhs, flat=False):
-        super(Expression, self).__init__()
-        self.lhs = lhs
-        self.op = op
-        self.rhs = rhs
-        self.flat = flat
-
-    def clone_base(self):
-        return Expression(self.lhs, self.op, self.rhs, self.flat)
-
-class DQ(Node):
-    """A "django-style" filter expression, e.g. {'foo__eq': 'x'}."""
-    def __init__(self, **query):
-        super(DQ, self).__init__()
-        self.query = query
-
-    def clone_base(self):
-        return DQ(**self.query)
-
-class Param(Node):
-    """
-    Arbitrary parameter passed into a query. Instructs the query compiler to
-    specifically treat this value as a parameter, useful for `list` which is
-    special-cased for `IN` lookups.
-    """
-    _node_type = 'param'
-
-    def __init__(self, value, conv=None):
-        self.value = value
-        self.conv = conv
-        super(Param, self).__init__()
-
-    def clone_base(self):
-        return Param(self.value, self.conv)
-
-class Passthrough(Param):
-    _node_type = 'passthrough'
-
 class SQL(Node):
     """An unescaped SQL string, with optional parameters."""
     _node_type = 'sql'
@@ -519,6 +473,20 @@ class SQL(Node):
     def clone_base(self):
         return SQL(self.value, *self.params)
 R = SQL  # backwards-compat.
+
+class Entity(Node):
+    """A quoted-name or entity, e.g. "table"."column"."""
+    _node_type = 'entity'
+
+    def __init__(self, *path):
+        super(Entity, self).__init__()
+        self.path = path
+
+    def clone_base(self):
+        return Entity(*self.path)
+
+    def __getattr__(self, attr):
+        return Entity(*filter(None, self.path + (attr,)))
 
 class Func(Node):
     """An arbitrary SQL function call."""
@@ -558,6 +526,68 @@ class Func(Node):
 # API.  So instead of `Func("LOWER", param)`, `fn.LOWER(param)`.
 fn = Func(None)
 
+class Expression(Node):
+    """A binary expression, e.g `foo + 1` or `bar < 7`."""
+    _node_type = 'expression'
+
+    def __init__(self, lhs, op, rhs, flat=False):
+        super(Expression, self).__init__()
+        self.lhs = lhs
+        self.op = op
+        self.rhs = rhs
+        self.flat = flat
+
+    def clone_base(self):
+        return Expression(self.lhs, self.op, self.rhs, self.flat)
+
+class Param(Node):
+    """
+    Arbitrary parameter passed into a query. Instructs the query compiler to
+    specifically treat this value as a parameter, useful for `list` which is
+    special-cased for `IN` lookups.
+    """
+    _node_type = 'param'
+
+    def __init__(self, value, conv=None):
+        self.value = value
+        self.conv = conv
+        super(Param, self).__init__()
+
+    def clone_base(self):
+        return Param(self.value, self.conv)
+
+class Passthrough(Param):
+    _node_type = 'passthrough'
+
+class Clause(Node):
+    """A SQL clause, one or more Node objects joined by spaces."""
+    _node_type = 'clause'
+
+    glue = ' '
+    parens = False
+
+    def __init__(self, *nodes, **kwargs):
+        if 'glue' in kwargs:
+            self.glue = kwargs['glue']
+        if 'parens' in kwargs:
+            self.parens = kwargs['parens']
+        super(Clause, self).__init__()
+        self.nodes = list(nodes)
+
+    def clone_base(self):
+        clone = Clause(*self.nodes)
+        clone.glue = self.glue
+        clone.parens = self.parens
+        return clone
+
+class CommaClause(Clause):
+    """One or more Node objects joined by commas, no parens."""
+    glue = ', '
+
+class EnclosedClause(CommaClause):
+    """One or more Node objects joined by commas and enclosed in parens."""
+    parens = True
+
 class Window(Node):
     def __init__(self, partition_by=None, order_by=None):
         super(Window, self).__init__()
@@ -580,49 +610,19 @@ class Window(Node):
     def clone_base(self):
         return Window(self.partition_by, self.order_by)
 
-class Clause(Node):
-    """A SQL clause, one or more Node objects joined by spaces."""
-    _node_type = 'clause'
-
-    glue = ' '
-    parens = False
-
-    def __init__(self, *nodes):
-        super(Clause, self).__init__()
-        self.nodes = list(nodes)
-
-    def clone_base(self):
-        clone = Clause(*self.nodes)
-        clone.glue = self.glue
-        clone.parens = self.parens
-        return clone
-
-class CommaClause(Clause):
-    """One or more Node objects joined by commas, no parens."""
-    glue = ', '
-
-class EnclosedClause(CommaClause):
-    """One or more Node objects joined by commas and enclosed in parens."""
-    parens = True
-
-class Entity(Node):
-    """A quoted-name or entity, e.g. "table"."column"."""
-    _node_type = 'entity'
-
-    def __init__(self, *path):
-        super(Entity, self).__init__()
-        self.path = path
-
-    def clone_base(self):
-        return Entity(*self.path)
-
-    def __getattr__(self, attr):
-        return Entity(*filter(None, self.path + (attr,)))
-
 class Check(SQL):
     """Check constraint, usage: `Check('price > 10')`."""
     def __init__(self, value):
         super(Check, self).__init__('CHECK (%s)' % value)
+
+class DQ(Node):
+    """A "django-style" filter expression, e.g. {'foo__eq': 'x'}."""
+    def __init__(self, **query):
+        super(DQ, self).__init__()
+        self.query = query
+
+    def clone_base(self):
+        return DQ(**self.query)
 
 class _StripParens(Node):
     _node_type = 'strip_parens'
@@ -632,14 +632,27 @@ class _StripParens(Node):
         self.node = node
 
 JoinMetadata = namedtuple('JoinMetadata', (
-    'source', 'target_attr', 'dest', 'to_field', 'related_name'))
+    'src_model',  # Source Model class.
+    'dest_model',   # Dest Model class.
+    'src',   # Source, may be Model, ModelAlias
+    'dest',  # Dest, may be Model, ModelAlias, or SelectQuery.
+    'attr',  # Attribute name joined instance(s) should be assigned to.
+    'primary_key',  # Primary key being joined on.
+    'foreign_key',  # Foreign key being joined from.
+    'is_backref',  # Is this a backref, i.e. 1 -> N.
+    'alias',  # Explicit alias given to join expression.
+    'is_self_join',  # Is this a self-join?
+    'is_expression',  # Is the join ON clause an Expression?
+))
 
-class Join(namedtuple('_Join', ('dest', 'join_type', 'on'))):
-    def get_foreign_key(self, source, dest):
-        fk_field = source._meta.rel_for_model(dest)
+class Join(namedtuple('_Join', ('src', 'dest', 'join_type', 'on'))):
+    def get_foreign_key(self, source, dest, field=None):
+        if isinstance(source, SelectQuery) or isinstance(dest, SelectQuery):
+            return None, None
+        fk_field = source._meta.rel_for_model(dest, field)
         if fk_field is not None:
             return fk_field, False
-        reverse_rel = source._meta.reverse_rel_for_model(dest)
+        reverse_rel = source._meta.reverse_rel_for_model(dest, field)
         if reverse_rel is not None:
             return reverse_rel, True
         return None, None
@@ -647,36 +660,67 @@ class Join(namedtuple('_Join', ('dest', 'join_type', 'on'))):
     def get_join_type(self):
         return self.join_type or JOIN.INNER
 
-    def join_metadata(self, source):
-        is_model_alias = isinstance(self.dest, ModelAlias)
-        if is_model_alias:
-            dest = self.dest.model_class
+    def model_from_alias(self, model_or_alias):
+        if isinstance(model_or_alias, ModelAlias):
+            return model_or_alias.model_class
+        elif isinstance(model_or_alias, SelectQuery):
+            return model_or_alias.model_class
+        return model_or_alias
+
+    def _join_metadata(self):
+        # Get the actual tables being joined.
+        src = self.model_from_alias(self.src)
+        dest = self.model_from_alias(self.dest)
+
+        join_alias = isinstance(self.on, Node) and self.on._alias or None
+        is_expression = isinstance(self.on, (Expression, Func, SQL))
+
+        on_field = isinstance(self.on, (Field, FieldProxy)) and self.on or None
+        if on_field:
+            fk_field = on_field
+            is_backref = on_field.name not in src._meta.fields
         else:
-            dest = self.dest
+            fk_field, is_backref = self.get_foreign_key(src, dest, self.on)
+            if fk_field is None and self.on is not None:
+                fk_field, is_backref = self.get_foreign_key(src, dest)
 
-        is_expr = isinstance(self.on, Expression)
-        join_alias = is_expr and self.on._alias or None
-
-        target_attr = to_field = related_name = None
-        fk_field, is_backref = self.get_foreign_key(source, dest)
         if fk_field is not None:
-            if is_backref:
-                target_attr = dest._meta.db_table
-                related_name = fk_field.related_name
-            else:
-                target_attr = fk_field.name
-                to_field = fk_field.to_field.name
-        elif is_expr and hasattr(self.on.lhs, 'name'):
-            target_attr = self.on.lhs.name
+            primary_key = fk_field.to_field
         else:
-            target_attr = dest._meta.db_table
+            primary_key = None
+
+        if not join_alias:
+            if fk_field is not None:
+                if is_backref:
+                    target_attr = dest._meta.db_table
+                else:
+                    target_attr = fk_field.name
+            else:
+                try:
+                    target_attr = self.on.lhs.name
+                except AttributeError:
+                    target_attr = dest._meta.db_table
+        else:
+            target_attr = None
 
         return JoinMetadata(
-            source,
-            join_alias or target_attr,
-            self.dest,
-            to_field,
-            related_name)
+            src_model=src,
+            dest_model=dest,
+            src=self.src,
+            dest=self.dest,
+            attr=join_alias or target_attr,
+            primary_key=primary_key,
+            foreign_key=fk_field,
+            is_backref=is_backref,
+            alias=join_alias,
+            is_self_join=src is dest,
+            is_expression=is_expression)
+
+    @property
+    def metadata(self):
+        if not hasattr(self, '_cached_metadata'):
+            self._cached_metadata = self._join_metadata()
+        return self._cached_metadata
 
 class FieldDescriptor(object):
     # Fields are exposed as descriptors in order to control access to the
@@ -1074,7 +1118,7 @@ class ObjectIdDescriptor(object):
 
     def __get__(self, instance, instance_type=None):
         if instance is not None:
-            return instance._data[self.attr_name]
+            return instance._data.get(self.attr_name)
 
 class ForeignKeyField(IntegerField):
     def __init__(self, rel_model, related_name=None, on_delete=None,
@@ -1559,15 +1603,15 @@ class QueryCompiler(object):
                     # Clear any alias on the join expression.
                     constraint = join.on.clone().alias()
                 else:
-                    field = src._meta.rel_for_model(dest, join.on)
-                    if field:
-                        left_field = field
-                        right_field = field.to_field
+                    metadata = join.metadata
+                    if metadata.foreign_key:
+                        lhs = metadata.foreign_key
+                        rhs = metadata.foreign_key.to_field
+                        if metadata.is_backref:
+                            lhs, rhs = rhs, lhs
+                        constraint = (lhs == rhs)
                     else:
-                        field = dest._meta.rel_for_model(src, join.on)
-                        left_field = field.to_field
-                        right_field = field
-                    constraint = (left_field == right_field)
+                        raise ValueError('Missing required join predicate.')
 
                 if isinstance(dest, Node):
                     # TODO: ensure alias?
@@ -1981,17 +2025,20 @@ class ModelQueryResultWrapper(QueryResultWrapper):
                 if isinstance(node, FieldProxy):
                     key = node._model_alias
                     constructor = node.model
+                    conv = node.field_instance.python_value
                 else:
                     key = constructor = node.model_class
-                attr = node.name
-                conv = node.python_value
+                    conv = node.python_value
+                attr = node._alias or node.name
             else:
                 if node._bind_to is None:
                     key = constructor = self.model
                 else:
                     key = constructor = node._bind_to
-                if isinstance(node, Expression) and node._alias:
+                if isinstance(node, Node) and node._alias:
                     attr = node._alias
+                elif isinstance(node, Entity):
+                    attr = node.path[-1]
             column_map.append((key, constructor, attr, conv))
             models.add(key)
 
@@ -2007,8 +2054,9 @@ class ModelQueryResultWrapper(QueryResultWrapper):
                 continue
 
             for join in joins[current]:
-                if join.dest in models:
-                    join_list.append(join.join_metadata(current))
+                metadata = join.metadata
+                if metadata.dest in models or metadata.dest_model in models:
+                    join_list.append(metadata)
                     stack.append(join.dest)
 
         return join_list
@@ -2039,22 +2087,44 @@ class ModelQueryResultWrapper(QueryResultWrapper):
 
     def follow_joins(self, collected):
         prepared = [collected[self.model]]
-        for (lhs, attr, rhs, to_field, related_name) in self.join_list:
-            inst = collected[lhs]
-            joined_inst = collected[rhs]
+        for metadata in self.join_list:
+            inst = collected[metadata.src]
+            try:
+                joined_inst = collected[metadata.dest]
+            except KeyError:
+                joined_inst = collected[metadata.dest_model]
 
             # Can we populate a value on the joined instance using the current?
-            if to_field is not None and attr in inst._data:
-                if getattr(joined_inst, to_field) is None:
-                    setattr(joined_inst, to_field, inst._data[attr])
+            mpk = metadata.primary_key is not None
+            can_populate_joined_pk = (
+                mpk and
+                (metadata.attr in inst._data) and
+                (getattr(joined_inst, metadata.primary_key.name) is None))
+            if can_populate_joined_pk:
+                setattr(
+                    joined_inst,
+                    metadata.primary_key.name,
+                    inst._data[metadata.attr])
 
-            setattr(inst, attr, joined_inst)
+            if metadata.is_backref:
+                can_populate_joined_fk = (
+                    mpk and
+                    (metadata.foreign_key is not None) and
+                    (getattr(inst, metadata.primary_key.name) is not None) and
+                    (joined_inst._data.get(metadata.foreign_key.name) is None))
+                if can_populate_joined_fk:
+                    setattr(
+                        joined_inst,
+                        metadata.foreign_key.name,
+                        inst)
+
+            setattr(inst, metadata.attr, joined_inst)
             prepared.append(joined_inst)
 
         return prepared
 
 
-JoinCache = namedtuple('JoinCache', ('src_fk', 'dest_fk', 'att_name'))
+JoinCache = namedtuple('JoinCache', ('metadata', 'attr'))
 
 
 class AggregateQueryResultWrapper(ModelQueryResultWrapper):
@@ -2065,7 +2135,7 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
     def initialize(self, description):
         super(AggregateQueryResultWrapper, self).initialize(description)
 
-        # Collect the set of all models queried.
+        # Collect the set of all models (and ModelAlias objects) queried.
         self.all_models = set()
         for key, _, _, _ in self.column_map:
             self.all_models.add(key)
@@ -2075,41 +2145,46 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
         self.models_with_aggregate = set()
         self.back_references = {}
         self.source_to_dest = {}
+        self.dest_to_source = {}
 
-        for (src, attr, dest, join_on, related_name) in self.join_list:
-            # The `related_name` will have a value if the join is 1->N. If
-            # this is a self-join, we will treat it as 1->N.
-            if self.is_self_join(src, dest):
-                related_name = attr
+        for metadata in self.join_list:
+            if metadata.is_backref:
+                att_name = metadata.foreign_key.related_name
+            else:
+                att_name = metadata.attr
 
-            # We need to determine if the join is on a particular column so
-            # we can find the appropriate foreign key.
-            if not isinstance(join_on, Field):
-                join_on = None
+            is_backref = metadata.is_backref or metadata.is_self_join
+            if is_backref:
+                self.models_with_aggregate.add(metadata.src)
+            else:
+                self.dest_to_source.setdefault(metadata.dest, set())
+                self.dest_to_source[metadata.dest].add(metadata.src)
 
-            if related_name:
-                self.models_with_aggregate.add(src)
-
-            self.source_to_dest.setdefault(src, {})
-            self.source_to_dest[src][dest] = JoinCache(
-                src_fk=src._meta.rel_for_model(dest, join_on),
-                dest_fk=src._meta.reverse_rel_for_model(dest, join_on),
-                att_name=related_name)
+            self.source_to_dest.setdefault(metadata.src, {})
+            self.source_to_dest[metadata.src][metadata.dest] = JoinCache(
+                metadata=metadata,
+                attr=metadata.alias or att_name)
 
         # Determine which columns could contain "duplicate" data, e.g. if
         # getting Users and their Tweets, this would be the User columns.
         self.columns_to_compare = {}
+        key_to_columns = {}
         for idx, (key, model_class, col_name, _) in enumerate(self.column_map):
             if key in self.models_with_aggregate:
                 self.columns_to_compare.setdefault(key, [])
                 self.columns_to_compare[key].append((idx, col_name))
 
-    def is_self_join(self, src_model, dest_model):
-        if isinstance(src_model, ModelAlias):
-            src_model = src_model.model_class
-        if isinstance(dest_model, ModelAlias):
-            dest_model = dest_model.model_class
-        return src_model is dest_model
+            key_to_columns.setdefault(key, [])
+            key_to_columns[key].append((idx, col_name))
+
+        # Also compare columns for joins -> many-related model.
+        for model_or_alias in self.models_with_aggregate:
+            if model_or_alias not in self.columns_to_compare:
+                continue
+            sources = self.dest_to_source.get(model_or_alias, ())
+            for joined_model in sources:
+                self.columns_to_compare[model_or_alias].extend(
+                    key_to_columns[joined_model])
 
     def read_model_data(self, row):
         models = {}
@@ -2144,9 +2219,9 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
         identity_map = {}
         _constructed = self.construct_instances(row)
         primary_instance = _constructed[self.model]
-        for model_class, instance in _constructed.items():
-            identity_map[model_class] = OrderedDict()
-            identity_map[model_class][_get_pk(instance)] = instance
+        for model_or_alias, instance in _constructed.items():
+            identity_map[model_or_alias] = OrderedDict()
+            identity_map[model_or_alias][_get_pk(instance)] = instance
 
         model_data = self.read_model_data(row)
         while True:
@@ -2167,12 +2242,15 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
             different_models = self.all_models - duplicate_models
 
             new_instances = self.construct_instances(cur_row, different_models)
-            for model_class, instance in new_instances.items():
+            for model_or_alias, instance in new_instances.items():
                 # Do not include any instances which are comprised solely of
                 # NULL values.
-                pk_value = _get_pk(instance)
-                if [val for val in instance._data.values() if val is not None]:
-                    identity_map[model_class][pk_value] = instance
+                all_none = True
+                for value in instance._data.values():
+                    if value is not None:
+                        all_none = False
+                if not all_none:
+                    identity_map[model_or_alias][_get_pk(instance)] = instance
 
         stack = [self.model]
         instances = [primary_instance]
@@ -2183,22 +2261,13 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
 
             for join in self.join_meta[current]:
                 try:
-                    metadata = self.source_to_dest[current][join.dest]
+                    metadata, attr = self.source_to_dest[current][join.dest]
                 except KeyError:
                     continue
 
-                if metadata.src_fk:
-                    if join.dest not in identity_map:
-                        continue
-
-                    for pk, instance in identity_map[current].items():
-                        joined_inst = identity_map[join.dest][
-                            instance._data[metadata.src_fk.name]]
-                        setattr(instance, metadata.src_fk.name, joined_inst)
-                        instances.append(joined_inst)
-                elif metadata.dest_fk:
+                if metadata.is_backref or metadata.is_self_join:
                     for instance in identity_map[current].values():
-                        setattr(instance, metadata.att_name, [])
+                        setattr(instance, attr, [])
 
                     if join.dest not in identity_map:
                         continue
@@ -2207,13 +2276,27 @@ class AggregateQueryResultWrapper(ModelQueryResultWrapper):
                         if pk is None:
                             continue
                         try:
+                            # XXX: if no FK exists, unable to join.
                             joined_inst = identity_map[current][
-                                inst._data[metadata.dest_fk.name]]
+                                inst._data[metadata.foreign_key.name]]
                         except KeyError:
                             continue
 
-                        getattr(joined_inst, metadata.att_name).append(inst)
+                        getattr(joined_inst, attr).append(inst)
                         instances.append(inst)
+                elif attr:
+                    if join.dest not in identity_map:
+                        continue
+
+                    for pk, instance in identity_map[current].items():
+                        # XXX: if no FK exists, unable to join.
+                        joined_inst = identity_map[join.dest][
+                            instance._data[metadata.foreign_key.name]]
+                        setattr(
+                            instance,
+                            metadata.foreign_key.name,
+                            joined_inst)
+                        instances.append(joined_inst)
 
                 stack.append(join.dest)
 
@@ -2276,16 +2359,17 @@ class Query(Node):
 
     @returns_clone
     def join(self, dest, join_type=None, on=None):
+        src = self._query_ctx
         if not on:
-            require_join_condition = [
-                isinstance(dest, SelectQuery),
-                (isclass(dest) and not self._query_ctx._meta.rel_exists(dest))]
-            if any(require_join_condition):
+            require_join_condition = (
+                isinstance(dest, SelectQuery) or
+                (isclass(dest) and not src._meta.rel_exists(dest)))
+            if require_join_condition:
                 raise ValueError('A join condition must be specified.')
         elif isinstance(on, basestring):
-            on = self._query_ctx._meta.fields[on]
-        self._joins.setdefault(self._query_ctx, [])
-        self._joins[self._query_ctx].append(Join(dest, join_type, on))
+            on = src._meta.fields[on]
+        self._joins.setdefault(src, [])
+        self._joins[src].append(Join(src, dest, join_type, on))
         if not isinstance(dest, SelectQuery):
             self._query_ctx = dest
 
@@ -2660,6 +2744,9 @@ class SelectQuery(Query):
         for node in self._select:
             if isinstance(node, Field) and node.model_class != model_class:
                 return False
+            elif isinstance(node, Node) and node._bind_to is not None:
+                if node._bind_to != model_class:
+                    return False
         return True
 
     def get_query_meta(self):
@@ -3824,10 +3911,10 @@ class ModelOptions(object):
         is_node = not is_field and isinstance(field_obj, Node)
         for field in self.get_fields():
             if isinstance(field, ForeignKeyField) and field.rel_model == model:
-                is_match = any((
-                    field_obj is None,
-                    is_field and field_obj.name == field.name,
-                    is_node and field_obj._alias == field.name))
+                is_match = (
+                    (field_obj is None) or
+                    (is_field and field_obj.name == field.name) or
+                    (is_node and field_obj._alias == field.name))
                 if is_match:
                     return field
 
