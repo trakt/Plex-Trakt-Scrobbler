@@ -1,4 +1,4 @@
-arrow==0.4.3
+arrow==0.6.0
 asio==1.1
 croniter==0.3.8
 expiringdict==1.1.3
