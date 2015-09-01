@@ -22,9 +22,6 @@ https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
 https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash
 
-https://bitbucket.org/fuzeman/shove/get/pu.zip#egg=shove
-https://bitbucket.org/fuzeman/stuf/get/default.zip#egg=stuf
-
 https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex
 https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex_activity
 https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex_metadata
