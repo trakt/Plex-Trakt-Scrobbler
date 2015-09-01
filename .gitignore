@@ -4,6 +4,8 @@
 /out
 
 .idea/
+*.egg-info/
+*.dist-info/
 
 *.iml
 *.pyc
