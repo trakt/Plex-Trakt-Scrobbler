@@ -10,7 +10,7 @@ pytz==2015.4
 requests==2.7.0
 six==1.9.0
 tzlocal==1.2
-websocket-client==0.11.0
+websocket-client==0.32.0
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/jsonpickle/archive/master.zip#egg=jsonpickle
