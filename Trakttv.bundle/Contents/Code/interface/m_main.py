@@ -1,4 +1,3 @@
-from core.cache import CacheManager
 from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
 from interface.m_messages import Count as MessageCount, ListMessages
@@ -59,26 +58,8 @@ def AboutMenu():
     oc = ObjectContainer(title2="About")
 
     oc.add(DirectoryObject(
-        key=Callback(CacheStatisticsMenu),
-        title=pad_title("Cache Statistics")
-    ))
-
-    oc.add(DirectoryObject(
         key=Callback(AboutMenu),
         title=pad_title("Version: %s" % PLUGIN_VERSION)
     ))
-
-    return oc
-
-
-@route(PLUGIN_PREFIX + '/about/cache')
-def CacheStatisticsMenu():
-    oc = ObjectContainer(title2="Cache Statistics")
-
-    for item in CacheManager.statistics():
-        oc.add(DirectoryObject(
-            key='',
-            title=pad_title("[%s] Cache Size: %s, Store Size: %s" % item)
-        ))
 
     return oc
