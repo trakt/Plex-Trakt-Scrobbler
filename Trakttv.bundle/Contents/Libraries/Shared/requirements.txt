@@ -7,7 +7,6 @@ ipaddress==1.0.4
 itsdangerous==0.24
 msgpack-python==0.4.2
 pytz==2015.4
-raven==5.2.0
 requests==2.5.1
 six==1.9.0
 stuf==0.9.12
@@ -21,6 +20,7 @@ https://github.com/fuzeman/peewee/archive/master.zip#egg=peewee
 https://github.com/fuzeman/peewee_migrate/archive/develop.zip#egg=peewee_migrate
 https://github.com/fuzeman/pyemitter/archive/develop.zip#egg=pyemitter
 https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
+https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://bitbucket.org/fuzeman/shove/get/pu.zip#egg=shove
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash
 

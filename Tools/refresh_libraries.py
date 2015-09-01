@@ -22,7 +22,8 @@ DELETE_DIRECTORIES = [
 ]
 
 DELETE_FILES = [
-    'pwiz.py'
+    'pwiz.py',
+    'setup.py'
 ]
 
 DELETE_EXTENSIONS = [
