@@ -10,6 +10,7 @@ DELETE_DIRECTORIES = [
     os.path.join('croniter', 'tests'),
     os.path.join('shove', 'tests'),
     os.path.join('tzlocal', 'test_data'),
+    os.path.join('websocket', 'tests'),
     'tests',
 
     os.path.join('raven', 'contrib', 'bottle'),
