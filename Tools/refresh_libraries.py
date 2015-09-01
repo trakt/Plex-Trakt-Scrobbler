@@ -2,23 +2,23 @@ from subprocess import call
 import os
 import shutil
 
-BASE_PATH = 'Trakttv.bundle\\Contents\\Libraries\\Shared'
+BASE_PATH = os.path.join('Trakttv.bundle', 'Contents', 'Libraries', 'Shared')
 
 DELETE_DIRECTORIES = [
     'futures',
 
-    'croniter\\tests',
-    'shove\\tests',
+    os.path.join('croniter', 'tests'),
+    os.path.join('shove', 'tests'),
     'tests',
 
-    'raven\\contrib\\bottle',
-    'raven\\contrib\\celery',
-    'raven\\contrib\\django',
-    'raven\\contrib\\pylons',
-    'raven\\contrib\\tornado',
-    'raven\\contrib\\webpy',
-    'raven\\contrib\\zerorpc',
-    'raven\\contrib\\zope'
+    os.path.join('raven', 'contrib', 'bottle'),
+    os.path.join('raven', 'contrib', 'celery'),
+    os.path.join('raven', 'contrib', 'django'),
+    os.path.join('raven', 'contrib', 'pylons'),
+    os.path.join('raven', 'contrib', 'tornado'),
+    os.path.join('raven', 'contrib', 'webpy'),
+    os.path.join('raven', 'contrib', 'zerorpc'),
+    os.path.join('raven', 'contrib', 'zope')
 ]
 
 DELETE_FILES = [
@@ -36,8 +36,8 @@ def install():
         "--no-compile",
         "--no-deps",
         "--upgrade",
-        "-r", "Trakttv.bundle\\Contents\\Libraries\\Shared\\requirements.txt",
-        "-t", "Trakttv.bundle\\Contents\\Libraries\\Shared\\"
+        "-r", os.path.join(BASE_PATH, 'requirements.txt'),
+        "-t", os.path.join(BASE_PATH, '')
     ])
 
 
