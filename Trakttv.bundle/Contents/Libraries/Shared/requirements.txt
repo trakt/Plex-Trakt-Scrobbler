@@ -1,16 +1,16 @@
-arrow==0.4.3
+arrow==0.6.0
 asio==1.1
 croniter==0.3.8
 expiringdict==1.1.3
-futures==2.1.6
-ipaddress==1.0.4
+futures==3.0.3
+ipaddress==1.0.14
 itsdangerous==0.24
-msgpack-python==0.4.2
+msgpack-python==0.4.6
 pytz==2015.4
-requests==2.5.1
+requests==2.7.0
 six==1.9.0
 tzlocal==1.2
-websocket-client==0.11.0
+websocket-client==0.32.0
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/jsonpickle/archive/master.zip#egg=jsonpickle
