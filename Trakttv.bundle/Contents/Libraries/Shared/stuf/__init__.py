@@ -6,7 +6,7 @@ from stuf.iterable import (
 from stuf.core import (
     defaultstuf, fixedstuf, frozenstuf, orderedstuf, stuf, chainstuf, countstuf)
 
-__version__ = (0, 9, 12)
+__version__ = (0, 9, 11)
 __all__ = (
     'defaultstuf fixedstuf frozenstuf orderedstuf stuf chainstuf countstuf'
 ).split()

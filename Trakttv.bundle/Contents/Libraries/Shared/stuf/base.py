@@ -40,8 +40,6 @@ def backport(*paths):
             break
         except ImportError:
             continue
-    if load is None:
-        raise ImportError('no path')
     return load
 
 
