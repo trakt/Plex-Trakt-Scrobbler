@@ -9,6 +9,7 @@ DELETE_DIRECTORIES = [
 
     os.path.join('croniter', 'tests'),
     os.path.join('shove', 'tests'),
+    os.path.join('tzlocal', 'test_data'),
     'tests',
 
     os.path.join('raven', 'contrib', 'bottle'),
@@ -22,6 +23,8 @@ DELETE_DIRECTORIES = [
 ]
 
 DELETE_FILES = [
+    os.path.join('tzlocal', 'tests.py'),
+
     'pwiz.py',
     'setup.py'
 ]
