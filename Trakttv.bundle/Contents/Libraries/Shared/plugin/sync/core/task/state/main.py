@@ -16,4 +16,5 @@ class SyncState(object):
     def flush(self):
         log.debug('Flushing caches...')
 
+        self.plex.flush()
         self.trakt.flush()
