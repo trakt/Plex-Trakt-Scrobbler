@@ -17,9 +17,6 @@ sys.modules['core.header'] = header
 import helpers
 sys.modules['core.helpers'] = helpers
 
-import cache
-sys.modules['core.cache'] = cache
-
 import update_checker
 sys.modules['core.update_checker'] = update_checker
 

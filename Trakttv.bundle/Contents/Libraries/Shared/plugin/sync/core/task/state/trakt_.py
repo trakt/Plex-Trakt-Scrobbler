@@ -93,6 +93,7 @@ class SyncStateTrakt(object):
         log.debug('Built table with %d keys', len(self.table))
 
     def flush(self):
+        # Flush trakt cache to disk
         self.cache.collections.flush()
 
         for key, store in self.cache.stores.items():
