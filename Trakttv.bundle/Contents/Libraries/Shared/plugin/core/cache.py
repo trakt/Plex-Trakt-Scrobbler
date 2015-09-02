@@ -82,7 +82,7 @@ class CacheManager(object):
 
             # Sync caches that have been queued
             for cache in caches:
-                if cache.sync_at is None or cache.sync_at > now:
+                if cache.flush_at is None or cache.flush_at > now:
                     continue
 
                 cache.flush()
@@ -95,7 +95,13 @@ class Cache(object):
         self.key = key
 
         self.stash = self._construct(key, serializer=serializer)
-        self.sync_at = None
+
+        self._flush_at = None
+        self._flush_lock = Lock()
+
+    @property
+    def flush_at(self):
+        return self._flush_at
 
     @staticmethod
     def _construct(key, serializer=DEFAULT_SERIALIZER):
@@ -124,7 +130,14 @@ class Cache(object):
     def __setitem__(self, key, value):
         self.stash[key] = value
 
-    def flush(self):
+    def flush(self, force=False):
+        with self._flush_lock:
+            self._flush(force=force)
+
+    def _flush(self, force=False):
+        if not force and self._flush_at is None:
+            return
+
         try:
             self.stash.flush()
 
@@ -137,9 +150,12 @@ class Cache(object):
     def flush_queue(self, delay=120):
         log.debug('Queued flush for "%s" cache in %ss', self.key, delay)
 
-        self.sync_at = time.time() + 120
+        self._flush_at = time.time() + 120
 
     def flush_clear(self):
+        if self._flush_at is None:
+            return
+
         log.debug('Cleared flush for "%s" cache', self.key)
 
-        self.sync_at = None
+        self._flush_at = None
