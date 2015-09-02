@@ -61,7 +61,9 @@ class UpdateAccount(Update):
             p_account.basic.save()
 
         # Refresh `Account`
-        p_account.account.refresh()
+        p_account.account.refresh(
+            force=True
+        )
 
         log.info('Updated account authorization for %r', p_account)
         return True

@@ -81,8 +81,7 @@ class AccountMigration(Migration):
             t_refreshed = False
 
         # Refresh account
-        if p_refreshed or t_refreshed:
-            account.refresh()
+        account.refresh(force=p_refreshed or t_refreshed)
 
     @classmethod
     def refresh_account(cls, account):
@@ -114,8 +113,7 @@ class AccountMigration(Migration):
                 t_refreshed = False
 
         # Refresh account
-        if p_refreshed or t_refreshed:
-            account.refresh()
+        account.refresh(force=p_refreshed or t_refreshed)
 
     @classmethod
     def create_rules(cls, account):

@@ -93,7 +93,9 @@ class UpdateAccount(Update):
             t_account.oauth.save()
 
         # Refresh `Account`
-        t_account.account.refresh()
+        t_account.account.refresh(
+            force=True
+        )
 
         log.info('Updated account authorization for %r', t_account)
         return True
@@ -147,7 +149,9 @@ class UpdateAccount(Update):
         )
 
         # Refresh `Account`
-        t_account.account.refresh()
+        t_account.account.refresh(
+            force=True
+        )
 
         log.info('Updated account authorization for %r', t_account)
         return t_account
