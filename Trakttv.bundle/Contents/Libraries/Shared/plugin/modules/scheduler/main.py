@@ -24,7 +24,9 @@ class Scheduler(Module):
 
     def __init__(self):
         self._running = False
+
         self._thread = Thread(target=self.run, name='Scheduler')
+        self._thread.daemon = True
 
     def start(self):
         self._running = True

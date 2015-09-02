@@ -60,7 +60,9 @@ class CacheManager(object):
         if cls._process_thread is not None:
             return
 
-        cls._process_thread = Thread(target=cls._process, name='CacheManager._process')
+        cls._process_thread = Thread(name='CacheManager._process', target=cls._process)
+        cls._process_thread.daemon = True
+
         cls._process_thread.start()
 
     @classmethod
