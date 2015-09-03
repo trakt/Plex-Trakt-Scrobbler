@@ -165,5 +165,5 @@ class MediaHandler(object):
     def store_episode(self, action, p_guid, identifier, p_show, **kwargs):
         return self.current.artifacts.store_episode(self.parent.data, action, p_guid, identifier, p_show, **kwargs)
 
-    def store_movie(self, action, p_guid, p_movie, **kwargs):
+    def store_movie(self, action, p_guid, p_movie=None, **kwargs):
         return self.current.artifacts.store_movie(self.parent.data, action, p_guid, p_movie, **kwargs)
