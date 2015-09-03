@@ -1,8 +1,9 @@
 from plugin.sync.core.constants import GUID_AGENTS
-from plugin.sync.core.enums import SyncMode, SyncMedia
+from plugin.sync.core.enums import SyncMode, SyncMedia, SyncData
 from plugin.sync.modes.core.base import Mode, log_unsupported_guid
 
-from plex_database.models import LibrarySectionType, MetadataItem, MediaItem, Episode
+from plex_database.models import MetadataItem, MediaItem, Episode
+from plex_metadata import Guid
 import logging
 
 log = logging.getLogger(__name__)
@@ -34,8 +35,10 @@ class Movies(Base):
         )
 
         # Task started
+        pending = self.trakt.movies.copy()
         unsupported_movies = {}
 
+        # Iterate over plex items
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
@@ -60,8 +63,54 @@ class Movies(Base):
                     t_item=t_movie
                 )
 
+            # Remove movie from `pending` set
+            if pk:
+                pending.remove(pk)
+
             # Task checkpoint
             self.checkpoint()
+
+        # Iterate over trakt items (that aren't in plex)
+        log.debug('Pending movies: %r', pending)
+
+        for pk in list(pending):
+            triggered = False
+
+            # Iterate over data handlers
+            for data in self.get_data(SyncMedia.Movies):
+                # Retrieve movie
+                t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
+
+                if not t_movie:
+                    continue
+
+                # Construct guid
+                log.info('Found movie missing from plex: %r [data: %r]', pk, SyncData.title(data))
+
+                # Trigger handler
+                self.execute_handlers(
+                    SyncMedia.Movies, data,
+
+                    key=None,
+
+                    p_guid=Guid(*pk),
+                    p_item=None,
+
+                    t_item=t_movie
+                )
+
+                # Mark triggered
+                triggered = True
+
+            # Check if action was triggered
+            if not triggered:
+                log.info('Unable to find movie: %r', pk)
+                continue
+
+            # Remove movie from `pending` set
+            pending.remove(pk)
+
+        log.debug('Pending movies: %r', pending)
 
 
 class Shows(Base):

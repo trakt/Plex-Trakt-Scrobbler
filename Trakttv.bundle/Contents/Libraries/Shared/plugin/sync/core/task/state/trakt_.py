@@ -19,6 +19,9 @@ class SyncStateTrakt(object):
         self.changes = None
         self.table = None
 
+        self.movies = None
+        self.shows = None
+
     def _build_cache(self):
         def storage(name):
             return StashBackend(
@@ -50,8 +53,10 @@ class SyncStateTrakt(object):
 
         # Refresh cache for account, store changes
         self.changes = self.cache.refresh(self.task.account.trakt.username)
-
         self.table = None
+
+        self.movies = None
+        self.shows = None
 
     def build_table(self):
         # Resolve changes
@@ -60,10 +65,13 @@ class SyncStateTrakt(object):
         # Map item `keys` into a table
         self.table = {}
 
+        self.movies = set()
+        self.shows = set()
+
         log.debug('Building table...')
 
         for key in self.cache.collections:
-            username, _, _ = key
+            username, media, _ = key
 
             if username != self.task.account.trakt.username:
                 # Collection isn't for the current account
@@ -71,10 +79,21 @@ class SyncStateTrakt(object):
 
             log.debug('[%-31s] Building table from collection...', '/'.join(key))
 
+            # Retrieve key map
+            if media == 'movies':
+                keys = self.movies
+            elif media in ['shows', 'seasons', 'episodes']:
+                keys = self.shows
+            else:
+                raise ValueError('Unknown media type: %r', media)
+
             # Retrieve cache store
             store = self.cache[key]
 
             for pk, item in store.iteritems():
+                # Store `pk` in `keys
+                keys.add(pk)
+
                 # Map `item.keys` -> `pk`
                 for key in item.keys:
                     agent, _ = key
@@ -90,7 +109,7 @@ class SyncStateTrakt(object):
             # Task checkpoint
             self.task.checkpoint()
 
-        log.debug('Built table with %d keys', len(self.table))
+        log.debug('Built table with %d keys (%d movies, %d shows)', len(self.table), len(self.movies), len(self.shows))
 
     def flush(self):
         # Flush trakt cache to disk
