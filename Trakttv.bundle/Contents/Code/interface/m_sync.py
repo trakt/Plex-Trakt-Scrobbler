@@ -242,15 +242,8 @@ class Active(object):
 
     @staticmethod
     def build_title(current, account):
-        if current.data == SyncData.All:
-            # <mode>
-            title = normalize(SyncMode.title(current.mode))
-        else:
-            # <mode> [<data>]
-            title = '%s [%s]' % (
-                normalize(SyncMode.title(current.mode)),
-                normalize(SyncData.title(current.data))
-            )
+        # <mode>
+        title = normalize(SyncMode.title(current.mode))
 
         # Task Progress
         percent = current.progress.percent
