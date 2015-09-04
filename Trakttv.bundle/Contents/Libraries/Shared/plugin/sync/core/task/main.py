@@ -119,58 +119,7 @@ class SyncTask(object):
     def create(cls, account, mode, data, media, trigger, **kwargs):
         # Get account
         if type(account) is int:
-            # TODO Move account retrieval/join to `Account` class
-            account = (Account
-                .select(
-                    Account.id,
-                    Account.name,
-
-                    PlexAccount.id,
-                    PlexAccount.key,
-                    PlexAccount.username,
-                    PlexBasicCredential.token_plex,
-                    PlexBasicCredential.token_server,
-
-                    TraktAccount.username,
-                    TraktBasicCredential.token,
-
-                    TraktOAuthCredential.access_token,
-                    TraktOAuthCredential.refresh_token,
-                    TraktOAuthCredential.created_at,
-                    TraktOAuthCredential.expires_in
-                )
-                # Plex
-                .join(
-                    PlexAccount, JOIN_LEFT_OUTER, on=(
-                        PlexAccount.account == Account.id
-                    ).alias('plex')
-                )
-                .join(
-                    PlexBasicCredential, JOIN_LEFT_OUTER, on=(
-                        PlexBasicCredential.account == PlexAccount.id
-                    ).alias('basic')
-                )
-                # Trakt
-                .switch(Account)
-                .join(
-                    TraktAccount, JOIN_LEFT_OUTER, on=(
-                        TraktAccount.account == Account.id
-                    ).alias('trakt')
-                )
-                .join(
-                    TraktBasicCredential, JOIN_LEFT_OUTER, on=(
-                        TraktBasicCredential.account == TraktAccount.id
-                    ).alias('basic')
-                )
-                .switch(TraktAccount)
-                .join(
-                    TraktOAuthCredential, JOIN_LEFT_OUTER, on=(
-                        TraktOAuthCredential.account == TraktAccount.id
-                    ).alias('oauth')
-                )
-                .where(Account.id == account)
-                .get()
-            )
+            account = cls.get_account(account)
         elif type(account) is not Account:
             raise ValueError('Unexpected value provided for the "account" parameter')
 
@@ -200,3 +149,58 @@ class SyncTask(object):
         task.configuration.load(account)
 
         return task
+
+    @classmethod
+    def get_account(cls, account_id):
+        # TODO Move account retrieval/join to `Account` class
+        return (
+            Account.select(
+                Account.id,
+                Account.name,
+
+                PlexAccount.id,
+                PlexAccount.key,
+                PlexAccount.username,
+                PlexBasicCredential.token_plex,
+                PlexBasicCredential.token_server,
+
+                TraktAccount.username,
+                TraktBasicCredential.token,
+
+                TraktOAuthCredential.access_token,
+                TraktOAuthCredential.refresh_token,
+                TraktOAuthCredential.created_at,
+                TraktOAuthCredential.expires_in
+            )
+            # Plex
+            .join(
+                PlexAccount, JOIN_LEFT_OUTER, on=(
+                    PlexAccount.account == Account.id
+                ).alias('plex')
+            )
+            .join(
+                PlexBasicCredential, JOIN_LEFT_OUTER, on=(
+                    PlexBasicCredential.account == PlexAccount.id
+                ).alias('basic')
+            )
+            # Trakt
+            .switch(Account)
+            .join(
+                TraktAccount, JOIN_LEFT_OUTER, on=(
+                    TraktAccount.account == Account.id
+                ).alias('trakt')
+            )
+            .join(
+                TraktBasicCredential, JOIN_LEFT_OUTER, on=(
+                    TraktBasicCredential.account == TraktAccount.id
+                ).alias('basic')
+            )
+            .switch(TraktAccount)
+            .join(
+                TraktOAuthCredential, JOIN_LEFT_OUTER, on=(
+                    TraktOAuthCredential.account == TraktAccount.id
+                ).alias('oauth')
+            )
+            .where(Account.id == account_id)
+            .get()
+        )
