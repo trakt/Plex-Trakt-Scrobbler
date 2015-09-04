@@ -154,7 +154,7 @@ class SyncArtifacts(object):
     # Artifact storage
     #
 
-    def store_show(self, data, action, p_guid, p_show, **kwargs):
+    def store_show(self, data, action, p_guid, p_show=None, **kwargs):
         key = (p_guid.agent, p_guid.sid)
 
         shows = dict_path(self.artifacts, [
@@ -179,7 +179,7 @@ class SyncArtifacts(object):
         self._set_kwargs(show, kwargs)
         return True
 
-    def store_episode(self, data, action, p_guid, identifier, p_show, **kwargs):
+    def store_episode(self, data, action, p_guid, identifier, p_show=None, **kwargs):
         key = (p_guid.agent, p_guid.sid)
         season_num, episode_num = identifier
 

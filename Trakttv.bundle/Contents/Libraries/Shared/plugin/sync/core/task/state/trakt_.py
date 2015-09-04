@@ -21,6 +21,7 @@ class SyncStateTrakt(object):
 
         self.movies = None
         self.shows = None
+        self.episodes = None
 
     def _build_cache(self):
         def storage(name):
@@ -57,6 +58,7 @@ class SyncStateTrakt(object):
 
         self.movies = None
         self.shows = None
+        self.episodes = None
 
     def build_table(self):
         # Resolve changes
@@ -67,6 +69,7 @@ class SyncStateTrakt(object):
 
         self.movies = set()
         self.shows = set()
+        self.episodes = {}
 
         log.debug('Building table...')
 
@@ -105,6 +108,14 @@ class SyncStateTrakt(object):
                         continue
 
                     self.table[key] = pk
+
+                # Map episodes in show
+                if media == 'episodes':
+                    if pk not in self.episodes:
+                        self.episodes[pk] = set()
+
+                    for identifier, _ in item.episodes():
+                        self.episodes[pk].add(identifier)
 
             # Task checkpoint
             self.task.checkpoint()

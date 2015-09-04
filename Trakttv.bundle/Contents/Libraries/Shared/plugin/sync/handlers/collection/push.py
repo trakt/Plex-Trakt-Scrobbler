@@ -158,6 +158,17 @@ class Episodes(Base):
             **self.build_metadata(p_item)
         )
 
+    @bind('removed', [SyncMode.Full])
+    def on_removed(self, p_guid, identifier, **kwargs):
+        if not self.configuration['sync.collection.clean']:
+            # Collection cleaning hasn't been enabled
+            return
+
+        log.debug('Episodes.on_removed(%r) - %r', p_guid, kwargs)
+
+        # Store action in artifacts
+        self.store_episode('remove', p_guid, identifier)
+
 
 class Push(DataHandler):
     data = SyncData.Collection
