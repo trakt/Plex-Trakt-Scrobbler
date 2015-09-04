@@ -36,10 +36,10 @@ class Movies(Base):
         )
 
         # Task started
-        pending = self.trakt.movies.copy()
+        pending_movies = self.trakt.movies.copy()
         unsupported_movies = {}
 
-        # Iterate over plex items
+        # Iterate over plex movies
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
                 log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
@@ -65,16 +65,16 @@ class Movies(Base):
                 )
 
             # Remove movie from `pending` set
-            if pk:
-                pending.remove(pk)
+            if pk and pk in pending_movies:
+                pending_movies.remove(pk)
 
             # Task checkpoint
             self.checkpoint()
 
-        # Iterate over trakt items (that aren't in plex)
-        log.debug('Pending movies: %r', pending)
+        # Iterate over trakt movies (that aren't in plex)
+        log.debug('Pending movies: %r', pending_movies)
 
-        for pk in list(pending):
+        for pk in list(pending_movies):
             triggered = False
 
             # Iterate over data handlers
@@ -85,7 +85,6 @@ class Movies(Base):
                 if not t_movie:
                     continue
 
-                # Construct guid
                 log.info('Found movie missing from plex: %r [data: %r]', pk, SyncData.title(data))
 
                 # Trigger handler
@@ -109,9 +108,9 @@ class Movies(Base):
                 continue
 
             # Remove movie from `pending` set
-            pending.remove(pk)
+            pending_movies.remove(pk)
 
-        log.debug('Pending movies: %r', pending)
+        log.debug('Pending movies: %r', pending_movies)
 
 
 class Shows(Base):
