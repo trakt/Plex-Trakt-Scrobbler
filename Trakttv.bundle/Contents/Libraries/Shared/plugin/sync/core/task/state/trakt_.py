@@ -23,6 +23,17 @@ class SyncStateTrakt(object):
         self.shows = None
         self.episodes = None
 
+        # Parse data/media enums into lists
+        self._data = [
+            Cache.Data.get(d)
+            for d in Cache.Data.parse(self.task.data)
+        ]
+
+        self._media = [
+            Cache.Media.get(m)
+            for m in Cache.Media.parse(self.task.media)
+        ]
+
     def _build_cache(self):
         def storage(name):
             return StashBackend(
@@ -74,10 +85,18 @@ class SyncStateTrakt(object):
         log.debug('Building table...')
 
         for key in self.cache.collections:
-            username, media, _ = key
+            username, media, data = key
 
             if username != self.task.account.trakt.username:
                 # Collection isn't for the current account
+                continue
+
+            if media not in self._media:
+                log.debug('Media %r has not been enabled [enabled: %r]', data, self._media)
+                continue
+
+            if data not in self._data:
+                log.debug('Data %r has not been enabled [enabled: %r]', data, self._data)
                 continue
 
             log.debug('[%-31s] Building table from collection...', '/'.join(key))

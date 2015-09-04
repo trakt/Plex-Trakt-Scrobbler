@@ -1,5 +1,6 @@
 from plugin.managers import ExceptionManager
 from plugin.models import *
+from plugin.sync.core.enums import SyncData
 from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
@@ -26,13 +27,6 @@ class SyncTask(object):
         # Extra arguments
         self.kwargs = kwargs
 
-        # Global syncing information
-        self.artifacts = SyncArtifacts(self)
-        self.configuration = SyncConfiguration(self)
-        self.progress = SyncProgress(self)
-
-        self.state = SyncState(self)
-
         # State/Result management
         self.result = result
         self.status = status
@@ -44,6 +38,25 @@ class SyncTask(object):
         self.success = None
 
         self._abort = False
+
+        # Load task configuration
+        self.configuration = SyncConfiguration(self)
+        self.configuration.load(account)
+
+        log.debug(self.configuration)
+
+        # Automatically determine enabled data types
+        if self.data is None:
+            self.data = self.get_enabled_data(self.configuration, self.mode)
+
+        log.debug('Sync Data: %r', self.data)
+        log.debug('Sync Media: %r', self.media)
+
+        # Global syncing information
+        self.artifacts = SyncArtifacts(self)
+        self.progress = SyncProgress(self)
+
+        self.state = SyncState(self)
 
     @property
     def id(self):
@@ -145,9 +158,6 @@ class SyncTask(object):
             **kwargs
         )
 
-        # Load configuration options from database
-        task.configuration.load(account)
-
         return task
 
     @classmethod
@@ -204,3 +214,32 @@ class SyncTask(object):
             .where(Account.id == account_id)
             .get()
         )
+
+    @classmethod
+    def get_enabled_data(cls, configuration, mode):
+        enabled = []
+
+        # Retrieve enabled data
+        if configuration['sync.watched.mode'] == mode:
+            enabled.append(SyncData.Watched)
+
+        if configuration['sync.ratings.mode'] == mode:
+            enabled.append(SyncData.Ratings)
+
+        if configuration['sync.playback.mode'] == mode:
+            enabled.append(SyncData.Playback)
+
+        if configuration['sync.collection.mode'] == mode:
+            enabled.append(SyncData.Collection)
+
+        # Convert to enum value
+        result = None
+
+        for data in enabled:
+            if result is None:
+                result = data
+                continue
+
+            result |= data
+
+        return result
