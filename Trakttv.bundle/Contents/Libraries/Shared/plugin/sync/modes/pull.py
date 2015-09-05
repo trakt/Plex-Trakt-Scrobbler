@@ -1,8 +1,7 @@
 from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
-from plugin.sync.modes.core.base import Mode, log_unsupported_guid
+from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
-from plex_database.models import LibrarySectionType
 import logging
 
 log = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ class Movies(Base):
 
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
+                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -82,9 +81,11 @@ class Movies(Base):
             # Task checkpoint
             self.checkpoint()
 
-        # Task stopped
+        # Log details
+        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
         log.debug('Pending: %r', pending)
 
+        # Task stopped
         self.current.progress.stop()
 
 
@@ -129,7 +130,7 @@ class Shows(Base):
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -156,7 +157,7 @@ class Shows(Base):
         # Process episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -205,9 +206,11 @@ class Shows(Base):
             # Task checkpoint
             self.checkpoint()
 
-        # Task stopped
+        # Log details
+        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
         log.debug('Pending: %r', pending)
 
+        # Task stopped
         self.current.progress.stop()
 
 

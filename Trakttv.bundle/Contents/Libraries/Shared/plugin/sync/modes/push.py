@@ -1,6 +1,6 @@
 from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia, SyncData
-from plugin.sync.modes.core.base import Mode, log_unsupported_guid
+from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
 from plex_database.models import MetadataItem, MediaItem, Episode
 from plex_metadata import Guid
@@ -81,7 +81,7 @@ class Movies(Base):
         # Iterate over plex movies
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
+                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -146,6 +146,8 @@ class Movies(Base):
             # Remove movie from `pending` set
             pending_movies.remove(pk)
 
+        # Log details
+        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
         self.log_pending('Unable to process %d movie(s)\n%s', pending_movies)
 
 
@@ -182,7 +184,7 @@ class Shows(Base):
         # Iterate over plex shows
         for sh_id, p_guid, p_show in p_shows:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -214,7 +216,7 @@ class Shows(Base):
         # Iterate over plex episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -250,6 +252,9 @@ class Shows(Base):
 
             # Task checkpoint
             self.checkpoint()
+
+        # Log details
+        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
 
         # Iterate over trakt shows (that aren't in plex)
         for pk in list(pending_shows):
