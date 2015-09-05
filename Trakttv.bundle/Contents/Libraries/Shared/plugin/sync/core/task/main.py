@@ -43,8 +43,6 @@ class SyncTask(object):
         self.configuration = SyncConfiguration(self)
         self.configuration.load(account)
 
-        log.debug(self.configuration)
-
         # Automatically determine enabled data types
         if self.data is None:
             self.data = self.get_enabled_data(self.configuration, self.mode)

@@ -13,6 +13,45 @@ log = logging.getLogger(__name__)
 class Base(Mode):
     mode = SyncMode.Push
 
+    @classmethod
+    def log_pending(cls, message, pending):
+        if type(pending) is set:
+            items = [
+                (k, None)
+                for k in pending
+            ]
+        elif type(pending) is dict:
+            items = [
+                (k, v)
+                for k, v in pending.items()
+                if len(v) > 0
+            ]
+        else:
+            raise ValueError('Unknown type for "pending" parameter')
+
+        if len(items) < 1:
+            return
+
+        log.info(
+            message,
+            len(items),
+            '\n'.join(cls.format_pending(items))
+        )
+
+    @classmethod
+    def format_pending(cls, items):
+        for key, children in items:
+            # Write basic line
+            yield '    %s' % (key, )
+
+            if children is None:
+                # No list of children (episodes)
+                continue
+
+            # Write each child
+            for child in children:
+                yield '        %s' % (child, )
+
 
 class Movies(Base):
     def run(self):
@@ -72,8 +111,6 @@ class Movies(Base):
             self.checkpoint()
 
         # Iterate over trakt movies (that aren't in plex)
-        log.debug('Pending movies: %r', pending_movies)
-
         for pk in list(pending_movies):
             triggered = False
 
@@ -85,7 +122,7 @@ class Movies(Base):
                 if not t_movie:
                     continue
 
-                log.info('Found movie missing from plex: %r [data: %r]', pk, SyncData.title(data))
+                log.debug('Found movie missing from plex: %r [data: %r]', pk, SyncData.title(data))
 
                 # Trigger handler
                 self.execute_handlers(
@@ -104,13 +141,12 @@ class Movies(Base):
 
             # Check if action was triggered
             if not triggered:
-                log.info('Unable to find movie: %r', pk)
                 continue
 
             # Remove movie from `pending` set
             pending_movies.remove(pk)
 
-        log.debug('Pending movies: %r', pending_movies)
+        self.log_pending('Unable to process %d movie(s)\n%s', pending_movies)
 
 
 class Shows(Base):
@@ -141,10 +177,7 @@ class Shows(Base):
 
         unsupported_shows = {}
 
-        log.debug('Pending shows: %r', pending_shows)
-        log.debug('Pending episodes: %r', pending_episodes)
-
-        # TODO process seasons
+        # TODO Iterate over plex seasons
 
         # Iterate over plex shows
         for sh_id, p_guid, p_show in p_shows:
@@ -219,8 +252,6 @@ class Shows(Base):
             self.checkpoint()
 
         # Iterate over trakt shows (that aren't in plex)
-        log.debug('Pending shows: %r', pending_shows)
-
         for pk in list(pending_shows):
             triggered = False
 
@@ -232,7 +263,7 @@ class Shows(Base):
                 if not t_show:
                     continue
 
-                log.info('Found show missing from plex: %r [data: %r]', pk, SyncData.title(data))
+                log.debug('Found show missing from plex: %r [data: %r]', pk, SyncData.title(data))
 
                 # Trigger handler
                 self.execute_handlers(
@@ -251,17 +282,14 @@ class Shows(Base):
 
             # Check if action was triggered
             if not triggered:
-                log.info('Unable to find show: %r', pk)
                 continue
 
             # Remove movie from `pending` set
             pending_shows.remove(pk)
 
-        log.debug('Pending shows: %r', pending_shows)
+        self.log_pending('Unable to process %d show(s)\n%s', pending_shows)
 
         # Iterate over trakt episodes (that aren't in plex)
-        log.debug('Pending episodes: %r', pending_episodes)
-
         for pk, episodes in [(p, list(e)) for (p, e) in pending_episodes.items()]:
             # Iterate over trakt episodes (that aren't in plex)
             for identifier in episodes:
@@ -300,13 +328,12 @@ class Shows(Base):
 
                 # Check if action was triggered
                 if not triggered:
-                    log.info('Unable to find episode: %r - %r', pk, identifier)
                     continue
 
                 # Remove movie from `pending` set
                 pending_episodes[pk].remove(identifier)
 
-        log.debug('Pending episodes: %r', pending_episodes)
+        self.log_pending('Unable to process %d episode(s)\n%s', pending_episodes)
 
     @staticmethod
     def t_objects(collection, pk, season_num, episode_num):
