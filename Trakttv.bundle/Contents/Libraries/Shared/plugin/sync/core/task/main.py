@@ -39,19 +39,9 @@ class SyncTask(object):
 
         self._abort = False
 
-        # Load task configuration
-        self.configuration = SyncConfiguration(self)
-        self.configuration.load(account)
-
-        # Automatically determine enabled data types
-        if self.data is None:
-            self.data = self.get_enabled_data(self.configuration, self.mode)
-
-        log.debug('Sync Data: %r', self.data)
-        log.debug('Sync Media: %r', self.media)
-
-        # Global syncing information
+        # Construct children
         self.artifacts = SyncArtifacts(self)
+        self.configuration = SyncConfiguration(self)
         self.progress = SyncProgress(self)
 
         self.state = SyncState(self)
@@ -69,6 +59,20 @@ class SyncTask(object):
             return None
 
         return (datetime.utcnow() - self.result.started_at).total_seconds()
+
+    def load(self):
+        # Load task configuration
+        self.configuration.load(self.account)
+
+        # Automatically determine enabled data types
+        if self.data is None:
+            self.data = self.get_enabled_data(self.configuration, self.mode)
+
+        log.debug('Sync Data: %r', self.data)
+        log.debug('Sync Media: %r', self.media)
+
+        # Load trakt/plex state
+        self.state.load()
 
     def abort(self, timeout=None):
         # Set `abort` flag, thread will abort on the next `checkpoint()`
@@ -155,6 +159,9 @@ class SyncTask(object):
             result, status,
             **kwargs
         )
+
+        # Load sync configuration/state
+        task.load()
 
         return task
 

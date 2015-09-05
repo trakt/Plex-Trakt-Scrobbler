@@ -20,6 +20,9 @@ class SyncStatePlex(object):
         self.matcher = Matcher(self.matcher_cache, Plex.client)
         self.library = Library(self.matcher)
 
+    def load(self):
+        pass
+
     def flush(self):
         log.debug('Flushing matcher cache...')
 

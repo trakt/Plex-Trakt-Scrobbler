@@ -14,7 +14,7 @@ class SyncStateTrakt(object):
         self.state = state
         self.task = state.task
 
-        self.cache = self._build_cache()
+        self.cache = None
 
         self.changes = None
         self.table = None
@@ -22,6 +22,12 @@ class SyncStateTrakt(object):
         self.movies = None
         self.shows = None
         self.episodes = None
+
+        self._data = None
+        self._media = None
+
+    def load(self):
+        self.cache = self._build_cache()
 
         # Parse data/media enums into lists
         self._data = [

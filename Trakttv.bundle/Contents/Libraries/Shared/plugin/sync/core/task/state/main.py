@@ -13,6 +13,10 @@ class SyncState(object):
         self.plex = SyncStatePlex(self)
         self.trakt = SyncStateTrakt(self)
 
+    def load(self):
+        self.plex.load()
+        self.trakt.load()
+
     def flush(self):
         log.debug('Flushing caches...')
 
