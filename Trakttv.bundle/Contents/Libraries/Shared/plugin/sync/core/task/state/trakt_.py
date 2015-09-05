@@ -83,6 +83,8 @@ class SyncStateTrakt(object):
         self.episodes = {}
 
         log.debug('Building table...')
+        log.debug(' - Data: %s', ', '.join(self._data))
+        log.debug(' - Media: %s', ', '.join(self._media))
 
         for key in self.cache.collections:
             username, media, data = key
@@ -92,29 +94,30 @@ class SyncStateTrakt(object):
                 continue
 
             if media not in self._media:
-                log.debug('Media %r has not been enabled [enabled: %r]', data, self._media)
+                log.debug('[%-31s] Media %r has not been enabled', '/'.join(key), data)
                 continue
 
             if data not in self._data:
-                log.debug('Data %r has not been enabled [enabled: %r]', data, self._data)
+                log.debug('[%-31s] Data %r has not been enabled', '/'.join(key), data)
                 continue
 
             log.debug('[%-31s] Building table from collection...', '/'.join(key))
 
             # Retrieve key map
+            keys = None
+
             if media == 'movies':
                 keys = self.movies
-            elif media in ['shows', 'seasons', 'episodes']:
+            elif media == 'shows':
                 keys = self.shows
-            else:
-                raise ValueError('Unknown media type: %r', media)
 
             # Retrieve cache store
             store = self.cache[key]
 
             for pk, item in store.iteritems():
                 # Store `pk` in `keys
-                keys.add(pk)
+                if keys is not None:
+                    keys.add(pk)
 
                 # Map `item.keys` -> `pk`
                 for key in item.keys:
