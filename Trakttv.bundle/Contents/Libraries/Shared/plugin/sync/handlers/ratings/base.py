@@ -5,7 +5,10 @@ class RatingsHandler(MediaHandler):
     @staticmethod
     def get_operands(p_item, t_item):
         # Retrieve plex rating from item
-        p_rating = p_item.get('settings', {}).get('rating')
+        if p_item is not None:
+            p_rating = p_item.get('settings', {}).get('rating')
+        else:
+            p_rating = None
 
         # Convert rating to integer
         if p_rating is not None:

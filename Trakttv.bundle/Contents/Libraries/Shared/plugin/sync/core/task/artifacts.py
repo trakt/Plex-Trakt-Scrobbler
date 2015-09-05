@@ -154,7 +154,7 @@ class SyncArtifacts(object):
     # Artifact storage
     #
 
-    def store_show(self, data, action, p_guid, p_show, **kwargs):
+    def store_show(self, data, action, p_guid, p_show=None, **kwargs):
         key = (p_guid.agent, p_guid.sid)
 
         shows = dict_path(self.artifacts, [
@@ -179,7 +179,7 @@ class SyncArtifacts(object):
         self._set_kwargs(show, kwargs)
         return True
 
-    def store_episode(self, data, action, p_guid, identifier, p_show, **kwargs):
+    def store_episode(self, data, action, p_guid, identifier, p_show=None, **kwargs):
         key = (p_guid.agent, p_guid.sid)
         season_num, episode_num = identifier
 
@@ -221,7 +221,7 @@ class SyncArtifacts(object):
         self._set_kwargs(episode, kwargs)
         return True
 
-    def store_movie(self, data, action, p_guid, p_movie, **kwargs):
+    def store_movie(self, data, action, p_guid, p_movie=None, **kwargs):
         key = (p_guid.agent, p_guid.sid)
 
         movies = dict_path(self.artifacts, [
@@ -248,17 +248,8 @@ class SyncArtifacts(object):
 
     @classmethod
     def _build_request(cls, p_guid, p_item, **kwargs):
-        # Validate parameters
-        if not p_item.get('title') or not p_item.get('year'):
-            log.warn('Invalid "title" or "year" attribute on <%r (%r)>', p_item.get('title'), p_item.get('year'))
-            return None
-
-        if not p_guid:
-            log.warn('Invalid GUID attribute on <%r (%r)>', p_item.get('title'), p_item.get('year'))
-            return None
-
-        if not p_guid or p_guid.agent not in GUID_AGENTS:
-            log.warn('GUID agent %r is not supported on <%r (%r)>', p_guid.agent if p_guid else None, p_item.get('title'), p_item.get('year'))
+        # Validate request
+        if not cls._validate_request(p_guid, p_item):
             return None
 
         # Build request
@@ -273,6 +264,29 @@ class SyncArtifacts(object):
         cls._set_kwargs(request, kwargs)
 
         return request
+
+    @classmethod
+    def _validate_request(cls, p_guid, p_item):
+        # Build item identifier
+        if p_item:
+            identifier = '<%r (%r)>' % (p_item.get('title'), p_item.get('year'))
+        else:
+            identifier = repr(p_guid)
+
+        # Validate parameters
+        if p_item is not None and (not p_item.get('title') or not p_item.get('year')):
+            log.warn('Invalid "title" or "year" attribute on %s', identifier)
+            return False
+
+        if not p_guid:
+            log.warn('Invalid GUID attribute on %s', identifier)
+            return False
+
+        if not p_guid or p_guid.agent not in GUID_AGENTS:
+            log.warn('GUID agent %r is not supported on %s', p_guid.agent if p_guid else None, identifier)
+            return False
+
+        return True
 
     @staticmethod
     def _set_kwargs(request, kwargs):

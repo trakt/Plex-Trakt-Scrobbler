@@ -130,6 +130,17 @@ class Movies(Base):
             **self.build_metadata(p_item)
         )
 
+    @bind('removed', [SyncMode.Full])
+    def on_removed(self, p_guid, **kwargs):
+        if not self.configuration['sync.collection.clean']:
+            # Collection cleaning hasn't been enabled
+            return
+
+        log.debug('Movies.on_removed(%r) - %r', p_guid, kwargs)
+
+        # Store action in artifacts
+        self.store_movie('remove', p_guid)
+
 
 class Episodes(Base):
     media = SyncMedia.Episodes
@@ -146,6 +157,17 @@ class Episodes(Base):
             collected_at=p_value,
             **self.build_metadata(p_item)
         )
+
+    @bind('removed', [SyncMode.Full])
+    def on_removed(self, p_guid, identifier, **kwargs):
+        if not self.configuration['sync.collection.clean']:
+            # Collection cleaning hasn't been enabled
+            return
+
+        log.debug('Episodes.on_removed(%r) - %r', p_guid, kwargs)
+
+        # Store action in artifacts
+        self.store_episode('remove', p_guid, identifier)
 
 
 class Push(DataHandler):

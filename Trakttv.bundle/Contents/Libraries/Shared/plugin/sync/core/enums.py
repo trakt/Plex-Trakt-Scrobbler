@@ -1,15 +1,44 @@
-class SyncActionMode(object):
+class Enum(object):
+    @classmethod
+    def parse(cls, value):
+        options = cls.options()
+
+        result = []
+
+        for k, v in options.items():
+            if type(v) is not int or v == 0:
+                continue
+
+            if value == 0 or (value & v) == v:
+                result.append(v)
+
+        return result
+
+    @classmethod
+    def options(cls):
+        result = {}
+
+        for key in dir(cls):
+            if key.startswith('_'):
+                continue
+
+            result[key] = getattr(cls, key)
+
+        return result
+
+
+class SyncActionMode(Enum):
     Update  = 0x00
     Log     = 0x01
 
 
-class SyncConflictResolution(object):
+class SyncConflictResolution(Enum):
     Latest  = 0x00
     Trakt   = 0x01
     Plex    = 0x02
 
 
-class SyncData(object):
+class SyncData(Enum):
     All         = 0x00
     Collection  = 0x01
     Playback    = 0x02
@@ -35,7 +64,7 @@ class SyncData(object):
         return cls.__titles__.get(value)
 
 
-class SyncInterval(object):
+class SyncInterval(Enum):
     M15     = '*/15 * * * *'
     M30     = '*/30 * * * *'
 
@@ -48,7 +77,7 @@ class SyncInterval(object):
     D7      = '0 0 */7 * *'
 
 
-class SyncMedia(object):
+class SyncMedia(Enum):
     All         = 0x00
     Movies      = 0x01
     Shows       = 0x02
@@ -72,7 +101,7 @@ class SyncMedia(object):
         return cls.__titles__.get(value)
 
 
-class SyncMode(object):
+class SyncMode(Enum):
     Full        = 0x00
     Pull        = 0x01
     Push        = 0x02

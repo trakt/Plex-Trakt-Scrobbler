@@ -1,8 +1,10 @@
 from plugin.sync.core.constants import GUID_AGENTS
-from plugin.sync.core.enums import SyncMode, SyncMedia
-from plugin.sync.modes.core.base import Mode, log_unsupported_guid
+from plugin.sync.core.enums import SyncMode, SyncMedia, SyncData
+from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
-from plex_database.models import LibrarySectionType, MetadataItem, MediaItem, Episode
+from plex_database.models import MetadataItem, MediaItem, Episode
+from plex_metadata import Guid
+import copy
 import logging
 
 log = logging.getLogger(__name__)
@@ -10,6 +12,45 @@ log = logging.getLogger(__name__)
 
 class Base(Mode):
     mode = SyncMode.Push
+
+    @classmethod
+    def log_pending(cls, message, pending):
+        if type(pending) is set:
+            items = [
+                (k, None)
+                for k in pending
+            ]
+        elif type(pending) is dict:
+            items = [
+                (k, v)
+                for k, v in pending.items()
+                if len(v) > 0
+            ]
+        else:
+            raise ValueError('Unknown type for "pending" parameter')
+
+        if len(items) < 1:
+            return
+
+        log.info(
+            message,
+            len(items),
+            '\n'.join(cls.format_pending(items))
+        )
+
+    @classmethod
+    def format_pending(cls, items):
+        for key, children in items:
+            # Write basic line
+            yield '    %s' % (key, )
+
+            if children is None:
+                # No list of children (episodes)
+                continue
+
+            # Write each child
+            for child in children:
+                yield '        %s' % (child, )
 
 
 class Movies(Base):
@@ -34,11 +75,13 @@ class Movies(Base):
         )
 
         # Task started
+        pending_movies = self.trakt.movies.copy()
         unsupported_movies = {}
 
+        # Iterate over plex movies
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, rating_key, p_guid, p_item, unsupported_movies)
+                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -60,8 +103,52 @@ class Movies(Base):
                     t_item=t_movie
                 )
 
+            # Remove movie from `pending` set
+            if pk and pk in pending_movies:
+                pending_movies.remove(pk)
+
             # Task checkpoint
             self.checkpoint()
+
+        # Iterate over trakt movies (that aren't in plex)
+        for pk in list(pending_movies):
+            triggered = False
+
+            # Iterate over data handlers
+            for data in self.get_data(SyncMedia.Movies):
+                # Retrieve movie
+                t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
+
+                if not t_movie:
+                    continue
+
+                log.debug('Found movie missing from plex: %r [data: %r]', pk, SyncData.title(data))
+
+                # Trigger handler
+                self.execute_handlers(
+                    SyncMedia.Movies, data,
+
+                    key=None,
+
+                    p_guid=Guid(*pk),
+                    p_item=None,
+
+                    t_item=t_movie
+                )
+
+                # Mark triggered
+                triggered = True
+
+            # Check if action was triggered
+            if not triggered:
+                continue
+
+            # Remove movie from `pending` set
+            pending_movies.remove(pk)
+
+        # Log details
+        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
+        self.log_pending('Unable to process %d movie(s)\n%s', pending_movies)
 
 
 class Shows(Base):
@@ -87,14 +174,17 @@ class Shows(Base):
         )
 
         # Task started
+        pending_shows = self.trakt.shows.copy()
+        pending_episodes = copy.deepcopy(self.trakt.episodes)
+
         unsupported_shows = {}
 
-        # TODO process seasons
+        # TODO Iterate over plex seasons
 
-        # Process shows
+        # Iterate over plex shows
         for sh_id, p_guid, p_show in p_shows:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, sh_id, p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -108,22 +198,29 @@ class Shows(Base):
                 # Execute show handlers
                 self.execute_handlers(
                     SyncMedia.Shows, data,
-
                     key=sh_id,
-
                     p_guid=p_guid,
+
                     p_item=p_show,
 
                     t_item=t_show
                 )
 
-        # Process episodes
+            # Remove show from `pending_shows`
+            if pk and pk in pending_shows:
+                pending_shows.remove(pk)
+
+            # Task checkpoint
+            self.checkpoint()
+
+        # Iterate over plex episodes
         for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                log_unsupported_guid(log, ids['show'], p_guid, p_show, unsupported_shows)
+                mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
+            identifier = (season_num, episode_num)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -139,7 +236,7 @@ class Shows(Base):
                     SyncMedia.Episodes, data,
 
                     key=ids['episode'],
-                    identifier=(season_num, episode_num),
+                    identifier=identifier,
 
                     p_guid=p_guid,
                     p_show=p_show,
@@ -149,8 +246,99 @@ class Shows(Base):
                     t_item=t_episode
                 )
 
+            # Remove episode from `pending_episodes`
+            if pk in pending_episodes and identifier in pending_episodes[pk]:
+                pending_episodes[pk].remove(identifier)
+
             # Task checkpoint
             self.checkpoint()
+
+        # Log details
+        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
+
+        # Iterate over trakt shows (that aren't in plex)
+        for pk in list(pending_shows):
+            triggered = False
+
+            # Iterate over data handlers
+            for data in self.get_data(SyncMedia.Shows):
+                # Retrieve movie
+                t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
+
+                if not t_show:
+                    continue
+
+                log.debug('Found show missing from plex: %r [data: %r]', pk, SyncData.title(data))
+
+                # Trigger handler
+                self.execute_handlers(
+                    SyncMedia.Shows, data,
+
+                    key=None,
+
+                    p_guid=Guid(*pk),
+                    p_item=None,
+
+                    t_item=t_show
+                )
+
+                # Mark triggered
+                triggered = True
+
+            # Check if action was triggered
+            if not triggered:
+                continue
+
+            # Remove movie from `pending` set
+            pending_shows.remove(pk)
+
+        self.log_pending('Unable to process %d show(s)\n%s', pending_shows)
+
+        # Iterate over trakt episodes (that aren't in plex)
+        for pk, episodes in [(p, list(e)) for (p, e) in pending_episodes.items()]:
+            # Iterate over trakt episodes (that aren't in plex)
+            for identifier in episodes:
+                season_num, episode_num = identifier
+
+                triggered = False
+
+                # Iterate over data handlers
+                for data in self.get_data(SyncMedia.Episodes):
+                    t_show, t_season, t_episode = self.t_objects(
+                        self.trakt[(SyncMedia.Episodes, data)], pk,
+                        season_num, episode_num
+                    )
+
+                    if not t_episode:
+                        continue
+
+                    log.debug('Found episode missing from plex: %r - %r [data: %r]', pk, identifier, SyncData.title(data))
+
+                    # Trigger handler
+                    self.execute_handlers(
+                        SyncMedia.Episodes, data,
+                        key=None,
+                        identifier=identifier,
+                        p_guid=Guid(*pk),
+
+                        p_show=None,
+                        p_item=None,
+
+                        t_show=t_show,
+                        t_item=t_episode
+                    )
+
+                    # Mark triggered
+                    triggered = True
+
+                # Check if action was triggered
+                if not triggered:
+                    continue
+
+                # Remove movie from `pending` set
+                pending_episodes[pk].remove(identifier)
+
+        self.log_pending('Unable to process %d episode(s)\n%s', pending_episodes)
 
     @staticmethod
     def t_objects(collection, pk, season_num, episode_num):
