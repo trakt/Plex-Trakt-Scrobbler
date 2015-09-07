@@ -2,6 +2,7 @@
 /.idea
 /htmlcov
 /out
+/Trakttv.bundle/Contents/.version
 
 .idea/
 *.egg-info/
