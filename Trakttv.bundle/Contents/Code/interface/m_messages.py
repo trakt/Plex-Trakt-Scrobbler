@@ -18,19 +18,17 @@ def ListMessages():
 
     for m in messages:
         if m.type is None or\
-           m.summary is None or \
-           m.description is None:
+           m.summary is None:
             continue
 
         callback = Callback(ListMessages)
         thumb = None
 
         if m.type == Message.Type.Exception:
-            callback = Callback(ViewMessage, error_id=m.id)
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
 
         oc.add(DirectoryObject(
-            key=callback,
+            key=Callback(ViewMessage, error_id=m.id),
             title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
             thumb=thumb
         ))
@@ -54,20 +52,35 @@ def ViewMessage(error_id):
         title2='[%s] %s' % (Message.Type.title(message.type), Trim(message.summary))
     )
 
-    for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
-        since = datetime.utcnow() - e.timestamp
+    if message.type == Message.Type.Exception:
+        # Display exception samples
+        for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
+            since = datetime.utcnow() - e.timestamp
 
-        callback = Callback(ViewMessage, error_id=error_id)
+            callback = Callback(ViewMessage, error_id=error_id)
 
-        if web_client:
-            # Display exception traceback in Plex/Web
-            callback = Callback(ViewException, exception_id=e.id)
+            if web_client:
+                # Display exception traceback in Plex/Web
+                callback = Callback(ViewException, exception_id=e.id)
 
+            oc.add(DirectoryObject(
+                key=callback,
+                title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message)),
+                thumb=R("icon-exception.png")
+            ))
+    elif message.type in [Message.Type.Info, Message.Type.Warning, Message.Type.Error, Message.Type.Critical]:
+        # Display message code
         oc.add(DirectoryObject(
-            key=callback,
-            title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message)),
-            thumb=R("icon-exception.png")
+            key='',
+            title=pad_title('Code: %s' % hex(message.code))
         ))
+
+        # Display message description
+        if message.description:
+            oc.add(DirectoryObject(
+                key='',
+                title=pad_title('Description: %s' % message.description)
+            ))
 
     return oc
 
