@@ -50,8 +50,8 @@ class Upgrade(Module):
         if tuple(installed['version']) < tuple(current['version']):
             cls.log(
                 logging.WARN, Message.Code.DowngradeUnclean,
-                message='Clean install is recommended',
-                description="Clean install is recommended when you downgrade the plugin, see ... for more details"
+                message='Unclean downgrade detected, see http://bit.ly/TFPx100201 for more details',
+                description="An unclean plugin downgrade can cause a number of errors, see http://bit.ly/TFPx100201 for more details"
             )
             return True, False
 
