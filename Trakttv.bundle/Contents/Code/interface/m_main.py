@@ -1,6 +1,6 @@
 from core.helpers import pad_title
 from core.plugin import ART, NAME, ICON
-from interface.m_messages import Count as MessageCount, ListMessages
+from interface.m_messages import Status as MessageStatus, ListMessages
 from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
@@ -15,13 +15,13 @@ def MainMenu():
     #
     # Messages
     #
-    num_messages = MessageCount(viewed=False)
+    m_count, m_type = MessageStatus(viewed=False)
 
-    if num_messages > 0:
+    if m_count > 0:
         oc.add(DirectoryObject(
             key=Callback(ListMessages, viewed=False),
-            title="Messages (%s)" % locale.format("%d", num_messages, grouping=True),
-            thumb=R("icon-messages.png")
+            title="Messages (%s)" % locale.format("%d", m_count, grouping=True),
+            thumb=R("icon-%s.png" % m_type)
         ))
 
     #

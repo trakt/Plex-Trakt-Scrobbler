@@ -7,6 +7,14 @@ from plugin.models import Exception, Message
 from ago import human
 from datetime import datetime, timedelta
 
+ERROR_TYPES = [
+    Message.Type.Exception,
+
+    Message.Type.Warning,
+    Message.Type.Error,
+    Message.Type.Critical
+]
+
 
 @route(PLUGIN_PREFIX + '/messages/list')
 def ListMessages(viewed=None):
@@ -24,7 +32,7 @@ def ListMessages(viewed=None):
         Message.last_logged_at.desc()
     ).limit(50))
 
-    total_messages = Count()
+    total_messages = List().count()
 
     # Construct container
     oc = ObjectContainer(
@@ -40,6 +48,10 @@ def ListMessages(viewed=None):
 
         if m.type == Message.Type.Exception:
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
+        elif m.type == Message.Type.Info:
+            thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
+        elif m.type in ERROR_TYPES:
+            thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
 
         oc.add(DirectoryObject(
             key=Callback(ViewMessage, error_id=m.id),
@@ -51,7 +63,7 @@ def ListMessages(viewed=None):
     if len(messages) != 50 and len(messages) < total_messages:
         oc.add(DirectoryObject(
             key=Callback(ListMessages),
-            title="View All"
+            title=pad_title("View All")
         ))
 
     return oc
@@ -140,11 +152,22 @@ def ViewException(exception_id):
 
     return oc
 
-def Count(viewed=None):
-    """Get the number of messages logged in the last week"""
-    return List(
-        viewed=viewed
-    ).count()
+
+def Status(viewed=None):
+    """Get the number and type of messages logged in the last week"""
+    messages = List(viewed=viewed)
+
+    count = 0
+    type = 'notification'
+
+    for message in messages:
+        if message.type in ERROR_TYPES:
+            type = 'error'
+
+        count += 1
+
+    return count, type
+
 
 def List(viewed=None):
     """Get messages logged in the last week"""
