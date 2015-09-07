@@ -21,10 +21,12 @@ class ModuleManager(object):
     def discover(cls):
         from plugin.modules.backup.main import Backup
         from plugin.modules.scheduler.main import Scheduler
+        from plugin.modules.upgrade.main import Upgrade
 
         return [
             Backup,
-            Scheduler
+            Scheduler,
+            Upgrade
         ]
 
     @classmethod
@@ -61,7 +63,7 @@ class ModuleManager(object):
 
                 started.append(key)
             except Exception, ex:
-                log.warn('Unable to start module: %r', module)
+                log.warn('Unable to start %r module - %s', key, ex, exc_info=True)
 
         log.debug('Started %d module(s): %s', len(started), ', '.join(started))
 
