@@ -9,9 +9,24 @@ from datetime import datetime, timedelta
 
 
 @route(PLUGIN_PREFIX + '/messages/list')
-def ListMessages():
-    messages = List().order_by(Message.last_logged_at.desc()).limit(50)
+def ListMessages(viewed=None):
+    # Cast `viewed` to boolean
+    if type(viewed) is str:
+        if viewed == 'None':
+            viewed = None
+        else:
+            viewed = viewed == 'True'
 
+    # Retrieve messages
+    messages = list(List(
+        viewed=viewed
+    ).order_by(
+        Message.last_logged_at.desc()
+    ).limit(50))
+
+    total_messages = Count()
+
+    # Construct container
     oc = ObjectContainer(
         title2="Messages"
     )
@@ -21,7 +36,6 @@ def ListMessages():
            m.summary is None:
             continue
 
-        callback = Callback(ListMessages)
         thumb = None
 
         if m.type == Message.Type.Exception:
@@ -31,6 +45,13 @@ def ListMessages():
             key=Callback(ViewMessage, error_id=m.id),
             title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
             thumb=thumb
+        ))
+
+    # Append "View More" button
+    if len(messages) != 50 and len(messages) < total_messages:
+        oc.add(DirectoryObject(
+            key=Callback(ListMessages),
+            title="View All"
         ))
 
     return oc
@@ -119,9 +140,11 @@ def ViewException(exception_id):
 
     return oc
 
-def Count():
+def Count(viewed=None):
     """Get the number of messages logged in the last week"""
-    return List(viewed=False).count()
+    return List(
+        viewed=viewed
+    ).count()
 
 def List(viewed=None):
     """Get messages logged in the last week"""

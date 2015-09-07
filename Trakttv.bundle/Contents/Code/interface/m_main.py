@@ -15,11 +15,11 @@ def MainMenu():
     #
     # Messages
     #
-    num_messages = MessageCount()
+    num_messages = MessageCount(viewed=False)
 
     if num_messages > 0:
         oc.add(DirectoryObject(
-            key=Callback(ListMessages),
+            key=Callback(ListMessages, viewed=False),
             title="Messages (%s)" % locale.format("%d", num_messages, grouping=True),
             thumb=R("icon-messages.png")
         ))
