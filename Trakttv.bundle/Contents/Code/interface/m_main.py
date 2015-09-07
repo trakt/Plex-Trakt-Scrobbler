@@ -58,6 +58,11 @@ def AboutMenu():
     oc = ObjectContainer(title2="About")
 
     oc.add(DirectoryObject(
+        key=Callback(ListMessages, viewed=None),
+        title=pad_title("Messages")
+    ))
+
+    oc.add(DirectoryObject(
         key=Callback(AboutMenu),
         title=pad_title("Version: %s" % PLUGIN_VERSION)
     ))
