@@ -3,6 +3,16 @@ from plugin.models.core import db
 from playhouse.apsw_ext import *
 
 
+class MessageCode(object):
+    # Release / Version (0x10)
+    # - Upgrade (0x1001)
+    UpgradePerformed = 0x100101
+    # - Downgrade (0x1002)
+    DowngradeUnclean = 0x100201
+
+    # TODO check for conflicting codes
+
+
 class MessageType(object):
     __titles__  = None
 
@@ -37,6 +47,7 @@ class MessageType(object):
 
 
 class Message(Model):
+    Code = MessageCode
     Type = MessageType
 
     class Meta:
