@@ -5,6 +5,7 @@ from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.progress import SyncProgress
+from plugin.sync.core.task.profiler import SyncProfiler
 from plugin.sync.core.task.state import SyncState
 
 from datetime import datetime
@@ -43,6 +44,7 @@ class SyncTask(object):
         self.artifacts = SyncArtifacts(self)
         self.configuration = SyncConfiguration(self)
         self.progress = SyncProgress(self)
+        self.profiler = SyncProfiler(self)
 
         self.state = SyncState(self)
 
@@ -110,6 +112,9 @@ class SyncTask(object):
 
         # Flush caches to archives
         self.state.flush()
+
+        # Display profiler report
+        self.profiler.log_report()
 
         # Mark finished
         self.finished = True

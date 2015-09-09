@@ -2,6 +2,7 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
+import elapsed
 import logging
 
 log = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class Base(Mode):
 
 
 class Movies(Base):
+    @elapsed.clock
     def run(self):
         # Retrieve movie sections
         p_sections = self.sections('movie')
@@ -90,6 +92,7 @@ class Movies(Base):
 
 
 class Shows(Base):
+    @elapsed.clock
     def run(self):
         # Retrieve show sections
         p_sections = self.sections('show')
@@ -222,6 +225,7 @@ class Pull(Mode):
         Shows
     ]
 
+    @elapsed.clock
     def run(self):
         # Fetch changes from trakt.tv
         self.trakt.refresh()

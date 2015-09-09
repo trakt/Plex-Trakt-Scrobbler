@@ -3,6 +3,7 @@ from plugin.core.cache import CacheManager
 from plex import Plex
 from plex_database.library import Library
 from plex_database.matcher import Matcher
+import elapsed
 import logging
 
 log = logging.getLogger(__name__)
@@ -23,8 +24,10 @@ class SyncStatePlex(object):
     def load(self):
         pass
 
+    @elapsed.clock
     def flush(self):
-        log.debug('Flushing matcher cache...')
+        with elapsed.clock(SyncStatePlex, 'flush:matcher'):
+            log.debug('Flushing matcher cache...')
 
-        # Flush matcher cache to disk
-        self.matcher_cache.flush(force=True)
+            # Flush matcher cache to disk
+            self.matcher_cache.flush(force=True)

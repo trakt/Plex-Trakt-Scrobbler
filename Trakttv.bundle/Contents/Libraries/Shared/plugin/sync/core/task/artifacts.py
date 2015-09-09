@@ -6,6 +6,7 @@ from plugin.sync.core.enums import SyncActionMode
 from datetime import datetime
 from trakt import Trakt
 from trakt_sync.cache.main import Cache
+import elapsed
 import logging
 
 log = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class SyncArtifacts(object):
 
         raise NotImplementedError('Unable to send artifacts to trakt, action mode %r not supported', action_mode)
 
+    @elapsed.clock
     def send_actions(self):
         changes = False
 
