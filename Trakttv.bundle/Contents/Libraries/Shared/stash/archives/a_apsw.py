@@ -1,6 +1,7 @@
 from stash.archives.core.base import Archive
 from stash.lib import six as six
 
+from collections import Mapping
 from contextlib import closing
 import collections
 
@@ -114,6 +115,24 @@ class ApswArchive(Archive):
                     (self.key_encode(key), buffer(self.dumps(value)))
                     for key, value in items
                 ])
+
+    def update(self, *args, **kwds):
+        if args:
+            other = args[0]
+            if isinstance(other, Mapping):
+                self.set_items(other.iteritems())
+            elif hasattr(other, "keys"):
+                self.set_items([
+                    (key, other[key])
+                    for key in other.keys()
+                ])
+            else:
+                self.set_items([
+                    (key, value)
+                    for key, value in other
+                ])
+
+        self.set_items(kwds.iteritems())
 
     def __delitem__(self, key):
         key = self.key_encode(key)
