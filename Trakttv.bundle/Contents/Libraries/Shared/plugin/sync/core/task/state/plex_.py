@@ -25,6 +25,10 @@ class SyncStatePlex(object):
         pass
 
     @elapsed.clock
+    def prime(self):
+        return self.matcher_cache.prime(force=True)
+
+    @elapsed.clock
     def flush(self):
         with elapsed.clock(SyncStatePlex, 'flush:matcher'):
             log.debug('Flushing matcher cache...')

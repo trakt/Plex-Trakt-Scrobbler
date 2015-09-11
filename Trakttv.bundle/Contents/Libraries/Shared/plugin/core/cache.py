@@ -126,6 +126,9 @@ class Cache(object):
     def get(self, key, default=None):
         return self.stash.get(key, default)
 
+    def prime(self, keys=None, force=False):
+        return self.stash.prime(keys, force)
+
     def __getitem__(self, key):
         return self.stash[key]
 
