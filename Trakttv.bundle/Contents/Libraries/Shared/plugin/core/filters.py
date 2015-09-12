@@ -56,7 +56,7 @@ class Filters(object):
         value = f_current()
 
         # Normalize value
-        if normalize_values:
+        if value and normalize_values:
             value = cls.normalize(value)
 
         # Fetch filter
