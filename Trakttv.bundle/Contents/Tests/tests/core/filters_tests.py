@@ -45,29 +45,59 @@ def test_user_empty():
 # is_valid_client
 #
 
-def test_client_basic():
+def test_client_basic_positive():
     Environment.prefs['scrobble_clients'] = 'pcone'
 
     assert Filters.is_valid_client({'title': 'PC-One'}) is True
+    assert Filters.is_valid_client({'title': 'PC-Two', 'product': 'DLNA'}) is False
 
 
-def test_client_inverted():
+def test_client_basic_inverted():
     Environment.prefs['scrobble_clients'] = 'pcone, -pctwo'
 
     assert Filters.is_valid_client({'title': 'PC-One'}) is True
     assert Filters.is_valid_client({'title': 'PC-Two'}) is False
+    assert Filters.is_valid_client({'title': 'PC-Three', 'product': 'DLNA'}) is False
+
+
+def test_client_dlna_positive():
+    Environment.prefs['scrobble_clients'] = '#dlna'
+
+    assert Filters.is_valid_client({'title': 'PC-One'}) is False
+    assert Filters.is_valid_client({'title': 'PC-Two', 'product': 'DLNA'}) is True
+
+
+def test_client_dlna_inverted():
+    Environment.prefs['scrobble_clients'] = '-#dlna'
+
+    assert Filters.is_valid_client({'title': 'PC-One'}) is True
+    assert Filters.is_valid_client({'title': 'PC-Two', 'product': 'DLNA'}) is False
+
+
+def test_client_dlna_invalid():
+    Environment.prefs['scrobble_clients'] = '#, pcone'
+
+    assert Filters.is_valid_client({'title': 'PC-One'}) is True
 
 
 def test_client_wildcard():
     Environment.prefs['scrobble_clients'] = '*'
 
     assert Filters.is_valid_client({'title': 'PC-One'}) is True
+    assert Filters.is_valid_client({'title': 'PC-Two', 'product': 'DLNA'}) is True
 
 
 def test_client_empty():
     Environment.prefs['scrobble_clients'] = ''
 
     assert Filters.is_valid_client({'title': 'PC-One'}) is True
+    assert Filters.is_valid_client({'title': 'PC-Two', 'product': 'DLNA'}) is True
+
+
+def test_client_invalid():
+    Environment.prefs['scrobble_clients'] = 'pcone'
+
+    assert Filters.is_valid_client({}) is False
 
 #
 # is_valid_metadata_section
