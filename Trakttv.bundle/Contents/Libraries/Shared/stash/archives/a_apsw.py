@@ -120,7 +120,10 @@ class ApswArchive(Archive):
         if args:
             other = args[0]
             if isinstance(other, Mapping):
-                self.set_items(other.iteritems())
+                if six.PY3:
+                    self.set_items(other.items())
+                else:
+                    self.set_items(other.iteritems())
             elif hasattr(other, "keys"):
                 self.set_items([
                     (key, other[key])
@@ -132,7 +135,10 @@ class ApswArchive(Archive):
                     for key, value in other
                 ])
 
-        self.set_items(kwds.iteritems())
+        if six.PY3:
+            self.set_items(kwds.items())
+        else:
+            self.set_items(kwds.iteritems())
 
     def __delitem__(self, key):
         key = self.key_encode(key)
