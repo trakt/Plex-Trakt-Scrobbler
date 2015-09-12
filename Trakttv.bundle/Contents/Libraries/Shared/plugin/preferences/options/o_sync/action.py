@@ -12,7 +12,7 @@ class SyncActionOption(SimpleOption):
     scope = 'server'
 
     group = ('Advanced', 'Sync')
-    label = 'Action Mode'
+    label = 'Action'
     order = 120
 
     @property
