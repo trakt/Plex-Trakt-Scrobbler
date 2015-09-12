@@ -151,7 +151,13 @@ class SyncStateTrakt(object):
             # Task checkpoint
             self.task.checkpoint()
 
-        log.debug('Built table with %d keys (%d movies, %d shows)', len(self.table), len(self.movies), len(self.shows))
+        log.debug(
+            'Built table with %d keys (movies: %d, shows: %d, episodes: %d)',
+            len(self.table),
+            len(self.movies),
+            len(self.shows),
+            len(self.episodes)
+        )
 
     @elapsed.clock
     def flush(self):
