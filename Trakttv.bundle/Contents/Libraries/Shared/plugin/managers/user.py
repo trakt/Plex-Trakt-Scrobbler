@@ -133,8 +133,10 @@ class UpdateUser(Update):
             # Process rule
             if rule.account_function is not None:
                 result['account'] = cls.account_function(user, rule)
-            else:
+            elif rule.account_id is not None:
                 result['account'] = rule.account_id
+            else:
+                return True, result
         else:
             result['account'] = None
 

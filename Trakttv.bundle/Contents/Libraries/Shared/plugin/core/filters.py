@@ -8,8 +8,8 @@ log = logging.getLogger(__name__)
 
 
 class Filters(object):
-    @staticmethod
-    def get(key, normalize_values=True):
+    @classmethod
+    def get(cls, key, normalize_values=True):
         value = Environment.get_pref(key)
         if not value:
             return None, None
@@ -34,7 +34,7 @@ class Filters(object):
 
             # Normalize values (if enabled)
             if normalize_values:
-                value = flatten(value)
+                value = cls.normalize(value)
 
             # Append value to list
             if not inverted:
@@ -56,11 +56,8 @@ class Filters(object):
         value = f_current()
 
         # Normalize value
-        if normalize_values:
-            if value:
-                value = value.strip()
-
-            value = flatten(value)
+        if value and normalize_values:
+            value = cls.normalize(value)
 
         # Fetch filter
         f_allow, f_deny = cls.get(key, normalize_values=normalize_values)
@@ -84,6 +81,26 @@ class Filters(object):
         return True
 
     @classmethod
+    def normalize(cls, value):
+        if type(value) is list:
+            return [cls.normalize(v) for v in value]
+
+        # Function option
+        if value.startswith('#'):
+            value = flatten(value)
+
+            if value:
+                return '#' + value
+
+            return value
+
+        # Basic option
+        if value:
+            value = value.strip()
+
+        return flatten(value)
+
+    @classmethod
     def is_valid_user(cls, user):
         return cls.match(
             'scrobble_names',
@@ -99,16 +116,42 @@ class Filters(object):
 
     @classmethod
     def is_valid_client(cls, player):
+        log.debug('Filters.is_valid_client(%r)', player)
+
+        def f_current():
+            if not player:
+                return None
+
+            values = [player.get('title')]
+
+            # Product
+            product = player.get('product', '').lower()
+
+            if product == 'dlna':
+                values.append('#dlna')
+
+            return values
+
+        def f_validate(values, f_allow, f_deny):
+            if f_allow:
+                # Check if player details exist
+                if not player:
+                    return True
+
+                # Check if player is allowed
+                if not cls._contains_one(values, f_allow):
+                    return True
+
+            # Check if player is denied
+            if cls._contains_one(values, f_deny):
+                return True
+
+            return False
+
         return cls.match(
             'scrobble_clients',
-            f_current=lambda: player.get('title') if player else None,
-            f_validate=lambda value, f_allow, f_deny: (
-                (f_allow and (
-                    not player or
-                    value not in f_allow
-                )) or
-                value in f_deny
-            )
+            f_current=f_current,
+            f_validate=f_validate
         )
 
     @classmethod
@@ -189,3 +232,11 @@ class Filters(object):
             f_validate=f_validate,
             f_transform=f_transform
         )
+
+    @classmethod
+    def _contains_one(cls, values, f_items):
+        for value in values:
+            if value in f_items:
+                return True
+
+        return False
