@@ -15,6 +15,7 @@ OPTIONS = [
 
     # Sync
     SyncActionOption,
+    SyncProfilerOption,
 
     SyncCollectionOption,
     SyncCleanCollectionOption,

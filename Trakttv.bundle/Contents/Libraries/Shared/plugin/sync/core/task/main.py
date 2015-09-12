@@ -73,7 +73,8 @@ class SyncTask(object):
         log.debug('Sync Data: %r', self.data)
         log.debug('Sync Media: %r', self.media)
 
-        # Load trakt/plex state
+        # Load children
+        self.profiler.load()
         self.state.load()
 
     def abort(self, timeout=None):
