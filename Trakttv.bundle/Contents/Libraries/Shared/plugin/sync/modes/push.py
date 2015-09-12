@@ -118,6 +118,9 @@ class Movies(Base):
 
             # Iterate over data handlers
             for data in self.get_data(SyncMedia.Movies):
+                if data not in [SyncData.Collection]:
+                    continue
+
                 # Retrieve movie
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
@@ -271,7 +274,10 @@ class Shows(Base):
 
                 # Iterate over data handlers
                 for data in self.get_data(SyncMedia.Shows):
-                    # Retrieve movie
+                    if data not in [SyncData.Collection]:
+                        continue
+
+                    # Retrieve show
                     t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
 
                     if not t_show:
@@ -314,6 +320,10 @@ class Shows(Base):
 
                     # Iterate over data handlers
                     for data in self.get_data(SyncMedia.Episodes):
+                        if data not in [SyncData.Collection]:
+                            continue
+
+                        # Retrieve episode
                         t_show, t_season, t_episode = self.t_objects(
                             self.trakt[(SyncMedia.Episodes, data)], pk,
                             season_num, episode_num
