@@ -3,5 +3,6 @@ from plugin.preferences.options.o_sync.collection import SyncCollectionOption, S
 from plugin.preferences.options.o_sync.interval import SyncIntervalOption
 from plugin.preferences.options.o_sync.library_update import SyncLibraryUpdateOption
 from plugin.preferences.options.o_sync.playback import SyncPlaybackOption
+from plugin.preferences.options.o_sync.profiler import SyncProfilerOption
 from plugin.preferences.options.o_sync.ratings import SyncRatingsOption, SyncRatingsConflictOption
 from plugin.preferences.options.o_sync.watched import SyncWatchedOption

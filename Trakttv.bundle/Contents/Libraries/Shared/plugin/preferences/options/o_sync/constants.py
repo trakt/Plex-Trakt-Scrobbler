@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode, SyncInterval
+from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode, SyncInterval, SyncProfilerMode
 
 #
 # Artifact modes
@@ -8,6 +8,15 @@ ACTION_MODE_LABELS_BY_KEY = {
     None:                   'Default',
     SyncActionMode.Update:  'Update',
     SyncActionMode.Log:     'Log'
+}
+
+#
+# Profiler modes
+#
+
+PROFILER_MODE_LABELS_BY_KEY = {
+    SyncProfilerMode.Disabled:  'Disabled',
+    SyncProfilerMode.Basic:     'Basic'
 }
 
 #

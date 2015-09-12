@@ -1,5 +1,6 @@
 from plugin.preferences import OPTIONS_BY_KEY
 
+import elapsed
 import logging
 
 log = logging.getLogger(__name__)
@@ -11,6 +12,7 @@ class SyncConfiguration(object):
 
         self._options = {}
 
+    @elapsed.clock
     def load(self, account):
         log.debug('Sync Configuration:')
 

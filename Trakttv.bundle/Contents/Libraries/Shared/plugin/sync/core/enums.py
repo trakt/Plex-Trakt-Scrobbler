@@ -32,6 +32,11 @@ class SyncActionMode(Enum):
     Log     = 0x01
 
 
+class SyncProfilerMode(Enum):
+    Disabled    = None
+    Basic       = 0x01
+
+
 class SyncConflictResolution(Enum):
     Latest  = 0x00
     Trakt   = 0x01

@@ -9,10 +9,12 @@ msgpack-python==0.4.6
 pytz==2015.4
 requests==2.7.0
 six==1.9.0
+sortedcontainers==0.9.6
 tzlocal==1.2
 websocket-client==0.32.0
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
+https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed
 https://github.com/fuzeman/jsonpickle/archive/master.zip#egg=jsonpickle
 https://github.com/fuzeman/Logr/archive/0.2.2.zip#egg=logr
 https://github.com/fuzeman/peewee/archive/master.zip#egg=peewee

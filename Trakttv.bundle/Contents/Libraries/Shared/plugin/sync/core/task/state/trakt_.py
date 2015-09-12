@@ -4,6 +4,7 @@ from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend
 from trakt_sync.cache.main import Cache
 from trakt_sync.differ.core.base import KEY_AGENTS
+import elapsed
 import logging
 
 log = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ class SyncStateTrakt(object):
 
         log.debug('Invalidated trakt cache (%r, %r) for account: %r', media, data, username)
 
+    @elapsed.clock
     def refresh(self):
         # Task checkpoint
         self.task.checkpoint()
@@ -77,6 +79,7 @@ class SyncStateTrakt(object):
         self.shows = None
         self.episodes = None
 
+    @elapsed.clock
     def build_table(self):
         # Resolve changes
         self.changes = list(self.changes)
@@ -150,11 +153,15 @@ class SyncStateTrakt(object):
 
         log.debug('Built table with %d keys (%d movies, %d shows)', len(self.table), len(self.movies), len(self.shows))
 
+    @elapsed.clock
     def flush(self):
-        # Flush trakt cache to disk
-        self.cache.collections.flush()
+        with elapsed.clock(SyncStateTrakt, 'flush:collections'):
+            # Flush trakt collections to disk
+            self.cache.collections.flush()
 
-        for key, store in self.cache.stores.items():
-            log.debug('[%-31s] Flushing collection...', '/'.join(key))
+        with elapsed.clock(SyncStateTrakt, 'flush:stores'):
+            # Flush trakt stores to disk
+            for key, store in self.cache.stores.items():
+                log.debug('[%-31s] Flushing collection...', '/'.join(key))
 
-            store.flush()
+                store.flush()

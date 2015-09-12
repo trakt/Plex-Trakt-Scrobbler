@@ -2,6 +2,7 @@ from plugin.core.filters import Filters
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
 from plex import Plex
+import elapsed
 import itertools
 import logging
 
@@ -90,6 +91,7 @@ class Mode(object):
         for c in self.children:
             c.run()
 
+    @elapsed.clock
     def execute_handlers(self, media, data, *args, **kwargs):
         if type(media) is not list:
             media = [media]
@@ -114,6 +116,7 @@ class Mode(object):
 
             yield data
 
+    @elapsed.clock
     def is_data_enabled(self, data):
         key = DATA_PREFERENCE_MAP.get(data)
 
