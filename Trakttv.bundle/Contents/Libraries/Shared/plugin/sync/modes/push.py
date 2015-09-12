@@ -386,8 +386,9 @@ class Push(Mode):
         # Build key table for lookups
         self.trakt.build_table()
 
-        # Run children
-        self.execute_children()
+        with self.plex.prime():
+            # Run children
+            self.execute_children()
 
         # Send artifacts to trakt
         self.current.artifacts.send()

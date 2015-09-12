@@ -15,11 +15,12 @@ class Full(Mode):
         # Build key table for lookups
         self.trakt.build_table()
 
-        # Run fast pull
-        self.modes[SyncMode.FastPull].execute_children()
+        with self.plex.prime():
+            # Run fast pull
+            self.modes[SyncMode.FastPull].execute_children()
 
-        # Run push
-        self.modes[SyncMode.Push].execute_children()
+            # Run push
+            self.modes[SyncMode.Push].execute_children()
 
         # Send artifacts to trakt
         self.current.artifacts.send()
