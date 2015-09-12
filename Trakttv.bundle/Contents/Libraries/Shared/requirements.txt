@@ -26,6 +26,8 @@ https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash
 
 https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex
 https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex_activity
+https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex_database
 https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex_metadata
 
 https://github.com/fuzeman/trakt.py/archive/develop.zip#egg=trakt
+https://github.com/fuzeman/trakt.sync.py/archive/develop.zip#egg=trakt_sync
