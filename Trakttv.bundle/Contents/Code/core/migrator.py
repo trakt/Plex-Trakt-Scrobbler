@@ -30,6 +30,10 @@ class Migration(object):
         return os.path.join(self.code_path, '..', 'Libraries')
 
     @property
+    def tests_path(self):
+        return os.path.join(self.code_path, '..', 'Tests')
+
+    @property
     def plex_path(self):
         return os.path.abspath(os.path.join(self.code_path, '..', '..', '..', '..'))
 
@@ -218,7 +222,7 @@ class Clean(Migration):
                 'Shared/plugin/data',
 
                 # native
-                'MacOSX/universal/ucs2',
+                'MacOSX/universal',
 
                 # pytz
                 'Shared/pytz/tests',
@@ -240,6 +244,18 @@ class Clean(Migration):
         )
     ]
 
+    tasks_tests = [
+        (
+            'delete_file', [
+            ], os.path.isfile
+        ),
+        (
+            'delete_directory', [
+                'tests/core/mock',
+            ], os.path.isdir
+        )
+    ]
+
     def run(self):
         if PLUGIN_VERSION_BASE >= (0, 8):
             self.upgrade()
@@ -247,6 +263,7 @@ class Clean(Migration):
     def upgrade(self):
         self.execute(self.tasks_code, 'upgrade', self.code_path)
         self.execute(self.tasks_lib, 'upgrade', self.lib_path)
+        self.execute(self.tasks_tests, 'upgrade', self.tests_path)
 
     def execute(self, tasks, name, base_path):
         for action, paths, conditions in tasks:
