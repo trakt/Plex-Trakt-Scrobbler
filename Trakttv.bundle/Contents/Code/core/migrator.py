@@ -1,12 +1,9 @@
 from core.helpers import all
-from core.logger import Logger
 from plugin.core.constants import PLUGIN_VERSION_BASE
 
 from lxml import etree
 import shutil
 import os
-
-log = Logger('core.migrator')
 
 
 class Migrator(object):
@@ -19,7 +16,7 @@ class Migrator(object):
     @classmethod
     def run(cls):
         for migration in cls.migrations:
-            log.debug('Running migration %s', migration)
+            Log.Debug('Running migration: %s', migration)
             migration.run()
 
 
@@ -42,7 +39,7 @@ class Migration(object):
 
     def get_preferences(self):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return {}
 
         data = Core.storage.load(self.preferences_path)
@@ -52,7 +49,7 @@ class Migration(object):
 
     def set_preferences(self, changes):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return False
 
         data = Core.storage.load(self.preferences_path)
@@ -68,7 +65,7 @@ class Migration(object):
             # Update node value, ensure it is a string
             elem.text = str(value)
 
-            log.trace('Updated preference with key "%s" to value %s', key, repr(value))
+            Log.Debug('Updated preference with key "%s" to value %s', key, repr(value))
 
         # Write back new preferences
         Core.storage.save(self.preferences_path, etree.tostring(doc, pretty_print=True))
@@ -78,16 +75,26 @@ class Migration(object):
         if not all([c(path) for c in conditions]):
             return False
 
-        os.remove(path)
-        return True
+        try:
+            os.remove(path)
+            return True
+        except Exception, ex:
+            Log.Warn('Unable to remove file %r - %s', path, ex, exc_info=True)
+
+        return False
 
     @staticmethod
     def delete_directory(path, conditions=None):
         if not all([c(path) for c in conditions]):
             return False
 
-        shutil.rmtree(path)
-        return True
+        try:
+            shutil.rmtree(path)
+            return True
+        except Exception, ex:
+            Log.Warn('Unable to remove directory %r - %s', path, ex, exc_info=True)
+
+        return False
 
 
 class Clean(Migration):
@@ -250,7 +257,7 @@ class Clean(Migration):
                 conditions = [conditions]
 
             if not hasattr(self, action):
-                log.error('Unknown migration action "%s"', action)
+                Log.Error('Unknown migration action "%s"', action)
                 continue
 
             m = getattr(self, action)
@@ -261,11 +268,11 @@ class Clean(Migration):
 
                 # Remove file
                 if m(path, conditions):
-                    log.info('(%s) %s: "%s"', name, action, path)
+                    Log.Info('(%s) %s: "%s"', name, action, path)
 
                 # Remove .pyc files as-well
                 if path.endswith('.py') and m(path + 'c', conditions):
-                    log.info('(%s) %s: "%s"', name, action, path + 'c')
+                    Log.Info('(%s) %s: "%s"', name, action, path + 'c')
 
 
 class ForceLegacy(Migration):
@@ -276,7 +283,7 @@ class ForceLegacy(Migration):
 
     def upgrade(self):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return
 
         preferences = self.get_preferences()
@@ -342,7 +349,7 @@ class SelectiveSync(Migration):
         if not changes:
             return
 
-        log.debug('Updating preferences with changes: %s', changes)
+        Log.Debug('Updating preferences with changes: %s', changes)
         self.set_preferences(changes)
 
 
