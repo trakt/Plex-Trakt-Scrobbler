@@ -96,6 +96,7 @@ class Clean(Migration):
             'delete_file', [
                 # /core
                 'core/action.py',
+                'core/cache.py',
                 'core/configuration.py',
                 'core/environment.py',
                 'core/eventing.py',
@@ -138,12 +139,40 @@ class Clean(Migration):
                 'Shared/plugin/modules/manager.py',
                 'Shared/plugin/preferences/options/core/base.py',
 
+                # native
+                'FreeBSD/i386/apsw.so',
+                'FreeBSD/i386/llist.so',
+
+                'Windows/i386/apsw.pyd',
+                'Windows/i386/llist.pyd',
+
+                'Linux/i386/apsw.so',
+                'Linux/i386/llist.so',
+                'Linux/x86_64/apsw.so',
+                'Linux/x86_64/llist.so',
+
                 # asio
                 'Shared/asio.py',
                 'Shared/asio_base.py',
                 'Shared/asio_posix.py',
                 'Shared/asio_windows.py',
                 'Shared/asio_windows_interop.py',
+
+                # concurrent
+                'Shared/concurrent/futures/_compat.py',
+
+                # msgpack
+                'Shared/msgpack/_packer.pyx',
+                'Shared/msgpack/_unpacker.pyx',
+                'Shared/msgpack/pack.h',
+                'Shared/msgpack/pack_template.h',
+                'Shared/msgpack/sysdep.h',
+                'Shared/msgpack/unpack.h',
+                'Shared/msgpack/unpack_define.h',
+                'Shared/msgpack/unpack_template.h',
+
+                # playhouse
+                'Shared/playhouse/pskel',
 
                 # plex.py
                 'Shared/plex/core/compat.py',
@@ -156,6 +185,7 @@ class Clean(Migration):
 
                 # requests
                 'Shared/requests/packages/urllib3/util.py',
+                'Shared/requests/packages/README.rst',
 
                 # trakt.py
                 'Shared/trakt/core/context.py',
@@ -165,7 +195,13 @@ class Clean(Migration):
                 'Shared/trakt/interfaces/sync/base.py',
                 'Shared/trakt/media_mapper.py',
                 'Shared/trakt/objects.py',
-                'Shared/trakt/request.py'
+                'Shared/trakt/request.py',
+
+                # tzlocal
+                'Shared/tzlocal/tests.py',
+
+                # websocket
+                'Shared/websocket.py'
             ], os.path.isfile
         ),
         (
@@ -174,10 +210,25 @@ class Clean(Migration):
                 'Shared/plugin/core/collections',
                 'Shared/plugin/data',
 
+                # native
+                'MacOSX/universal/ucs2',
+
+                # pytz
+                'Shared/pytz/tests',
+
+                # shove
+                'Shared/shove',
+
+                # stuf
+                'Shared/stuf',
+
                 # trakt.py
                 'Shared/trakt/interfaces/movie',
                 'Shared/trakt/interfaces/show',
-                'Shared/trakt/interfaces/user'
+                'Shared/trakt/interfaces/user',
+
+                # tzlocal
+                'Shared/tzlocal/test_data'
             ], os.path.isdir
         )
     ]
