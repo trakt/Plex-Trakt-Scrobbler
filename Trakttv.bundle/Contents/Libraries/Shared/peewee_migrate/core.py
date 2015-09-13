@@ -9,7 +9,11 @@ import datetime as dt
 from .utils import exec_in
 
 from peewee import SqliteDatabase, MySQLDatabase, PostgresqlDatabase, Proxy, Model, CharField
-from playhouse.apsw_ext import DateTimeField
+
+try:
+    from playhouse.apsw_ext import DateTimeField
+except ImportError:
+    from peewee import DateTimeField
 
 
 LOGGER = logging.getLogger(__name__)

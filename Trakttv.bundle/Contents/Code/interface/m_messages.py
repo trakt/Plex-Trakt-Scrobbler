@@ -7,32 +7,63 @@ from plugin.models import Exception, Message
 from ago import human
 from datetime import datetime, timedelta
 
+ERROR_TYPES = [
+    Message.Type.Exception,
+
+    Message.Type.Warning,
+    Message.Type.Error,
+    Message.Type.Critical
+]
+
 
 @route(PLUGIN_PREFIX + '/messages/list')
-def ListMessages():
-    messages = List().order_by(Message.last_logged_at.desc()).limit(50)
+def ListMessages(viewed=None):
+    # Cast `viewed` to boolean
+    if type(viewed) is str:
+        if viewed == 'None':
+            viewed = None
+        else:
+            viewed = viewed == 'True'
 
+    # Retrieve messages
+    messages = list(List(
+        viewed=viewed
+    ).order_by(
+        Message.last_logged_at.desc()
+    ).limit(50))
+
+    total_messages = List().count()
+
+    # Construct container
     oc = ObjectContainer(
         title2="Messages"
     )
 
     for m in messages:
         if m.type is None or\
-           m.summary is None or \
-           m.description is None:
+           m.summary is None:
             continue
 
-        callback = Callback(ListMessages)
         thumb = None
 
         if m.type == Message.Type.Exception:
-            callback = Callback(ViewMessage, error_id=m.id)
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
+        elif m.type == Message.Type.Info:
+            thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
+        elif m.type in ERROR_TYPES:
+            thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
 
         oc.add(DirectoryObject(
-            key=callback,
+            key=Callback(ViewMessage, error_id=m.id),
             title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
             thumb=thumb
+        ))
+
+    # Append "View More" button
+    if len(messages) != 50 and len(messages) < total_messages:
+        oc.add(DirectoryObject(
+            key=Callback(ListMessages),
+            title=pad_title("View All")
         ))
 
     return oc
@@ -54,20 +85,35 @@ def ViewMessage(error_id):
         title2='[%s] %s' % (Message.Type.title(message.type), Trim(message.summary))
     )
 
-    for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
-        since = datetime.utcnow() - e.timestamp
+    if message.type == Message.Type.Exception:
+        # Display exception samples
+        for e in message.exceptions.order_by(Exception.timestamp.desc()).limit(50):
+            since = datetime.utcnow() - e.timestamp
 
-        callback = Callback(ViewMessage, error_id=error_id)
+            callback = Callback(ViewMessage, error_id=error_id)
 
-        if web_client:
-            # Display exception traceback in Plex/Web
-            callback = Callback(ViewException, exception_id=e.id)
+            if web_client:
+                # Display exception traceback in Plex/Web
+                callback = Callback(ViewException, exception_id=e.id)
 
+            oc.add(DirectoryObject(
+                key=callback,
+                title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message)),
+                thumb=R("icon-exception.png")
+            ))
+    elif message.type in [Message.Type.Info, Message.Type.Warning, Message.Type.Error, Message.Type.Critical]:
+        # Display message code
         oc.add(DirectoryObject(
-            key=callback,
-            title=pad_title('[%s] %s: %s' % (human(since, precision=1), e.type, e.message)),
-            thumb=R("icon-exception.png")
+            key='',
+            title=pad_title('Code: %s' % hex(message.code))
         ))
+
+        # Display message description
+        if message.description:
+            oc.add(DirectoryObject(
+                key='',
+                title=pad_title('Description: %s' % message.description)
+            ))
 
     return oc
 
@@ -106,9 +152,22 @@ def ViewException(exception_id):
 
     return oc
 
-def Count():
-    """Get the number of messages logged in the last week"""
-    return List(viewed=False).count()
+
+def Status(viewed=None):
+    """Get the number and type of messages logged in the last week"""
+    messages = List(viewed=viewed)
+
+    count = 0
+    type = 'notification'
+
+    for message in messages:
+        if message.type in ERROR_TYPES:
+            type = 'error'
+
+        count += 1
+
+    return count, type
+
 
 def List(viewed=None):
     """Get messages logged in the last week"""

@@ -1,10 +1,10 @@
-from core.cache import CacheManager
 from core.header import Header
 from core.helpers import get_class_name, md5
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
+from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, update_loggers
 from plugin.core.logger.handlers.error_reporter import RAVEN
@@ -103,7 +103,10 @@ class Main(object):
 
         # plex.metadata.py
         Metadata.configure(
-            cache=CacheManager.get('metadata'),
+            cache=CacheManager.get(
+                'plex.metadata',
+                serializer='pickle:///?protocol=2'
+            ),
             client=Plex.client
         )
 

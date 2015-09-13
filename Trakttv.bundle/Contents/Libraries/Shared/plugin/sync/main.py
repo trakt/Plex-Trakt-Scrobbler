@@ -56,7 +56,7 @@ class Main(object):
 
             yield key, cls(self)
 
-    def queue(self, account, mode, data=SyncData.All, media=SyncMedia.All, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
+    def queue(self, account, mode, data=None, media=SyncMedia.All, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
         """Queue a sync for the provided account
 
         Note: if a sync is already queued for the provided account a `SyncError` will be raised.

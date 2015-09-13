@@ -90,6 +90,8 @@ class ActionManager(Manager):
             return
 
         cls._process_thread = Thread(target=cls.run)
+        cls._process_thread.daemon = True
+
         cls._process_thread.start()
 
     @classmethod

@@ -1,8 +1,12 @@
 /.coverage
 /.idea
+/htmlcov
 /out
+/Trakttv.bundle/Contents/.version
 
 .idea/
+*.egg-info/
+*.dist-info/
 
 *.iml
 *.pyc

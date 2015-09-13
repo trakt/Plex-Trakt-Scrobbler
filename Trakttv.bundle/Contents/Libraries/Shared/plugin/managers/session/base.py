@@ -64,6 +64,10 @@ class UpdateSession(Update, Base):
             log.debug('%r, ignoring session', e.message)
             return None, None
 
+        # Queue flush for metadata cache
+        Metadata.cache.flush_queue()
+
+        # Validate metadata
         if metadata.type not in ['movie', 'episode']:
             log.info('Ignoring metadata with type %r for rating_key %r', metadata.type, rating_key)
             return metadata, None

@@ -1,9 +1,14 @@
 from stash.archives.core.base import Archive
 from stash.lib import six as six
 
+from collections import Mapping
 from contextlib import closing
-import apsw
 import collections
+
+try:
+    import apsw
+except ImportError:
+    apsw = None
 
 if six.PY3:
     def buffer(value):
@@ -15,6 +20,9 @@ class ApswArchive(Archive):
 
     def __init__(self, db, table):
         super(ApswArchive, self).__init__()
+
+        if apsw is None:
+            raise Exception('Unable to construct apsw:// - "apsw" module is not available')
 
         self.db = apsw.Connection(db) if type(db) is str else db
         self.table = table
@@ -107,6 +115,30 @@ class ApswArchive(Archive):
                     (self.key_encode(key), buffer(self.dumps(value)))
                     for key, value in items
                 ])
+
+    def update(self, *args, **kwds):
+        if args:
+            other = args[0]
+            if isinstance(other, Mapping):
+                if six.PY3:
+                    self.set_items(other.items())
+                else:
+                    self.set_items(other.iteritems())
+            elif hasattr(other, "keys"):
+                self.set_items([
+                    (key, other[key])
+                    for key in other.keys()
+                ])
+            else:
+                self.set_items([
+                    (key, value)
+                    for key, value in other
+                ])
+
+        if six.PY3:
+            self.set_items(kwds.items())
+        else:
+            self.set_items(kwds.iteritems())
 
     def __delitem__(self, key):
         key = self.key_encode(key)

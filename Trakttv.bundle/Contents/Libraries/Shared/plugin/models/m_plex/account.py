@@ -146,9 +146,6 @@ class PlexAccount(Model):
         if self.key is None:
             return True
 
-        if self.username is None:
-            return True
-
         if self.title is None:
             return True
 

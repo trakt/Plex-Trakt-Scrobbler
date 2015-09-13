@@ -3,13 +3,11 @@ from plugin.sync.handlers.core.base.media import MediaHandler
 
 class PushHandler(MediaHandler):
     @staticmethod
-    def build_action(action, p_guid, p_item, p_value, **kwargs):
+    def build_action(action, p_item, p_value, **kwargs):
         data = {}
 
         if action in ['added', 'changed']:
-            data['p_guid'] = p_guid
             data['p_item'] = p_item
-
             data['p_value'] = p_value
 
         data.update(kwargs)

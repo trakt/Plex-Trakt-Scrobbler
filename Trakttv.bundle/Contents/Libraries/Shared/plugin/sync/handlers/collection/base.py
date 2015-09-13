@@ -4,9 +4,13 @@ from plugin.sync.handlers.core import MediaHandler
 class CollectionHandler(MediaHandler):
     @staticmethod
     def get_operands(p_item, t_item):
-        p_added_at = p_item.get('added_at')
+        # Retrieve plex `added_at` from item
+        if p_item is not None:
+            p_added_at = p_item.get('added_at')
+        else:
+            p_added_at = None
 
-        # Retrieve trakt `viewed_at` from item
+        # Retrieve trakt `added_at` from item
         if type(t_item) is dict:
             t_added_at = t_item.get('collected_at')
         else:

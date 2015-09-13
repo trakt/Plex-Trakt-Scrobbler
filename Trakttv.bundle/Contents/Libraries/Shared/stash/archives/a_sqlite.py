@@ -15,7 +15,7 @@ class SqliteArchive(Archive):
         super(SqliteArchive, self).__init__()
 
         if sqlite3 is None:
-            raise Exception('"sqlite3" library is not available')
+            raise Exception('Unable to construct sqlite:// - "sqlite3" module is not available')
 
         self.db = sqlite3.connect(db) if type(db) is str else db
         self.table = table

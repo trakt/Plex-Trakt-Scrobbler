@@ -133,8 +133,10 @@ class UpdateUser(Update):
             # Process rule
             if rule.account_function is not None:
                 result['account'] = cls.account_function(user, rule)
-            else:
+            elif rule.account_id is not None:
                 result['account'] = rule.account_id
+            else:
+                return True, result
         else:
             result['account'] = None
 
@@ -151,7 +153,10 @@ class UpdateUser(Update):
             # Map, try automatically finding matching `PlexAccount`
             plex_account = (PlexAccount
                 .select()
-                .where(PlexAccount.username == user['title'])
+                .where(
+                    (PlexAccount.username == user['title']) |
+                    (PlexAccount.title == user['title'])
+                )
                 .first()
             )
 

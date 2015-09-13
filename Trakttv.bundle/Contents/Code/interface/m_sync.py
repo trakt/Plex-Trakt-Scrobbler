@@ -40,8 +40,8 @@ def AccountsMenu(refresh=None):
             key=Callback(ControlsMenu, account_id=account.id),
             title=account.name,
 
-            art=function_path('Cover.png', account_id=account.id, refresh=timestamp()),
-            thumb=function_path('Thumb.png', account_id=account.id, refresh=timestamp())
+            art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts),
+            thumb=function_path('Thumb.png', account_id=account.id, refresh=account.refreshed_ts)
         ))
 
     return oc
@@ -56,7 +56,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         title2=LF('controls:title', account.name),
         no_cache=True,
 
-        art=function_path('Cover.png', account_id=account.id, refresh=timestamp())
+        art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
     )
 
     # Start result message
@@ -87,7 +87,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         summary=Status.build(account, SyncMode.Full),
 
         thumb=R("icon-sync.png"),
-        art=function_path('Cover.png', account_id=account.id)
+        art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
     ))
 
     #
@@ -100,7 +100,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         summary=Status.build(account, SyncMode.Pull),
 
         thumb=R("icon-sync_down.png"),
-        art=function_path('Cover.png', account_id=account.id)
+        art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
     ))
 
     oc.add(DirectoryObject(
@@ -109,7 +109,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         summary=Status.build(account, SyncMode.FastPull),
 
         thumb=R("icon-sync_down.png"),
-        art=function_path('Cover.png', account_id=account.id)
+        art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
     ))
 
     #
@@ -150,7 +150,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
             summary=Status.build(account, SyncMode.Push, section.key),
 
             thumb=R("icon-sync_up.png"),
-            art=function_path('Cover.png', account_id=account.id)
+            art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
         ))
         section_keys.append(section.key)
 
@@ -161,7 +161,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
             summary=Status.build(account, SyncMode.Push),
 
             thumb=R("icon-sync_up.png"),
-            art=function_path('Cover.png', account_id=account.id)
+            art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
         ))
 
     return oc
@@ -242,15 +242,8 @@ class Active(object):
 
     @staticmethod
     def build_title(current, account):
-        if current.data == SyncData.All:
-            # <mode>
-            title = normalize(SyncMode.title(current.mode))
-        else:
-            # <mode> [<data>]
-            title = '%s [%s]' % (
-                normalize(SyncMode.title(current.mode)),
-                normalize(SyncData.title(current.data))
-            )
+        # <mode>
+        title = normalize(SyncMode.title(current.mode))
 
         # Task Progress
         percent = current.progress.percent

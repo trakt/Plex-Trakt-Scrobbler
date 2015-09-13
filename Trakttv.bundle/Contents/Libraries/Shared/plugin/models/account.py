@@ -1,8 +1,11 @@
 from plugin.models.core import db
 
+from datetime import datetime, timedelta
 from playhouse.apsw_ext import *
 import logging
 import requests
+
+REFRESH_INTERVAL = timedelta(days=1)
 
 log = logging.getLogger(__name__)
 
@@ -13,6 +16,8 @@ class Account(Model):
 
     name = CharField(null=True, unique=True)
     thumb = TextField(null=True)
+
+    refreshed_at = DateTimeField(null=True)
 
     def __init__(self, *args, **kwargs):
         super(Account, self).__init__(*args, **kwargs)
@@ -42,6 +47,13 @@ class Account(Model):
     def trakt(self, value):
         self._trakt_account = value
 
+    @property
+    def refreshed_ts(self):
+        if self.refreshed_at is None:
+            return None
+
+        return (self.refreshed_at - datetime(1970, 1, 1)).total_seconds()
+
     def thumb_url(self, update=False):
         if self.thumb and not update:
             return self.thumb
@@ -56,7 +68,18 @@ class Account(Model):
 
         return thumb
 
-    def refresh(self, save=True):
+    def refresh(self, force=False, save=True):
+        # Check if refresh is required
+        if self.refresh_required():
+            force = True
+
+        # Only refresh account every `REFRESH_INTERVAL`
+        if not force and self.refreshed_at:
+            since_refresh = datetime.utcnow() - self.refreshed_at
+
+            if since_refresh < REFRESH_INTERVAL:
+                return False
+
         # Retrieve trakt/plex accounts
         p = self.plex
         t = self.trakt
@@ -72,8 +95,18 @@ class Account(Model):
         )
 
         # Store changes in database
+        self.refreshed_at = datetime.utcnow()
+
         if save:
             self.save()
+
+        return True
+
+    def refresh_required(self):
+        if self.thumb is None:
+            return True
+
+        return False
 
     def build_thumb(self, plex=None, trakt=None):
         # Check if trakt thumbnail exists

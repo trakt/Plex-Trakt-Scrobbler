@@ -6,7 +6,7 @@ from trakt.interfaces.base import InterfaceProxy
 
 import logging
 
-__version__ = '2.4.0'
+__version__ = '2.4.1'
 
 log = logging.getLogger(__name__)
 

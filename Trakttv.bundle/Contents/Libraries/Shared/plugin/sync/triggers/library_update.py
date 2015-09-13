@@ -48,6 +48,8 @@ class LibraryUpdateTrigger(Trigger):
 
         # Construct thread
         self._thread = Thread(target=self._run, name='LibraryUpdateTrigger')
+        self._thread.daemon = True
+
         self._thread.start()
 
     def _run_wrapper(self):

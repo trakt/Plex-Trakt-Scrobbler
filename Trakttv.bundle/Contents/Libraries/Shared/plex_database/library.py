@@ -65,6 +65,19 @@ class LibraryBase(object):
         return result
 
     @staticmethod
+    def _tuple_iterator(query):
+        result = query.tuples().execute()
+
+        while True:
+            try:
+                row = result.iterate()
+            except UnicodeDecodeError, ex:
+                log.warn('Unable to retrieve row: %s', ex, exc_info=True)
+                continue
+
+            yield row
+
+    @staticmethod
     def _models(fields, account=None):
         models = {}
 
@@ -208,7 +221,7 @@ class MovieLibrary(LibraryBase):
         # Parse rows
         return [
             self._parse(fields, row, offset=2)
-            for row in query.tuples().iterator()
+            for row in self._tuple_iterator(query)
         ]
 
     def mapped(self, sections, fields=None, account=None, parse_guid=False):
@@ -291,7 +304,7 @@ class ShowLibrary(LibraryBase):
         # Parse rows
         return [
             self._parse(fields, row, offset=2)
-            for row in query.tuples().iterator()
+            for row in self._tuple_iterator(query)
         ]
 
 
@@ -334,7 +347,7 @@ class SeasonLibrary(LibraryBase):
         # Parse rows
         return [
             self._parse(fields, row, offset=1)
-            for row in query.tuples().iterator()
+            for row in self._tuple_iterator(query)
         ]
 
 
@@ -377,7 +390,7 @@ class EpisodeLibrary(LibraryBase):
         # Parse rows
         return [
             self._parse(fields, row, offset=2)
-            for row in query.tuples().iterator()
+            for row in self._tuple_iterator(query)
         ]
 
     def mapped(self, sections, fields=None, account=None, parse_guid=False):
@@ -552,7 +565,7 @@ class EpisodeLibrary(LibraryBase):
         )
 
         def iterator():
-            for row in query.tuples().iterator():
+            for row in self._tuple_iterator(query):
                 yield self._parse(fields, row, offset=4)
 
         return iterator()

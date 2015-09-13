@@ -2,6 +2,7 @@ from plugin.core.filters import Filters
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
 from plex import Plex
+import elapsed
 import itertools
 import logging
 
@@ -90,6 +91,7 @@ class Mode(object):
         for c in self.children:
             c.run()
 
+    @elapsed.clock
     def execute_handlers(self, media, data, *args, **kwargs):
         if type(media) is not list:
             media = [media]
@@ -114,6 +116,7 @@ class Mode(object):
 
             yield data
 
+    @elapsed.clock
     def is_data_enabled(self, data):
         key = DATA_PREFERENCE_MAP.get(data)
 
@@ -166,17 +169,35 @@ class Mode(object):
         return result
 
 
-def log_unsupported_guid(logger, rating_key, p_guid, p_item, dictionary=None):
-    if dictionary is not None:
-        if rating_key in dictionary:
-            return
+def mark_unsupported(dictionary, rating_key, p_guid, p_item):
+    if rating_key in dictionary:
+        return
 
-        dictionary[rating_key] = True
+    dictionary[rating_key] = (p_guid, p_item)
 
-    title = p_item.get('title')
-    year = p_item.get('year')
 
-    if title and year:
-        logger.info('[%r] GUID agent %r is not supported on: %r (%r)', rating_key, p_guid.agent if p_guid else None, title, year)
-    else:
-        logger.info('[%r] GUID agent %r is not supported', rating_key, p_guid.agent if p_guid else None)
+def log_unsupported(logger, message, dictionary):
+    if len(dictionary) < 1:
+        return
+
+    logger.info(
+        message,
+        len(dictionary),
+        '\n'.join(format_unsupported(dictionary))
+    )
+
+
+def format_unsupported(dictionary):
+    keys = sorted(dictionary.keys())
+
+    for key in keys:
+        p_guid, p_item = dictionary[key]
+
+        agent = p_guid.agent if p_guid else None
+        title = p_item.get('title')
+        year = p_item.get('year')
+
+        if title and year:
+            yield '    [%6s] GUID agent %r is not supported on: %r (%r)' % (key, agent, title, year)
+        else:
+            yield '    [%6s] GUID agent %r is not supported' % (key, agent)

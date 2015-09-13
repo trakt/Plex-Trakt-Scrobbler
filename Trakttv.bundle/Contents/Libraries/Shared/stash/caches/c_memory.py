@@ -1,4 +1,5 @@
 from stash.caches.core.base import Cache
+from stash.lib import six as six
 
 
 class MemoryCache(Cache):
@@ -8,6 +9,12 @@ class MemoryCache(Cache):
         super(MemoryCache, self).__init__()
 
         self.data = initial or {}
+
+    def iteritems(self):
+        return self.data.iteritems()
+
+    def items(self):
+        return self.data.items()
 
     def __delitem__(self, key):
         del self.data[key]
