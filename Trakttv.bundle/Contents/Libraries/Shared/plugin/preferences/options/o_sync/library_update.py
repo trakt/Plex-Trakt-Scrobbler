@@ -13,7 +13,7 @@ class SyncLibraryUpdateOption(SimpleOption):
 
     group = ('Sync', 'Triggers')
     label = 'After library updates'
-    order = 241
+    order = 251
 
     preference = 'sync_run_library'
 

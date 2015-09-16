@@ -249,6 +249,9 @@ class SyncTask(object):
         if configuration['sync.collection.mode'] in modes:
             enabled.append(SyncData.Collection)
 
+        if configuration['sync.watchlist.mode'] == mode:
+            enabled.append(SyncData.Watchlist)
+
         # Convert to enum value
         result = None
 
