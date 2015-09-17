@@ -1,6 +1,6 @@
 from plugin.managers import ExceptionManager
 from plugin.models import *
-from plugin.sync.core.enums import SyncData
+from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
@@ -230,17 +230,23 @@ class SyncTask(object):
     def get_enabled_data(cls, configuration, mode):
         enabled = []
 
+        # Determine accepted modes
+        modes = [SyncMode.Full, mode]
+
+        if mode == SyncMode.FastPull:
+            modes.append(SyncMode.Pull)
+
         # Retrieve enabled data
-        if configuration['sync.watched.mode'] == mode:
+        if configuration['sync.watched.mode'] in modes:
             enabled.append(SyncData.Watched)
 
-        if configuration['sync.ratings.mode'] == mode:
+        if configuration['sync.ratings.mode'] in modes:
             enabled.append(SyncData.Ratings)
 
-        if configuration['sync.playback.mode'] == mode:
+        if configuration['sync.playback.mode'] in modes:
             enabled.append(SyncData.Playback)
 
-        if configuration['sync.collection.mode'] == mode:
+        if configuration['sync.collection.mode'] in modes:
             enabled.append(SyncData.Collection)
 
         # Convert to enum value
