@@ -1,6 +1,6 @@
 from threading import Thread
 from plugin.models import SyncResult
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncMedia
 from plugin.sync.core.exceptions import QueueError
 from plugin.sync.core.task import SyncTask
 from plugin.sync.handlers import *
@@ -19,7 +19,8 @@ HANDLERS = [
     Collection,
     Playback,
     Ratings,
-    Watched
+    Watched,
+    Watchlist
 ]
 
 MODES = [

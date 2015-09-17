@@ -1,5 +1,5 @@
 from plugin.sync.core.constants import GUID_AGENTS
-from plugin.sync.core.enums import SyncMode, SyncMedia
+from plugin.sync.core.enums import SyncMode, SyncData, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
 from plex_database.models import MetadataItem
@@ -63,9 +63,14 @@ class Movies(Mode):
             # Store in item map
             self.current.map.add(p_item.get('library_section'), rating_key, p_guid)
 
+            # Iterate over changed data
             for (media, data), result in self.trakt.changes:
                 if media != SyncMedia.Movies:
                     # Ignore changes that aren't for movies
+                    continue
+
+                if data == SyncData.Watchlist:
+                    # Ignore watchlist data
                     continue
 
                 if not self.is_data_enabled(data):
