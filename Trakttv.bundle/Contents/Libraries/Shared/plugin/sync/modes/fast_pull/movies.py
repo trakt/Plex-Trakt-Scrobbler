@@ -2,6 +2,7 @@ from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
+from plex_database.models import MetadataItem
 from trakt_sync.cache.main import Cache
 import elapsed
 import logging
@@ -15,11 +16,13 @@ class Movies(Mode):
     @elapsed.clock
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections('movie')
+        p_sections, p_sections_map = self.sections('movie')
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
-            p_sections,
+            p_sections, [
+                MetadataItem.library_section
+            ],
             account=self.current.account.plex.key,
             parse_guid=True
         )
@@ -56,6 +59,9 @@ class Movies(Mode):
             if pk is None:
                 # No `pk` found
                 continue
+
+            # Store in item map
+            self.current.map.add(p_item.get('library_section'), rating_key, p_guid)
 
             for (media, data), result in self.trakt.changes:
                 if media != SyncMedia.Movies:

@@ -13,7 +13,7 @@ class Shows(Base):
     @elapsed.clock
     def run(self):
         # Retrieve show sections
-        p_sections = self.sections('show')
+        p_sections, p_sections_map = self.sections('show')
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(

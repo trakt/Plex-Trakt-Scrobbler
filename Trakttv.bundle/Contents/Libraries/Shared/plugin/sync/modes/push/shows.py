@@ -16,7 +16,7 @@ class Shows(Base):
     @elapsed.clock
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections('show')
+        p_sections, p_sections_map = self.sections('show')
 
         with elapsed.clock(Shows, 'run:fetch'):
             # Fetch movies with account settings

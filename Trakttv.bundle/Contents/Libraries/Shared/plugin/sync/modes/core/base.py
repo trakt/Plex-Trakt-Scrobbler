@@ -39,6 +39,7 @@ DATA_PREFERENCE_MAP = {
     SyncData.Watchlist:     False,
 }
 
+
 class Mode(object):
     mode = None
     children = []
@@ -144,14 +145,14 @@ class Mode(object):
 
         return True
 
-    def sections(self, section_type):
+    def sections(self, section_type=None):
         p_sections = Plex['library'].sections()
 
         if p_sections is None:
             return None
 
         # Retrieve sections
-        result = []
+        result = {}
 
         for section in p_sections.filter(section_type):
             # Apply section name filter
@@ -164,9 +165,9 @@ class Mode(object):
                 log.warn('Unable to cast section key %r to integer: %s', section.key, ex, exc_info=True)
                 continue
 
-            result.append((key,))
+            result[key] = section.uuid
 
-        return result
+        return [(key, ) for key in result.keys()], result
 
 
 def mark_unsupported(dictionary, rating_key, p_guid, p_item):

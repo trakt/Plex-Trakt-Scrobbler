@@ -13,7 +13,7 @@ class Movies(Base):
     @elapsed.clock
     def run(self):
         # Retrieve movie sections
-        p_sections = self.sections('movie')
+        p_sections, p_sections_map = self.sections('movie')
 
         # Fetch movies with account settings
         p_items = self.plex.library.movies.mapped(
