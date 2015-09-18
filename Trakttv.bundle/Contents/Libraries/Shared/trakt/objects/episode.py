@@ -4,8 +4,8 @@ from trakt.objects.video import Video
 
 
 class Episode(Video):
-    def __init__(self, client, keys=None):
-        super(Episode, self).__init__(client, keys)
+    def __init__(self, client, keys=None, index=None):
+        super(Episode, self).__init__(client, keys, index)
 
         self.show = None
         self.season = None
@@ -56,8 +56,8 @@ class Episode(Video):
         update_attributes(self, info, ['title'])
 
     @classmethod
-    def _construct(cls, client, keys, info=None, **kwargs):
-        episode = cls(client, keys)
+    def _construct(cls, client, keys, info=None, index=None, **kwargs):
+        episode = cls(client, keys, index=index)
         episode._update(info, **kwargs)
 
         return episode
