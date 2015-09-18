@@ -73,7 +73,7 @@ class LikedLists(Mode):
 
             # Execute handler
             self.execute_handlers(
-                media, SyncData.List,
+                media, SyncData.ListLiked,
 
                 playlist=playlist,
                 playlist_items=playlist_items,

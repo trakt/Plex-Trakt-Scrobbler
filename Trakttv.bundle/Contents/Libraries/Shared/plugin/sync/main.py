@@ -50,13 +50,22 @@ class Main(object):
 
     def _construct_modules(self, modules, attribute):
         for cls in modules:
-            key = getattr(cls, attribute, None)
+            keys = getattr(cls, attribute, None)
 
-            if key is None:
+            if keys is None:
                 log.warn('Module %r is missing a valid %r attribute', cls, attribute)
                 continue
 
-            yield key, cls(self)
+            # Convert `keys` to list
+            if type(keys) is not list:
+                keys = [keys]
+
+            # Construct module
+            obj = cls(self)
+
+            # Return module with keys
+            for key in keys:
+                yield key, obj
 
     def queue(self, account, mode, data=None, media=SyncMedia.All, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
         """Queue a sync for the provided account

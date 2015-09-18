@@ -93,7 +93,7 @@ class Shows(Base):
 
 
 class Pull(DataHandler):
-    data = SyncData.List
+    data = [SyncData.ListLiked, SyncData.ListPersonal]
     mode = [SyncMode.FastPull, SyncMode.Pull]
 
     children = [
