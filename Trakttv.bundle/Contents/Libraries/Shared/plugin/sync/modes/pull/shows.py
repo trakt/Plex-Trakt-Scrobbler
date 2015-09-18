@@ -3,6 +3,7 @@ from plugin.sync.core.enums import SyncMedia
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
 
+from plex_database.models import MetadataItem
 import elapsed
 import logging
 
@@ -17,7 +18,9 @@ class Shows(Base):
 
         # Fetch episodes with account settings
         p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
-            p_sections,
+            p_sections, ([
+                MetadataItem.library_section
+            ], [], []),
             account=self.current.account.plex.key,
             parse_guid=True
         )
@@ -55,6 +58,9 @@ class Shows(Base):
                 continue
 
             key = (p_guid.agent, p_guid.sid)
+
+            # Store in item map
+            self.current.map.add(p_show.get('library_section'), sh_id, p_guid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

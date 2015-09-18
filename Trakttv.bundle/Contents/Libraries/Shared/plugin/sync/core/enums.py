@@ -51,6 +51,8 @@ class SyncData(Enum):
     Watched     = 0x08
     Watchlist   = 0x16
 
+    List        = 0x32
+
     __titles__ = None
 
     @classmethod

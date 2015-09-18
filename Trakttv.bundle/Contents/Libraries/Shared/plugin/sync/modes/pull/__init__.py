@@ -2,6 +2,7 @@ from plugin.sync.core.enums import SyncMode
 from plugin.sync.modes.core.base import Mode
 from plugin.sync.modes.pull.movies import Movies
 from plugin.sync.modes.pull.shows import Shows
+from plugin.sync.modes.pull.lists import LikedLists, PersonalLists
 
 import elapsed
 import logging
@@ -14,7 +15,10 @@ class Pull(Mode):
 
     children = [
         Movies,
-        Shows
+        Shows,
+
+        LikedLists,
+        PersonalLists
     ]
 
     @elapsed.clock

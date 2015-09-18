@@ -17,6 +17,7 @@ log = logging.getLogger(__name__)
 
 HANDLERS = [
     Collection,
+    List,
     Playback,
     Ratings,
     Watched,
