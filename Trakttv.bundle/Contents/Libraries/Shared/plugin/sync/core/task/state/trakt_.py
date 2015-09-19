@@ -53,14 +53,11 @@ class SyncStateTrakt(object):
         return Cache(self.task.media, self.task.data, storage)
 
     def __getitem__(self, key):
-        if len(key) != 2:
-            return None
-
         collection = [self.task.account.trakt.username]
 
         if key[0] in [SyncData.ListLiked, SyncData.ListPersonal]:
             collection.extend(Cache.Data.get(key[0]))
-            collection.append(key[1])
+            collection.extend(key[1:])
         else:
             collection.extend([
                 Cache.Media.get(key[0]),

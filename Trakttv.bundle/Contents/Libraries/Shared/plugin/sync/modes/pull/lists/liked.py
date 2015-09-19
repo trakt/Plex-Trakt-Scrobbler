@@ -16,16 +16,21 @@ class LikedLists(Mode):
 
     @elapsed.clock
     def run(self):
-        log.debug('_by_guid: %r', self.current.map._by_guid)
-
         # Retrieve plex sections
         p_sections, p_sections_map = self.sections()
 
         # Retrieve plex playlists
         p_playlists = dict(self.get_playlists())
 
+        # Retrieve trakt lists
+        t_lists = self.trakt[(SyncData.ListLiked,)]
+
+        if t_lists is None:
+            log.warn('Unable to retrieve liked lists')
+            return
+
         # Process trakt lists
-        for t_list in Trakt['users'].likes('lists'):
+        for _, t_list in t_lists.items():
             self.process(p_playlists, p_sections_map, t_list)
 
     def process(self, p_playlists, p_sections_map, t_list):
