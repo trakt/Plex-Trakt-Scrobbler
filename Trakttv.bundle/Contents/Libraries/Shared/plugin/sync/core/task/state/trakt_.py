@@ -1,4 +1,5 @@
 from plugin.core.database import Database
+from plugin.sync.core.enums import SyncData
 
 from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend
@@ -51,11 +52,22 @@ class SyncStateTrakt(object):
 
         return Cache(self.task.media, self.task.data, storage)
 
-    def __getitem__(self, (media, data)):
-        media = Cache.Media.get(media)
-        data = Cache.Data.get(data)
+    def __getitem__(self, key):
+        if len(key) != 2:
+            return None
 
-        return self.cache[(self.task.account.trakt.username, media, data)]
+        collection = [self.task.account.trakt.username]
+
+        if key[0] in [SyncData.ListLiked, SyncData.ListPersonal]:
+            collection.extend(Cache.Data.get(key[0]))
+            collection.append(key[1])
+        else:
+            collection.extend([
+                Cache.Media.get(key[0]),
+                Cache.Data.get(key[1])
+            ])
+
+        return self.cache[collection]
 
     def invalidate(self, media, data):
         """Invalidate collection in trakt cache"""

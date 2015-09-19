@@ -37,20 +37,21 @@ class LikedLists(Mode):
             for item in playlist.items()
         ])
 
-        # Iterate over items in trakt list
-        t_items = t_list.items()
+        # Retrieve trakt list items from cache
+        t_items = self.trakt[(SyncData.ListLiked, t_list.id)]
 
-        if t_items is None:
+        if not t_items:
             log.warn('Unable to retrieve list items for: %r', t_list)
             return
 
-        for t_item in t_items:
+        # Iterate over items in trakt list
+        for pk, t_item in t_items.items():
             media = self.get_media(t_item)
 
             if media is None:
                 continue
 
-            p_keys = self.current.map.by_guid(t_item.pk)
+            p_keys = self.current.map.by_guid(pk)
 
             if not p_keys:
                 # Item not found in plex
