@@ -1,4 +1,5 @@
 from plugin.core.database import Database
+from plugin.sync.core.enums import SyncData
 
 from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend
@@ -51,11 +52,19 @@ class SyncStateTrakt(object):
 
         return Cache(self.task.media, self.task.data, storage)
 
-    def __getitem__(self, (media, data)):
-        media = Cache.Media.get(media)
-        data = Cache.Data.get(data)
+    def __getitem__(self, key):
+        collection = [self.task.account.trakt.username]
 
-        return self.cache[(self.task.account.trakt.username, media, data)]
+        if key[0] in [SyncData.ListLiked, SyncData.ListPersonal]:
+            collection.extend(Cache.Data.get(key[0]))
+            collection.extend(key[1:])
+        else:
+            collection.extend([
+                Cache.Media.get(key[0]),
+                Cache.Data.get(key[1])
+            ])
+
+        return self.cache[collection]
 
     def invalidate(self, media, data):
         """Invalidate collection in trakt cache"""
@@ -92,17 +101,35 @@ class SyncStateTrakt(object):
         self.episodes = {}
 
         log.debug('Building table...')
-        log.debug(' - Data: %s', ', '.join(self._data))
-        log.debug(' - Media: %s', ', '.join(self._media))
+
+        log.debug(' - Data: %s', ', '.join([
+            '/'.join(x) if type(x) is tuple else x
+            for x in self._data
+        ]))
+
+        log.debug(' - Media: %s', ', '.join([
+            '/'.join(x) if type(x) is tuple else x
+            for x in self._media
+        ]))
 
         for key in self.cache.collections:
-            username, media, data = key
+            if len(key) == 3:
+                # Sync
+                username, media, data = key
+            elif len(key) == 4:
+                # Lists
+                username = key[0]
+                media = None
+                data = tuple(key[1:3])
+            else:
+                log.warn('Unknown key: %r', key)
+                continue
 
             if username != self.task.account.trakt.username:
                 # Collection isn't for the current account
                 continue
 
-            if media not in self._media:
+            if media and media not in self._media:
                 log.debug('[%-31s] Media %r has not been enabled', '/'.join(key), data)
                 continue
 
@@ -110,15 +137,21 @@ class SyncStateTrakt(object):
                 log.debug('[%-31s] Data %r has not been enabled', '/'.join(key), data)
                 continue
 
-            log.debug('[%-31s] Building table from collection...', '/'.join(key))
-
             # Retrieve key map
             keys = None
 
             if media == 'movies':
                 keys = self.movies
-            elif media == 'shows':
+            elif media in ['shows', 'seasons', 'episodes']:
                 keys = self.shows
+            elif not media:
+                # Ignore unsupported media types
+                continue
+            else:
+                log.warn('Unknown media type: %r', media)
+                continue
+
+            log.debug('[%-31s] Building table from collection...', '/'.join(key))
 
             # Retrieve cache store
             store = self.cache[key]

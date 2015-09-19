@@ -1,4 +1,4 @@
-from trakt.objects import Movie, Show, Episode, Season, CustomList
+from trakt.objects import Movie, Show, Episode, Season, CustomList, Comment
 
 IDENTIFIERS = {
     'movie': [
@@ -64,6 +64,9 @@ class Mapper(object):
                 item.get('number')
             ))
 
+        if media == 'comment':
+            keys.insert(0, ('trakt', item.get('id')))
+
         if not len(keys):
             return None, []
 
@@ -85,6 +88,9 @@ class Mapper(object):
 
         if media == 'episode':
             return Episode._construct(client, keys, item, **kwargs)
+
+        if media == 'comment':
+            return Comment._construct(client, keys, item, **kwargs)
 
         if media == 'custom_list':
             return CustomList._construct(client, keys, item, **kwargs)

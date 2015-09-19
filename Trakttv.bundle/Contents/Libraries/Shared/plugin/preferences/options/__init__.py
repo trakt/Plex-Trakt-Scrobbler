@@ -28,5 +28,7 @@ OPTIONS = [
     SyncRatingsOption,
     SyncRatingsConflictOption,
 
-    SyncWatchedOption
+    SyncWatchedOption,
+
+    SyncWatchlistOption
 ]

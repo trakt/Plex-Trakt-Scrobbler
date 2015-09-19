@@ -4,6 +4,7 @@ from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.core.exceptions import SyncAbort
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
+from plugin.sync.core.task.map import SyncMap
 from plugin.sync.core.task.progress import SyncProgress
 from plugin.sync.core.task.profiler import SyncProfiler
 from plugin.sync.core.task.state import SyncState
@@ -43,6 +44,7 @@ class SyncTask(object):
         # Construct children
         self.artifacts = SyncArtifacts(self)
         self.configuration = SyncConfiguration(self)
+        self.map = SyncMap(self)
         self.progress = SyncProgress(self)
         self.profiler = SyncProfiler(self)
 
@@ -248,6 +250,15 @@ class SyncTask(object):
 
         if configuration['sync.collection.mode'] in modes:
             enabled.append(SyncData.Collection)
+
+        if configuration['sync.watchlist.mode'] == mode:
+            enabled.append(SyncData.Watchlist)
+
+        # TODO implement actual list options
+        enabled.extend([
+            SyncData.ListLiked,
+            SyncData.ListPersonal
+        ])
 
         # Convert to enum value
         result = None

@@ -1,7 +1,7 @@
 from trakt_sync.differ.core.base import Differ
 from trakt_sync.differ.core.helpers import dict_path
 from trakt_sync.differ.core.result import Result
-from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
+from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched, Watchlist
 
 
 class ShowDiffer(Differ):
@@ -10,7 +10,8 @@ class ShowDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Ratings
+                Ratings,
+                Watchlist
             ]
         ]
 
@@ -63,7 +64,8 @@ class SeasonDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Ratings
+                Ratings,
+                Watchlist
             ]
         ]
 
@@ -132,7 +134,8 @@ class EpisodeDiffer(Differ):
                 Collection,
                 Playback,
                 Ratings,
-                Watched
+                Watched,
+                Watchlist
             ]
         ]
 

@@ -60,3 +60,8 @@ class LibraryMetadataInterface(Interface):
                 }))
             }
         }))
+
+    def update(self, key, **kwargs):
+        response = self.http.put(key, query=kwargs.items())
+
+        return response.status_code == 200

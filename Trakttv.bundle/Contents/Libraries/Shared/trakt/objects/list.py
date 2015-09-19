@@ -16,6 +16,7 @@ class List(object):
         self.allow_comments = None
         self.display_numbers = None
 
+        self.liked_at = None
         self.updated_at = None
 
         self.comment_count = None
@@ -41,6 +42,9 @@ class List(object):
         if not info:
             return
 
+        if 'liked_at' in info:
+            self.liked_at = from_iso8601(info.get('liked_at'))
+
         if 'updated_at' in info:
             self.updated_at = from_iso8601(info.get('updated_at'))
 
@@ -56,6 +60,14 @@ class List(object):
             'item_count'
         ])
 
+    def __getstate__(self):
+        state = self.__dict__
+
+        if hasattr(self, '_client'):
+            del state['_client']
+
+        return state
+
     def __repr__(self):
         _, sid = self.pk
 
@@ -66,7 +78,7 @@ class List(object):
 
 
 class CustomList(List):
-    def __init__(self, client, keys, username):
+    def __init__(self, client, keys, username=None):
         super(CustomList, self).__init__(client, keys)
 
         self.username = username
@@ -83,6 +95,12 @@ class CustomList(List):
             'privacy'
         ])
 
+        # Update with user details
+        user = info.get('user', {})
+
+        if user.get('username'):
+            self.username = user['username']
+
     @classmethod
     def _construct(cls, client, keys, info, **kwargs):
         if not info:
@@ -92,6 +110,9 @@ class CustomList(List):
         l._update(info)
         return l
 
+    def items(self, **kwargs):
+        return self._client['users/*/lists/*'].items(self.username, self.id, **kwargs)
+
     #
     # Owner actions
     #
@@ -99,8 +120,8 @@ class CustomList(List):
     def add(self, items, **kwargs):
         return self._client['users/*/lists/*'].add(self.username, self.id, items, **kwargs)
 
-    def delete(self):
-        return self._client['users/*/lists/*'].delete(self.username, self.id)
+    def delete(self, **kwargs):
+        return self._client['users/*/lists/*'].delete(self.username, self.id, **kwargs)
 
     def update(self, **kwargs):
         item = self._client['users/*/lists/*'].update(self.username, self.id, return_type='data', **kwargs)

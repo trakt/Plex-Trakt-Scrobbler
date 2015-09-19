@@ -38,8 +38,8 @@ class UsersListInterface(Interface):
             return None
 
         return [
-            ListItemMapper.process(self.client, item)
-            for item in items
+            ListItemMapper.process(self.client, item, index=x + 1)
+            for x, item in enumerate(items)
         ]
 
     #

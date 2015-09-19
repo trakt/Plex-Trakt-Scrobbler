@@ -1,3 +1,4 @@
+from trakt.mapper.comment import CommentMapper
 from trakt.mapper.list import ListMapper
 from trakt.mapper.list_item import ListItemMapper
 from trakt.mapper.search import SearchMapper

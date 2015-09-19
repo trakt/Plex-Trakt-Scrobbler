@@ -17,7 +17,7 @@ class SyncIntervalOption(SchedulerOption):
 
     group = ('Sync', 'Triggers')
     label = 'Interval'
-    order = 240
+    order = 250
 
     preference = 'sync_run_interval'
 
