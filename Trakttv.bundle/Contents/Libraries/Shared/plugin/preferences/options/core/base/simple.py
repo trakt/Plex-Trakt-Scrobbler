@@ -1,8 +1,6 @@
-from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.models import ConfigurationOption
 from plugin.preferences.options.core.base.base import Option
 
-from plex import Plex
 import logging
 import msgpack
 
@@ -80,19 +78,6 @@ class SimpleOption(Option):
     #
     # Private functions
     #
-
-    @classmethod
-    def _update_preference(cls, value, account=None):
-        if account is not None and account > 1:
-            # Ignore change for non-administrator account
-            return value
-
-        # Disable preference migration when validated
-        with Plex.configuration.headers({'X-Disable-Preference-Migration': '1'}):
-            # Update preference
-            Plex[':/plugins/%s/prefs' % PLUGIN_IDENTIFIER].set(cls.preference, value)
-
-        return value
 
     @classmethod
     def _pack(cls, value):
