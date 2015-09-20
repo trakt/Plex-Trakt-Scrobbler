@@ -34,7 +34,7 @@ class Movies(Base):
         )
 
         # Task started
-        pending_movies = self.trakt.movies.copy()
+        pending_movies = self.trakt.table.movies.copy()
         unsupported_movies = {}
 
         # Iterate over plex movies

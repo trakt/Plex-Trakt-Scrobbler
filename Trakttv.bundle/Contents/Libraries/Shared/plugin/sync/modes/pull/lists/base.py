@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 class Lists(Mode):
     def process(self, data, p_playlists, p_sections_map, t_list):
+        log.debug('Processing list: %r', t_list)
+
         # Create/retrieve plex list
         playlist = self.get_playlist(p_playlists, t_list)
 
@@ -32,16 +34,25 @@ class Lists(Mode):
             return
 
         # Iterate over items in trakt list
-        for pk, t_item in t_items.items():
+        for key, t_item in t_items.items():
+            # Get `SyncMedia` for `t_item`
             media = self.get_media(t_item)
 
             if media is None:
                 continue
 
+            # Try retrieve `pk` for `key`
+            pk = self.trakt.table.get(key)
+
+            if pk is None:
+                log.info('Unable to map %r to a primary key', key)
+                pk = key
+
+            # Retrieve plex items that match `pk`
             p_keys = self.current.map.by_guid(pk)
 
             if not p_keys:
-                # Item not found in plex
+                log.info('Unable to find item that matches guid: %r', pk)
                 continue
 
             # Convert to list (for indexing)

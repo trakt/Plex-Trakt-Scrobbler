@@ -49,16 +49,17 @@ class Movies(Base):
 
             key = (p_guid.agent, p_guid.sid)
 
-            # Store in item map
-            self.current.map.add(p_item.get('library_section'), rating_key, p_guid)
-
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
+
+            # Store in item map
+            self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])
 
             if pk is None:
                 # No `pk` found
                 continue
 
+            # Execute data handlers
             for data in self.get_data(SyncMedia.Movies):
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 

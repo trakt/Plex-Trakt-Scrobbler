@@ -10,13 +10,23 @@ class SyncMap(object):
         self._by_guid = {}
         self._by_key = {}
 
-    def add(self, p_section_key, p_key, guid):
+    def add(self, p_section_key, p_key, guids):
+        if not guids or not p_key:
+            return False
+
+        for guid in guids:
+            self.add_one(p_section_key, p_key, guid)
+
+    def add_one(self, p_section_key, p_key, guid):
         if not guid or not p_key:
             return False
 
         # Flatten `p_guid`
         if type(guid) is not tuple:
             guid = (guid.agent, guid.sid)
+
+        if guid[0] not in ['imdb', 'tvdb']:
+            log.info('Unknown primary agent: %r -> %r', guid, (p_section_key, p_key))
 
         # Store in `_by_guid` map
         if guid not in self._by_guid:

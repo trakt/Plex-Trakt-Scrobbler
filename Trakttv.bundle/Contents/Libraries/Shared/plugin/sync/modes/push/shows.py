@@ -37,8 +37,8 @@ class Shows(Base):
             )
 
         # Task started
-        pending_shows = self.trakt.shows.copy()
-        pending_episodes = copy.deepcopy(self.trakt.episodes)
+        pending_shows = self.trakt.table.shows.copy()
+        pending_episodes = copy.deepcopy(self.trakt.table.episodes)
 
         unsupported_shows = {}
 

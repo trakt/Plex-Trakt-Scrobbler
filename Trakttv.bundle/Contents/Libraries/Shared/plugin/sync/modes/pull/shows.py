@@ -59,16 +59,17 @@ class Shows(Base):
 
             key = (p_guid.agent, p_guid.sid)
 
-            # Store in item map
-            self.current.map.add(p_show.get('library_section'), sh_id, p_guid)
-
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
+
+            # Store in item map
+            self.current.map.add(p_show.get('library_section'), sh_id, [key, pk])
 
             if pk is None:
                 # No `pk` found
                 continue
 
+            # Execute data handlers
             for data in self.get_data(SyncMedia.Shows):
                 t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
 

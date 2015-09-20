@@ -56,12 +56,12 @@ class Movies(Mode):
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
 
+            # Store in item map
+            self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])
+
             if pk is None:
                 # No `pk` found
                 continue
-
-            # Store in item map
-            self.current.map.add(p_item.get('library_section'), rating_key, p_guid)
 
             # Iterate over changed data
             for (media, data), result in self.trakt.changes:

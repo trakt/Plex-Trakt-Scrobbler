@@ -60,12 +60,12 @@ class Shows(Mode):
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
 
+                # Store in item map
+                self.current.map.add(p_show.get('library_section'), sh_id, [key, pk])
+
                 if pk is None:
                     # No `pk` found
                     continue
-
-                # Store in item map
-                self.current.map.add(p_show.get('library_section'), sh_id, p_guid)
 
                 # Iterate over changed data
                 for (media, data), result in self.trakt.changes:
