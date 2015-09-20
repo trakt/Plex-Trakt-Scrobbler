@@ -1,5 +1,7 @@
+from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.models import Account
 
+from plex import Plex
 import logging
 
 log = logging.getLogger(__name__)
@@ -88,6 +90,19 @@ class Option(object):
 
     def _clone(self, *args):
         return self.__class__(self._preferences, *args)
+
+    @classmethod
+    def _update_preference(cls, value, account=None):
+        if account is not None and account > 1:
+            # Ignore change for non-administrator account
+            return value
+
+        # Disable preference migration when validated
+        with Plex.configuration.headers({'X-Disable-Preference-Migration': '1'}):
+            # Update preference
+            Plex[':/plugins/%s/prefs' % PLUGIN_IDENTIFIER].set(cls.preference, value)
+
+        return value
 
     @staticmethod
     def _validate_account(account):
