@@ -129,12 +129,17 @@ class SyncStateTrakt(object):
                 # Collection isn't for the current account
                 continue
 
-            if media and media not in self._media:
-                log.debug('[%-31s] Media %r has not been enabled', '/'.join(key), data)
-                continue
+            if media:
+                if media == 'lists':
+                    log.debug('[%-38s] Collection has been ignored (unsupported media)', '/'.join(key))
+                    continue
+
+                if media not in self._media:
+                    log.debug('[%-38s] Media %r has not been enabled', '/'.join(key), media)
+                    continue
 
             if data not in self._data:
-                log.debug('[%-31s] Data %r has not been enabled', '/'.join(key), data)
+                log.debug('[%-38s] Data %r has not been enabled', '/'.join(key), data)
                 continue
 
             # Retrieve key map
@@ -146,12 +151,13 @@ class SyncStateTrakt(object):
                 keys = self.shows
             elif not media:
                 # Ignore unsupported media types
+                log.debug('[%-38s] Collection has been ignored (unsupported media)', '/'.join(key))
                 continue
             else:
                 log.warn('Unknown media type: %r', media)
                 continue
 
-            log.debug('[%-31s] Building table from collection...', '/'.join(key))
+            log.debug('[%-38s] Building table from collection...', '/'.join(key))
 
             # Retrieve cache store
             store = self.cache[key]
@@ -201,6 +207,6 @@ class SyncStateTrakt(object):
         with elapsed.clock(SyncStateTrakt, 'flush:stores'):
             # Flush trakt stores to disk
             for key, store in self.cache.stores.items():
-                log.debug('[%-31s] Flushing collection...', '/'.join(key))
+                log.debug('[%-38s] Flushing collection...', '/'.join(key))
 
                 store.flush()

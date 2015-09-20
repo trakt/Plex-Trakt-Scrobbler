@@ -38,6 +38,11 @@ class Watchlist(Mode):
 
     @elapsed.clock
     def run(self):
+        # Check if data is enabled
+        if not self.is_data_enabled(SyncData.Watchlist):
+            log.debug('Watchlist syncing has not been enabled')
+            return
+
         # Retrieve sections
         p_sections, p_sections_map = self.sections()
 

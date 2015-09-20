@@ -251,14 +251,15 @@ class SyncTask(object):
         if configuration['sync.collection.mode'] in modes:
             enabled.append(SyncData.Collection)
 
-        if configuration['sync.watchlist.mode'] == mode:
+        # Lists
+        if configuration['sync.lists.watchlist.mode'] in modes:
             enabled.append(SyncData.Watchlist)
 
-        # TODO implement actual list options
-        enabled.extend([
-            SyncData.ListLiked,
-            SyncData.ListPersonal
-        ])
+        if configuration['sync.lists.liked.mode'] in modes:
+            enabled.append(SyncData.ListLiked)
+
+        if configuration['sync.lists.personal.mode'] in modes:
+            enabled.append(SyncData.ListPersonal)
 
         # Convert to enum value
         result = None

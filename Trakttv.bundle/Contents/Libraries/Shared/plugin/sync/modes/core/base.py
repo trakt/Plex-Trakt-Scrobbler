@@ -36,7 +36,11 @@ DATA_PREFERENCE_MAP = {
     SyncData.Playback:      'sync.playback.mode',
     SyncData.Ratings:       'sync.ratings.mode',
     SyncData.Watched:       'sync.watched.mode',
-    SyncData.Watchlist:     'sync.watchlist.mode'
+
+    # Lists
+    SyncData.ListLiked:     'sync.lists.liked.mode',
+    SyncData.ListPersonal:  'sync.lists.personal.mode',
+    SyncData.Watchlist:     'sync.lists.watchlist.mode',
 }
 
 
