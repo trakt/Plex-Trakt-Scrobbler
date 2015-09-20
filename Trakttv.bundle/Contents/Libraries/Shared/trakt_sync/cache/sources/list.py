@@ -20,6 +20,9 @@ class ListSource(Source):
             yield change
 
     def refresh_lists(self, username, data, lists):
+        # Resolve lists
+        lists = list(lists)
+
         # Store lists in cache
         self.update_store((username, data), dict([
             (t_list.id, t_list)
