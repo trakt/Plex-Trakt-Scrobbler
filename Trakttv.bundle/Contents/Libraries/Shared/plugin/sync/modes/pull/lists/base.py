@@ -101,7 +101,7 @@ class Lists(Mode):
             yield playlist.title.lower(), playlist
 
     def get_playlist(self, p_playlists, t_list):
-        if not p_playlists or not t_list:
+        if p_playlists is None or not t_list:
             return None
 
         # Try find existing playlist
