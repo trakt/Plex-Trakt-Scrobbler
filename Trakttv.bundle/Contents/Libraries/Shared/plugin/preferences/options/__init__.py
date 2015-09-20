@@ -30,5 +30,13 @@ OPTIONS = [
 
     SyncWatchedOption,
 
-    SyncWatchlistOption
+    # Sync - Lists
+    SyncListsLikedOption,
+    SyncListsLikedPlaylistsOption,
+
+    SyncListsPersonalOption,
+    SyncListsPersonalPlaylistsOption,
+
+    SyncListsWatchlistOption,
+    SyncListsWatchlistPlaylistsOption
 ]
