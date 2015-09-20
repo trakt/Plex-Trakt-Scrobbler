@@ -14,6 +14,11 @@ class Lists(Mode):
         # Create/retrieve plex list
         playlist = self.get_playlist(p_playlists, t_list)
 
+        if not playlist:
+            log.warn('Unable to create/retrieve playlist for: %r', t_list)
+            return
+
+        # Retrieve current playlist items
         playlist_items = dict([
             (int(item.rating_key), item)
             for item in playlist.items()
