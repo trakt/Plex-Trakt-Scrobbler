@@ -1,5 +1,9 @@
 from plugin.models import Account
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class Option(object):
     key = None
@@ -48,7 +52,10 @@ class Option(object):
         raise NotImplementedError
 
     def on_database_changed(self, value, account=None):
-        pass
+        if self.preference is None:
+            return
+
+        log.warn('[%s] on_database_changed() not implemented, option may not be synchronized with plex', self.key)
 
     def on_plex_changed(self, value, account=None):
         raise NotImplementedError
