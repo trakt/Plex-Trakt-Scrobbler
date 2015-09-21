@@ -45,6 +45,14 @@ class Playlist(Descriptor):
             size=size
         )
 
+    def move(self, item_id, after=None):
+        return Plex['playlists/*/items'].move(
+            self.rating_key,
+
+            item_id=item_id,
+            after=after
+        )
+
     def remove(self, item_id):
         return Plex['playlists/*/items'].remove(
             self.rating_key,

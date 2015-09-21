@@ -51,3 +51,14 @@ class PlaylistItemsInterface(Interface):
                 'Playlist': 'Playlist'
             }))
         }))
+
+    def move(self, playlist_id, item_id, after=None):
+        response = self.http.put('/playlists/%s/items/%s/move' % (playlist_id, item_id), query=[
+            ('after', after)
+        ])
+
+        return self.parse(response, idict({
+            'MediaContainer': ('MediaContainer', idict({
+                'Playlist': 'Playlist'
+            }))
+        }))
