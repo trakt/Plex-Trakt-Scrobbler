@@ -28,13 +28,16 @@ class Lists(PullListsMode):
             return
 
         # Map trakt list items into plex playlist
-        self.process_items(data, p_sections_map, p_playlist, t_items)
+        items = list(self.process_items(data, p_sections_map, p_playlist, t_items))
+
+        # Order items in plex playlist
+        self.order_items(p_playlist, items)
 
     def process_items(self, data, p_sections_map, p_playlist, t_items):
         # Retrieve current playlist items
         p_playlist_items = dict([
-            (int(item.rating_key), item)
-            for item in p_playlist.items()
+            (int(item.rating_key), (index, item))
+            for index, item in enumerate(p_playlist.items())
         ])
 
         # Iterate over items in trakt list
@@ -86,3 +89,44 @@ class Lists(PullListsMode):
                 p_keys=p_keys,
                 uri=uri
             )
+
+            # Retrieve plex item
+            if p_item_key not in p_playlist_items:
+                continue
+
+            p_index, p_item = p_playlist_items.get(p_item_key)
+
+            yield t_item.index, p_index, p_item
+
+    def order_items(self, p_playlist, items):
+        def ordered(key):
+            return [
+                item[2] for item in sorted(
+                    items, key=key
+                )
+            ]
+
+        items_trakt = ordered(lambda i: i[0])
+        items_plex = ordered(lambda i: i[1])
+
+        # Re-order
+        for t_index, p_item in enumerate(items_trakt):
+            p_index = items_plex.index(p_item)
+
+            log.debug('[T:%s][P:%s] %s', t_index, p_index, p_item)
+
+            if t_index == p_index:
+                continue
+
+            if t_index == 0:
+                p_playlist.move(p_item.playlist_item_id)
+                continue
+
+            p_after = items_trakt[t_index - 1]
+
+            p_playlist.move(
+                p_item.playlist_item_id,
+                p_after.playlist_item_id
+            )
+
+        log.debug('List %r contains %d items', p_playlist, len(items))
