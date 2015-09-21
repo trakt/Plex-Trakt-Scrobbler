@@ -1,8 +1,8 @@
 from plugin.sync.core.enums import SyncMode
 from plugin.sync.modes.core.base import Mode
+from plugin.sync.modes.fast_pull.lists import Watchlist
 from plugin.sync.modes.fast_pull.movies import Movies
 from plugin.sync.modes.fast_pull.shows import Shows
-from plugin.sync.modes.fast_pull.watchlist import Watchlist
 
 import elapsed
 import logging

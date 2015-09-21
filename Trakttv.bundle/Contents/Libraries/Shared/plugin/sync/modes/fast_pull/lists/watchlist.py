@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncData, SyncMode
-from plugin.sync.modes.core.base import Mode
+from plugin.sync.modes.fast_pull.lists.base import Lists
 
 from plex import Plex
 from trakt_sync.cache.main import Cache
@@ -10,31 +10,8 @@ import urllib
 log = logging.getLogger(__name__)
 
 
-class Watchlist(Mode):
+class Watchlist(Lists):
     mode = SyncMode.FastPull
-
-    def find_watchlist(self):
-        # Try find existing playlist
-        container = Plex['playlists'].all(playlist_type='video')
-
-        if not container:
-            return None
-
-        for playlist in container:
-            if not playlist or not playlist.title:
-                continue
-
-            if playlist.title.lower() == 'watchlist':
-                return playlist
-
-        # Create new playlist
-        log.debug('Creating new watchlist for account %r', self.current.account.id)
-
-        return Plex['playlists'].create(
-            type='video',
-            title='Watchlist',
-            uri='trakt://watchlist/%s' % self.current.account.id
-        )
 
     @elapsed.clock
     def run(self):
@@ -47,11 +24,20 @@ class Watchlist(Mode):
         p_sections, p_sections_map = self.sections()
 
         # Retrieve playlist
-        playlist = self.find_watchlist()
+        p_playlists = dict(self.get_playlists())
 
-        playlist_items = dict([
+        p_playlist = self.get_playlist(
+            p_playlists,
+            uri='trakt://watchlist/%s' % self.current.account.id,
+            title='Watchlist'
+        )
+
+        if not p_playlist:
+            return
+
+        p_playlist_items = dict([
             (int(item.rating_key), item)
-            for item in playlist.items()
+            for item in p_playlist.items()
         ])
 
         # Iterate over changed data
@@ -70,8 +56,8 @@ class Watchlist(Mode):
                 # No changes for collection
                 continue
 
-            for action, items in result.changes[data_name].items():
-                for guid in items:
+            for action, t_items in result.changes[data_name].items():
+                for guid, t_item in t_items.items():
                     p_keys = self.current.map.by_guid(guid)
 
                     if not p_keys:
@@ -98,9 +84,20 @@ class Watchlist(Mode):
                         media, data,
                         action=action,
 
-                        playlist=playlist,
-                        playlist_items=playlist_items,
+                        playlist=p_playlist,
+                        playlist_items=p_playlist_items,
+
+                        t_item=t_item,
 
                         p_keys=p_keys,
                         uri=uri
                     )
+
+    def create_playlist(self, uri, name):
+        # Check if playlist creation is enabled
+        if self.configuration['sync.lists.watchlist.playlists'] is False:
+            log.info('No playlist found named %r ("Create playlist in plex" not enabled)', name)
+            return None
+
+        # Create playlist
+        return super(Watchlist, self).create_playlist(uri, name)
