@@ -33,3 +33,12 @@ class LikedLists(Lists):
         # Process trakt lists
         for _, t_list in t_lists.items():
             self.process(SyncData.ListLiked, p_playlists, p_sections_map, t_list)
+
+    def create_playlist(self, uri, name):
+        # Check if playlist creation is enabled
+        if self.configuration['sync.lists.liked.playlists'] is False:
+            log.info('No playlist found named %r ("Create playlists in plex" not enabled)', name)
+            return None
+
+        # Create playlist
+        return super(LikedLists, self).create_playlist(uri, name)

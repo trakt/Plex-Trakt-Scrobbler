@@ -49,3 +49,12 @@ class Watchlist(Lists):
 
             # Map trakt list items into plex playlist
             self.process_items(SyncData.Watchlist, p_sections_map, p_playlist, t_items)
+
+    def create_playlist(self, uri, name):
+        # Check if playlist creation is enabled
+        if self.configuration['sync.lists.watchlist.playlists'] is False:
+            log.info('No playlist found named %r ("Create playlist in plex" not enabled)', name)
+            return None
+
+        # Create playlist
+        return super(Watchlist, self).create_playlist(uri, name)
