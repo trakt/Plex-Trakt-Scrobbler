@@ -5,7 +5,10 @@ from plugin.sync.core.task import SyncTask
 
 from plex import Plex
 from trakt import Trakt
+import logging
 import responses
+
+log = logging.getLogger(__name__)
 
 # Set client configuration defaults
 Plex.configuration.defaults.server(host='mock')
@@ -13,8 +16,26 @@ Trakt.base_url = 'http://mock'
 
 
 @responses.activate
-def test_match():
+def test_basic():
     # Setup response fixtures
+    responses.add(
+        responses.GET, 'http://mock:32400/library/metadata/101/allLeaves',
+        body=read(__file__, r"fixtures\plex\library\metadata\101\allLeaves.xml"), status=200,
+        content_type='application/xml'
+    )
+
+    responses.add(
+        responses.GET, 'http://mock:32400/library/metadata/106/children',
+        body=read(__file__, r"fixtures\plex\library\metadata\106\children.xml"), status=200,
+        content_type='application/xml'
+    )
+
+    responses.add(
+        responses.GET, 'http://mock:32400/library/metadata/107/children',
+        body=read(__file__, r"fixtures\plex\library\metadata\107\children.xml"), status=200,
+        content_type='application/xml'
+    )
+
     responses.add(
         responses.GET, 'http://mock:32400/playlists/1',
         body=read(__file__, r"fixtures\plex\playlists\1.xml"), status=200,
@@ -85,37 +106,45 @@ def test_match():
     mapper.plex.load(Plex['playlists'].get(1).first())
     mapper.trakt.load(Trakt['users/*/lists/*'].get('one', 'mixed'))
 
-    print_items(mapper.plex.table)
-    print '----------------------------------------------------------------------------------------------------'
-    print_items(mapper.trakt.table)
+    # Match items between plex and trakt
+    t_items, p_items = mapper.match()
 
-    print '===================================================================================================='
+    # Print items
+    print_items(t_items)
+    print_items(p_items)
 
-    for key, index, p_item, t_item in mapper.match():
+    # Build dictionaries from items
+    t_items = dict([
+        (item[0], item[1:])
+        for item in t_items
+    ])
+
+    p_items = dict([
+        (item[0], item[1:])
+        for item in p_items
+    ])
+
+    # Validate result
+    assert t_items[(('imdb', 'tt0993846'),)][1] == (None, None)
+    assert t_items[(('imdb', 'tt1375666'),)][1] == (None, None)
+    assert t_items[(('tvdb', '79488'), 1, 2)][1] == (None, None)
+
+    assert p_items[(('imdb', 'tt1228705'),)][2] == (None, None)
+
+
+def print_items(items):
+    for key, index, (p_index, p_item), (t_index, t_item) in items:
+        # Build key
         key = list(key)
         key[0] = '/'.join(key[0])
 
         key = '/'.join([str(x) for x in key])
 
-        print '%-14s (%3s) | %r' % (key, index, p_item)
-        print '%-20s | %r' % ('', t_item)
-        print
+        # Build indices
+        if p_index is None:
+            p_index = '--'
 
-    print
+        if t_index is None:
+            t_index = '--'
 
-
-def print_items(table, depth=0):
-    for key, value in table.items():
-        if type(key) is tuple:
-            key = '/'.join(key)
-        else:
-            key = str(key)
-
-        if type(value) is dict:
-            print '%-14s' % (('    ' * depth) + key)
-            print_items(value, depth=depth + 1)
-        else:
-            print '%-14s %r' % (('    ' * depth) + key, value)
-
-        if depth == 0:
-            print
+        log.debug('[%-14s](%2s) - %68s <[%2s] - [%2s]> %r', key, index, p_item, p_index, t_index, t_item)

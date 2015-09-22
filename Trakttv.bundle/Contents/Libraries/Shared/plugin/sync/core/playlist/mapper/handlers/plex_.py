@@ -69,14 +69,14 @@ class PlexPlaylistHandler(PlaylistHandler):
         raise ValueError('Unknown item type: %r' % i_type)
 
     def parse(self, items):
-        for item in items:
+        for index, item in enumerate(items):
             keys = self.build_key(item)
 
             if keys is None:
                 continue
 
             # Update `items`
-            self.items[tuple(keys)] = item
+            self.items[tuple(keys)] = (index, item)
 
             # Update `table`
-            self.path_set(self.table, keys, item)
+            self.path_set(self.table, keys, (index, item))

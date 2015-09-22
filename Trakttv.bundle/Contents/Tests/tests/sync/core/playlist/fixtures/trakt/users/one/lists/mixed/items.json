@@ -139,20 +139,6 @@
     }
   },
   {
-    "listed_at":"2015-09-22T02:51:04.000Z",
-    "type":"movie",
-    "movie":{
-      "title":"Iron Man 2",
-      "year":2010,
-      "ids":{
-        "trakt":5355,
-        "slug":"iron-man-2-2010",
-        "imdb":"tt1228705",
-        "tmdb":10138
-      }
-    }
-  },
-  {
     "listed_at":"2015-09-22T02:51:06.000Z",
     "type":"movie",
     "movie":{
