@@ -1,4 +1,4 @@
-from mock.models import LibraryMetadata, LibrarySection
+from tests.mock.models import LibraryMetadata, LibrarySection
 from plugin.core.environment import Environment
 from plugin.core.filters import Filters
 

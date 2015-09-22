@@ -10,7 +10,7 @@ import sys
 try:
     Log.Debug('Using framework "Log" handler')
 except NameError:
-    from mock.framework import Logger
+    from tests.mock.framework import Logger
 
     Log = Logger()
     Log.Debug('Using dummy "Log" handler')
