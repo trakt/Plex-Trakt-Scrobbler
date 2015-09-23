@@ -2,6 +2,7 @@ from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
 import logging
+import urllib
 
 log = logging.getLogger(__name__)
 
@@ -11,24 +12,21 @@ class Base(MediaHandler):
     def build_action(action, **kwargs):
         return kwargs
 
-    def get_action(self, p_items, t_item):
-        # Convert to list
-        p_items = list(p_items)
-
-        if not p_items and t_item:
+    def get_action(self, p_index, p_item, t_index, t_item):
+        if not p_item and t_item:
             return 'added'
 
-        if p_items and not t_item:
+        if p_item and not t_item:
             return 'removed'
+
+        if p_index != t_index:
+            return 'moved'
 
         return None
 
-    def pull(self, playlist_items, p_keys, t_item, *args, **kwargs):
-        # Try find matching plex items
-        p_items = self.match(playlist_items, p_keys)
-
+    def pull(self, key, p_item, t_item, p_index=None, t_index=None, *args, **kwargs):
         # Determine performed action
-        action = self.get_action(p_items, t_item)
+        action = self.get_action(p_index, p_item, t_index, t_item)
 
         if not action:
             # No action required
@@ -38,7 +36,9 @@ class Base(MediaHandler):
         self.execute_action(
             action,
 
-            p_items=p_items,
+            key=key,
+
+            p_item=p_item,
             t_item=t_item,
             **kwargs
         )
@@ -48,32 +48,56 @@ class Base(MediaHandler):
     #
 
     @bind('added')
-    def on_added(self, playlist, p_items, t_item, uri):
-        log.debug('%s.on_added(uri: %r)', self.media, uri)
+    def on_added(self, p_sections_map, p_playlist, key, p_item, t_item):
+        # Find item in plex matching `t_item`
+        p_key = self.match(*key)
+
+        if p_key is None:
+            log.debug('Unable to find item that matches item: %r', t_item)
+            return
+
+        log.debug('%s.on_added(p_key: %r)', self.media, p_key)
+
+        # Build uri for plex item
+        uri = self.build_uri(p_sections_map, *p_key)
 
         # Add item to playlist
-        playlist.add(uri)
+        p_playlist.add(uri)
 
     #
     # Helpers
     #
 
     @staticmethod
-    def match(playlist_items, p_keys):
-        for _, p_item_key in p_keys:
-            p_item = playlist_items.get(p_item_key)
+    def build_uri(p_sections_map, p_section_key, p_item_key):
+        # Retrieve section UUID
+        p_section_uuid = p_sections_map.get(p_section_key)
 
-            if p_item is not None:
-                yield p_item
+        # Build URI
+        return 'library://%s/item/%s' % (
+            p_section_uuid,
+            urllib.quote_plus('/library/metadata/%s' % p_item_key)
+        )
 
-    @classmethod
-    def has_key(cls, playlist_items, p_keys):
-        for p_item in cls.match(playlist_items, p_keys):
-            # Item found
-            return True
+    def match(self, key, *extra):
+        # Try retrieve `pk` for `key`
+        pk = self.current.state.trakt.table.get(key)
 
-        # No items found matching `p_keys`
-        return False
+        if pk is None:
+            log.debug('Unable to map %r to a primary key', key)
+            pk = key
+
+        # Retrieve plex items that match `pk`
+        p_keys = self.current.map.by_guid(pk)
+
+        if not p_keys:
+            return None
+
+        # Convert to list (for indexing)
+        p_keys = list(p_keys)
+
+        # Use first match found in plex
+        return p_keys[0]
 
 
 class Movies(Base):
@@ -84,12 +108,12 @@ class Shows(Base):
     media = SyncMedia.Shows
 
 
-# class Seasons(Base):
-#     media = SyncMedia.Seasons
-#
-#
-# class Episodes(Base):
-#     media = SyncMedia.Episodes
+class Seasons(Base):
+    media = SyncMedia.Seasons
+
+
+class Episodes(Base):
+    media = SyncMedia.Episodes
 
 
 class Pull(DataHandler):
@@ -99,6 +123,6 @@ class Pull(DataHandler):
     children = [
         Movies,
         Shows,
-        # Seasons,
-        # Episodes
+        Seasons,
+        Episodes
     ]

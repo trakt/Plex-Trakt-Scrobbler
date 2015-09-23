@@ -11,20 +11,21 @@ log = logging.getLogger(__name__)
 class PullListsMode(Mode):
     @staticmethod
     def get_media(t_item):
-        if type(t_item) is trakt.objects.Movie:
+        t_type = type(t_item)
+
+        if t_type is trakt.objects.Movie:
             return SyncMedia.Movies
 
-        if type(t_item) is trakt.objects.Show:
+        if t_type is trakt.objects.Show:
             return SyncMedia.Shows
 
-        # TODO implement season/episode items
+        if t_type is trakt.objects.Season:
+            return SyncMedia.Seasons
 
-        # if type(t_item) is trakt.objects.Season:
-        #     return SyncMedia.Seasons
-        #
-        # if type(t_item) is trakt.objects.Episode:
-        #     return SyncMedia.Episodes
+        if t_type is trakt.objects.Episode:
+            return SyncMedia.Episodes
 
+        log.warn('Unknown "t_item" type: %r', t_type)
         return None
 
     @staticmethod

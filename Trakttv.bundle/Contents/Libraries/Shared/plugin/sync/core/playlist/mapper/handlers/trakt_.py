@@ -1,6 +1,9 @@
 from plugin.sync.core.playlist.mapper.handlers.base import PlaylistHandler
 
 from trakt.objects import Movie, Show, Season, Episode
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class TraktPlaylistHandler(PlaylistHandler):
@@ -50,7 +53,7 @@ class TraktPlaylistHandler(PlaylistHandler):
         if i_type is Episode:
             return [item.show.pk] + list(item.pk)
 
-        raise ValueError('Unknown item type: %r' % i_type)
+        raise ValueError('Unknown item: %r, type: %r' % (item, i_type))
 
     def parse(self, items):
         for item in items:
@@ -63,4 +66,5 @@ class TraktPlaylistHandler(PlaylistHandler):
             self.items[tuple(keys)] = item
 
             # Update `table`
-            self.path_set(self.table, keys, item)
+            if not self.path_set(self.table, keys, item):
+                log.warn('Unable to update table (keys: %r)', keys)

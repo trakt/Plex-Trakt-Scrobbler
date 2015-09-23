@@ -45,7 +45,7 @@ class PlexPlaylistHandler(PlaylistHandler):
         guids = list(self.task.map.by_key(root.rating_key))
 
         if len(guids) < 1:
-            log.warn('Unable to find any guids for item #%s', root.rating_key)
+            log.warn('Unable to find any guids for item #%s (guids: %r)', root.rating_key, guids)
             return None
 
         if len(guids) > 1:
@@ -79,4 +79,5 @@ class PlexPlaylistHandler(PlaylistHandler):
             self.items[tuple(keys)] = (index, item)
 
             # Update `table`
-            self.path_set(self.table, keys, (index, item))
+            if not self.path_set(self.table, keys, (index, item)):
+                log.warn('Unable to update table (keys: %r)', keys)

@@ -54,4 +54,11 @@ class PlaylistHandler(object):
 
             d = d[key]
 
+            if type(d) is not dict:
+                break
+
+        if type(d) is not dict:
+            return False
+
         d[keys[-1]] = value
+        return True

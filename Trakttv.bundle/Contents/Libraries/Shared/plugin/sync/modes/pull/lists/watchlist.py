@@ -39,23 +39,7 @@ class Watchlist(Lists):
         if not p_playlist:
             return
 
-        # Map watchlist collections into plex playlist
-        items = list(self.process_watchlist(p_sections_map, p_playlist))
-
-        log.debug('Watchlist contains %d items', len(items))
-
-    def process_watchlist(self, p_sections_map, p_playlist):
-        for media in MEDIA:
-            # Retrieve trakt watchlist items from cache
-            t_items = self.trakt[(media, SyncData.Watchlist)]
-
-            if t_items is None:
-                log.warn('Unable to retrieve items for %r watchlist', media)
-                continue
-
-            # Map trakt list items into plex playlist
-            for item in self.process_items(SyncData.Watchlist, p_sections_map, p_playlist, t_items):
-                yield item
+        # TODO update to use `PlaylistMapper`
 
     def create_playlist(self, uri, name):
         # Check if playlist creation is enabled

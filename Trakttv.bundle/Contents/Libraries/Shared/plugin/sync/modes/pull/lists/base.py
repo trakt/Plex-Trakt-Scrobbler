@@ -1,7 +1,7 @@
+from plugin.sync.core.playlist.mapper import PlaylistMapper
 from plugin.sync.modes.core.base import PullListsMode
 
 import logging
-import urllib
 
 log = logging.getLogger(__name__)
 
@@ -27,106 +27,66 @@ class Lists(PullListsMode):
             log.warn('Unable to retrieve list items for: %r', t_list)
             return
 
-        # Map trakt list items into plex playlist
-        items = list(self.process_items(data, p_sections_map, p_playlist, t_items))
+        # Construct playlist mapper
+        mapper = PlaylistMapper(self.current, p_sections_map)
 
-        # Order items in plex playlist
-        self.order_items(p_playlist, items)
+        # Parse plex playlist items
+        mapper.plex.load(p_playlist)
 
-    def process_items(self, data, p_sections_map, p_playlist, t_items):
-        # Retrieve current playlist items
-        p_playlist_items = dict([
-            (int(item.rating_key), (index, item))
-            for index, item in enumerate(p_playlist.items())
-        ])
+        # Parse trakt list items
+        mapper.trakt.load(t_list, t_items.itervalues())
 
-        # Iterate over items in trakt list
-        for key, t_item in t_items.items():
+        # Match playlist items and expand shows/seasons
+        t_items, p_items = mapper.match()
+
+        log.info(
+            'Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
+            len(t_items) + len(p_items),
+            '\n'.join(self.format_items(t_items)),
+            '\n'.join(self.format_items(p_items))
+        )
+
+        # Iterate over matched trakt items
+        for key, index, (p_index, p_item), (t_index, t_item) in t_items:
             # Get `SyncMedia` for `t_item`
             media = self.get_media(t_item)
 
             if media is None:
+                log.warn('Unable to identify media of "t_item" (p_item: %r, t_item: %r)', p_item, t_item)
                 continue
-
-            # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
-
-            if pk is None:
-                log.info('Unable to map %r to a primary key', key)
-                pk = key
-
-            # Retrieve plex items that match `pk`
-            p_keys = self.current.map.by_guid(pk)
-
-            if not p_keys:
-                log.info('Unable to find item that matches guid: %r', pk)
-                continue
-
-            # Convert to list (for indexing)
-            p_keys = list(p_keys)
-
-            # Use first match found in plex
-            p_section_key, p_item_key = p_keys[0]
-
-            # Retrieve section UUID
-            p_section_uuid = p_sections_map.get(p_section_key)
-
-            # Build URI
-            uri = 'library://%s/item/%s' % (
-                p_section_uuid,
-                urllib.quote_plus('/library/metadata/%s' % p_item_key)
-            )
 
             # Execute handler
             self.execute_handlers(
                 media, data,
 
-                playlist=p_playlist,
-                playlist_items=p_playlist_items,
+                p_sections_map=p_sections_map,
+                p_playlist=p_playlist,
 
-                t_item=t_item,
+                key=key,
 
-                p_keys=p_keys,
-                uri=uri
+                p_item=p_item,
+                t_item=t_item
             )
 
-            # Retrieve plex item
-            if p_item_key not in p_playlist_items:
-                continue
+    @staticmethod
+    def format_items(items):
+        for key, index, (p_index, p_item), (t_index, t_item) in items:
+            # Build key
+            key = list(key)
+            key[0] = '/'.join(key[0])
 
-            p_index, p_item = p_playlist_items.get(p_item_key)
+            key = '/'.join([str(x) for x in key])
 
-            yield t_item.index, p_index, p_item
+            # Build indices
+            if p_index is None:
+                p_index = '---'
 
-    def order_items(self, p_playlist, items):
-        def ordered(key):
-            return [
-                item[2] for item in sorted(
-                    items, key=key
-                )
-            ]
+            if t_index is None:
+                t_index = '---'
 
-        items_trakt = ordered(lambda i: i[0])
-        items_plex = ordered(lambda i: i[1])
-
-        # Re-order
-        for t_index, p_item in enumerate(items_trakt):
-            p_index = items_plex.index(p_item)
-
-            log.debug('[T:%s][P:%s] %s', t_index, p_index, p_item)
-
-            if t_index == p_index:
-                continue
-
-            if t_index == 0:
-                p_playlist.move(p_item.playlist_item_id)
-                continue
-
-            p_after = items_trakt[t_index - 1]
-
-            p_playlist.move(
-                p_item.playlist_item_id,
-                p_after.playlist_item_id
+            yield '%s[%-16s](%3s) - %68s <[%3s] - [%3s]> %r' % (
+                ' ' * 4,
+                key, index,
+                p_item, p_index,
+                t_index, t_item
             )
-
-        log.debug('List %r contains %d items', p_playlist, len(items))

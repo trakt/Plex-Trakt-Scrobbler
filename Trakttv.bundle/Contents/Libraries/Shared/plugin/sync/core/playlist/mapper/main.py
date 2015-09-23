@@ -27,6 +27,8 @@ class PlaylistMapper(object):
         raise ValueError('Unknown item type: %r' % t_type)
 
     def expand_show(self, t_show):
+        t_client = getattr(t_show, '_client', None)
+
         # Retrieve plex show that matches `t_season`
         p_keys = list(self.task.map.by_guid(t_show.pk))
 
@@ -42,10 +44,10 @@ class PlaylistMapper(object):
         for p_episode in Plex['library/metadata'].all_leaves(p_show_key):
             p_season = p_episode.season
 
-            t_season = t_objects.Season(t_show._client, [p_season.index], t_show.index)
+            t_season = t_objects.Season(t_client, [p_season.index], t_show.index)
             t_season.show = t_show
 
-            t_episode = t_objects.Episode(t_show._client, [(p_season.index, p_episode.index)], t_show.index)
+            t_episode = t_objects.Episode(t_client, [(p_season.index, p_episode.index)], t_show.index)
             t_episode.show = t_show
             t_episode.season = t_season
 
@@ -60,6 +62,7 @@ class PlaylistMapper(object):
         return t_episodes
 
     def expand_season(self, t_season):
+        t_client = getattr(t_season, '_client', None)
         t_show = t_season.show
 
         # Retrieve plex show that matches `t_season`
@@ -83,7 +86,7 @@ class PlaylistMapper(object):
         t_episodes = {}
 
         for p_episode in p_season.children():
-            t_episode = t_objects.Episode(t_season._client, [(p_season.index, p_episode.index)], t_season.index)
+            t_episode = t_objects.Episode(t_client, [(p_season.index, p_episode.index)], t_season.index)
             t_episode.show = t_season.show
             t_episode.season = t_season
 
@@ -140,12 +143,8 @@ class PlaylistMapper(object):
         p_type = type(p_items)
         t_type = type(t_items)
 
-        if p_type is not dict and t_type is not dict:
+        if p_type is not dict or t_type is not dict:
             yield base_key, p_items, t_items
-            return
-
-        if t_type is not dict:
-            log.warn('Unable to process items that haven\'t been expanded')
             return
 
         # Iterate over dictionaries

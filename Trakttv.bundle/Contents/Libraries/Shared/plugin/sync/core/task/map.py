@@ -18,8 +18,10 @@ class SyncMap(object):
             self.add_one(p_section_key, p_key, guid)
 
     def add_one(self, p_section_key, p_key, guid):
-        if not guid or not p_key:
+        if guid is None or p_key is None:
             return False
+
+        p_key = int(p_key)
 
         # Flatten `p_guid`
         if type(guid) is not tuple:
@@ -50,4 +52,7 @@ class SyncMap(object):
         return self._by_guid.get(guid, set())
 
     def by_key(self, rating_key):
-        return self._by_key.get(rating_key, set())
+        if rating_key is None:
+            return set()
+
+        return self._by_key.get(int(rating_key), set())
