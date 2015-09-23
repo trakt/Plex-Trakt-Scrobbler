@@ -1,6 +1,7 @@
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, MediaHandler, bind
 
+from plex import Plex
 import logging
 import urllib
 
@@ -53,7 +54,6 @@ class Base(MediaHandler):
         p_key = self.match(*key)
 
         if p_key is None:
-            log.debug('Unable to find item that matches item: %r', t_item)
             return
 
         log.debug('%s.on_added(p_key: %r)', self.media, p_key)
@@ -84,7 +84,6 @@ class Base(MediaHandler):
         pk = self.current.state.trakt.table.get(key)
 
         if pk is None:
-            log.debug('Unable to map %r to a primary key', key)
             pk = key
 
         # Retrieve plex items that match `pk`
@@ -97,7 +96,47 @@ class Base(MediaHandler):
         p_keys = list(p_keys)
 
         # Use first match found in plex
-        return p_keys[0]
+        p_section_key, p_item_key = p_keys[0]
+
+        # Find season/episode
+        if len(extra) > 0:
+            return self.match_show(p_section_key, p_item_key, *extra)
+
+        return p_section_key, p_item_key
+
+    def match_show(self, p_section_key, p_show_key, season, episode=None):
+        # Fetch seasons for show
+        p_seasons = dict([
+            (p_season.index, p_season.rating_key)
+            for p_season in Plex['library/metadata'].children(p_show_key)
+        ])
+
+        # Find matching season
+        p_season_key = p_seasons.get(season)
+
+        if p_season_key is None:
+            # Unable to find season
+            return None
+
+        if episode is None:
+            # Return matching season
+            return p_section_key, p_season_key
+
+        # Fetch episodes for season
+        p_episodes = dict([
+            (p_episode.index, p_episode.rating_key)
+            for p_episode in Plex['library/metadata'].children(p_season_key)
+        ])
+
+        # Find matching episode
+        p_episode_key = p_episodes.get(episode)
+
+        if p_episode_key is None:
+            # Unable to find episode
+            return None
+
+        # Return matching episode
+        return p_section_key, p_episode_key
 
 
 class Movies(Base):

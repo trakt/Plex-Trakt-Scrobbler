@@ -21,9 +21,9 @@ class Lists(PullListsMode):
             return
 
         # Retrieve trakt list items from cache
-        t_items = self.trakt[(data, t_list.id)]
+        t_list_items = self.trakt[(data, t_list.id)]
 
-        if not t_items:
+        if not t_list_items:
             log.warn('Unable to retrieve list items for: %r', t_list)
             return
 
@@ -34,39 +34,67 @@ class Lists(PullListsMode):
         mapper.plex.load(p_playlist)
 
         # Parse trakt list items
-        mapper.trakt.load(t_list, t_items.itervalues())
+        mapper.trakt.load(t_list, t_list_items.itervalues())
 
         # Match playlist items and expand shows/seasons
-        t_items, p_items = mapper.match()
+        m_trakt, m_plex = mapper.match()
 
         log.info(
             'Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
-            len(t_items) + len(p_items),
-            '\n'.join(self.format_items(t_items)),
-            '\n'.join(self.format_items(p_items))
+            len(m_trakt) + len(m_plex),
+            '\n'.join(self.format_items(m_trakt)),
+            '\n'.join(self.format_items(m_plex))
         )
 
         # Iterate over matched trakt items
-        for key, index, (p_index, p_item), (t_index, t_item) in t_items:
-            # Get `SyncMedia` for `t_item`
-            media = self.get_media(t_item)
+        for key, index, (p_index, p_items), (t_index, t_items) in m_trakt:
+            # Expand shows/seasons into episodes
+            for p_item, t_item in self.expand(p_items, t_items):
+                # Get `SyncMedia` for `t_item`
+                media = self.get_media(t_item)
 
-            if media is None:
-                log.warn('Unable to identify media of "t_item" (p_item: %r, t_item: %r)', p_item, t_item)
-                continue
+                if media is None:
+                    log.warn('Unable to identify media of "t_item" (p_item: %r, t_item: %r)', p_item, t_item)
+                    continue
 
-            # Execute handler
-            self.execute_handlers(
-                media, data,
+                # Execute handler
+                self.execute_handlers(
+                    media, data,
 
-                p_sections_map=p_sections_map,
-                p_playlist=p_playlist,
+                    p_sections_map=p_sections_map,
+                    p_playlist=p_playlist,
 
-                key=key,
+                    key=key,
 
-                p_item=p_item,
-                t_item=t_item
-            )
+                    p_item=p_item,
+                    t_item=t_item
+                )
+
+    def expand(self, p_items, t_items):
+        p_type = type(p_items)
+        t_type = type(t_items)
+
+        if p_type is not dict and t_type is not dict:
+            return [(p_items, t_items)]
+
+        result = []
+
+        if p_type is dict and t_type is dict:
+            # Match items by key
+            for key, t_item in t_items.iteritems():
+                result.extend(self.expand(p_items.get(key), t_item))
+        elif p_type is dict:
+            # Iterate over plex items
+            for p_item in p_items.itervalues():
+                result.extend(self.expand(p_item, t_items))
+        elif t_type is dict:
+            # Iterate over trakt items
+            for t_item in t_items.itervalues():
+                result.extend(self.expand(p_items, t_item))
+        else:
+            log.warn('Unsupported items (p_items: %r, t_items: %r)', p_items, t_items)
+
+        return result
 
     @staticmethod
     def format_items(items):
