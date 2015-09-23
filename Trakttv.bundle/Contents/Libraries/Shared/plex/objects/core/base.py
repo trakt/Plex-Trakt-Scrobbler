@@ -163,6 +163,9 @@ class Descriptor(Interface):
 
         return dict(build())
 
+    def __str__(self):
+        return self.__repr__()
+
 
 class DescriptorMixin(Descriptor):
     pass

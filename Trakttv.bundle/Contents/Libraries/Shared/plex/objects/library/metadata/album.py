@@ -22,6 +22,12 @@ class Album(Directory, Metadata, RateMixin):
     def children(self):
         return self.client['library/metadata'].children(self.rating_key)
 
+    def __repr__(self):
+        if self.artist:
+            return '<Album %r - %r (%s)>' % (self.artist.title, self.title, self.year)
+
+        return '<Album %r (%s)>' % (self.title, self.year)
+
     @staticmethod
     def construct_artist(client, node):
         attribute_map = {

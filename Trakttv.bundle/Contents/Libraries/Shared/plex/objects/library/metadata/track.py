@@ -22,6 +22,22 @@ class Track(Directory, Metadata, PlaylistItemMixin, SessionMixin, ScrobbleMixin)
 
     chapter_source = Property('chapterSource')
 
+    def __repr__(self):
+        if self.artist:
+            return '<Track %r - %r>' % (
+                self.artist.title,
+                self.title
+            )
+        elif self.album:
+            return '<Track %r (%s) - %r>' % (
+                self.album.title,
+                self.album.year,
+
+                self.title
+            )
+
+        return '<Track %r>' % self.title
+
     @staticmethod
     def construct_artist(client, node):
         attribute_map = {
