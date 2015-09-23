@@ -49,7 +49,7 @@ class PlexPlaylistHandler(PlaylistHandler):
             return None
 
         if len(guids) > 1:
-            log.warn('Multiple guids returned for %r', item)
+            log.info('Multiple guids returned for %r: %r', item, guids)
 
         guid = guids[0]
 

@@ -27,6 +27,13 @@ class Lists(PullListsMode):
             log.warn('Unable to retrieve list items for: %r', t_list)
             return
 
+        # Update (add/remove) list items
+        self.process_update(data, p_playlist, p_sections_map, t_list, t_list_items)
+
+        # Sort list items
+        self.process_sort(data, p_playlist, p_sections_map, t_list, t_list_items)
+
+    def process_update(self, data, p_playlist, p_sections_map, t_list, t_list_items):
         # Construct playlist mapper
         mapper = PlaylistMapper(self.current, p_sections_map)
 
@@ -39,8 +46,8 @@ class Lists(PullListsMode):
         # Match playlist items and expand shows/seasons
         m_trakt, m_plex = mapper.match()
 
-        log.info(
-            'Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
+        log.debug(
+            'Update - Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
             len(m_trakt) + len(m_plex),
             '\n'.join(self.format_items(m_trakt)),
             '\n'.join(self.format_items(m_plex))
@@ -69,6 +76,85 @@ class Lists(PullListsMode):
                     p_item=p_item,
                     t_item=t_item
                 )
+
+    def process_sort(self, data, p_playlist, p_sections_map, t_list, t_list_items):
+        # Construct playlist mapper
+        mapper = PlaylistMapper(self.current, p_sections_map)
+
+        # Parse plex playlist items
+        mapper.plex.load(p_playlist)
+
+        # Parse trakt list items
+        mapper.trakt.load(t_list, t_list_items.itervalues())
+
+        # Match playlist items and expand shows/seasons
+        m_trakt, m_plex = mapper.match()
+
+        log.debug(
+            'Sort - Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
+            len(m_trakt) + len(m_plex),
+            '\n'.join(self.format_items(m_trakt)),
+            '\n'.join(self.format_items(m_plex))
+        )
+
+        # Build a list of plex items (sorted by `p_index`)
+        p_playlist_items = []
+
+        for item in mapper.plex.items.itervalues():
+            p_playlist_items.append(item)
+
+        p_playlist_items = [
+            i[1]
+            for i in sorted(p_playlist_items, key=lambda i: i[0])
+        ]
+
+        # Iterate over trakt items, re-order plex items
+        t_index = 0
+
+        for key, _, (_, p_items), (_, t_items) in m_trakt:
+            # Expand shows/seasons into episodes
+            for p_item, t_item in self.expand(p_items, t_items):
+                if not p_item:
+                    continue
+
+                if p_item not in p_playlist_items:
+                    log.info('Unable to find %r in "p_playlist_items"', p_item)
+                    t_index += 1
+                    continue
+
+                p_index = p_playlist_items.index(p_item)
+
+                if p_index == t_index:
+                    t_index += 1
+                    continue
+
+                p_after = p_playlist_items[t_index - 1] if t_index > 0 else None
+
+                log.info('[%2d:%2d] p_item: %r, t_item: %r (move after: %r)',
+                    p_index, t_index,
+                    p_item, t_item,
+                    p_after
+                )
+
+                # Move item in plex playlist
+                p_playlist.move(
+                    p_item.playlist_item_id,
+                    p_after.playlist_item_id if p_after else None
+                )
+
+                # Remove item from current position
+                if t_index > p_index:
+                    p_playlist_items[p_index] = None
+                else:
+                    p_playlist_items.pop(p_index)
+
+                # Insert at new position
+                if p_playlist_items[t_index] is None:
+                    p_playlist_items[t_index] = p_item
+                else:
+                    p_playlist_items.insert(t_index, p_item)
+
+                t_index += 1
 
     def expand(self, p_items, t_items):
         p_type = type(p_items)

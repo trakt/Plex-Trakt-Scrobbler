@@ -33,7 +33,7 @@ class PlaylistMapper(object):
         p_keys = list(self.task.map.by_guid(t_show.pk))
 
         if len(p_keys) < 1:
-            log.warn('Unable to find show that matches guid: %r', t_show.pk)
+            log.info('Unable to find show that matches guid: %r', t_show.pk)
             return t_show
 
         p_section_key, p_show_key = p_keys[0]
@@ -69,7 +69,7 @@ class PlaylistMapper(object):
         p_keys = list(self.task.map.by_guid(t_show.pk))
 
         if len(p_keys) < 1:
-            log.warn('Unable to find show that matches guid: %r', t_show.pk)
+            log.info('Unable to find show that matches guid: %r', t_show.pk)
             return t_season
 
         p_section_key, p_show_key = p_keys[0]
