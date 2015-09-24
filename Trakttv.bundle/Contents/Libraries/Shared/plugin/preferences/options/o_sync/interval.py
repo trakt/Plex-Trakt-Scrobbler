@@ -1,6 +1,7 @@
 from plugin.models import SyncStatus, SyncResult
 from plugin.preferences.options.core.base import SchedulerOption
-from plugin.preferences.options.o_sync.constants import INTERVAL_LABELS_BY_KEY, INTERVAL_KEYS_BY_LABEL
+from plugin.preferences.options.o_sync.constants import INTERVAL_LABELS_BY_KEY, INTERVAL_KEYS_BY_LABEL, \
+    INTERVAL_IDS_BY_KEY
 from plugin.sync.core.enums import SyncMode
 
 import logging
@@ -20,6 +21,17 @@ class SyncIntervalOption(SchedulerOption):
     order = 240
 
     preference = 'sync_run_interval'
+
+    def on_database_changed(self, value, account=None):
+        if value not in INTERVAL_IDS_BY_KEY:
+            log.warn('Unknown value: %r', value)
+            return
+
+        # Map `value` to plex preference
+        value = INTERVAL_IDS_BY_KEY[value]
+
+        # Update preference
+        return self._update_preference(value, account)
 
     def on_plex_changed(self, value, account=None):
         if value not in INTERVAL_KEYS_BY_LABEL:
