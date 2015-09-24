@@ -25,9 +25,12 @@ class Cache(object):
             'sync': SyncSource(self)
         }
 
-    def invalidate(self, username, *args):
-        for source in self._sources.values():
-            source.invalidate(username, *args)
+    def invalidate(self, key):
+        # Retrieve collection from database
+        collection = self._get_collection(*key)
+
+        # Reset collection timestamps
+        collection['timestamps'] = {}
 
     def refresh(self, username):
         for source in self._sources.values():

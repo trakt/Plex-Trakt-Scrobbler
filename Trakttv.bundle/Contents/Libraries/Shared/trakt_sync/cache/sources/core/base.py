@@ -16,9 +16,6 @@ class Source(object):
     def get_store(self, username, *args):
         return self.main._get_store(username, *args)
 
-    def invalidate(self, username, *args):
-        raise NotImplementedError
-
     def refresh(self, username):
         raise NotImplementedError
 

@@ -82,18 +82,6 @@ class SyncSource(Source):
 
         return result
 
-    def invalidate(self, username, media, data):
-        media_key = enums.Media.get(media)
-        data_key = enums.Data.get(data)
-
-        # Retrieve collection from database
-        collection = self.get_collection(username, media_key, data_key)
-
-        # Update timestamp in cache to invalidate items
-        timestamp_key = enums.Data.get_timestamp_key(data)
-
-        collection['timestamps'][media_key][timestamp_key] = None
-
     def refresh(self, username):
         activities = Trakt['sync'].last_activities(exceptions=True)
 
