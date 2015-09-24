@@ -53,14 +53,14 @@ class SyncStateTrakt(object):
 
         return self.cache[collection]
 
-    def invalidate(self, media, data):
+    def invalidate(self, *key):
         """Invalidate collection in trakt cache"""
         username = self.task.account.trakt.username
 
         # Invalidate collection
-        self.cache.invalidate(username, media, data)
+        self.cache.invalidate([username] + list(key))
 
-        log.debug('Invalidated trakt cache (%r, %r) for account: %r', media, data, username)
+        log.debug('Invalidated trakt cache %r for account: %r', key, username)
 
     @elapsed.clock
     def refresh(self):

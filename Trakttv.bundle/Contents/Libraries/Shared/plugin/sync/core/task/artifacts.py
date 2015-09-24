@@ -59,7 +59,10 @@ class SyncArtifacts(object):
                     # Unknown media type
                     continue
 
-                self.task.state.trakt.invalidate(data, media)
+                self.task.state.trakt.invalidate(
+                    Cache.Media.get(media),
+                    Cache.Data.get(data)
+                )
 
             # Task checkpoint
             self.task.checkpoint()
