@@ -96,6 +96,9 @@ class SyncStateTrakt(object):
         log.debug(' - Media: %s', ', '.join(self._media))
 
         for key in self.cache.collections:
+            if len(key) != 3:
+                continue
+
             username, media, data = key
 
             if username != self.task.account.trakt.username:
