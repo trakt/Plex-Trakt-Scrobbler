@@ -59,8 +59,15 @@ class Mapper(object):
             keys.insert(0, item.get('number'))
 
         if media == 'episode':
+            # Special seasons are typically represented as Season '0'
+            # so using a simple 'or' condition to use parent will result
+            # in an attribute error if parent is None
+            season_no = item.get('season')
+            if season_no is None and parent is not None:
+                season_no = parent.pk
+
             keys.insert(0, (
-                item.get('season') or parent.pk,
+                season_no,
                 item.get('number')
             ))
 

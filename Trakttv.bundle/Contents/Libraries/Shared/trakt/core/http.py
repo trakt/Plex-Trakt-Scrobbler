@@ -96,7 +96,7 @@ class HttpClient(object):
         response = None
 
         for i in range(max_retries + 1):
-            if i > 0 :
+            if i > 0:
                 log.warn('Retry # %s', i)
 
             # Send request
@@ -171,7 +171,8 @@ class HttpClient(object):
         config = self.client.configuration
 
         if config['oauth.created_at'] is None or config['oauth.expires_in'] is None:
-            log.debug('OAuth - Missing "created_at" or "expires_in" parameter, unable to determine if token is still valid')
+            log.debug('OAuth - Missing "created_at" or "expires_in" parameter, '
+                      'unable to determine if token is still valid')
             return True
 
         current = calendar.timegm(datetime.datetime.utcnow().utctimetuple())

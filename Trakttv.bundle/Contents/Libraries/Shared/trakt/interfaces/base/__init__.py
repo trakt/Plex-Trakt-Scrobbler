@@ -62,22 +62,6 @@ class Interface(object):
         if not parse:
             return response
 
-        # Parse response, return data
-        content_type = response.headers.get('content-type')
-
-        if content_type and content_type.startswith('application/json'):
-            # Try parse json response
-            try:
-                data = response.json()
-            except Exception as e:
-                log.warning('unable to parse JSON response: %s', e)
-                return None
-        else:
-            log.debug('response returned content-type: %r, falling back to raw data', content_type)
-
-            # Fallback to raw content
-            data = response.content
-
         # Check status code, log any errors
         error = False
 
@@ -100,6 +84,22 @@ class Interface(object):
         # Return `None` if we encountered an error, return response data
         if error:
             return None
+
+        # Parse response, return data
+        content_type = response.headers.get('content-type')
+
+        if content_type and content_type.startswith('application/json'):
+            # Try parse json response
+            try:
+                data = response.json()
+            except Exception as e:
+                log.warning('unable to parse JSON response: %s', e)
+                return None
+        else:
+            log.debug('response returned content-type: %r, falling back to raw data', content_type)
+
+            # Fallback to raw content
+            data = response.content
 
         return data
 

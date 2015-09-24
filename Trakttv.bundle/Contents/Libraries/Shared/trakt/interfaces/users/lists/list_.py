@@ -1,4 +1,4 @@
-from trakt.interfaces import Interface
+from trakt.interfaces.base import Interface
 from trakt.mapper import ListMapper, ListItemMapper
 
 

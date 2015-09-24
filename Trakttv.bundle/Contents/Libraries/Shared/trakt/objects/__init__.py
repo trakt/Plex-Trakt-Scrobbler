@@ -7,3 +7,16 @@ from trakt.objects.rating import Rating
 from trakt.objects.season import Season
 from trakt.objects.show import Show
 from trakt.objects.video import Video
+
+
+__all__ = [
+    'Comment',
+    'Episode',
+    'CustomList', 'List',
+    'Media',
+    'Movie',
+    'Rating',
+    'Season',
+    'Show',
+    'Video'
+]
