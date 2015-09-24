@@ -21,3 +21,6 @@ class Movie(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     originally_available_at = Property('originallyAvailableAt')
 
     tagline = Property
+
+    def __repr__(self):
+        return '<Movie %r (%s)>' % (self.title, self.year)

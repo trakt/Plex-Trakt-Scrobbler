@@ -20,6 +20,27 @@ class Episode(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     year = Property(type=int)
     originally_available_at = Property('originallyAvailableAt')
 
+    def __repr__(self):
+        if self.show and self.season:
+            return '<Episode %r - S%02dE%02d (%s)>' % (
+                self.show.title,
+
+                self.season.index,
+                self.index,
+                self.year
+            )
+        elif self.season:
+            return '<Episode S%02dE%02d (%s)>' % (
+                self.season.index,
+                self.index,
+                self.year
+            )
+
+        return '<Episode E%02d (%s)>' % (
+            self.index,
+            self.year
+        )
+
     @staticmethod
     def construct_show(client, node):
         attribute_map = {
