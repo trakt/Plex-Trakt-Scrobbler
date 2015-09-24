@@ -20,43 +20,43 @@ def test_basic():
     # Setup response fixtures
     responses.add(
         responses.GET, 'http://mock:32400/library/metadata/101/allLeaves',
-        body=read(__file__, r"fixtures\plex\library\metadata\101\allLeaves.xml"), status=200,
+        body=read(__file__, "fixtures/plex/library/metadata/101/allLeaves.xml"), status=200,
         content_type='application/xml'
     )
 
     responses.add(
         responses.GET, 'http://mock:32400/library/metadata/106/children',
-        body=read(__file__, r"fixtures\plex\library\metadata\106\children.xml"), status=200,
+        body=read(__file__, "fixtures/plex/library/metadata/106/children.xml"), status=200,
         content_type='application/xml'
     )
 
     responses.add(
         responses.GET, 'http://mock:32400/library/metadata/107/children',
-        body=read(__file__, r"fixtures\plex\library\metadata\107\children.xml"), status=200,
+        body=read(__file__, "fixtures/plex/library/metadata/107/children.xml"), status=200,
         content_type='application/xml'
     )
 
     responses.add(
         responses.GET, 'http://mock:32400/playlists/1',
-        body=read(__file__, r"fixtures\plex\playlists\1.xml"), status=200,
+        body=read(__file__, "fixtures/plex/playlists/1.xml"), status=200,
         content_type='application/xml'
     )
 
     responses.add(
         responses.GET, 'http://mock:32400/playlists/1/items',
-        body=read(__file__, r"fixtures\plex\playlists\1\items.xml"), status=200,
+        body=read(__file__, "fixtures/plex/playlists/1/items.xml"), status=200,
         content_type='application/xml'
     )
 
     responses.add(
         responses.GET, 'http://mock/users/one/lists/mixed',
-        body=read(__file__, r"fixtures\trakt\users\one\lists\mixed.json"), status=200,
+        body=read(__file__, "fixtures/trakt/users/one/lists/mixed.json"), status=200,
         content_type='application/json'
     )
 
     responses.add(
         responses.GET, 'http://mock/users/one/lists/1413325/items',
-        body=read(__file__, r"fixtures\trakt\users\one\lists\mixed\items.json"), status=200,
+        body=read(__file__, "fixtures/trakt/users/one/lists/mixed/items.json"), status=200,
         content_type='application/json'
     )
 
@@ -147,4 +147,4 @@ def print_items(items):
         if t_index is None:
             t_index = '--'
 
-        log.debug('[%-14s](%2s) - %68s <[%2s] - [%2s]> %r', key, index, p_item, p_index, t_index, t_item)
+        log.debug('[%-14s](%2s) - %50s <[%2s] - [%2s]> %r', key, index, p_item, p_index, t_index, t_item)
