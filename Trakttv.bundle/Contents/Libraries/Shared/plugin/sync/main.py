@@ -20,8 +20,7 @@ HANDLERS = [
     List,
     Playback,
     Ratings,
-    Watched,
-    Watchlist
+    Watched
 ]
 
 MODES = [

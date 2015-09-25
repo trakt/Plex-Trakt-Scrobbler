@@ -156,8 +156,16 @@ class Episodes(Base):
 
 
 class Pull(DataHandler):
-    data = [SyncData.ListLiked, SyncData.ListPersonal]
-    mode = [SyncMode.FastPull, SyncMode.Pull]
+    data = [
+        SyncData.ListLiked,
+        SyncData.ListPersonal,
+        SyncData.Watchlist
+    ]
+
+    mode = [
+        SyncMode.FastPull,
+        SyncMode.Pull
+    ]
 
     children = [
         Movies,

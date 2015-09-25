@@ -106,7 +106,7 @@ class Mode(object):
 
         for m, d in itertools.product(media, data):
             if d not in self.handlers:
-                log.debug('Unknown sync data: %r', d)
+                log.debug('Unable to find handler for data: %r', d)
                 continue
 
             try:
@@ -126,7 +126,7 @@ class Mode(object):
         key = DATA_PREFERENCE_MAP.get(data)
 
         if key is None:
-            log.warn('Unknown data: %r', data)
+            log.warn('Unable to check if data %r is enabled', data)
             return False
 
         if key is False:

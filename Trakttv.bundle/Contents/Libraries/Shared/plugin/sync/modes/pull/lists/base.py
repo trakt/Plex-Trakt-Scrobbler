@@ -23,17 +23,17 @@ class Lists(PullListsMode):
         # Retrieve trakt list items from cache
         t_list_items = self.trakt[(data, t_list.id)]
 
-        if not t_list_items:
+        if t_list_items is None:
             log.warn('Unable to retrieve list items for: %r', t_list)
             return
 
         # Update (add/remove) list items
-        self.process_update(data, p_playlist, p_sections_map, t_list, t_list_items)
+        self.process_update(data, p_playlist, p_sections_map, t_list, t_list_items.itervalues())
 
         # Sort list items
-        self.process_sort(data, p_playlist, p_sections_map, t_list, t_list_items)
+        self.process_sort(data, p_playlist, p_sections_map, t_list, t_list_items.itervalues())
 
-    def process_update(self, data, p_playlist, p_sections_map, t_list, t_list_items):
+    def process_update(self, data, p_playlist, p_sections_map, t_list=None, t_list_items=None):
         # Construct playlist mapper
         mapper = PlaylistMapper(self.current, p_sections_map)
 
@@ -41,7 +41,7 @@ class Lists(PullListsMode):
         mapper.plex.load(p_playlist)
 
         # Parse trakt list items
-        mapper.trakt.load(t_list, t_list_items.itervalues())
+        mapper.trakt.load(t_list, t_list_items)
 
         # Match playlist items and expand shows/seasons
         m_trakt, m_plex = mapper.match()
@@ -85,7 +85,7 @@ class Lists(PullListsMode):
         mapper.plex.load(p_playlist)
 
         # Parse trakt list items
-        mapper.trakt.load(t_list, t_list_items.itervalues())
+        mapper.trakt.load(t_list, t_list_items)
 
         # Match playlist items and expand shows/seasons
         m_trakt, m_plex = mapper.match()

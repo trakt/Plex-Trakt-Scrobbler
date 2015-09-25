@@ -13,8 +13,11 @@ class TraktPlaylistHandler(PlaylistHandler):
         self.playlist = None
         self.items = None
 
-    def load(self, playlist, items=None):
+    def load(self, playlist=None, items=None):
         if items is None:
+            if playlist is None:
+                raise ValueError('Either the "playlist" or "items" parameter is required')
+
             # Fetch playlist items
             items = playlist.items()
 

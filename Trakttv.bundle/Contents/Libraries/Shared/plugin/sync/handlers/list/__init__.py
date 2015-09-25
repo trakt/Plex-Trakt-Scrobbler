@@ -4,7 +4,12 @@ from plugin.sync.handlers.list.pull import Pull
 
 
 class List(ModeHandler):
-    data = [SyncData.ListLiked, SyncData.ListPersonal]
+    data = [
+        SyncData.ListLiked,
+        SyncData.ListPersonal,
+        SyncData.Watchlist
+    ]
+
     children = [
         Pull
     ]
