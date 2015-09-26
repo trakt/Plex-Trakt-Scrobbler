@@ -32,56 +32,6 @@ class SyncSource(Source):
         self._movie_differ = MovieDiffer()
         self._show_differ = ShowDiffer()
 
-    def fetch(self, data, media):
-        interface = enums.Data.get_interface(data)
-        method = enums.Media.get(media)
-
-        func = self.fetch_func(data, media)
-
-        if func is None:
-            return None
-
-        # Execute `func` (fetch data from trakt.tv)
-        path = '/'.join([interface, method])
-
-        log.info('Fetching "%s"', path)
-
-        try:
-            return func(exceptions=True)
-        except NotImplementedError:
-            log.warn('Unable to fetch "%s", not implemented', path)
-
-    def diff(self, media, data, base, current):
-        if not base:
-            if not current:
-                return None
-
-            # No `base` data stored, assume all the `current` items have been added
-            if media == enums.Media.Movies:
-                result = MovieResult()
-            elif media in [enums.Media.Shows, enums.Media.Seasons, enums.Media.Episodes]:
-                result = ShowResult()
-            else:
-                raise Exception('Unknown media type: %r', media)
-
-            # Set `result` changes
-            result.changes = {
-                'added': current
-            }
-
-            return result
-
-        data_name = enums.Data.get(data)
-
-        if media == enums.Media.Movies:
-            result = self._movie_differ.run(base, current, handlers=[data_name])
-        elif media in [enums.Media.Shows, enums.Media.Seasons, enums.Media.Episodes]:
-            result = self._show_differ.run(base, current, handlers=[data_name])
-        else:
-            raise Exception('Unknown media type: %r', media)
-
-        return result
-
     def refresh(self, username):
         activities = Trakt['sync'].last_activities(exceptions=True)
 
@@ -134,6 +84,56 @@ class SyncSource(Source):
 
                 # Return collection changes
                 yield self._collection_key(m, d), changes
+
+    def diff(self, media, data, base, current):
+        if not base:
+            if not current:
+                return None
+
+            # No `base` data stored, assume all the `current` items have been added
+            if media == enums.Media.Movies:
+                result = MovieResult()
+            elif media in [enums.Media.Shows, enums.Media.Seasons, enums.Media.Episodes]:
+                result = ShowResult()
+            else:
+                raise Exception('Unknown media type: %r', media)
+
+            # Set `result` changes
+            result.changes = {
+                'added': current
+            }
+
+            return result
+
+        data_name = enums.Data.get(data)
+
+        if media == enums.Media.Movies:
+            result = self._movie_differ.run(base, current, handlers=[data_name])
+        elif media in [enums.Media.Shows, enums.Media.Seasons, enums.Media.Episodes]:
+            result = self._show_differ.run(base, current, handlers=[data_name])
+        else:
+            raise Exception('Unknown media type: %r', media)
+
+        return result
+
+    def fetch(self, data, media):
+        interface = enums.Data.get_interface(data)
+        method = enums.Media.get(media)
+
+        func = self.fetch_func(data, media)
+
+        if func is None:
+            return None
+
+        # Execute `func` (fetch data from trakt.tv)
+        path = '/'.join([interface, method])
+
+        log.info('Fetching "%s"', path)
+
+        try:
+            return func(exceptions=True)
+        except NotImplementedError:
+            log.warn('Unable to fetch "%s", not implemented', path)
 
     @staticmethod
     def fetch_func(data, media):

@@ -33,6 +33,7 @@ class Media(Enum):
     Shows       = 2
     Seasons     = 4
     Episodes    = 8
+    Lists       = 16
 
     __map__ = None
 
@@ -40,10 +41,11 @@ class Media(Enum):
     def get(cls, key):
         if cls.__map__ is None:
             cls.__map__ = {
-                Media.Movies:     'movies',
-                Media.Shows:      'shows',
-                Media.Seasons:    'seasons',
-                Media.Episodes:   'episodes'
+                Media.Movies:       'movies',
+                Media.Shows:        'shows',
+                Media.Seasons:      'seasons',
+                Media.Episodes:     'episodes',
+                Media.Lists:        'lists'
             }
 
         return cls.__map__.get(key)
@@ -57,8 +59,9 @@ class Data(Enum):
     Watched         = 8
     Watchlist       = 16
 
-    ListLiked       = 32
-    ListPersonal    = 64
+    # Lists
+    Liked           = 32
+    Personal        = 64
 
     __attributes__ = None
     __map__ = None
@@ -90,11 +93,12 @@ class Data(Enum):
                 'timestamp': 'watchlisted_at'
             },
 
-            Data.ListLiked: {
+            # Lists
+            Data.Liked: {
                 'interface': 'users/likes',
                 'timestamp': 'updated_at'
             },
-            Data.ListPersonal: {
+            Data.Personal: {
                 'interface': 'users/*/lists',
                 'timestamp': 'updated_at'
             }
@@ -110,8 +114,9 @@ class Data(Enum):
                 Data.Watched:       'watched',
                 Data.Watchlist:     'watchlist',
 
-                Data.ListLiked:     ('lists', 'liked'),
-                Data.ListPersonal:  ('lists', 'personal')
+                # Lists
+                Data.Liked:     'liked',
+                Data.Personal:  'personal'
             }
 
         return cls.__map__.get(key)
