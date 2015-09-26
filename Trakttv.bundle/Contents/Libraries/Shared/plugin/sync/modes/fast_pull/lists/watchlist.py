@@ -41,7 +41,7 @@ class Watchlist(Lists):
         ])
 
         # Update (add/remove) list items
-        self.process_update(
+        self.update_changed(
             SyncData.Watchlist, p_playlist, p_sections_map,
             t_list_items=t_list_items
         )

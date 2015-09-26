@@ -22,7 +22,15 @@ class Base(MediaHandler):
 
         return None
 
-    def fast_pull(self, action, **kwargs):
+    def fast_pull(self, action=None, **kwargs):
+        if action is None:
+            # Determine performed action
+            action = self.get_action(kwargs['p_item'], kwargs['t_item'])
+
+        if not action:
+            # No action required
+            return
+
         # Execute action
         self.execute_action(action, **kwargs)
 
@@ -140,6 +148,26 @@ class Base(MediaHandler):
         return p_section_key, p_episode_key
 
 
+class Lists(MediaHandler):
+    media = SyncMedia.Lists
+
+    @staticmethod
+    def build_action(action, **kwargs):
+        return kwargs
+
+    def fast_pull(self, action, **kwargs):
+        # Execute action
+        self.execute_action(action, **kwargs)
+
+    @bind('added')
+    def on_added(self, key, **kwargs):
+        log.debug('%s.on_added(key: %r, kwargs: %r)', self.media, key, kwargs)
+
+    @bind('changed')
+    def on_changed(self, key, **kwargs):
+        log.debug('%s.on_changed(key: %r, kwargs: %r)', self.media, key, kwargs)
+
+
 class Movies(Base):
     media = SyncMedia.Movies
 
@@ -169,6 +197,8 @@ class Pull(DataHandler):
     ]
 
     children = [
+        Lists,
+
         Movies,
         Shows,
         Seasons,
