@@ -92,16 +92,14 @@ class SyncSource(Source):
 
             # No `base` data stored, assume all the `current` items have been added
             if media == enums.Media.Movies:
-                result = MovieResult()
+                result = MovieResult(self._movie_differ)
             elif media in [enums.Media.Shows, enums.Media.Seasons, enums.Media.Episodes]:
-                result = ShowResult()
+                result = ShowResult(self._show_differ)
             else:
                 raise Exception('Unknown media type: %r', media)
 
-            # Set `result` changes
-            result.changes = {
-                'added': current
-            }
+            # Update `result` with current items
+            result.add(current)
 
             return result
 

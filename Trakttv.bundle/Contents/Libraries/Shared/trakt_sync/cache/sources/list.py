@@ -112,14 +112,12 @@ class ListSource(Source):
                 raise Exception('Unknown media type: %r', media)
 
             if list_id is not None:
-                result = ListResult()
+                result = ListResult(self._list_differ)
             else:
-                result = ListsResult()
+                result = ListsResult(self._lists_differ)
 
-            # Set `result` changes
-            result.changes = {
-                'added': current
-            }
+            # Update `result` with current items
+            result.add(current)
 
             return result
 

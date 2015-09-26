@@ -15,7 +15,7 @@ class ListsDiffer(Differ):
         b = set(base.keys())
         c = set(current.keys())
 
-        result = ListsResult()
+        result = ListsResult(self)
 
         for key in c - b:
             actions = self.process_added(current[key])
@@ -36,8 +36,8 @@ class ListsDiffer(Differ):
 
 
 class ListsResult(Result):
-    def __init__(self):
-        super(ListsResult, self).__init__()
+    def __init__(self, differ):
+        super(ListsResult, self).__init__(differ)
 
         self.metrics = ListsMetrics()
 

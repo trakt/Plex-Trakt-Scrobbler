@@ -19,7 +19,7 @@ class ShowDiffer(Differ):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
-        result = ShowResult()
+        result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -74,7 +74,7 @@ class SeasonDiffer(Differ):
         keys_current = set(current.keys())
 
         if result is None:
-            result = ShowResult()
+            result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -144,7 +144,7 @@ class EpisodeDiffer(Differ):
         keys_current = set(current.keys())
 
         if result is None:
-            result = ShowResult()
+            result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -188,8 +188,8 @@ class EpisodeDiffer(Differ):
 
 
 class ShowResult(Result):
-    def __init__(self):
-        super(ShowResult, self).__init__()
+    def __init__(self, differ):
+        super(ShowResult, self).__init__(differ)
 
         self.metrics = ShowMetrics()
 

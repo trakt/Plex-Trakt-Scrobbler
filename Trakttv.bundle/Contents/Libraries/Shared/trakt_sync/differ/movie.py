@@ -19,7 +19,7 @@ class MovieDiffer(Differ):
         b = set(base.keys())
         c = set(current.keys())
 
-        result = MovieResult()
+        result = MovieResult(self)
 
         for key in c - b:
             actions = self.process_added(current[key], handlers=handlers)
@@ -47,8 +47,8 @@ class MovieDiffer(Differ):
 
 
 class MovieResult(Result):
-    def __init__(self):
-        super(MovieResult, self).__init__()
+    def __init__(self, differ):
+        super(MovieResult, self).__init__(differ)
 
         self.metrics = MovieMetrics()
 
