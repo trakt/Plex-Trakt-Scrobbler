@@ -1,3 +1,4 @@
+from plugin.sync.core.enums import SyncMedia
 from plugin.sync.core.playlist.mapper import PlaylistMapper
 from plugin.sync.modes.core.base import PullListsMode
 
@@ -21,7 +22,7 @@ class Lists(PullListsMode):
             return
 
         # Retrieve trakt list items from cache
-        t_list_items = self.trakt[(data, t_list.id)]
+        t_list_items = self.trakt[(SyncMedia.Lists, data, t_list.id)]
 
         if t_list_items is None:
             log.warn('Unable to retrieve list items for: %r', t_list)
@@ -49,8 +50,8 @@ class Lists(PullListsMode):
         log.debug(
             'Update - Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
             len(m_trakt) + len(m_plex),
-            '\n'.join(self.format_items(m_trakt)),
-            '\n'.join(self.format_items(m_plex))
+            '\n'.join(self.format_mapper_result(m_trakt)),
+            '\n'.join(self.format_mapper_result(m_plex))
         )
 
         # Iterate over matched trakt items
@@ -93,8 +94,8 @@ class Lists(PullListsMode):
         log.debug(
             'Sort - Mapper Result (%d items)\nt_items:\n%s\n\np_items:\n%s',
             len(m_trakt) + len(m_plex),
-            '\n'.join(self.format_items(m_trakt)),
-            '\n'.join(self.format_items(m_plex))
+            '\n'.join(self.format_mapper_result(m_trakt)),
+            '\n'.join(self.format_mapper_result(m_plex))
         )
 
         # Build a list of plex items (sorted by `p_index`)

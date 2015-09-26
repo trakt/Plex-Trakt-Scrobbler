@@ -38,8 +38,8 @@ DATA_PREFERENCE_MAP = {
     SyncData.Watched:       'sync.watched.mode',
 
     # Lists
-    SyncData.ListLiked:     'sync.lists.liked.mode',
-    SyncData.ListPersonal:  'sync.lists.personal.mode',
+    SyncData.Liked:         'sync.lists.liked.mode',
+    SyncData.Personal:      'sync.lists.personal.mode',
     SyncData.Watchlist:     'sync.lists.watchlist.mode',
 }
 

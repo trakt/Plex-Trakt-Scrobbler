@@ -123,7 +123,20 @@ class PullListsMode(Mode):
                     yield t_episode
 
     @staticmethod
-    def format_items(items):
+    def format_changes(changes):
+        for key, actions in changes.items():
+            # Build key
+            key = list(key)
+            key[0] = '/'.join(key[0])
+
+            key = '/'.join([str(x) for x in key])
+
+            yield '    [%-16s] actions: %r' % (
+                key, actions
+            )
+
+    @staticmethod
+    def format_mapper_result(items):
         for key, index, (p_index, p_item), (t_index, t_item) in items:
             # Build key
             key = list(key)

@@ -256,10 +256,10 @@ class SyncTask(object):
             enabled.append(SyncData.Watchlist)
 
         if configuration['sync.lists.liked.mode'] in modes:
-            enabled.append(SyncData.ListLiked)
+            enabled.append(SyncData.Liked)
 
         if configuration['sync.lists.personal.mode'] in modes:
-            enabled.append(SyncData.ListPersonal)
+            enabled.append(SyncData.Personal)
 
         # Convert to enum value
         result = None

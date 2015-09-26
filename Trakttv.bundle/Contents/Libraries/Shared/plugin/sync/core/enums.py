@@ -51,8 +51,9 @@ class SyncData(Enum):
     Watched         = 8
     Watchlist       = 16
 
-    ListLiked       = 32
-    ListPersonal    = 64
+    # Lists
+    Liked           = 32
+    Personal        = 64
 
     __titles__ = None
 
@@ -91,6 +92,7 @@ class SyncMedia(Enum):
     Shows       = 2
     Seasons     = 4
     Episodes    = 8
+    Lists       = 16
 
     __titles__ = None
 

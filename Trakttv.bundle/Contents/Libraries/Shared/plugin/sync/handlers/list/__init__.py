@@ -5,8 +5,8 @@ from plugin.sync.handlers.list.pull import Pull
 
 class List(ModeHandler):
     data = [
-        SyncData.ListLiked,
-        SyncData.ListPersonal,
+        SyncData.Liked,
+        SyncData.Personal,
         SyncData.Watchlist
     ]
 

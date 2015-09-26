@@ -158,8 +158,8 @@ class Episodes(Base):
 
 class Pull(DataHandler):
     data = [
-        SyncData.ListLiked,
-        SyncData.ListPersonal,
+        SyncData.Liked,
+        SyncData.Personal,
         SyncData.Watchlist
     ]
 

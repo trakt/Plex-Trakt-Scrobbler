@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMode, SyncMedia
 from plugin.sync.modes.pull.lists.base import Lists
 
 import elapsed
@@ -13,7 +13,7 @@ class PersonalLists(Lists):
     @elapsed.clock
     def run(self):
         # Check if data is enabled
-        if not self.is_data_enabled(SyncData.ListPersonal):
+        if not self.is_data_enabled(SyncData.Personal):
             log.debug('Personal list syncing has not been enabled')
             return
 
@@ -24,7 +24,7 @@ class PersonalLists(Lists):
         p_playlists = dict(self.get_playlists())
 
         # Retrieve trakt lists
-        t_lists = self.trakt[(SyncData.ListPersonal,)]
+        t_lists = self.trakt[(SyncMedia, SyncData.Personal)]
 
         if t_lists is None:
             log.warn('Unable to retrieve liked lists')
@@ -32,7 +32,7 @@ class PersonalLists(Lists):
 
         # Process trakt lists
         for _, t_list in t_lists.items():
-            self.process(SyncData.ListPersonal, p_playlists, p_sections_map, t_list)
+            self.process(SyncData.Personal, p_playlists, p_sections_map, t_list)
 
     def create_playlist(self, uri, name):
         # Check if playlist creation is enabled

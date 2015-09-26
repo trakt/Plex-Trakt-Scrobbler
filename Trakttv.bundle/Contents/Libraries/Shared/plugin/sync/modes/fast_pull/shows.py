@@ -33,7 +33,9 @@ class Shows(Mode):
         # Calculate total number of episode changes
         total = 0
 
-        for (media, data), result in self.trakt.changes:
+        for key, result in self.trakt.changes:
+            media, data = key[0:2]
+
             if media != SyncMedia.Episodes:
                 # Ignore changes that aren't for episodes
                 continue
@@ -68,7 +70,9 @@ class Shows(Mode):
                     continue
 
                 # Iterate over changed data
-                for (media, data), result in self.trakt.changes:
+                for key, result in self.trakt.changes:
+                    media, data = key[0:2]
+
                     if media != SyncMedia.Shows:
                         # Ignore changes that aren't for episodes
                         continue
@@ -125,7 +129,9 @@ class Shows(Mode):
                     # Missing `episode` rating key
                     continue
 
-                for (media, data), result in self.trakt.changes:
+                for key, result in self.trakt.changes:
+                    media, data = key[0:2]
+
                     if media != SyncMedia.Episodes:
                         # Ignore changes that aren't for episodes
                         continue

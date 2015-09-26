@@ -30,7 +30,9 @@ class Movies(Mode):
         # Calculate total number of steps
         total = 0
 
-        for (media, data), result in self.trakt.changes:
+        for key, result in self.trakt.changes:
+            media, data = key[0:2]
+
             if media != SyncMedia.Movies:
                 # Ignore changes that aren't for episodes
                 continue
@@ -64,7 +66,9 @@ class Movies(Mode):
                 continue
 
             # Iterate over changed data
-            for (media, data), result in self.trakt.changes:
+            for key, result in self.trakt.changes:
+                media, data = key[0:2]
+
                 if media != SyncMedia.Movies:
                     # Ignore changes that aren't for movies
                     continue

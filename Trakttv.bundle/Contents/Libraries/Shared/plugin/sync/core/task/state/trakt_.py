@@ -40,16 +40,15 @@ class SyncStateTrakt(object):
         return Cache(self.task.media, self.task.data, storage)
 
     def __getitem__(self, key):
-        collection = [self.task.account.trakt.username]
+        collection = [
+            self.task.account.trakt.username,
+            Cache.Media.get(key[0]),
+            Cache.Data.get(key[1])
+        ]
 
-        if key[0] in [SyncData.ListLiked, SyncData.ListPersonal]:
-            collection.extend(Cache.Data.get(key[0]))
-            collection.extend(key[1:])
-        else:
-            collection.extend([
-                Cache.Media.get(key[0]),
-                Cache.Data.get(key[1])
-            ])
+        if len(key) > 2:
+            # Include extra parameters (list id)
+            collection.extend(key[2:])
 
         return self.cache[collection]
 
@@ -153,9 +152,7 @@ class Table(object):
                 username, media, data = key
             elif len(key) == 4:
                 # Lists
-                username = key[0]
-                media = None
-                data = tuple(key[1:3])
+                username, media, data = tuple(key[0:3])
             else:
                 log.warn('Unknown key: %r', key)
                 continue
@@ -174,8 +171,8 @@ class Table(object):
 
             # Map store items
             if data in [
-                Cache.Data.get(Cache.Data.ListLiked),
-                Cache.Data.get(Cache.Data.ListPersonal)
+                Cache.Data.get(Cache.Data.Liked),
+                Cache.Data.get(Cache.Data.Personal)
             ]:
                 self.map_items(key, cache[key])
             else:
