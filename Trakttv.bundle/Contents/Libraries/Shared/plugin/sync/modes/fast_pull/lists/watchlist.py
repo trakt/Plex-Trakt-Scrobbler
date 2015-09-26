@@ -1,11 +1,8 @@
-from plugin.sync.core.enums import SyncData, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.modes.fast_pull.lists.base import Lists
 
-from plex import Plex
-from trakt_sync.cache.main import Cache
 import elapsed
 import logging
-import urllib
 
 log = logging.getLogger(__name__)
 
@@ -35,63 +32,19 @@ class Watchlist(Lists):
         if not p_playlist:
             return
 
-        p_playlist_items = dict([
-            (int(item.rating_key), item)
-            for item in p_playlist.items()
+        # Retrieve items from watchlist collections
+        t_list_items = self.get_items(SyncData.Watchlist, [
+            SyncMedia.Movies,
+            SyncMedia.Shows,
+            SyncMedia.Seasons,
+            SyncMedia.Episodes
         ])
 
-        # Iterate over changed data
-        for (media, data), result in self.trakt.changes:
-            if data != SyncData.Watchlist:
-                # Ignore non-watchlist data
-                continue
-
-            if not self.is_data_enabled(data):
-                # Data type has been disabled
-                continue
-
-            data_name = Cache.Data.get(data)
-
-            if data_name not in result.changes:
-                # No changes for collection
-                continue
-
-            for action, t_items in result.changes[data_name].items():
-                for guid, t_item in t_items.items():
-                    p_keys = self.current.map.by_guid(guid)
-
-                    if not p_keys:
-                        # Item not found in plex
-                        continue
-
-                    # Convert to list (for indexing)
-                    p_keys = list(p_keys)
-
-                    # Use first match found in plex
-                    p_section_key, p_item_key = p_keys[0]
-
-                    # Retrieve section UUID
-                    p_section_uuid = p_sections_map.get(p_section_key)
-
-                    # Build URI
-                    uri = 'library://%s/item/%s' % (
-                        p_section_uuid,
-                        urllib.quote_plus('/library/metadata/%s' % p_item_key)
-                    )
-
-                    # Execute handler
-                    self.execute_handlers(
-                        media, data,
-                        action=action,
-
-                        playlist=p_playlist,
-                        playlist_items=p_playlist_items,
-
-                        t_item=t_item,
-
-                        p_keys=p_keys,
-                        uri=uri
-                    )
+        # Update (add/remove) list items
+        self.process_update(
+            SyncData.Watchlist, p_playlist, p_sections_map,
+            t_list_items=t_list_items
+        )
 
     def create_playlist(self, uri, name):
         # Check if playlist creation is enabled

@@ -13,21 +13,22 @@ class Base(MediaHandler):
     def build_action(action, **kwargs):
         return kwargs
 
-    def get_action(self, p_index, p_item, t_index, t_item):
+    def get_action(self, p_item, t_item):
         if not p_item and t_item:
             return 'added'
 
         if p_item and not t_item:
             return 'removed'
 
-        if p_index != t_index:
-            return 'moved'
-
         return None
 
-    def pull(self, key, p_item, t_item, p_index=None, t_index=None, *args, **kwargs):
+    def fast_pull(self, action, **kwargs):
+        # Execute action
+        self.execute_action(action, **kwargs)
+
+    def pull(self, key, p_item, t_item, *args, **kwargs):
         # Determine performed action
-        action = self.get_action(p_index, p_item, t_index, t_item)
+        action = self.get_action(p_item, t_item)
 
         if not action:
             # No action required
