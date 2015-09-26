@@ -3,8 +3,7 @@ from trakt.core.emitter import Emitter
 from trakt.core.http import HttpClient
 from trakt.interfaces import construct_map
 from trakt.interfaces.base import InterfaceProxy
-
-__version__ = '2.5.0'
+from trakt.version import __version__
 
 
 class TraktClient(Emitter):
