@@ -24,7 +24,7 @@ class PersonalLists(Lists):
         p_playlists = dict(self.get_playlists())
 
         # Retrieve trakt lists
-        t_lists = self.trakt[(SyncMedia, SyncData.Personal)]
+        t_lists = self.trakt[(SyncMedia.Lists, SyncData.Personal)]
 
         if t_lists is None:
             log.warn('Unable to retrieve liked lists')
