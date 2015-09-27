@@ -19,13 +19,18 @@ class ListSource(Source):
         self._lists_differ = ListsDiffer()
 
     def refresh(self, username):
-        # Refresh liked lists, yield changes
-        for change in self.refresh_lists(username, enums.Data.Liked, Trakt['users'].likes('lists')):
-            yield change
+        if enums.Media.Lists not in self.media:
+            return
 
-        # Refresh personal lists, yield changes
-        for change in self.refresh_lists(username, enums.Data.Personal, Trakt['users/*/lists'].get(username)):
-            yield change
+        if enums.Data.Liked in self.data:
+            # Refresh liked lists, yield changes
+            for change in self.refresh_lists(username, enums.Data.Liked, Trakt['users'].likes('lists')):
+                yield change
+
+        if enums.Data.Personal in self.data:
+            # Refresh personal lists, yield changes
+            for change in self.refresh_lists(username, enums.Data.Personal, Trakt['users/*/lists'].get(username)):
+                yield change
 
     def refresh_lists(self, username, data, lists):
         key = (enums.Media.Lists, data)
