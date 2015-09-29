@@ -23,7 +23,10 @@ class AccountMigration(Migration):
         self.create_administrator_account(token_plex=token_plex)
 
         # Refresh extra accounts
-        accounts = Account.select().where(Account.id > 1)
+        accounts = Account.select().where(
+            Account.id > 1,
+            Account.deleted == False
+        )
 
         for account in accounts:
             self.refresh_account(account)
@@ -85,7 +88,7 @@ class AccountMigration(Migration):
 
     @classmethod
     def refresh_account(cls, account):
-        if not account:
+        if not account or account.deleted:
             return
 
         log.debug('Refreshing account: %r', account)
