@@ -21,3 +21,22 @@ class PlexBasicCredentialManager(Manager):
     update = UpdateBasicCredential
 
     model = PlexBasicCredential
+
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve basic credential
+        credential = cls.get(*query, **kwargs)
+
+        if not credential:
+            log.warn('Unable to find basic credential (query: %r, kwargs: %r)', query, kwargs)
+            return False
+
+        # Clear basic credential
+        cls.update(credential, {
+            'password': None,
+
+            'token_plex': None,
+            'token_server': None
+        })
+
+        return True

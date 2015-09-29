@@ -1,11 +1,12 @@
 from plugin.api.core.base import Service, expose
 from plugin.api.core.exceptions import ApiError
 from plugin.managers import AccountManager
+from plugin.managers.core.exceptions import TraktAccountExistsException, PlexAccountExistsException
+from plugin.models import Account
 
 import apsw
 import logging
 import peewee
-from plugin.managers.core.exceptions import TraktAccountExistsException, PlexAccountExistsException
 
 log = logging.getLogger(__name__)
 
@@ -25,12 +26,17 @@ class NameConflictError(ApiError):
     message = 'Name conflicts with an existing account'
 
 
+class DeletionBlockedError(ApiError):
+    code = 'account.deletion_blocked'
+    message = 'Deletion of system/administrator accounts is blocked'
+
+
 class UpdateFailedError(ApiError):
     code = 'account.update_failed'
     message = 'Unable to update account'
 
 
-class Account(Service):
+class AccountService(Service):
     __key__ = 'account'
 
     @expose
@@ -43,6 +49,17 @@ class Account(Service):
             raise NameConflictError
 
         return True
+
+    @expose
+    def delete(self, id):
+        if id <= 1:
+            # Block deletion of system/administrator accounts
+            raise DeletionBlockedError
+
+        # Delete account
+        return AccountManager.delete(
+            id=id
+        )
 
     @expose
     def get(self, full=False, **kwargs):

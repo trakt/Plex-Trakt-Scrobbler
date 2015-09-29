@@ -173,3 +173,34 @@ class TraktAccountManager(Manager):
     update = UpdateAccount
 
     model = TraktAccount
+
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve account
+        account = cls.get(*query, **kwargs)
+
+        if not account:
+            log.warn('Unable to find trakt account (query: %r, kwargs: %r)', query, kwargs)
+            return False
+
+        # Clear trakt account
+        cls.update(account, {
+            'username': None,
+            'thumb': None,
+
+            'cover': None,
+            'timezone': None,
+
+            'refreshed_at': None
+        })
+
+        # Delete trakt credentials
+        TraktBasicCredentialManager.delete(
+            account=account.id
+        )
+
+        TraktOAuthCredentialManager.delete(
+            account=account.id
+        )
+
+        return True
