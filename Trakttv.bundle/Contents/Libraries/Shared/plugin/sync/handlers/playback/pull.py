@@ -20,6 +20,13 @@ class Base(PullHandler, PlaybackHandler):
             # Missing data required for playback syncing
             return None
 
+        p_settings = p_item.get('settings', {})
+        p_view_count = p_settings.get('view_count', 0)
+
+        if p_view_count > 0:
+            # Ignore items that have been watched in plex
+            return None
+
         data['p_value'] = p_item.get('settings', {}).get('view_offset')
 
         # Set arguments for action
