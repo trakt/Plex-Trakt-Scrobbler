@@ -50,10 +50,10 @@ class AccountManager(Manager):
     @classmethod
     def delete(cls, *query, **kwargs):
         # Retrieve account
-        account = cls.get(*query, **kwargs)
-
-        if not account:
-            log.warn('Unable to find account (query: %r, kwargs: %r)', query, kwargs)
+        try:
+            account = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find account (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 
         if account.deleted:

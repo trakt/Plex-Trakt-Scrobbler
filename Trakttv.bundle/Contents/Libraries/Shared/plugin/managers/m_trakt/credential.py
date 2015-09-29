@@ -40,10 +40,10 @@ class TraktBasicCredentialManager(Manager):
     @classmethod
     def delete(cls, *query, **kwargs):
         # Retrieve basic credential
-        credential = cls.get(*query, **kwargs)
-
-        if not credential:
-            log.warn('Unable to find basic credential (query: %r, kwargs: %r)', query, kwargs)
+        try:
+            credential = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find basic credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 
         # Clear basic credential
@@ -89,10 +89,10 @@ class TraktOAuthCredentialManager(Manager):
     @classmethod
     def delete(cls, *query, **kwargs):
         # Retrieve oauth credential
-        credential = cls.get(*query, **kwargs)
-
-        if not credential:
-            log.warn('Unable to find oauth credential (query: %r, kwargs: %r)', query, kwargs)
+        try:
+            credential = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find oauth credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 
         # Clear oauth credential
