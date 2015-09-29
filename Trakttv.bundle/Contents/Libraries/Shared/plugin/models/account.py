@@ -17,6 +17,7 @@ class Account(Model):
     name = CharField(null=True, unique=True)
     thumb = TextField(null=True)
 
+    deleted = BooleanField(default=False)
     refreshed_at = DateTimeField(null=True)
 
     def __init__(self, *args, **kwargs):
@@ -55,7 +56,7 @@ class Account(Model):
         return (self.refreshed_at - datetime(1970, 1, 1)).total_seconds()
 
     def thumb_url(self, update=False):
-        if self.thumb and not update:
+        if self.deleted or (self.thumb and not update):
             return self.thumb
 
         # Build thumb from `plex` and `trakt` accounts
@@ -69,6 +70,9 @@ class Account(Model):
         return thumb
 
     def refresh(self, force=False, save=True):
+        if self.deleted:
+            return False
+
         # Check if refresh is required
         if self.refresh_required():
             force = True
@@ -85,7 +89,7 @@ class Account(Model):
         t = self.trakt
 
         # Set `name` to trakt/plex username (if `name` isn't already set)
-        if self.name is None:
+        if self.name is None and (t or p):
             self.name = t.username or p.username
 
         # Update account thumb
@@ -109,6 +113,9 @@ class Account(Model):
         return False
 
     def build_thumb(self, plex=None, trakt=None):
+        if self.deleted:
+            return None
+
         # Check if trakt thumbnail exists
         t = trakt or self.trakt
         t_thumb = t.thumb_url('404') if t else None
@@ -131,6 +138,7 @@ class Account(Model):
         result = {
             'id': self.id,
             'name': self.name,
+            'deleted': self.deleted,
 
             'thumb_url': self.thumb_url()
         }
