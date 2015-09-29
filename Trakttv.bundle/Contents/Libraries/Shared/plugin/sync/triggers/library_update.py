@@ -92,6 +92,10 @@ class LibraryUpdateTrigger(Trigger):
         )
 
         for account in accounts:
+            if account.deleted:
+                # Ignore library update trigger for deleted accounts
+                continue
+
             enabled = Preferences.get('sync.library_update', account)
 
             log.debug('account: %r, enabled: %r', account.id, enabled)

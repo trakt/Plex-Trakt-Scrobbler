@@ -65,6 +65,10 @@ class Scheduler(Module):
         log.debug('Complete')
 
     def process_job(self, job):
+        if job.account.deleted:
+            # Ignore scheduled jobs for deleted accounts
+            return True
+
         log.info('Running job: %r', job)
 
         # Retrieve handler for job
