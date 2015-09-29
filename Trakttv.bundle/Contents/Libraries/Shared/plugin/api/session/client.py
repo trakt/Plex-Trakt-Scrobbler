@@ -6,7 +6,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Client(Service):
+class ClientService(Service):
     __key__ = 'session.client'
 
     @expose
@@ -17,7 +17,7 @@ class Client(Service):
         ]
 
 
-class ClientRule(Service):
+class ClientRuleService(Service):
     __key__ = 'session.client.rule'
 
     @expose
