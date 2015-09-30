@@ -34,6 +34,17 @@ class PlexBasicCredential(Model):
         return 'empty'
 
     def refresh(self, save=True):
+        # Refresh account details
+        if not self.refresh_details():
+            return False
+
+        # Store changes in database
+        if save:
+            self.save()
+
+        return True
+
+    def refresh_details(self):
         if self.token_plex is None:
             # Missing token
             return False
@@ -41,6 +52,9 @@ class PlexBasicCredential(Model):
         if self.token_server is not None:
             # Already authenticated
             return True
+
+        if self.token_plex == 'anonymous':
+            return self.refresh_anonymous()
 
         # Fetch server token
         response = requests.get('https://plex.tv/api/resources?includeHttps=1', headers={
@@ -69,9 +83,12 @@ class PlexBasicCredential(Model):
         # Update `token_server`
         self.token_server = server.attrib.get('accessToken')
 
-        # Store changes in database
-        if save:
-            self.save()
+        return True
+
+    def refresh_anonymous(self):
+        log.debug('Refreshing anonymous plex credential')
+
+        self.token_server = 'anonymous'
 
         return True
 

@@ -110,26 +110,7 @@ def Api(*args, **kwargs):
 
 def ValidatePrefs():
     # Retrieve plex token
-    token_plex = os.environ.get('PLEXTOKEN')
-
-    if not token_plex:
-        token_plex = Request.Headers.get('X-Plex-Token')
-
-        if token_plex:
-            log.debug('No plex token found in environment, using request token')
-        else:
-            data = {
-                'Client': {
-                    'User-Agent': Request.Headers.get('User-Agent'),
-                    'X-Plex-Product': Request.Headers.get('X-Plex-Product'),
-                },
-                'Headers': Request.Headers.keys()
-            }
-
-            log.debug('Request details: %r', data)
-            log.error('No plex token found in environment and request', extra={
-                'data': data
-            })
+    token_plex = AccountMigration.get_token(Request.Headers)
 
     # Retrieve current activity mode
     last_activity_mode = Preferences.get('activity.mode')
