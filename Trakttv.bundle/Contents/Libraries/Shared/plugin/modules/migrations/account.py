@@ -160,10 +160,11 @@ class AccountMigration(Migration):
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
             # Ensure basic credential has a token
             rows_updated = PlexBasicCredential.update(
-                token_plex=token_plex
+                token_plex=token_plex,
+                token_server=None
             ).where(
                 PlexBasicCredential.account == plex_account,
-                PlexBasicCredential.token_plex >> None
+                PlexBasicCredential.token_plex != token_plex
             ).execute()
 
             # Check if basic credential was updated
