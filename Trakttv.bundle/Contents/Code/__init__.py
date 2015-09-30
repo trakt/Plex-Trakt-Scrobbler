@@ -68,7 +68,6 @@ from plugin.preferences import Preferences
 from datetime import datetime
 from plex import Plex
 import json
-import requests
 import time
 
 # http://bugs.python.org/issue7980
@@ -109,47 +108,9 @@ def Api(*args, **kwargs):
         return None
 
 
-def GetToken():
-    # Environment token
-    env_token = os.environ.get('PLEXTOKEN')
-
-    if env_token:
-        log.info('Plex Token: environment')
-        return env_token
-
-    # Check if anonymous access is available
-    server = requests.get('http://localhost:32400')
-
-    if server.status_code == 200:
-        log.info('Plex Token: anonymous')
-        return 'anonymous'
-
-    # Request token
-    req_token = Request.Headers.get('X-Plex-Token')
-
-    if req_token:
-        log.info('Plex Token: request')
-        return req_token
-
-    # No token available
-    data = {
-        'Client': {
-            'User-Agent': Request.Headers.get('User-Agent'),
-            'X-Plex-Product': Request.Headers.get('X-Plex-Product'),
-        },
-        'Headers': Request.Headers.keys()
-    }
-
-    log.debug('Request details: %r', data)
-    log.error('Plex Token: not available', extra={
-        'data': data
-    })
-    return None
-
-
 def ValidatePrefs():
     # Retrieve plex token
-    token_plex = GetToken()
+    token_plex = AccountMigration.get_token(Request.Headers)
 
     # Retrieve current activity mode
     last_activity_mode = Preferences.get('activity.mode')
