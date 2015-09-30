@@ -2,7 +2,7 @@ from trakt.core.errors import ERRORS
 from trakt.core.exceptions import RequestError, ClientError, ServerError
 from trakt.client import TraktClient
 from trakt.helpers import has_attribute
-from trakt.version import __version__
+from trakt.version import __version__  # NOQA
 
 from six import add_metaclass
 
