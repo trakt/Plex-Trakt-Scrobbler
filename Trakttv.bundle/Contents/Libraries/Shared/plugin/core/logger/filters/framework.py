@@ -4,20 +4,35 @@ import logging
 
 class FrameworkFilter(Filter):
     def filter(self, record):
-        if self.is_ioloop_error(record):
-            return False
+        level = self.map(record)
 
+        if level is None:
+            return True
+
+        record.levelno = level
+        record.levelname = logging.getLevelName(level)
         return True
 
     @staticmethod
-    def is_ioloop_error(record):
+    def map(record):
         if record.levelno < logging.ERROR:
-            return False
+            return None
 
         if record.name != 'root':
-            return False
+            return None
 
-        if record.filename != 'ioloop.py':
-            return False
+        if not record.pathname:
+            return None
 
-        return True
+        path = record.pathname.lower().replace('\\', '/')
+
+        if path.endswith('/libraries/tornado/ioloop.py'):
+            return logging.INFO
+
+        if path.endswith('/framework/components/runtime.py'):
+            return logging.INFO
+
+        if path.endswith('/framework/core.py'):
+            return logging.INFO
+
+        return None
