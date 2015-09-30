@@ -46,3 +46,36 @@ class AccountManager(Manager):
     update = UpdateAccount
 
     model = Account
+
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve account
+        try:
+            account = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find account (query: %r, kwargs: %r): %r', query, kwargs, ex)
+            return False
+
+        if account.deleted:
+            return True
+
+        # Clear account
+        cls.update(account, {
+            'name': None,
+            'thumb': None,
+
+            'deleted': True,
+            'refreshed_at': None
+        })
+
+        # Delete `PlexAccount`
+        PlexAccountManager.delete(
+            account=account.id
+        )
+
+        # Delete `TraktAccount`
+        TraktAccountManager.delete(
+            account=account.id
+        )
+
+        return True

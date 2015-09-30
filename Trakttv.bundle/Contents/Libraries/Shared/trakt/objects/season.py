@@ -3,8 +3,8 @@ from trakt.objects.media import Media
 
 
 class Season(Media):
-    def __init__(self, client, keys=None):
-        super(Season, self).__init__(client, keys)
+    def __init__(self, client, keys=None, index=None):
+        super(Season, self).__init__(client, keys, index)
 
         self.show = None
         self.episodes = {}
@@ -38,8 +38,8 @@ class Season(Media):
         return result
 
     @classmethod
-    def _construct(cls, client, keys, info=None, **kwargs):
-        season = cls(client, keys)
+    def _construct(cls, client, keys, info=None, index=None, **kwargs):
+        season = cls(client, keys, index=index)
         season._update(info, **kwargs)
 
         return season

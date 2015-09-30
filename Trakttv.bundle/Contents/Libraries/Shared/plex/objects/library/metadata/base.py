@@ -14,6 +14,12 @@ class Metadata(Descriptor):
     title_sort = Property('titleSort')
     title_original = Property('originalTitle')
 
+    audience_rating = Property('audienceRating', float)
+    audience_rating_image = Property('audienceRatingImage')
+
+    rating_count = Property('ratingCount')
+    rating_image = Property('ratingImage')
+
     summary = Property
 
     thumb = Property

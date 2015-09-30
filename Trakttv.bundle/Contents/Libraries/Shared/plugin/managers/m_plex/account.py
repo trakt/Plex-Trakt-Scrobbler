@@ -76,3 +76,30 @@ class PlexAccountManager(Manager):
     update = UpdateAccount
 
     model = PlexAccount
+
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve account
+        try:
+            account = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find plex account (query: %r, kwargs: %r): %r', query, kwargs, ex)
+            return False
+
+        # Clear plex account
+        cls.update(account, {
+            'key': None,
+            'username': None,
+
+            'title': None,
+            'thumb': None,
+
+            'refreshed_at': None
+        })
+
+        # Delete plex credentials
+        PlexBasicCredentialManager.delete(
+            account=account.id
+        )
+
+        return True

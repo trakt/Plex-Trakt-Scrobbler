@@ -11,6 +11,9 @@ class SummaryMapper(Mapper):
 
     @classmethod
     def movie(cls, client, item, **kwargs):
+        if not item:
+            return None
+
         if 'movie' in item:
             i_movie = item['movie']
         else:
@@ -40,6 +43,9 @@ class SummaryMapper(Mapper):
 
     @classmethod
     def show(cls, client, item, **kwargs):
+        if not item:
+            return None
+
         if 'show' in item:
             i_show = item['show']
         else:
@@ -69,6 +75,9 @@ class SummaryMapper(Mapper):
 
     @classmethod
     def season(cls, client, item, **kwargs):
+        if not item:
+            return None
+
         if 'season' in item:
             i_season = item['season']
         else:
@@ -98,6 +107,9 @@ class SummaryMapper(Mapper):
 
     @classmethod
     def episode(cls, client, item, **kwargs):
+        if not item:
+            return None
+
         if 'episode' in item:
             i_episode = item['episode']
         else:

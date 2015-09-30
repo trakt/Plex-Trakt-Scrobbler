@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer
+        size="17"
+        totalSize="17"
+        leafCount="17"
+        offset="0"
+        smart="0"
+        title="Mixed"
+    >
+    <Video
+        ratingKey="92"
+        parentRatingKey="89"
+        grandparentRatingKey="88"
+        type="episode"
+        title="The Pawnee-Eagleton Tip Off Classic"
+        titleSort="Pawnee-Eagleton Tip Off Classic"
+        grandparentTitle="Parks and Recreation"
+        index="3"
+        parentIndex="6"
+        playlistItemID="231">
+    </Video>
+    <Video
+            ratingKey="109"
+            parentRatingKey="107"
+            grandparentRatingKey="106"
+            type="episode"
+            title="Chuck Versus the Helicopter"
+            grandparentTitle="Chuck"
+            index="2"
+            parentIndex="1"
+            playlistItemID="233">
+    </Video>
+    <Video
+        ratingKey="108"
+        parentRatingKey="107"
+        grandparentRatingKey="106"
+        type="episode"
+        title="Chuck Versus the Intersect"
+        grandparentTitle="Chuck"
+        index="1"
+        parentIndex="1"
+        playlistItemID="232">
+    </Video>
+    <Video
+        ratingKey="110"
+        parentRatingKey="107"
+        grandparentRatingKey="106"
+        type="episode"
+        title="Chuck Versus the Tango"
+        grandparentTitle="Chuck"
+        index="3"
+        parentIndex="1"
+        playlistItemID="234">
+    </Video>
+    <Video
+        ratingKey="111"
+        parentRatingKey="107"
+        grandparentRatingKey="106"
+        type="episode"
+        title="Chuck Versus the Wookiee"
+        grandparentTitle="Chuck"
+        index="4"
+        parentIndex="1"
+        playlistItemID="235">
+    </Video>
+    <Video
+        ratingKey="112"
+        parentRatingKey="107"
+        grandparentRatingKey="106"
+        type="episode"
+        title="Chuck Versus the Sizzling Shrimp"
+        grandparentTitle="Chuck"
+        index="5"
+        parentIndex="1"
+        playlistItemID="236">
+    </Video>
+    <Video
+        ratingKey="103"
+        parentRatingKey="102"
+        grandparentRatingKey="101"
+        type="episode"
+        title="Pilot"
+        grandparentTitle="30 Rock"
+        index="1"
+        parentIndex="1"
+        playlistItemID="237">
+    </Video>
+    <Video
+        ratingKey="105"
+        parentRatingKey="102"
+        grandparentRatingKey="101"
+        type="episode"
+        title="Blind Date"
+        grandparentTitle="30 Rock"
+        index="3"
+        parentIndex="1"
+        playlistItemID="239">
+    </Video>
+    <Video
+        ratingKey="485"
+        type="movie"
+        title="Don&apos;t Look Down"
+        playlistItemID="240">
+    </Video>
+    <Video
+        ratingKey="486"
+        type="movie"
+        title="Tomorrowland"
+        playlistItemID="241">
+    </Video>
+    <Video
+        ratingKey="484"
+        type="movie"
+        title="Air"
+        playlistItemID="242">
+    </Video>
+    <Video
+        ratingKey="3"
+        type="movie"
+        title="Despicable Me"
+        playlistItemID="244">
+    </Video>
+    <Video
+        ratingKey="7"
+        type="movie"
+        title="Iron Man 2"
+        playlistItemID="245">
+    </Video>
+    <Video
+        ratingKey="6"
+        type="movie"
+        title="Iron Man"
+        playlistItemID="247">
+    </Video>
+</MediaContainer>

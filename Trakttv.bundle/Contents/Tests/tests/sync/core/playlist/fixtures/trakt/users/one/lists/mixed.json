@@ -1,0 +1,22 @@
+{
+  "name":"Mixed",
+  "description":"",
+  "privacy":"private",
+  "display_numbers":false,
+  "allow_comments":false,
+  "updated_at":"2015-09-22T02:50:58.000Z",
+  "item_count":11,
+  "comment_count":0,
+  "likes":0,
+  "ids":{
+    "trakt":1413325,
+    "slug":"mixed"
+  },
+  "user":{
+    "username":"one",
+    "private":false,
+    "name":"One",
+    "vip":false,
+    "vip_ep":false
+  }
+}

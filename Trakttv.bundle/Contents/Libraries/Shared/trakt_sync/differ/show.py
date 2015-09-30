@@ -1,7 +1,7 @@
 from trakt_sync.differ.core.base import Differ
 from trakt_sync.differ.core.helpers import dict_path
 from trakt_sync.differ.core.result import Result
-from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
+from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched, Watchlist
 
 
 class ShowDiffer(Differ):
@@ -10,7 +10,8 @@ class ShowDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Ratings
+                Ratings,
+                Watchlist
             ]
         ]
 
@@ -18,7 +19,7 @@ class ShowDiffer(Differ):
         keys_base = set(base.keys())
         keys_current = set(current.keys())
 
-        result = ShowResult()
+        result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -63,7 +64,8 @@ class SeasonDiffer(Differ):
 
         self.handlers = [
             h(self) for h in [
-                Ratings
+                Ratings,
+                Watchlist
             ]
         ]
 
@@ -72,7 +74,7 @@ class SeasonDiffer(Differ):
         keys_current = set(current.keys())
 
         if result is None:
-            result = ShowResult()
+            result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -132,7 +134,8 @@ class EpisodeDiffer(Differ):
                 Collection,
                 Playback,
                 Ratings,
-                Watched
+                Watched,
+                Watchlist
             ]
         ]
 
@@ -141,7 +144,7 @@ class EpisodeDiffer(Differ):
         keys_current = set(current.keys())
 
         if result is None:
-            result = ShowResult()
+            result = ShowResult(self)
 
         for key in keys_current - keys_base:
             actions = self.process_added(current[key], handlers=handlers)
@@ -185,8 +188,8 @@ class EpisodeDiffer(Differ):
 
 
 class ShowResult(Result):
-    def __init__(self):
-        super(ShowResult, self).__init__()
+    def __init__(self, differ):
+        super(ShowResult, self).__init__(differ)
 
         self.metrics = ShowMetrics()
 

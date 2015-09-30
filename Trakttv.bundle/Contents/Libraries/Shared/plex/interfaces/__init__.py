@@ -1,6 +1,8 @@
 from plex.interfaces.channel import ChannelInterface
 from plex.interfaces.library import LibraryInterface
 from plex.interfaces.library.metadata import LibraryMetadataInterface
+from plex.interfaces.playlists import PlaylistsInterface
+from plex.interfaces.playlists.items import PlaylistItemsInterface
 from plex.interfaces.plugin import PluginInterface
 from plex.interfaces.plugin.preferences import PluginPreferencesInterface
 from plex.interfaces.preferences import PreferencesInterface
@@ -23,6 +25,10 @@ INTERFACES = [
     LibraryInterface,
     LibraryMetadataInterface,
     SectionInterface,
+
+    # /playlists
+    PlaylistsInterface,
+    PlaylistItemsInterface,
 
     # /:
     PreferencesInterface,

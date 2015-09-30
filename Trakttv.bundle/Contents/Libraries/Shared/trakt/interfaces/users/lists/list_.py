@@ -1,4 +1,4 @@
-from trakt.interfaces import Interface
+from trakt.interfaces.base import Interface
 from trakt.mapper import ListMapper, ListItemMapper
 
 
@@ -38,8 +38,8 @@ class UsersListInterface(Interface):
             return None
 
         return [
-            ListItemMapper.process(self.client, item)
-            for item in items
+            ListItemMapper.process(self.client, item, index=x + 1)
+            for x, item in enumerate(items)
         ]
 
     #

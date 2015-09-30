@@ -1,7 +1,6 @@
 from trakt_sync.differ.core.base import Differ
-from trakt_sync.differ.core.helpers import dict_path
 from trakt_sync.differ.core.result import Result
-from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched
+from trakt_sync.differ.handlers import Collection, Playback, Ratings, Watched, Watchlist
 
 
 class MovieDiffer(Differ):
@@ -11,7 +10,8 @@ class MovieDiffer(Differ):
                 Collection,
                 Playback,
                 Ratings,
-                Watched
+                Watched,
+                Watchlist
             ]
         ]
 
@@ -19,7 +19,7 @@ class MovieDiffer(Differ):
         b = set(base.keys())
         c = set(current.keys())
 
-        result = MovieResult()
+        result = MovieResult(self)
 
         for key in c - b:
             actions = self.process_added(current[key], handlers=handlers)
@@ -47,8 +47,8 @@ class MovieDiffer(Differ):
 
 
 class MovieResult(Result):
-    def __init__(self):
-        super(MovieResult, self).__init__()
+    def __init__(self, differ):
+        super(MovieResult, self).__init__(differ)
 
         self.metrics = MovieMetrics()
 

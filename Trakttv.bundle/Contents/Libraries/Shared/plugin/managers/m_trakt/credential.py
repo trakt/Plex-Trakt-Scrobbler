@@ -37,6 +37,24 @@ class TraktBasicCredentialManager(Manager):
 
     model = TraktBasicCredential
 
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve basic credential
+        try:
+            credential = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find basic credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
+            return False
+
+        # Clear basic credential
+        cls.update(credential, {
+            'password': None,
+
+            'token': None
+        })
+
+        return True
+
 
 class UpdateOAuthCredential(Update):
     keys = ['code', 'access_token', 'refresh_token', 'created_at', 'expires_in', 'token_type', 'scope']
@@ -67,3 +85,28 @@ class TraktOAuthCredentialManager(Manager):
     update = UpdateOAuthCredential
 
     model = TraktOAuthCredential
+
+    @classmethod
+    def delete(cls, *query, **kwargs):
+        # Retrieve oauth credential
+        try:
+            credential = cls.get(*query, **kwargs)
+        except Exception, ex:
+            log.warn('Unable to find oauth credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
+            return False
+
+        # Clear oauth credential
+        cls.update(credential, {
+            'code': None,
+
+            'access_token': None,
+            'refresh_token': None,
+
+            'created_at': None,
+            'expires_in': None,
+
+            'token_type': None,
+            'scope': None
+        })
+
+        return True

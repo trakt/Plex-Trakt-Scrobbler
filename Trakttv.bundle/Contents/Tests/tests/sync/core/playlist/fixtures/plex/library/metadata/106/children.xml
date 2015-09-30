@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer
+        size="1"
+        identifier="com.plexapp.plugins.library"
+        key="106"
+        librarySectionID="2"
+        parentIndex="1"
+        parentTitle="Chuck"
+        viewGroup="season"
+        viewMode="65593"
+    >
+    <Directory
+        ratingKey="107"
+        parentRatingKey="106"
+        type="season"
+        title="Season 1"
+        index="1"
+        leafCount="5"
+        viewedLeafCount="5">
+    </Directory>
+</MediaContainer>

@@ -4,8 +4,8 @@ from trakt.objects.video import Video
 
 
 class Movie(Video):
-    def __init__(self, client, keys):
-        super(Movie, self).__init__(client, keys)
+    def __init__(self, client, keys, index=None):
+        super(Movie, self).__init__(client, keys, index)
 
         self.title = None
         self.year = None
@@ -56,8 +56,8 @@ class Movie(Video):
             self.year = int(info['year'])
 
     @classmethod
-    def _construct(cls, client, keys, info, **kwargs):
-        movie = cls(client, keys)
+    def _construct(cls, client, keys, info, index=None, **kwargs):
+        movie = cls(client, keys, index=index)
         movie._update(info, **kwargs)
 
         return movie

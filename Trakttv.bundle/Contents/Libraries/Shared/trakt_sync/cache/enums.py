@@ -28,11 +28,12 @@ class Enum(object):
 
 
 class Media(Enum):
-    All         = 0x00
-    Movies      = 0x01
-    Shows       = 0x02
-    Seasons     = 0x04
-    Episodes    = 0x08
+    All         = 0
+    Movies      = 1
+    Shows       = 2
+    Seasons     = 4
+    Episodes    = 8
+    Lists       = 16
 
     __map__ = None
 
@@ -40,22 +41,27 @@ class Media(Enum):
     def get(cls, key):
         if cls.__map__ is None:
             cls.__map__ = {
-                Media.Movies:     'movies',
-                Media.Shows:      'shows',
-                Media.Seasons:    'seasons',
-                Media.Episodes:   'episodes'
+                Media.Movies:       'movies',
+                Media.Shows:        'shows',
+                Media.Seasons:      'seasons',
+                Media.Episodes:     'episodes',
+                Media.Lists:        'lists'
             }
 
         return cls.__map__.get(key)
 
 
 class Data(Enum):
-    All         = 0x00
-    Collection  = 0x01
-    Playback    = 0x02
-    Ratings     = 0x04
-    Watched     = 0x08
-    Watchlist   = 0x16
+    All             = 0
+    Collection      = 1
+    Playback        = 2
+    Ratings         = 4
+    Watched         = 8
+    Watchlist       = 16
+
+    # Lists
+    Liked           = 32
+    Personal        = 64
 
     __attributes__ = None
     __map__ = None
@@ -85,6 +91,16 @@ class Data(Enum):
             Data.Watchlist: {
                 'interface': 'sync/watchlist',
                 'timestamp': 'watchlisted_at'
+            },
+
+            # Lists
+            Data.Liked: {
+                'interface': 'users/likes',
+                'timestamp': 'updated_at'
+            },
+            Data.Personal: {
+                'interface': 'users/*/lists',
+                'timestamp': 'updated_at'
             }
         }
 
@@ -96,7 +112,11 @@ class Data(Enum):
                 Data.Playback:      'playback',
                 Data.Ratings:       'ratings',
                 Data.Watched:       'watched',
-                Data.Watchlist:     'watchlist'
+                Data.Watchlist:     'watchlist',
+
+                # Lists
+                Data.Liked:     'liked',
+                Data.Personal:  'personal'
             }
 
         return cls.__map__.get(key)

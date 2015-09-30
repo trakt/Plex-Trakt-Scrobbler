@@ -28,5 +28,15 @@ OPTIONS = [
     SyncRatingsOption,
     SyncRatingsConflictOption,
 
-    SyncWatchedOption
+    SyncWatchedOption,
+
+    # Sync - Lists
+    SyncListsLikedOption,
+    SyncListsLikedPlaylistsOption,
+
+    SyncListsPersonalOption,
+    SyncListsPersonalPlaylistsOption,
+
+    SyncListsWatchlistOption,
+    SyncListsWatchlistPlaylistsOption
 ]

@@ -108,6 +108,9 @@ class PlexAccount(Model):
         return True
 
     def refresh_details(self, basic):
+        if basic.token_plex == 'anonymous':
+            return self.refresh_anonymous()
+
         # Fetch account details
         response = requests.get('https://plex.tv/users/account', headers={
             'X-Plex-Token': basic.token_plex
@@ -139,6 +142,21 @@ class PlexAccount(Model):
 
             # Update `key`
             self.key = user_id
+
+        return True
+
+    def refresh_anonymous(self):
+        log.debug('Refreshing anonymous plex account')
+
+        self.username = 'administrator'
+
+        self.title = 'Administrator'
+        self.thumb = None
+
+        if self.id == 1:
+            self.key = 1
+        else:
+            self.key = None
 
         return True
 

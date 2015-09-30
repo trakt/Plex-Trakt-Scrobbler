@@ -27,7 +27,7 @@ sys.path.insert(0, CODE_DIR)
 # Environment
 #
 
-from mock.framework import Core
+from tests.mock.framework import Core
 from plugin.core.environment import Environment
 from plugin.core.constants import PLUGIN_IDENTIFIER
 

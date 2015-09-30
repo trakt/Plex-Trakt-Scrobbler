@@ -1,7 +1,6 @@
 from trakt.mapper.core.base import Mapper
 
 import logging
-from trakt.objects import Season, Episode
 
 log = logging.getLogger(__name__)
 

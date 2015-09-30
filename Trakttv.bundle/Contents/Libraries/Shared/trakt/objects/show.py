@@ -6,8 +6,8 @@ from six import iteritems
 
 
 class Show(Media):
-    def __init__(self, client, keys):
-        super(Show, self).__init__(client, keys)
+    def __init__(self, client, keys, index=None):
+        super(Show, self).__init__(client, keys, index)
 
         self.title = None
         self.year = None
@@ -60,8 +60,8 @@ class Show(Media):
             self.year = int(info['year'])
 
     @classmethod
-    def _construct(cls, client, keys, info=None, **kwargs):
-        show = cls(client, keys)
+    def _construct(cls, client, keys, info=None, index=None, **kwargs):
+        show = cls(client, keys, index=index)
         show._update(info, **kwargs)
 
         return show

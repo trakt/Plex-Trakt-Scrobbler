@@ -27,7 +27,7 @@ class UpdateConflictError(ApiError):
     message = "Update conflict, options have been changed by another user"
 
 
-class Option(Service):
+class OptionService(Service):
     __key__ = 'option'
 
     @expose

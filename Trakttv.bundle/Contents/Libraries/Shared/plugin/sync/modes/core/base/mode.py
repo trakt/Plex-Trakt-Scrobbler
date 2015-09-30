@@ -36,8 +36,13 @@ DATA_PREFERENCE_MAP = {
     SyncData.Playback:      'sync.playback.mode',
     SyncData.Ratings:       'sync.ratings.mode',
     SyncData.Watched:       'sync.watched.mode',
-    SyncData.Watchlist:     False,
+
+    # Lists
+    SyncData.Liked:         'sync.lists.liked.mode',
+    SyncData.Personal:      'sync.lists.personal.mode',
+    SyncData.Watchlist:     'sync.lists.watchlist.mode',
 }
+
 
 class Mode(object):
     mode = None
@@ -101,7 +106,7 @@ class Mode(object):
 
         for m, d in itertools.product(media, data):
             if d not in self.handlers:
-                log.debug('Unknown sync data: %r', d)
+                log.debug('Unable to find handler for data: %r', d)
                 continue
 
             try:
@@ -121,7 +126,7 @@ class Mode(object):
         key = DATA_PREFERENCE_MAP.get(data)
 
         if key is None:
-            log.warn('Unknown data: %r', data)
+            log.warn('Unable to check if data %r is enabled', data)
             return False
 
         if key is False:
@@ -144,14 +149,14 @@ class Mode(object):
 
         return True
 
-    def sections(self, section_type):
+    def sections(self, section_type=None):
         p_sections = Plex['library'].sections()
 
         if p_sections is None:
             return None
 
         # Retrieve sections
-        result = []
+        result = {}
 
         for section in p_sections.filter(section_type):
             # Apply section name filter
@@ -164,40 +169,6 @@ class Mode(object):
                 log.warn('Unable to cast section key %r to integer: %s', section.key, ex, exc_info=True)
                 continue
 
-            result.append((key,))
+            result[key] = section.uuid
 
-        return result
-
-
-def mark_unsupported(dictionary, rating_key, p_guid, p_item):
-    if rating_key in dictionary:
-        return
-
-    dictionary[rating_key] = (p_guid, p_item)
-
-
-def log_unsupported(logger, message, dictionary):
-    if len(dictionary) < 1:
-        return
-
-    logger.info(
-        message,
-        len(dictionary),
-        '\n'.join(format_unsupported(dictionary))
-    )
-
-
-def format_unsupported(dictionary):
-    keys = sorted(dictionary.keys())
-
-    for key in keys:
-        p_guid, p_item = dictionary[key]
-
-        agent = p_guid.agent if p_guid else None
-        title = p_item.get('title')
-        year = p_item.get('year')
-
-        if title and year:
-            yield '    [%6s] GUID agent %r is not supported on: %r (%r)' % (key, agent, title, year)
-        else:
-            yield '    [%6s] GUID agent %r is not supported' % (key, agent)
+        return [(key, ) for key in result.keys()], result

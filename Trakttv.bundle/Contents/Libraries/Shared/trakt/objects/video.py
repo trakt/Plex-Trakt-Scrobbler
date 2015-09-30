@@ -4,8 +4,8 @@ from trakt.objects.media import Media
 
 
 class Video(Media):
-    def __init__(self, client, keys=None):
-        super(Video, self).__init__(client, keys)
+    def __init__(self, client, keys=None, index=None):
+        super(Video, self).__init__(client, keys, index)
 
         self.last_watched_at = None
         self.collected_at = None

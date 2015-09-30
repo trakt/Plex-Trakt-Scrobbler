@@ -13,7 +13,7 @@ class SyncPlaybackOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync', 'Playback')
+    group = ('Sync', 'Playback Progress')
     label = 'Mode'
     order = 220
 

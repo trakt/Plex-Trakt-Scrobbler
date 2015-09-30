@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="1">
+    <Playlist
+        ratingKey="1"
+        key="/playlists/1/items"
+        type="playlist"
+        title="Mixed"
+        smart="0"
+        playlistType="video"
+        leafCount="17">
+    </Playlist>
+</MediaContainer>

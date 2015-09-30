@@ -149,6 +149,10 @@ class Clean(Migration):
                 'Shared/plugin/modules/base.py',
                 'Shared/plugin/modules/manager.py',
                 'Shared/plugin/preferences/options/core/base.py',
+                'Shared/plugin/sync/modes/core/base.py',
+                'Shared/plugin/sync/modes/fast_pull.py',
+                'Shared/plugin/sync/modes/pull.py',
+                'Shared/plugin/sync/modes/push.py',
 
                 # native
                 'FreeBSD/i386/apsw.so',

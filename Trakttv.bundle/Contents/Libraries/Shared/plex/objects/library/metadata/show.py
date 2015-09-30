@@ -31,6 +31,9 @@ class Show(Directory, Metadata, RateMixin):
     def children(self):
         return self.client['library/metadata'].children(self.rating_key)
 
+    def __repr__(self):
+        return '<Show %r (%s)>' % (self.title, self.year)
+
 
 class ShowChildrenContainer(ChildrenContainer):
     show = Property(resolver=lambda: ShowLeavesContainer.construct_show)

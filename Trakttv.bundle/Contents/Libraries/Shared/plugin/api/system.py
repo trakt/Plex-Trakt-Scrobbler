@@ -11,11 +11,11 @@ import requests
 log = logging.getLogger(__name__)
 
 
-class System(Service):
+class SystemService(Service):
     __key__ = 'system'
 
     def __init__(self, manager):
-        super(System, self).__init__(manager)
+        super(SystemService, self).__init__(manager)
 
         self._serializers = {
             'access': self._build_serializer(7 * 86400, 'authenticate'),  # access tokens expire in 7 days

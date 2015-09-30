@@ -1,44 +1,43 @@
-from trakt.interfaces.base import Interface
+from trakt.interfaces import auth
+from trakt.interfaces import movies
+from trakt.interfaces import oauth
+from trakt.interfaces import scrobble
+from trakt.interfaces import search
+from trakt.interfaces import shows
+from trakt.interfaces import sync
+from trakt.interfaces import users
 
-from trakt.interfaces.auth import *
-from trakt.interfaces.movies import *
-from trakt.interfaces.oauth import *
-from trakt.interfaces.scrobble import *
-from trakt.interfaces.search import *
-from trakt.interfaces.shows import *
-from trakt.interfaces.sync import *
-from trakt.interfaces.users import *
 
 INTERFACES = [
     # /
-    AuthInterface,
-    OAuthInterface,
+    auth.AuthInterface,
+    oauth.OAuthInterface,
 
-    ScrobbleInterface,
-    SearchInterface,
+    scrobble.ScrobbleInterface,
+    search.SearchInterface,
 
     # /sync/
-    SyncInterface,
-    SyncCollectionInterface,
-    SyncHistoryInterface,
-    SyncPlaybackInterface,
-    SyncRatingsInterface,
-    SyncWatchedInterface,
-    SyncWatchlistInterface,
+    sync.SyncInterface,
+    sync.SyncCollectionInterface,
+    sync.SyncHistoryInterface,
+    sync.SyncPlaybackInterface,
+    sync.SyncRatingsInterface,
+    sync.SyncWatchedInterface,
+    sync.SyncWatchlistInterface,
 
     # /shows/
-    ShowsInterface,
+    shows.ShowsInterface,
 
     # /movies/
-    MoviesInterface,
+    movies.MoviesInterface,
 
     # /users/
-    UsersInterface,
-    UsersSettingsInterface,
+    users.UsersInterface,
+    users.UsersSettingsInterface,
 
     # /users/lists/
-    UsersListsInterface,
-    UsersListInterface
+    users.UsersListsInterface,
+    users.UsersListInterface
 ]
 
 

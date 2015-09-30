@@ -217,7 +217,8 @@ class Accounts(object):
     @classmethod
     def list(cls):
         return AccountManager.get.all().where(
-            Account.id != 0
+            Account.id != 0,
+            Account.deleted == False
         )
 
 

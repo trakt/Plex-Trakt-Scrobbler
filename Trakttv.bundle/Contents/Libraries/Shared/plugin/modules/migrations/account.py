@@ -10,6 +10,7 @@ import apsw
 import logging
 import os
 import peewee
+import requests
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +24,10 @@ class AccountMigration(Migration):
         self.create_administrator_account(token_plex=token_plex)
 
         # Refresh extra accounts
-        accounts = Account.select().where(Account.id > 1)
+        accounts = Account.select().where(
+            Account.id > 1,
+            Account.deleted == False
+        )
 
         for account in accounts:
             self.refresh_account(account)
@@ -85,7 +89,7 @@ class AccountMigration(Migration):
 
     @classmethod
     def refresh_account(cls, account):
-        if not account:
+        if not account or account.deleted:
             return
 
         log.debug('Refreshing account: %r', account)
@@ -138,14 +142,10 @@ class AccountMigration(Migration):
     @classmethod
     def create_plex_basic_credential(cls, plex_account, token_plex=None):
         if token_plex is None:
-            token_plex = os.environ.get('PLEXTOKEN')
-
-            if token_plex:
-                log.debug('No plex token provided, using environment token')
-            else:
-                log.warn('No plex token available, unable to authenticate plex account')
+            token_plex = cls.get_token()
 
         if not token_plex:
+            log.warn('No plex token available, unable to authenticate plex account')
             return False
 
         try:
@@ -157,10 +157,11 @@ class AccountMigration(Migration):
         except (apsw.ConstraintError, peewee.IntegrityError), ex:
             # Ensure basic credential has a token
             rows_updated = PlexBasicCredential.update(
-                token_plex=token_plex
+                token_plex=token_plex,
+                token_server=None
             ).where(
                 PlexBasicCredential.account == plex_account,
-                PlexBasicCredential.token_plex >> None
+                PlexBasicCredential.token_plex != token_plex
             ).execute()
 
             # Check if basic credential was updated
@@ -232,4 +233,47 @@ class AccountMigration(Migration):
         if Environment.dict['trakt.username']:
             return Environment.dict['trakt.username']
 
+        return None
+
+    @classmethod
+    def get_token(cls, request_headers=None):
+        # Environment token
+        env_token = os.environ.get('PLEXTOKEN')
+
+        if env_token:
+            log.info('Plex Token: environment')
+            return env_token
+
+        # Check if anonymous access is available
+        server = requests.get('http://localhost:32400')
+
+        if server.status_code == 200:
+            log.info('Plex Token: anonymous')
+            return 'anonymous'
+
+        # No token available
+        if request_headers is None:
+            log.error('Plex Token: not available')
+            return None
+
+        # Try retrieve token from request
+        req_token = request_headers.get('X-Plex-Token')
+
+        if req_token:
+            log.info('Plex Token: request')
+            return req_token
+
+        # No token available in request
+        data = {
+            'Client': {
+                'User-Agent': request_headers.get('User-Agent'),
+                'X-Plex-Product': request_headers.get('X-Plex-Product'),
+            },
+            'Headers': request_headers.keys()
+        }
+
+        log.debug('Request details: %r', data)
+        log.error('Plex Token: not available', extra={
+            'data': data
+        })
         return None

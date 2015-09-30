@@ -53,6 +53,27 @@
         "default": "false"
     },
     {
+        "id": "sync_liked_lists",
+        "type": "enum",
+        "label": "Sync - Liked Lists",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
+        "id": "sync_personal_lists",
+        "type": "enum",
+        "label": "Sync - Personal Lists",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
+        "id": "sync_watchlist",
+        "type": "enum",
+        "label": "Sync - Watchlist",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
         "id": "sync_instant_actions",
         "type": "bool",
         "label": "Sync - Instant Actions",
