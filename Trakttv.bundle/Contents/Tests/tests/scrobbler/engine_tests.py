@@ -77,6 +77,27 @@ def test_finished_duplication():
     assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 54 * 1000})], [])
 
 
+def test_stopped_duplication():
+    engine = SessionEngine()
+    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+
+    # Start watching item
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset':  1000})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 20000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 30000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 40000})], [])
+
+    # Ensure "stop" actions aren't duplicated
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [('stop',)])
+    assert_events(engine, session, [('paused',  {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [])
+
+    # Ensure item can be restarted
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000})], [('start',)])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [('stop',)])
+
+
 def test_finished():
     engine = SessionEngine()
     session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)

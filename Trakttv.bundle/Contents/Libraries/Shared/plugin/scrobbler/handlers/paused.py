@@ -10,8 +10,8 @@ class PausedHandler(SessionHandler):
 
     @classmethod
     def process(cls, session, payload):
-        if session.state == 'pause':
-            # Duplicate action, just update the current data
+        if session.state in ['pause', 'stop']:
+            # Ignore action, just update the current data
             yield None, payload
             return
 
