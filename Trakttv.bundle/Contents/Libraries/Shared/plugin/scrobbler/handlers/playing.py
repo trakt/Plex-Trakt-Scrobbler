@@ -5,7 +5,7 @@ from plugin.scrobbler.core import SessionEngine, SessionHandler
 class PlayingHandler(SessionHandler):
     __event__ = 'playing'
 
-    __src__ = ['create', 'pause', 'stop']
+    __src__ = ['create', 'pause', 'stop', 'start']
     __dst__ = ['start', 'stop']
 
     @classmethod
