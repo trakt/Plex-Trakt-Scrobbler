@@ -12,11 +12,11 @@ class PlayingHandler(SessionHandler):
     def process(cls, session, payload):
         if cls.has_media_changed(session, payload):
             # Only yield a "stop" action if the session hasn't already been stopped
-            if session.state != 'stop':
+            if session.state in ['start', 'pause']:
                 yield 'stop', session.payload
         elif cls.has_finished(session, payload):
             # Only yield a "stop" action if the session hasn't already been stopped
-            if session.state != 'stop':
+            if session.state in ['start', 'pause']:
                 yield 'stop', payload
 
             # No action required

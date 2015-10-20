@@ -128,22 +128,17 @@ def test_media_changed():
     ])
 
 
-def test_session_duplication():
+def test_media_changed_unplayed():
     engine = SessionEngine()
+    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
 
-    # Main session
-    session_one = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 0})], [('start',)])
 
-    assert_events(engine, session_one, [('playing', {'rating_key': 100, 'view_offset':  1000})], [('start',)])
-    assert_events(engine, session_one, [('playing', {'rating_key': 100, 'view_offset': 10000})], [])
-    assert_events(engine, session_one, [('playing', {'rating_key': 100, 'view_offset': 20000})], [])
-    assert_events(engine, session_one, [('playing', {'rating_key': 100, 'view_offset': 30000})], [])
-    assert_events(engine, session_one, [('playing', {'rating_key': 100, 'view_offset': 40000})], [])
 
-    assert_events(engine, session_one, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [('stop',)])
+def test_unplayed():
+    engine = SessionEngine()
+    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
 
-    # Duplicate session
-    session_two = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
-
-    assert_events(engine, session_two, [('paused', {'rating_key': 100, 'view_offset': 50000})], [])
-    assert_events(engine, session_two, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [])
