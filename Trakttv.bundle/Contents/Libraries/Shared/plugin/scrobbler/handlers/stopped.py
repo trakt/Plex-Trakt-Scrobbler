@@ -5,7 +5,7 @@ from plugin.scrobbler.core import SessionEngine, SessionHandler
 class StoppedHandler(SessionHandler):
     __event__ = 'stopped'
 
-    __src__ = ['pause', 'start']
+    __src__ = ['pause', 'start', 'stop']
     __dst__ = ['stop']
 
     @classmethod

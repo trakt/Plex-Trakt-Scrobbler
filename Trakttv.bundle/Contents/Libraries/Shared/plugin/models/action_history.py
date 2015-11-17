@@ -13,6 +13,8 @@ class ActionHistory(Model):
     account = ForeignKeyField(Account, 'action_history')
     session = ForeignKeyField(Session, 'action_history', null=True)
 
+    rating_key = IntegerField(null=True)
+
     event = CharField()
     performed = CharField(null=True)
 

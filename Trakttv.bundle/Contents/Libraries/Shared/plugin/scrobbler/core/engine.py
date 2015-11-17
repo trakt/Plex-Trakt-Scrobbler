@@ -29,8 +29,15 @@ class Engine(object):
         result = None
 
         for h in handlers:
+            if not h.is_valid_source(obj.state):
+                log.info('Ignoring %r event for %r, invalid state transition', key, obj)
+                continue
+
             result = h.process(obj, payload)
             break
+
+        if result is None:
+            return
 
         for item in result:
             if not item:
