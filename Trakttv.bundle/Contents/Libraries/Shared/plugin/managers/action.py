@@ -3,7 +3,7 @@ from plugin.managers.core.base import Manager
 from plugin.models import ActionHistory, ActionQueue
 from plugin.preferences import Preferences
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
 from trakt import Trakt
 import apsw
@@ -59,6 +59,9 @@ class ActionManager(Manager):
             obj = ActionQueue.create(
                 account=account_id,
                 session=session,
+
+                progress=session.progress,
+                rating_key=session.rating_key,
 
                 event=event,
                 request=request,
@@ -126,6 +129,9 @@ class ActionManager(Manager):
         if not action.request:
             return None
 
+        if cls.is_duplicate(action):
+            return None
+
         interface, method = action.event.split('/')
         request = str(action.request)
 
@@ -146,6 +152,29 @@ class ActionManager(Manager):
 
         log.warn('result: %r', result)
         return None
+
+    @classmethod
+    def is_duplicate(cls, action):
+        if action.event != 'scrobble/stop':
+            return False
+
+        if action.progress < 80:
+            return False
+
+        results = ActionHistory.select().where(
+            ActionHistory.account == action.account,
+            ActionHistory.rating_key == action.rating_key,
+
+            ActionHistory.performed == 'scrobble',
+
+            ActionHistory.sent_at > action.queued_at - timedelta(hours=1)
+        )
+
+        if results.count() > 0:
+            log.info('Ignoring duplicate %r action, scrobble already performed in the last hour', action.event)
+            return True
+
+        return False
 
     @classmethod
     def send(cls, action, func, request):
@@ -176,6 +205,8 @@ class ActionManager(Manager):
         ActionHistory.create(
             account=action.account_id,
             session=action.session_id,
+
+            rating_key=action.rating_key,
 
             event=action.event,
             performed=performed,
