@@ -36,3 +36,9 @@ class Session(Model):
             'rating_key': self.rating_key,
             'view_offset': self.view_offset
         }
+
+    def __repr__(self):
+        return '<Session session_key: %r, state: %r>' % (
+            self.session_key,
+            self.state
+        )

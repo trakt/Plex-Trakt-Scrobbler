@@ -5,6 +5,14 @@ class Handler(object):
     __dst__ = []
 
     @classmethod
+    def is_valid_source(cls, state):
+        return state in cls.__src__
+
+    @classmethod
+    def is_valid_destination(cls, state):
+        return state in cls.__dst__
+
+    @classmethod
     def process(cls, obj, payload):
         pass
 

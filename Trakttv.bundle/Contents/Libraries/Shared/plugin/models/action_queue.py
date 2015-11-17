@@ -14,6 +14,9 @@ class ActionQueue(Model):
     account = ForeignKeyField(Account, 'action_queue')
     session = ForeignKeyField(Session, 'action_queue', null=True)
 
+    progress = FloatField(null=True)
+    rating_key = IntegerField(null=True)
+
     event = CharField()
     request = BlobField()
 

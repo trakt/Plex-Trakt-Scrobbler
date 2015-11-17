@@ -33,3 +33,8 @@ class Session(object):
                 raise KeyError('Unknown attribute with key %r', key)
 
             setattr(self, key, value)
+
+    def __repr__(self):
+        return '<Session state: %r>' % (
+            self.state
+        )
