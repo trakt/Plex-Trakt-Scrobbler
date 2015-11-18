@@ -111,7 +111,8 @@ class SeasonDiffer(Differ):
             cls.store_season_action(result, season, *action)
 
     @classmethod
-    def store_season_action(cls, result, season, key, collection, action, properties=None):
+    def store_season_action(cls, result, season, keys, collection, action, properties=None):
+        season_num = keys[0]
         show = season.show
 
         # Store action in `result`
@@ -121,7 +122,7 @@ class SeasonDiffer(Differ):
             'seasons',
         ))
 
-        seasons[key] = properties
+        seasons[season_num] = properties
 
         # Update episode metrics
         Differ.increment_metric(result.metrics.seasons, collection, action)
@@ -169,8 +170,8 @@ class EpisodeDiffer(Differ):
             cls.store_episode_action(result, episode, *action)
 
     @classmethod
-    def store_episode_action(cls, result, episode, key, collection, action, properties=None):
-        season_num, episode_num = key[0]
+    def store_episode_action(cls, result, episode, keys, collection, action, properties=None):
+        season_num, episode_num = keys[0]
         show = episode.show
 
         # Store action in `result`
