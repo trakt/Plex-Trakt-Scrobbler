@@ -127,8 +127,6 @@ class PullListsMode(Mode):
         for key, actions in changes.items():
             # Build key
             key = list(key)
-            key[0] = '/'.join(key[0])
-
             key = '/'.join([str(x) for x in key])
 
             yield '    [%-16s] actions: %r' % (
