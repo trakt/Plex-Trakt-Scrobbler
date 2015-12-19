@@ -94,6 +94,7 @@ class Mode(object):
 
     def execute_children(self):
         for c in self.children:
+            log.info('Running child: %r', c)
             c.run()
 
     @elapsed.clock

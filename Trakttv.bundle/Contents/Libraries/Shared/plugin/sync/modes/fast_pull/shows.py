@@ -59,6 +59,8 @@ class Shows(Mode):
 
                 key = (p_guid.agent, p_guid.sid)
 
+                log.debug('Processing show: %s', key)
+
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
 
@@ -117,6 +119,8 @@ class Shows(Mode):
                     continue
 
                 key = (p_guid.agent, p_guid.sid)
+
+                log.debug('Processing episode: %s - S%02dE%02d', key, season_num, episode_num)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
