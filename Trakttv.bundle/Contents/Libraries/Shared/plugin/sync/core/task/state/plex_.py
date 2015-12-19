@@ -22,7 +22,11 @@ class SyncStatePlex(object):
         self.library = Library(self.matcher)
 
     def load(self):
-        pass
+        # Configure matcher
+        if self.task.configuration['matcher.mode'] == 0:
+            # Disable extended matcher
+            self.matcher.caper_enabled = False
+            self.matcher.extend_enabled = False
 
     @elapsed.clock
     def prime(self):
