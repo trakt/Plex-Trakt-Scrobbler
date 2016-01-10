@@ -93,13 +93,22 @@ class Router(object):
         LOGGER.info('Start migrations')
 
         migrator = Migrator(self.db)
+
+        # Run migration by name
         if name:
             return self.run_one(name, migrator)
 
+        # Report currently applied migrations
+        db_migrations = self.db_migrations
+
+        if db_migrations:
+            LOGGER.info('Database has %d migrations applied:\n  %s', len(db_migrations), '\n  '.join(db_migrations))
+
+        # Run migrations that haven't been applied yet
         diff = self.diff
 
         if diff:
-            LOGGER.info('Applying %d migrations\n  %s', len(diff), '\n  '.join(diff))
+            LOGGER.info('Applying %d database migrations:\n  %s', len(diff), '\n  '.join(diff))
 
             for name in diff:
                 self.run_one(name, migrator)
