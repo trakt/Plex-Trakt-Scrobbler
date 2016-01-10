@@ -92,10 +92,13 @@ class Router(object):
             return self.run_one(name, migrator)
 
         diff = self.diff
-        for name in diff:
-            self.run_one(name, migrator)
 
-        if not diff:
+        if diff:
+            LOGGER.info('Applying %d migrations\n  %s', len(diff), '\n  '.join(diff))
+
+            for name in diff:
+                self.run_one(name, migrator)
+        else:
             LOGGER.info('Nothing to migrate')
 
     def run_one(self, name, migrator):
