@@ -71,7 +71,12 @@ class Router(object):
 
     @property
     def fs_migrations(self):
-        return sorted(''.join(f[:-3]) for f in ls(self.migrate_dir) if self.filemask.match(f))
+        files = [
+            f[:-3] for f in ls(self.migrate_dir)
+            if self.filemask.match(f)
+        ]
+
+        return sorted(files, key=lambda f: int(f.split('_')[0]))
 
     @property
     def db_migrations(self):
