@@ -297,6 +297,10 @@ class SystemHelper(object):
         bits, _ = platform.architecture()
         machine = platform.machine()
 
+        # Check for ARM machine
+        if bits == '32bit' and machine.startswith('armv'):
+            return cls.arm(machine)
+
         # Check (bits, machine) map
         machine_key = (bits, machine)
 
@@ -321,3 +325,51 @@ class SystemHelper(object):
             system = cls.name_map[system]
 
         return system
+
+    @classmethod
+    def arm(cls, machine):
+        # Determine floating-point type
+        float_type = cls.arm_float_type()
+
+        if float_type is None:
+            Log.Warn('Unable to use ARM libraries, unsupported floating-point type?')
+            return None
+
+        # Determine ARM version
+        version = cls.arm_version()
+
+        if version is None:
+            Log.Warn('Unable to use ARM libraries, unsupported ARM version (%r)?' % machine)
+            return None
+
+        return '%s_%s' % (version, float_type)
+
+    @classmethod
+    def arm_version(cls, machine=None):
+        # Read `machine` name if not provided
+        if machine is None:
+            machine = platform.machine()
+
+        # Ensure `machine` is valid
+        if not machine:
+            return None
+
+        # ARMv6
+        if machine.startswith('armv6'):
+            return 'armv6'
+
+        # ARMv7
+        if machine.startswith('armv7'):
+            return 'armv7'
+
+        return None
+
+    @classmethod
+    def arm_float_type(cls):
+        if os.path.exists('/lib/arm-linux-gnueabihf'):
+            return 'hf'
+
+        if os.path.exists('/lib/arm-linux-gnueabi'):
+            return 'sf'
+
+        return None
