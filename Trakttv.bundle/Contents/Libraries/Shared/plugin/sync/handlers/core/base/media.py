@@ -9,15 +9,15 @@ log = logging.getLogger(__name__)
 class MediaHandler(object):
     media = None
 
-    def __init__(self, data, main):
+    def __init__(self, data, task):
         self.__parent = data
-        self.__main = main
+        self.__task = task
 
         self.__handlers = {}
 
     @property
     def configuration(self):
-        return self.__main.current.configuration
+        return self.__task.configuration
 
     @property
     def parent(self):
@@ -67,11 +67,11 @@ class MediaHandler(object):
 
     @property
     def current(self):
-        return self.__main.current
+        return self.__task
 
     @property
     def handlers(self):
-        return self.__main.handlers
+        return self.__task.handlers
 
     @staticmethod
     def build_action(*args, **kwargs):

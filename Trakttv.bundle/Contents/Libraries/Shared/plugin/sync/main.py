@@ -33,9 +33,6 @@ MODES = [
 
 class Main(object):
     def __init__(self):
-        self.handlers = dict(self._construct_modules(HANDLERS, 'data'))
-        self.modes = dict(self._construct_modules(MODES, 'mode'))
-
         self.current = None
 
         self._queue = Queue.PriorityQueue()
@@ -46,25 +43,6 @@ class Main(object):
 
         # Triggers
         self._library_update = LibraryUpdateTrigger(self)
-
-    def _construct_modules(self, modules, attribute):
-        for cls in modules:
-            keys = getattr(cls, attribute, None)
-
-            if keys is None:
-                log.warn('Module %r is missing a valid %r attribute', cls, attribute)
-                continue
-
-            # Convert `keys` to list
-            if type(keys) is not list:
-                keys = [keys]
-
-            # Construct module
-            obj = cls(self)
-
-            # Return module with keys
-            for key in keys:
-                yield key, obj
 
     def queue(self, account, mode, data=None, media=SyncMedia.All, priority=10, trigger=SyncResult.Trigger.Manual, **kwargs):
         """Queue a sync for the provided account
@@ -140,6 +118,9 @@ class Main(object):
             self.current.started = True
 
             try:
+                # Construct modes/handlers for task
+                self.current.construct(HANDLERS, MODES)
+
                 # Run in plex authorization context
                 with self.current.account.plex.authorization():
                     # Run in trakt authorization context
@@ -171,11 +152,11 @@ class Main(object):
         self.current = None
 
     def run(self):
-        if self.current.mode not in self.modes:
+        if self.current.mode not in self.current.modes:
             log.warn('Unknown sync mode: %r', self.current.mode)
             return
 
-        self.modes[self.current.mode].run()
+        self.current.modes[self.current.mode].run()
 
     def cancel(self, id):
         """Trigger a currently running sync to abort

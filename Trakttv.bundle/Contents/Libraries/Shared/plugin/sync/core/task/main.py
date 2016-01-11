@@ -29,6 +29,10 @@ class SyncTask(object):
         # Extra arguments
         self.kwargs = kwargs
 
+        # Handlers/Modes for task
+        self.handlers = None
+        self.modes = None
+
         # State/Result management
         self.result = result
         self.status = status
@@ -63,6 +67,13 @@ class SyncTask(object):
             return None
 
         return (datetime.utcnow() - self.result.started_at).total_seconds()
+
+    def construct(self, handlers, modes):
+        log.debug('Constructing %d handlers...', len(handlers))
+        self.handlers = dict(self._construct_modules(handlers, 'data'))
+
+        log.debug('Constructing %d modes...', len(modes))
+        self.modes = dict(self._construct_modules(modes, 'mode'))
 
     def load(self):
         # Load task configuration
@@ -272,3 +283,22 @@ class SyncTask(object):
             result |= data
 
         return result
+
+    def _construct_modules(self, modules, attribute):
+        for cls in modules:
+            keys = getattr(cls, attribute, None)
+
+            if keys is None:
+                log.warn('Module %r is missing a valid %r attribute', cls, attribute)
+                continue
+
+            # Convert `keys` to list
+            if type(keys) is not list:
+                keys = [keys]
+
+            # Construct module
+            obj = cls(self)
+
+            # Return module with keys
+            for key in keys:
+                yield key, obj
