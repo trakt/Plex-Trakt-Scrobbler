@@ -71,7 +71,12 @@ class Router(object):
 
     @property
     def fs_migrations(self):
-        return sorted(''.join(f[:-3]) for f in ls(self.migrate_dir) if self.filemask.match(f))
+        files = [
+            f[:-3] for f in ls(self.migrate_dir)
+            if self.filemask.match(f)
+        ]
+
+        return sorted(files, key=lambda f: int(f.split('_')[0]))
 
     @property
     def db_migrations(self):
@@ -88,14 +93,26 @@ class Router(object):
         LOGGER.info('Start migrations')
 
         migrator = Migrator(self.db)
+
+        # Run migration by name
         if name:
             return self.run_one(name, migrator)
 
-        diff = self.diff
-        for name in diff:
-            self.run_one(name, migrator)
+        # Report currently applied migrations
+        db_migrations = self.db_migrations
 
-        if not diff:
+        if db_migrations:
+            LOGGER.info('Database has %d migrations applied:\n  %s', len(db_migrations), '\n  '.join(db_migrations))
+
+        # Run migrations that haven't been applied yet
+        diff = self.diff
+
+        if diff:
+            LOGGER.info('Applying %d database migrations:\n  %s', len(diff), '\n  '.join(diff))
+
+            for name in diff:
+                self.run_one(name, migrator)
+        else:
             LOGGER.info('Nothing to migrate')
 
     def run_one(self, name, migrator):
