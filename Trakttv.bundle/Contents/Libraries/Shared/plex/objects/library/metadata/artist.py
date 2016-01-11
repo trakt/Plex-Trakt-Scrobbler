@@ -14,6 +14,9 @@ class Artist(Directory, Metadata, RateMixin):
     def children(self):
         return self.client['library/metadata'].children(self.rating_key)
 
+    def __repr__(self):
+        return '<Artist %r>' % self.title
+
 
 class ArtistChildrenContainer(ChildrenContainer):
     artist = Property(resolver=lambda: ArtistChildrenContainer.construct_artist)

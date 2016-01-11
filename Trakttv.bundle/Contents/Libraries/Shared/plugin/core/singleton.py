@@ -103,6 +103,8 @@ class Singleton(object):
 
         # Start listening thread
         cls._thread = Thread(target=cls._run, name='Singleton')
+        cls._thread.daemon = True
+
         cls._thread.start()
 
         log.debug('Started')

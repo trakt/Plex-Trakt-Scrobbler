@@ -177,6 +177,8 @@ class Arrow(object):
         return the entire range, with **limit** alone to return a maximum # of results from the
         start, and with both to cap a range at a maximum # of results.
 
+        Supported frame values: year, quarter, month, week, day, hour, minute, second
+
         Recognized datetime expressions:
 
             - An :class:`Arrow <arrow.arrow.Arrow>` object.
@@ -204,7 +206,8 @@ class Arrow(object):
 
         '''
 
-        frame_relative = cls._get_frames(frame)[1]
+        _, frame_relative, relative_steps = cls._get_frames(frame)
+
         tzinfo = cls._get_tzinfo(start.tzinfo if tz is None else tz)
 
         start = cls._get_datetime(start).replace(tzinfo=tzinfo)
@@ -218,7 +221,7 @@ class Arrow(object):
             results.append(current)
 
             values = [getattr(current, f) for f in cls._ATTRS]
-            current = cls(*values, tzinfo=tzinfo) + relativedelta(**{frame_relative: 1})
+            current = cls(*values, tzinfo=tzinfo) + relativedelta(**{frame_relative: relative_steps})
 
         return results
 
@@ -237,6 +240,8 @@ class Arrow(object):
         **NOTE**: the **end** or **limit** must be provided.  Call with **end** alone to
         return the entire range, with **limit** alone to return a maximum # of results from the
         start, and with both to cap a range at a maximum # of results.
+
+        Supported frame values: year, quarter, month, week, day, hour, minute, second
 
         Recognized datetime expressions:
 
@@ -264,7 +269,8 @@ class Arrow(object):
             (<Arrow [2013-05-05T16:00:00+00:00]>, <Arrow [2013-05-05T16:59:59.999999+00:00]>)
 
         '''
-
+        tzinfo = cls._get_tzinfo(start.tzinfo if tz is None else tz)
+        start = cls.fromdate(start, tzinfo).span(frame)[0]
         _range = cls.range(frame, start, end, tz, limit)
         return [r.span(frame) for r in _range]
 
@@ -377,7 +383,7 @@ class Arrow(object):
         >>> arw.replace(years=1, months=-1)
         <Arrow [2014-04-11T22:27:34.787885+00:00]>
 
-        You can also provide a tzimezone expression can also be replaced:
+        You can also provide a timezone expression can also be replaced:
 
         >>> arw.replace(tzinfo=tz.tzlocal())
         <Arrow [2013-05-11T22:27:34.787885-07:00]>
@@ -460,11 +466,14 @@ class Arrow(object):
         return self.__class__(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
             dt.microsecond, tz)
 
-    def span(self, frame):
+    def span(self, frame, count=1):
         ''' Returns two new :class:`Arrow <arrow.arrow.Arrow>` objects, representing the timespan
         of the :class:`Arrow <arrow.arrow.Arrow>` object in a given timeframe.
 
         :param frame: the timeframe.  Can be any ``datetime`` property (day, hour, minute...).
+        :param count: (optional) the number of frames to span.
+
+        Supported frame values: year, quarter, month, week, day, hour, minute, second
 
         Usage::
 
@@ -477,11 +486,21 @@ class Arrow(object):
             >>> arrow.utcnow().span('day')
             (<Arrow [2013-05-09T00:00:00+00:00]>, <Arrow [2013-05-09T23:59:59.999999+00:00]>)
 
+            >>> arrow.utcnow().span('day', count=2)
+            (<Arrow [2013-05-09T00:00:00+00:00]>, <Arrow [2013-05-10T23:59:59.999999+00:00]>)
+
         '''
 
-        frame_absolute, frame_relative = self._get_frames(frame)
+        frame_absolute, frame_relative, relative_steps = self._get_frames(frame)
 
-        index = self._ATTRS.index('day' if frame_absolute == 'week' else frame_absolute)
+        if frame_absolute == 'week':
+            attr = 'day'
+        elif frame_absolute == 'quarter':
+            attr = 'month'
+        else:
+            attr = frame_absolute
+
+        index = self._ATTRS.index(attr)
         frames = self._ATTRS[:index + 1]
 
         values = [getattr(self, f) for f in frames]
@@ -493,8 +512,11 @@ class Arrow(object):
 
         if frame_absolute == 'week':
             floor = floor + relativedelta(days=-(self.isoweekday() - 1))
+        elif frame_absolute == 'quarter':
+            floor = floor + relativedelta(months=-((self.month - 1) % 3))
 
-        ceil = floor + relativedelta(**{frame_relative: 1}) + relativedelta(microseconds=-1)
+        ceil = floor + relativedelta(
+            **{frame_relative: count * relative_steps}) + relativedelta(microseconds=-1)
 
         return floor, ceil
 
@@ -508,7 +530,7 @@ class Arrow(object):
 
         Usage::
 
-            >>> arrow.utcnow().ceil('hour')
+            >>> arrow.utcnow().floor('hour')
             <Arrow [2013-05-09T03:00:00+00:00]>
         '''
 
@@ -533,7 +555,7 @@ class Arrow(object):
 
     # string output and formatting.
 
-    def format(self, fmt, locale='en_us'):
+    def format(self, fmt='YYYY-MM-DD HH:mm:ssZZ', locale='en_us'):
         ''' Returns a string representation of the :class:`Arrow <arrow.arrow.Arrow>` object,
         formatted according to a format string.
 
@@ -549,6 +571,10 @@ class Arrow(object):
 
             >>> arrow.utcnow().format('MMMM DD, YYYY')
             'May 09, 2013'
+
+            >>> arrow.utcnow().format()
+            '2013-05-09 03:56:47 -00:00'
+
         '''
 
         return formatter.DateTimeFormatter(locale).format(self._datetime, fmt)
@@ -558,7 +584,7 @@ class Arrow(object):
         ''' Returns a localized, humanized representation of a relative difference in time.
 
         :param other: (optional) an :class:`Arrow <arrow.arrow.Arrow>` or ``datetime`` object.
-            Defaults to now in the current :class:`Arrow <arrow.arrow.Arrow>` objet's timezone.
+            Defaults to now in the current :class:`Arrow <arrow.arrow.Arrow>` object's timezone.
         :param locale: (optional) a ``str`` specifying a locale.  Defaults to 'en_us'.
 
         Usage::
@@ -667,6 +693,10 @@ class Arrow(object):
 
     # comparisons
 
+    def _cmperror(self, other):
+        raise TypeError('can\'t compare \'{0}\' to \'{1}\''.format(
+            type(self), type(other)))
+
     def __eq__(self, other):
 
         if not isinstance(other, (Arrow, datetime)):
@@ -682,28 +712,28 @@ class Arrow(object):
     def __gt__(self, other):
 
         if not isinstance(other, (Arrow, datetime)):
-            return False
+            self._cmperror(other)
 
         return self._datetime > self._get_datetime(other)
 
     def __ge__(self, other):
 
         if not isinstance(other, (Arrow, datetime)):
-            return False
+            self._cmperror(other)
 
         return self._datetime >= self._get_datetime(other)
 
     def __lt__(self, other):
 
         if not isinstance(other, (Arrow, datetime)):
-            return False
+            self._cmperror(other)
 
         return self._datetime < self._get_datetime(other)
 
     def __le__(self, other):
 
         if not isinstance(other, (Arrow, datetime)):
-            return False
+            self._cmperror(other)
 
         return self._datetime <= self._get_datetime(other)
 
@@ -792,6 +822,9 @@ class Arrow(object):
 
         return self._datetime.strftime(format)
 
+    def for_json(self):
+        '''Serializes for the ``for_json`` protocol of simplejson.'''
+        return self.isoformat()
 
     # internal tools.
 
@@ -827,10 +860,12 @@ class Arrow(object):
     def _get_frames(cls, name):
 
         if name in cls._ATTRS:
-            return name, '{0}s'.format(name)
+            return name, '{0}s'.format(name), 1
 
         elif name in ['week', 'weeks']:
-            return 'week', 'weeks'
+            return 'week', 'weeks', 1
+        elif name in ['quarter', 'quarters']:
+            return 'quarter', 'months', 3
 
         raise AttributeError()
 

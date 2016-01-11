@@ -3,18 +3,12 @@
 
 """Implements ThreadPoolExecutor."""
 
-from __future__ import with_statement
 import atexit
+from concurrent.futures import _base
+import Queue as queue
 import threading
 import weakref
 import sys
-
-from concurrent.futures import _base
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
@@ -38,7 +32,7 @@ _shutdown = False
 def _python_exit():
     global _shutdown
     _shutdown = True
-    items = list(_threads_queues.items())
+    items = list(_threads_queues.items()) if _threads_queues else ()
     for t, q in items:
         q.put(None)
     for t, q in items:
@@ -60,8 +54,8 @@ class _WorkItem(object):
         try:
             result = self.fn(*self.args, **self.kwargs)
         except BaseException:
-            e = sys.exc_info()[1]
-            self.future.set_exception(e)
+            e, tb = sys.exc_info()[1:]
+            self.future.set_exception_info(e, tb)
         else:
             self.future.set_result(result)
 
@@ -71,6 +65,8 @@ def _worker(executor_reference, work_queue):
             work_item = work_queue.get(block=True)
             if work_item is not None:
                 work_item.run()
+                # Delete references to object. See issue16284
+                del work_item
                 continue
             executor = executor_reference()
             # Exit if:

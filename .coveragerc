@@ -1,0 +1,5 @@
+[run]
+source = Trakttv.bundle/Contents/Libraries/Shared/plugin
+
+[report]
+omit = Trakttv.bundle/Contents/Tests/*

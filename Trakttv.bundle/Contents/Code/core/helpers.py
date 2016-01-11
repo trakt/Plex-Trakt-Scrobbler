@@ -1,13 +1,16 @@
 from core.logger import Logger
 
+from plugin.core.constants import PLUGIN_PREFIX
+
+import base64
+import cerealizer
 import hashlib
 import inspect
-import re
 import sys
 import threading
 import thread
 import time
-import unicodedata
+import urllib
 
 log = Logger('core.helpers')
 
@@ -198,7 +201,7 @@ def sum(values):
 
 
 def timestamp():
-    return int(time.time())
+    return str(time.time())
 
 
 # <bound method type.start of <class 'Scrobbler'>>
@@ -283,13 +286,6 @@ def plural(value):
     return 's'
 
 
-def get_pref(key, default=None):
-    if Dict['preferences'] and key in Dict['preferences']:
-        return Dict['preferences'][key]
-
-    return Prefs[key] or default
-
-
 def join_attributes(**kwargs):
     fragments = [
         (('%s: %s' % (key, value)) if value else None)
@@ -299,74 +295,58 @@ def join_attributes(**kwargs):
     return ', '.join([x for x in fragments if x])
 
 
-def get_filter(key, normalize_values=True):
-    value = get_pref(key)
-    if not value:
-        return None, None
-
-    value = value.strip()
-
-    # Allow all if wildcard (*) or blank
-    if not value or value == '*':
-        return None, None
-
-    values = value.split(',')
-
-    allow, deny = [], []
-
-    for value in [v.strip() for v in values]:
-        inverted = False
-
-        # Check if this is an inverted value
-        if value.startswith('-'):
-            inverted = True
-            value = value[1:]
-
-        # Normalize values (if enabled)
-        if normalize_values:
-            value = flatten(value)
-
-        # Append value to list
-        if not inverted:
-            allow.append(value)
-        else:
-            deny.append(value)
-
-    return allow, deny
-
-
-def normalize(text):
-    if text is None:
-        return None
-
-    # Normalize unicode characters
-    if type(text) is unicode:
-        text = unicodedata.normalize('NFKD', text)
-
-    # Ensure text is ASCII, ignore unknown characters
-    return text.encode('ascii', 'ignore')
-
-
-def flatten(text):
-    if text is None:
-        return None
-
-    # Normalize `text` to ascii
-    text = normalize(text)
-
-    # Remove special characters
-    text = re.sub('[^A-Za-z0-9\s]+', '', text)
-
-    # Merge duplicate spaces
-    text = ' '.join(text.split())
-
-    # Convert to lower-case
-    return text.lower()
-
-
 def md5(value):
     # Generate MD5 hash of key
     m = hashlib.md5()
     m.update(value)
 
     return m.hexdigest()
+
+
+def safe_encode(string):
+    string = str(string)
+    return base64.b64encode(string).replace('/', '@').replace('+', '*').replace('=', '_')
+
+
+def pack(obj):
+    serialized_obj = cerealizer.dumps(obj)
+    encoded_string = safe_encode(serialized_obj)
+    return urllib.quote(encoded_string)
+
+
+def function_path(name, ext=None, **kwargs):
+    return '%s/:/function/%s%s?%s' % (
+        PLUGIN_PREFIX,
+        name,
+        ('.%s' % ext) if ext else '',
+
+        urllib.urlencode({
+            'function_args': pack(kwargs)
+        })
+    )
+
+
+def redirect(path, **kwargs):
+    location = PLUGIN_PREFIX + path
+
+    if kwargs:
+        location += '?' + urllib.urlencode(kwargs)
+
+    try:
+        request = Core.sandbox.context.request
+
+        # Retrieve protocol
+        protocol = request.protocol
+
+        if request.host.endswith('.plex.direct:32400'):
+            # Secure connection
+            protocol = 'https'
+
+        # Build URL
+        if request and request.host and location[0] == "/":
+            location = protocol + "://" + request.host + location
+    except Exception, ex:
+        log.warn('Redirect - %s', str(ex), exc_info=True)
+
+    # Return redirect response
+    return Redirect(location)

@@ -1,7 +1,11 @@
-import arrow
 import functools
 import logging
 import warnings
+
+try:
+    import arrow
+except ImportError:
+    arrow = None
 
 log = logging.getLogger(__name__)
 
@@ -10,14 +14,17 @@ def from_iso8601(value):
     if value is None:
         return None
 
+    if arrow is None:
+        raise Exception('"arrow" module is not available')
+
     # Parse ISO8601 datetime
     dt = arrow.get(value)
 
     # Convert to UTC
     dt = dt.to('UTC')
 
-    # Return naive datetime object
-    return dt.naive
+    # Return datetime object
+    return dt.datetime
 
 
 def to_iso8601(value):

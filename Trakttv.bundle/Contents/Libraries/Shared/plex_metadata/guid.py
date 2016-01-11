@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 class Guid(object):
     map = compile_map(DEFAULT_GUID_MAP)
 
-    def __init__(self, agent, sid, extra):
+    def __init__(self, agent, sid, extra=None):
         self.agent = agent
         self.sid = sid
         self.extra = extra
@@ -94,3 +94,20 @@ class Guid(object):
             return map_agent, map_pattern, match
 
         return agent, None, None
+
+    def __repr__(self):
+        parameters = [
+            'agent: %r' % self.agent,
+            'sid: %r' % self.sid
+        ]
+
+        if self.season is not None:
+            parameters.append('season: %r' % self.season)
+
+        if self.episode is not None:
+            parameters.append('episode: %r' % self.episode)
+
+        return '<Guid - %s>' % ', '.join(parameters)
+
+    def __str__(self):
+        return self.__repr__()

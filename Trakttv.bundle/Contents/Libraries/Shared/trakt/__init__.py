@@ -1,7 +1,8 @@
 from trakt.core.errors import ERRORS
 from trakt.core.exceptions import RequestError, ClientError, ServerError
-from trakt.client import TraktClient, __version__
+from trakt.client import TraktClient
 from trakt.helpers import has_attribute
+from trakt.version import __version__  # NOQA
 
 from six import add_metaclass
 
@@ -48,3 +49,15 @@ class Trakt(object):
     @classmethod
     def construct(cls):
         cls.client = TraktClient()
+
+
+# Set default logging handler to avoid "No handler found" warnings.
+import logging
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+logging.getLogger(__name__).addHandler(NullHandler())

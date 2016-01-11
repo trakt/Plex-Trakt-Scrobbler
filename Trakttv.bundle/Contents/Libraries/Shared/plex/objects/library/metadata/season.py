@@ -23,6 +23,12 @@ class Season(Directory, Metadata):
     def children(self):
         return self.client['library/metadata'].children(self.rating_key)
 
+    def __repr__(self):
+        if self.show:
+            return '<Season %r (%s) - S%02d>' % (self.show.title, self.show.year, self.index)
+
+        return '<Season S%02d>' % self.index
+
     @staticmethod
     def construct_show(client, node):
         attribute_map = {
