@@ -125,6 +125,7 @@ class Main(object):
                 with self.current.account.plex.authorization():
                     # Run in trakt authorization context
                     with self.current.account.trakt.authorization():
+                        # Run sync
                         self.run()
 
                 self.current.success = True
@@ -151,13 +152,6 @@ class Main(object):
         # Cleanup sync manager
         self.current = None
 
-    def run(self):
-        if self.current.mode not in self.current.modes:
-            log.warn('Unknown sync mode: %r', self.current.mode)
-            return
-
-        self.current.modes[self.current.mode].run()
-
     def cancel(self, id):
         """Trigger a currently running sync to abort
 
@@ -183,6 +177,31 @@ class Main(object):
 
         log.info('(%r) Abort', current.mode)
         return True
+
+    def run(self):
+        # Trigger sync methods
+        self._trigger([
+            'construct',
+            'start',
+            'run',
+            'stop'
+        ])
+
+    def _trigger(self, names):
+        if self.current.mode not in self.current.modes:
+            log.warn('Unknown sync mode: %r', self.current.mode)
+            return
+
+        mode = self.current.modes[self.current.mode]
+
+        for name in names:
+            func = getattr(mode, name, None)
+
+            if not func:
+                log.warn('Unknown method: %r', name)
+                return
+
+            func()
 
 
 Sync = Main()

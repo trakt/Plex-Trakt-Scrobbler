@@ -24,7 +24,7 @@ class Push(Mode):
 
         with self.plex.prime():
             # Run children
-            self.execute_children()
+            self.execute_children('run')
 
         # Send artifacts to trakt
         self.current.artifacts.send()

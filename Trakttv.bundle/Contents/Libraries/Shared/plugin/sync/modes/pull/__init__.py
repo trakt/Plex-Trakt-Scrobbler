@@ -30,4 +30,4 @@ class Pull(Mode):
         self.trakt.build_table()
 
         # Run children
-        self.execute_children()
+        self.execute_children('run')
