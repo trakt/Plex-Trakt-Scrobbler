@@ -63,7 +63,7 @@ class SyncProgress(object):
 
         return float(remaining) / self._speed
 
-    def start(self, maximum):
+    def start(self, maximum=0):
         self._current = 0
         self._maximum = maximum
 
@@ -71,6 +71,16 @@ class SyncProgress(object):
         self._ended_at = None
 
         self._speed = None
+
+        log.debug('started (maximum: %s)', self._maximum)
+
+    def add(self, steps):
+        if steps is None:
+            return
+
+        self._maximum += steps
+
+        log.debug('added %d steps', self._maximum)
 
     def step(self, delta=1):
         if self._current is None:
@@ -80,6 +90,8 @@ class SyncProgress(object):
 
         # Update average syncing speed
         self.update_speed()
+
+        log.debug('stepped (delta: %s) [%s/%s - %s]', delta, self._current, self._maximum, self.percent)
 
     def update_speed(self):
         if self._speed is None:
@@ -92,3 +104,5 @@ class SyncProgress(object):
 
     def stop(self):
         self._ended_at = datetime.utcnow()
+
+        log.debug('stopped [%s/%s - %s]', self._current, self._maximum, self.percent)
