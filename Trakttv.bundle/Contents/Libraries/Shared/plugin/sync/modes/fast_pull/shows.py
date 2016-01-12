@@ -30,25 +30,8 @@ class Shows(Mode):
 
         # TODO process seasons
 
-        # Calculate total number of episode changes
-        total = 0
-
-        for key, result in self.trakt.changes:
-            media, data = key[0:2]
-
-            if media != SyncMedia.Episodes:
-                # Ignore changes that aren't for episodes
-                continue
-
-            data_name = Cache.Data.get(data)
-
-            for count in result.metrics.episodes.get(data_name, {}).itervalues():
-                total += count
-
         # Task started
         unsupported_shows = {}
-
-        self.current.progress.start(total)
 
         with elapsed.clock(Shows, 'run:shows'):
             # Process shows
@@ -186,6 +169,3 @@ class Shows(Mode):
 
         # Log details
         log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
-
-        # Task stopped
-        self.current.progress.stop()

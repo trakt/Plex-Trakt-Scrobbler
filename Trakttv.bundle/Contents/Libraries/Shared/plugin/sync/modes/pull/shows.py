@@ -29,7 +29,6 @@ class Shows(Base):
 
         # Calculate total number of episodes
         pending = {}
-        total = 0
 
         for data in self.get_data(SyncMedia.Episodes):
             t_episodes = [
@@ -44,12 +43,9 @@ class Shows(Base):
 
             for key in t_episodes:
                 pending[data][key] = False
-                total += 1
 
         # Task started
         unsupported_shows = {}
-
-        self.current.progress.start(total)
 
         # Process shows
         for sh_id, p_guid, p_show in p_shows:
@@ -137,6 +133,3 @@ class Shows(Base):
         # Log details
         log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
         log.debug('Pending: %r', pending)
-
-        # Task stopped
-        self.current.progress.stop()
