@@ -13,8 +13,5 @@ class Base(Mode):
         if key not in pending[data]:
             return
 
-        # Increment one step
-        self.current.progress.step()
-
         # Remove from `pending` dictionary
         del pending[data][key]

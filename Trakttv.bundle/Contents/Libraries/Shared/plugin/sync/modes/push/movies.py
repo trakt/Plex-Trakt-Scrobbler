@@ -38,7 +38,8 @@ class Movies(Base):
         )
 
         # Increment progress steps total
-        self.current.progress.add(self.p_count)
+        self.current.progress.group(Movies, 'matched:movies').add(self.p_count)
+        self.current.progress.group(Movies, 'missing:movies')
 
     @elapsed.clock
     def start(self):
@@ -65,16 +66,16 @@ class Movies(Base):
     @elapsed.clock
     def run(self):
         # Process movies
-        self.process_matches()
-        self.process_missing()
+        self.process_matched_movies()
+        self.process_missing_movies()
 
-    def process_matches(self):
+    def process_matched_movies(self):
         """Trigger actions for movies that have been matched in plex"""
 
         # Iterate over movies
         for rating_key, p_guid, p_item in self.p_movies:
             # Increment one step
-            self.current.progress.step()
+            self.current.progress.group(Movies, 'matched:movies').step()
 
             # Ensure `p_guid` is available
             if not p_guid or p_guid.agent not in GUID_AGENTS:
@@ -110,16 +111,16 @@ class Movies(Base):
         # Report unsupported movies (unsupported guid)
         log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)
 
-    def process_missing(self):
+    def process_missing_movies(self):
         """Trigger actions for movies that are in trakt, but was unable to be found in plex"""
 
         # Increment progress steps
-        self.current.progress.add(len(self.p_pending))
+        self.current.progress.group(Movies, 'missing:movies').add(len(self.p_pending))
 
         # Iterate over movies
         for pk in list(self.p_pending):
             # Increment one step
-            self.current.progress.step()
+            self.current.progress.group(Movies, 'missing:movies').step()
 
             # Iterate over data handlers
             triggered = False

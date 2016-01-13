@@ -38,7 +38,7 @@ class Movies(Mode):
         )
 
         # Increment progress steps total
-        self.current.progress.add(self.p_count)
+        self.current.progress.group(Movies).add(self.p_count)
 
     @elapsed.clock
     def start(self):
@@ -59,7 +59,7 @@ class Movies(Mode):
         # Process movies
         for mo_id, p_guid, p_item in self.p_movies:
             # Increment one step
-            self.current.progress.step()
+            self.current.progress.group(Movies).step()
 
             # Ensure `p_guid` is available
             if not p_guid or p_guid.agent not in GUID_AGENTS:
