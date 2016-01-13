@@ -13,31 +13,71 @@ log = logging.getLogger(__name__)
 class Shows(Mode):
     mode = SyncMode.FastPull
 
+    def __init__(self, task):
+        super(Shows, self).__init__(task)
+
+        # Sections
+        self.p_sections = None
+        self.p_sections_map = None
+
+        # Shows
+        self.p_shows = None
+        self.p_shows_count = None
+        self.p_shows_unsupported = None
+
+        # Seasons
+        self.p_seasons = None
+
+        # Episodes
+        self.p_episodes = None
+        self.p_episodes_count = None
+
+    @elapsed.clock
+    def construct(self):
+        # Retrieve show sections
+        self.p_sections, self.p_sections_map = self.sections('show')
+
+        # Determine number of shows that will be processed
+        self.p_shows_count = self.plex.library.shows.count(
+            self.p_sections
+        )
+
+        # Determine number of shows that will be processed
+        self.p_episodes_count = self.plex.library.episodes.count_items(
+            self.p_sections
+        )
+
+        # Increment progress steps total
+        self.current.progress.group(Shows, 'shows').add(self.p_shows_count)
+        self.current.progress.group(Shows, 'episodes').add(self.p_episodes_count)
+
+    @elapsed.clock
+    def start(self):
+        # Fetch episodes with account settings
+        self.p_shows, self.p_seasons, self.p_episodes = self.plex.library.episodes.mapped(
+            self.p_sections, ([
+                MetadataItem.library_section
+            ], [], []),
+            account=self.current.account.plex.key,
+            parse_guid=True
+        )
+
+        # Reset state
+        self.p_shows_unsupported = {}
+
     @elapsed.clock
     def run(self):
-        # Retrieve show sections
-        p_sections, p_sections_map = self.sections('show')
-
-        with elapsed.clock(Shows, 'run:fetch'):
-            # Fetch episodes with account settings
-            p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
-                p_sections, ([
-                    MetadataItem.library_section
-                ], [], []),
-                account=self.current.account.plex.key,
-                parse_guid=True
-            )
-
         # TODO process seasons
-
-        # Task started
-        unsupported_shows = {}
 
         with elapsed.clock(Shows, 'run:shows'):
             # Process shows
-            for sh_id, p_guid, p_show in p_shows:
+            for sh_id, p_guid, p_show in self.p_shows:
+                # Increment one step
+                self.current.progress.group(Shows, 'shows').step()
+
+                # Ensure `p_guid` is available
                 if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
+                    mark_unsupported(self.p_shows_unsupported, sh_id, p_guid, p_show)
                     continue
 
                 key = (p_guid.agent, p_guid.sid)
@@ -96,9 +136,13 @@ class Shows(Mode):
 
         with elapsed.clock(Shows, 'run:episodes'):
             # Process episodes
-            for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+                # Increment one step
+                self.current.progress.group(Shows, 'episodes').step()
+
+                # Ensure `p_guid` is available
                 if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
+                    mark_unsupported(self.p_shows_unsupported, ids['show'], p_guid, p_show)
                     continue
 
                 key = (p_guid.agent, p_guid.sid)
@@ -161,11 +205,8 @@ class Shows(Mode):
                             t_item=t_episode
                         )
 
-                        # Increment one step
-                        self.current.progress.step()
-
                 # Task checkpoint
                 self.checkpoint()
 
         # Log details
-        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
+        log_unsupported(log, 'Found %d unsupported show(s)\n%s', self.p_shows_unsupported)
