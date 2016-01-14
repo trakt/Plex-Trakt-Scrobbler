@@ -142,12 +142,17 @@ class SyncProgress(SyncProgressBase):
         # Reset active groups
         self.groups = {}
 
-        log.debug('started (maximum: %s)', self.maximum)
+        log.debug('[%-40s] started (maximum: %s)', self.tag[-40:], self.maximum)
+
+    def step(self, delta=1):
+        super(SyncProgress, self).step(delta)
+
+        log.debug('[%-40s] stepped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
 
     def stop(self):
         super(SyncProgress, self).stop()
 
-        log.debug('stopped [%s/%s - %s]', self.current, self.maximum, self.percent)
+        log.debug('[%-40s] stopped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
 
         for tag, group in self.groups.items():
             log.debug('[%s] %r', tag, group)
@@ -197,6 +202,8 @@ class SyncProgressGroup(SyncProgressBase):
 
     def step(self, delta=1):
         super(SyncProgressGroup, self).step(delta)
+
+        log.debug('[%-40s] stepped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
 
         # Update root progress
         self.root.step(delta)
