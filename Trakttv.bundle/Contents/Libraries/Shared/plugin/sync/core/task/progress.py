@@ -177,7 +177,12 @@ class SyncProgressGroup(SyncProgressBase):
         if self.maximum < 1:
             return 0.0
 
-        return (float(self.current) / self.maximum) * 100
+        value = (float(self.current) / self.maximum) * 100
+
+        if value > 100:
+            return 100.0
+
+        return value
 
     def add(self, delta):
         super(SyncProgressGroup, self).add(delta)
