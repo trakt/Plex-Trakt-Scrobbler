@@ -37,7 +37,19 @@ class SyncStateTrakt(object):
                 'pickle:///?protocol=2'
             )
 
-        return Cache(self.task.media, self.task.data, storage)
+        cache = Cache(self.task.media, self.task.data, storage)
+
+        # Bind to cache events
+        cache.events.on([
+            'refresh.sync.progress',
+            'refresh.list.progress'
+        ], self.on_refresh_progress)
+
+        return cache
+
+    def on_refresh_progress(self, source, current):
+        # Step refresh progress for `source`
+        self.task.progress.group(SyncStateTrakt, 'refresh:%s' % source).step()
 
     def __getitem__(self, key):
         collection = [
@@ -65,6 +77,17 @@ class SyncStateTrakt(object):
     def refresh(self):
         # Task checkpoint
         self.task.checkpoint()
+
+        # Construct progress groups
+        def setup_progress_group(source):
+            # Retrieve steps from cache source
+            steps = self.cache.source(source).steps()
+
+            # Setup progress group with total steps
+            self.task.progress.group(SyncStateTrakt, 'refresh:%s' % source).add(steps)
+
+        setup_progress_group('list')
+        setup_progress_group('sync')
 
         # Refresh cache for account, store changes
         self.changes = self.cache.refresh(self.task.account.trakt.username)
@@ -146,7 +169,15 @@ class Table(object):
             for x in self._media
         ]))
 
+        # Construct progress group
+        self.task.progress.group(Table, 'build').add(len(cache.collections))
+
+        # Map each item in cache collections
         for key in cache.collections:
+            # Increment one step
+            self.task.progress.group(Table, 'build').step()
+
+            # Parse `key`
             if len(key) == 3:
                 # Sync
                 username, media, data = key
