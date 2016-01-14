@@ -240,17 +240,22 @@ class Matcher(object):
 
         # Extend-style episodes
         if 'episode_from' in c_identifier and 'episode_to' in c_identifier:
+            # Cast parameters to integers
             c_from = try_convert(c_identifier['episode_from'], int)
             c_to = try_convert(c_identifier['episode_to'], int)
 
             if c_from is None or c_to is None:
                 return
 
-            episodes = range(c_from, c_to + 1)
+            # Ensure range is valid
+            count = c_to - c_from
+
+            if count > 10 or count < 0:
+                return
 
             # Ensure plex episode is inside identifier episode range
-            if p_episode in episodes:
-                c_episodes = episodes
+            if c_from <= p_episode <= c_to:
+                c_episodes = range(c_from, c_to + 1)
             else:
                 return
 
