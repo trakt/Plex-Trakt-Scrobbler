@@ -209,8 +209,9 @@ class SyncProgressGroup(SyncProgressBase):
         self.root.step(delta)
 
     def __repr__(self):
-        return '<SyncProgressGroup %s/%s - %s>' % (
+        return '<SyncProgressGroup %s/%s - %s (speed: %r)>' % (
             self.current,
             self.maximum,
-            self.percent
+            self.percent,
+            self.speed
         )
