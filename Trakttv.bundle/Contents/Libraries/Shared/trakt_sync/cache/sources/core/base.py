@@ -7,6 +7,10 @@ class Source(object):
         return self.main.data
 
     @property
+    def events(self):
+        return self.main.events
+
+    @property
     def media(self):
         return self.main.media
 
@@ -17,6 +21,9 @@ class Source(object):
         return self.main._get_store(username, *args)
 
     def refresh(self, username):
+        raise NotImplementedError
+
+    def steps(self):
         raise NotImplementedError
 
     def update_store(self, key, current):
