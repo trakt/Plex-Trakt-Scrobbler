@@ -46,7 +46,12 @@ class SyncProgressBase(object):
         if self.maximum is None or self.current is None:
             return None
 
-        return self.maximum - self.current
+        value = self.maximum - self.current
+
+        if value < 0:
+            return 0
+
+        return value
 
     @property
     def remaining_seconds(self):
