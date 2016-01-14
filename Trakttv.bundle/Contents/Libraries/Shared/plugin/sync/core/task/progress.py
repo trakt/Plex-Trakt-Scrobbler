@@ -190,3 +190,10 @@ class SyncProgressGroup(SyncProgressBase):
 
         # Update root progress
         self.root.step(delta)
+
+    def __repr__(self):
+        return '<SyncProgressGroup %s/%s - %s>' % (
+            self.current,
+            self.maximum,
+            self.percent
+        )
