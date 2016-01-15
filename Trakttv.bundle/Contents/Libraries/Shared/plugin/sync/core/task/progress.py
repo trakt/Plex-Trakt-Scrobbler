@@ -1,3 +1,5 @@
+from plugin.core.environment import Environment
+
 from datetime import datetime
 import inspect
 import logging
@@ -6,14 +8,13 @@ log = logging.getLogger(__name__)
 
 
 class SyncProgressBase(object):
-    speed_smoothing = 0.75
+    speed_smoothing = 0.5
 
     def __init__(self, tag):
         self.tag = tag
 
-        self.current = None
-        self.maximum = None
-        self.speed = None
+        self.current = 0
+        self.maximum = 0
 
         self.started_at = None
         self.ended_at = None
@@ -31,6 +32,202 @@ class SyncProgressBase(object):
     @property
     def percent(self):
         raise NotImplementedError
+
+    @property
+    def remaining_seconds(self):
+        raise NotImplementedError
+
+    def add(self, delta):
+        if not delta:
+            return
+
+        # Update group maximum
+        self.maximum += delta
+
+    def start(self):
+        self.started_at = datetime.utcnow()
+        self.ended_at = None
+
+    def step(self, delta=1):
+        if not delta:
+            return
+
+        if not self.started_at:
+            self.start()
+
+        # Update group position
+        self.current += delta
+
+    def stop(self):
+        self.ended_at = datetime.utcnow()
+
+    def _ema(self, value, previous, smoothing):
+        if smoothing is None:
+            # Use default smoothing value
+            smoothing = self.speed_smoothing
+
+        # Calculate EMA
+        return smoothing * value + (1 - smoothing) * previous
+
+
+class SyncProgress(SyncProgressBase):
+    def __init__(self, task):
+        super(SyncProgress, self).__init__('root')
+
+        self.task = task
+
+        self.groups = None
+        self.group_speeds = None
+
+    @property
+    def percent(self):
+        if not self.groups:
+            return 0.0
+
+        samples = []
+
+        for group in self.groups.itervalues():
+            samples.append(group.percent)
+
+        return sum(samples) / len(samples)
+
+    @property
+    def remaining_seconds(self):
+        if not self.groups:
+            return 0.0
+
+        samples = []
+
+        for group in self.groups.itervalues():
+            remaining_seconds = group.remaining_seconds
+
+            if remaining_seconds is None:
+                continue
+
+            samples.append(remaining_seconds)
+
+        return sum(samples)
+
+    def group(self, *tag):
+        # Resolve tag to string
+        tag = self._resolve_tag(tag)
+
+        # Return existing progress group (if available)
+        if tag in self.groups:
+            return self.groups[tag]
+
+        # Construct new progress group
+        group = self.groups[tag] = SyncProgressGroup(self, tag)
+        return group
+
+    def start(self):
+        super(SyncProgress, self).start()
+
+        # Reset active groups
+        self.groups = {}
+
+        # Retrieve group speeds
+        self.group_speeds = Environment.dict['sync.progress.group_speeds'] or {}
+
+        log.debug('[%-40s] started (maximum: %s)', self.tag[-40:], self.maximum)
+        log.debug('group_speeds: %r', self.group_speeds)
+
+    def step(self, delta=1):
+        super(SyncProgress, self).step(delta)
+
+        log.debug(
+            '[%-40s] stepped [%s/%s - %.02f%%] (remaining_seconds: %.02f, samples: %r)',
+            self.tag[-40:],
+            self.current,
+            self.maximum,
+            self.percent or 0,
+            self.remaining_seconds or 0,
+            [
+                group.remaining_seconds
+                for group in self.groups.itervalues()
+            ]
+        )
+
+    def stop(self):
+        super(SyncProgress, self).stop()
+
+        log.debug(
+            '[%-40s] stopped [%s/%s - %.02f%%]',
+            self.tag[-40:],
+            self.current,
+            self.maximum,
+            self.percent or 0
+        )
+
+        # Report group details
+        for tag, group in self.groups.items():
+            log.debug('[%s] %r', tag, group)
+
+        # Save progress statistics
+        self.save()
+
+    def save(self):
+        # Update group speeds
+        self.group_speeds = dict([
+            (group.tag, self._group_speed(group))
+            for group in self.groups.itervalues()
+        ])
+
+        log.debug('group_speeds: %r', self.group_speeds)
+
+        # Save to plugin dictionary
+        Environment.dict['sync.progress.group_speeds'] = self.group_speeds
+
+    def _group_speed(self, group):
+        speed = self.group_speeds.get(group.tag)
+
+        if speed is None:
+            # First sample
+            return group.speed_min
+
+        # Calculate EMA for group speed
+        return self._ema(group.speed_min, speed, self.speed_smoothing)
+
+    @staticmethod
+    def _resolve_tag(tag):
+        if isinstance(tag, (str, unicode)):
+            return tag
+
+        # Resolve tag
+        if inspect.isclass(tag[0]):
+            cls = tag[0]
+            path = '%s.%s' % (cls.__module__, cls.__name__)
+
+            tag = [path] + list(tag[1:])
+
+        # Convert tag to string
+        return ':'.join(tag)
+
+
+class SyncProgressGroup(SyncProgressBase):
+    def __init__(self, root, tag):
+        super(SyncProgressGroup, self).__init__(tag)
+
+        self.root = root
+
+        # Retrieve average group speed
+        self.speed = self.root.group_speeds.get(self.tag)
+        self.speed_min = None
+
+    @property
+    def percent(self):
+        if self.maximum is None or self.current is None:
+            return 0.0
+
+        if self.maximum < 1:
+            return 0.0
+
+        value = (float(self.current) / self.maximum) * 100
+
+        if value > 100:
+            return 100.0
+
+        return value
 
     @property
     def per_second(self):
@@ -63,138 +260,6 @@ class SyncProgressBase(object):
         return float(remaining) / self.speed
 
     def add(self, delta):
-        if not delta:
-            return
-
-        # Update group maximum
-        self.maximum += delta
-
-    def start(self, maximum=0):
-        self.current = 0
-        self.maximum = maximum
-
-        self.speed = None
-
-        self.started_at = datetime.utcnow()
-        self.ended_at = None
-
-    def step(self, delta=1):
-        if not delta:
-            return
-
-        # Update group position
-        self.current += delta
-
-        # Update average syncing speed
-        self.update_speed()
-
-    def stop(self):
-        self.ended_at = datetime.utcnow()
-
-    def update_speed(self):
-        if self.speed is None:
-            # First sample, set to current `per_second`
-            self.speed = self.per_second
-            return
-
-        # Calculate average syncing speed (EMA)
-        self.speed = self.speed_smoothing * self.per_second + (1 - self.speed_smoothing) * self.speed
-
-
-class SyncProgress(SyncProgressBase):
-    def __init__(self, task):
-        super(SyncProgress, self).__init__('root')
-
-        self.task = task
-
-        self.groups = None
-
-    @property
-    def percent(self):
-        if not self.groups:
-            return 0.0
-
-        samples = []
-
-        for group in self.groups.itervalues():
-            samples.append(group.percent)
-
-        return sum(samples) / len(samples)
-
-    def group(self, *tag):
-        # Resolve tag to string
-        tag = self._resolve_tag(tag)
-
-        # Return existing progress group (if available)
-        if tag in self.groups:
-            return self.groups[tag]
-
-        # Construct new progress group
-        group = self.groups[tag] = SyncProgressGroup(self, tag)
-        group.start()
-
-        log.debug('constructed group (tag: %r)', tag)
-        return group
-
-    def start(self, maximum=0):
-        super(SyncProgress, self).start(maximum)
-
-        # Reset active groups
-        self.groups = {}
-
-        log.debug('[%-40s] started (maximum: %s)', self.tag[-40:], self.maximum)
-
-    def step(self, delta=1):
-        super(SyncProgress, self).step(delta)
-
-        log.debug('[%-40s] stepped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
-
-    def stop(self):
-        super(SyncProgress, self).stop()
-
-        log.debug('[%-40s] stopped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
-
-        for tag, group in self.groups.items():
-            log.debug('[%s] %r', tag, group)
-
-    @staticmethod
-    def _resolve_tag(tag):
-        if isinstance(tag, (str, unicode)):
-            return tag
-
-        # Resolve tag
-        if inspect.isclass(tag[0]):
-            cls = tag[0]
-            path = '%s.%s' % (cls.__module__, cls.__name__)
-
-            tag = [path] + list(tag[1:])
-
-        # Convert tag to string
-        return ':'.join(tag)
-
-
-class SyncProgressGroup(SyncProgressBase):
-    def __init__(self, root, tag):
-        super(SyncProgressGroup, self).__init__(tag)
-
-        self.root = root
-
-    @property
-    def percent(self):
-        if self.maximum is None or self.current is None:
-            return 0.0
-
-        if self.maximum < 1:
-            return 0.0
-
-        value = (float(self.current) / self.maximum) * 100
-
-        if value > 100:
-            return 100.0
-
-        return value
-
-    def add(self, delta):
         super(SyncProgressGroup, self).add(delta)
 
         # Update root maximum
@@ -203,15 +268,40 @@ class SyncProgressGroup(SyncProgressBase):
     def step(self, delta=1):
         super(SyncProgressGroup, self).step(delta)
 
-        log.debug('[%-40s] stepped [%s/%s - %s]', self.tag[-40:], self.current, self.maximum, self.percent)
+        # Update average syncing speed
+        self.update_speed()
 
         # Update root progress
         self.root.step(delta)
 
+    def update_speed(self):
+        if not self.per_second:
+            # No steps emitted yet
+            return
+
+        if not self.speed:
+            # First sample, set to current `per_second`
+            self.speed = self.per_second
+            return
+
+        # Calculate average syncing speed (EMA)
+        self.speed = self._ema(self.per_second, self.speed, self.speed_smoothing)
+
+        # Update minimum speed
+        if self.speed_min is None:
+            # First sample
+            self.speed_min = self.speed
+        elif self.speed < self.speed_min:
+            # New minimum speed reached
+            self.speed_min = self.speed
+
     def __repr__(self):
-        return '<SyncProgressGroup %s/%s - %s (speed: %r)>' % (
+        return '<SyncProgressGroup %s/%s - %.02f%% (remaining_seconds: %.02f, speed: %.02f, speed_min: %.02f)>' % (
             self.current,
             self.maximum,
-            self.percent,
-            self.speed
+            self.percent or 0,
+
+            self.remaining_seconds or 0,
+            self.speed or 0,
+            self.speed_min or 0
         )
