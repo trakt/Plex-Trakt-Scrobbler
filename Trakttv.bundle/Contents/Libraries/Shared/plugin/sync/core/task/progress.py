@@ -129,39 +129,8 @@ class SyncProgress(SyncProgressBase):
         # Retrieve group speeds
         self.group_speeds = Environment.dict['sync.progress.group_speeds'] or {}
 
-        log.debug('[%-40s] started (maximum: %s)', self.tag[-40:], self.maximum)
-        log.debug('group_speeds: %r', self.group_speeds)
-
-    def step(self, delta=1):
-        super(SyncProgress, self).step(delta)
-
-        log.debug(
-            '[%-40s] stepped [%s/%s - %.02f%%] (remaining_seconds: %.02f, samples: %r)',
-            self.tag[-40:],
-            self.current,
-            self.maximum,
-            self.percent or 0,
-            self.remaining_seconds or 0,
-            [
-                group.remaining_seconds
-                for group in self.groups.itervalues()
-            ]
-        )
-
     def stop(self):
         super(SyncProgress, self).stop()
-
-        log.debug(
-            '[%-40s] stopped [%s/%s - %.02f%%]',
-            self.tag[-40:],
-            self.current,
-            self.maximum,
-            self.percent or 0
-        )
-
-        # Report group details
-        for tag, group in self.groups.items():
-            log.debug('[%s] %r', tag, group)
 
         # Save progress statistics
         self.save()
@@ -172,8 +141,6 @@ class SyncProgress(SyncProgressBase):
             (group.tag, self._group_speed(group))
             for group in self.groups.itervalues()
         ])
-
-        log.debug('group_speeds: %r', self.group_speeds)
 
         # Save to plugin dictionary
         Environment.dict['sync.progress.group_speeds'] = self.group_speeds
