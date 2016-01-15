@@ -121,5 +121,8 @@ class Movies(Mode):
             # Task checkpoint
             self.checkpoint()
 
+        # Stop progress group
+        self.current.progress.group(Movies).stop()
+
         # Log details
         log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)

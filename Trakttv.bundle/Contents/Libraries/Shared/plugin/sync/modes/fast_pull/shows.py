@@ -134,6 +134,9 @@ class Shows(Mode):
                             t_item=t_show
                         )
 
+        # Stop progress group
+        self.current.progress.group(Shows, 'shows').stop()
+
         with elapsed.clock(Shows, 'run:episodes'):
             # Process episodes
             for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
@@ -207,6 +210,9 @@ class Shows(Mode):
 
                 # Task checkpoint
                 self.checkpoint()
+
+        # Stop progress group
+        self.current.progress.group(Shows, 'episodes').stop()
 
         # Log details
         log_unsupported(log, 'Found %d unsupported show(s)\n%s', self.p_shows_unsupported)

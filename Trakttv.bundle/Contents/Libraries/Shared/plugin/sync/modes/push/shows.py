@@ -135,6 +135,9 @@ class Shows(Base):
             # Task checkpoint
             self.checkpoint()
 
+        # Stop progress group
+        self.current.progress.group(Shows, 'matched:shows').stop()
+
     @elapsed.clock
     def process_missing_shows(self):
         # Increment progress steps
@@ -181,6 +184,9 @@ class Shows(Base):
 
             # Remove movie from `pending` set
             self.p_shows_pending.remove(pk)
+
+        # Stop progress group
+        self.current.progress.group(Shows, 'missing:shows').stop()
 
         self.log_pending('Unable to process %d show(s)\n%s', self.p_shows_pending)
 
@@ -236,6 +242,9 @@ class Shows(Base):
             # Task checkpoint
             self.checkpoint()
 
+        # Stop progress group
+        self.current.progress.group(Shows, 'matched:episodes').stop()
+
     @elapsed.clock
     def process_missing_episodes(self):
         # Increment progress steps
@@ -290,6 +299,9 @@ class Shows(Base):
 
                 # Remove movie from `pending` set
                 self.p_episodes_pending[pk].remove(identifier)
+
+        # Stop progress group
+        self.current.progress.group(Shows, 'missing:episodes').stop()
 
         self.log_pending('Unable to process %d episode(s)\n%s', self.p_episodes_pending)
 

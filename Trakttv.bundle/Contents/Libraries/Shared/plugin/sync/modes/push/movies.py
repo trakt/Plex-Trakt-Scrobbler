@@ -108,6 +108,9 @@ class Movies(Base):
             # Task checkpoint
             self.checkpoint()
 
+        # Stop progress group
+        self.current.progress.group(Movies, 'matched:movies').stop()
+
         # Report unsupported movies (unsupported guid)
         log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)
 
@@ -158,6 +161,9 @@ class Movies(Base):
 
             # Remove movie from `pending` set
             self.p_pending.remove(pk)
+
+        # Stop progress group
+        self.current.progress.group(Movies, 'missing:movies').stop()
 
         # Report pending movies (no actions triggered)
         self.log_pending('Unable to process %d movie(s)\n%s', self.p_pending)
