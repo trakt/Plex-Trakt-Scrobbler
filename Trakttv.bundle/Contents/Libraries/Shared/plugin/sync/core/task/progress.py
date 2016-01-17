@@ -109,6 +109,9 @@ class SyncProgress(SyncProgressBase):
         return sum(samples)
 
     def group(self, *tag):
+        if self.groups is None:
+            raise Exception("Progress tracking hasn't been started")
+
         # Resolve tag to string
         tag = self._resolve_tag(tag)
 
