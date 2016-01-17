@@ -1,5 +1,5 @@
 from requests import Request
-from urllib import urlencode
+from six.moves.urllib_parse import urlencode
 import json
 import six
 

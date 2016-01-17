@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer
+        size="3"
+        identifier="com.plexapp.plugins.library"
+        librarySectionID="2"
+        parentIndex="1"
+        parentTitle="30 Rock"
+        viewGroup="episode"
+        viewMode="65592"
+    >
+    <Video
+        ratingKey="103"
+        parentRatingKey="102"
+        type="episode"
+        title="Pilot"
+        grandparentTitle="30 Rock"
+        index="1"
+        parentIndex="1">
+    </Video>
+    <Video
+        ratingKey="104"
+        parentRatingKey="102"
+        type="episode"
+        title="The Aftermath"
+        grandparentTitle="30 Rock"
+        index="2"
+        parentIndex="1">
+    </Video>
+    <Video
+        ratingKey="105"
+        parentRatingKey="102"
+        type="episode"
+        title="Blind Date"
+        grandparentTitle="30 Rock"
+        index="3"
+        parentIndex="1">
+    </Video>
+</MediaContainer>

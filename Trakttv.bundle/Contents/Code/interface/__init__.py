@@ -1,9 +1,14 @@
 import sys
 
-# submodules for Plex plugins "hack"
 
-import sync_menu
-sys.modules['interface.sync_menu'] = sync_menu
+import m_sync
+sys.modules['interface.m_sync'] = m_sync
 
-import main_menu
-sys.modules['interface.main_menu'] = main_menu
+import m_messages
+sys.modules['interface.m_messages'] = m_messages
+
+import m_main
+sys.modules['interface.m_main'] = m_main
+
+import resources
+sys.modules['interface.resources'] = resources

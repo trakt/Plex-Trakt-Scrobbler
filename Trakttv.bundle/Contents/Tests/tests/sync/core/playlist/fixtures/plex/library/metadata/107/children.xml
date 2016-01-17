@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer
+        size="5"
+        grandparentTitle="Chuck"
+        identifier="com.plexapp.plugins.library"
+        key="107"
+        librarySectionID="2"
+        parentIndex="1"
+        viewGroup="episode"
+        viewMode="65592"
+    >
+    <Video
+        ratingKey="108"
+        parentRatingKey="107"
+        type="episode"
+        title="Chuck Versus the Intersect"
+        index="1">
+    </Video>
+    <Video
+        ratingKey="109"
+        parentRatingKey="107"
+        type="episode"
+        title="Chuck Versus the Helicopter"
+        index="2">
+    </Video>
+    <Video
+        ratingKey="110"
+        parentRatingKey="107"
+        type="episode"
+        title="Chuck Versus the Tango"
+        index="3">
+    </Video>
+    <Video
+        ratingKey="111"
+        parentRatingKey="107"
+        type="episode"
+        title="Chuck Versus the Wookiee"
+        index="4">
+    </Video>
+    <Video
+        ratingKey="112"
+        parentRatingKey="107"
+        type="episode"
+        title="Chuck Versus the Sizzling Shrimp"
+        index="5">
+    </Video>
+</MediaContainer>

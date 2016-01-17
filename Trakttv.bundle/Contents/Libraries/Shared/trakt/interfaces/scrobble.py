@@ -31,7 +31,9 @@ class ScrobbleInterface(Interface):
 
         response = self.http.post(
             action,
-            data=data
+            data=data,
+
+            authenticated=kwargs.get('authenticated', None)
         )
 
         return self.get_data(response)

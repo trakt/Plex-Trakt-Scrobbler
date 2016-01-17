@@ -1,12 +1,9 @@
 from core.helpers import all
-from core.logger import Logger
 from plugin.core.constants import PLUGIN_VERSION_BASE
 
 from lxml import etree
 import shutil
 import os
-
-log = Logger('core.migrator')
 
 
 class Migrator(object):
@@ -19,7 +16,7 @@ class Migrator(object):
     @classmethod
     def run(cls):
         for migration in cls.migrations:
-            log.debug('Running migration %s', migration)
+            Log.Debug('Running migration: %s', migration)
             migration.run()
 
 
@@ -33,6 +30,10 @@ class Migration(object):
         return os.path.join(self.code_path, '..', 'Libraries')
 
     @property
+    def tests_path(self):
+        return os.path.join(self.code_path, '..', 'Tests')
+
+    @property
     def plex_path(self):
         return os.path.abspath(os.path.join(self.code_path, '..', '..', '..', '..'))
 
@@ -42,7 +43,7 @@ class Migration(object):
 
     def get_preferences(self):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return {}
 
         data = Core.storage.load(self.preferences_path)
@@ -52,7 +53,7 @@ class Migration(object):
 
     def set_preferences(self, changes):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return False
 
         data = Core.storage.load(self.preferences_path)
@@ -68,7 +69,7 @@ class Migration(object):
             # Update node value, ensure it is a string
             elem.text = str(value)
 
-            log.trace('Updated preference with key "%s" to value %s', key, repr(value))
+            Log.Debug('Updated preference with key "%s" to value %s', key, repr(value))
 
         # Write back new preferences
         Core.storage.save(self.preferences_path, etree.tostring(doc, pretty_print=True))
@@ -78,16 +79,26 @@ class Migration(object):
         if not all([c(path) for c in conditions]):
             return False
 
-        os.remove(path)
-        return True
+        try:
+            os.remove(path)
+            return True
+        except Exception, ex:
+            Log.Warn('Unable to remove file %r - %s', path, ex, exc_info=True)
+
+        return False
 
     @staticmethod
     def delete_directory(path, conditions=None):
         if not all([c(path) for c in conditions]):
             return False
 
-        shutil.rmtree(path)
-        return True
+        try:
+            shutil.rmtree(path)
+            return True
+        except Exception, ex:
+            Log.Warn('Unable to remove directory %r - %s', path, ex, exc_info=True)
+
+        return False
 
 
 class Clean(Migration):
@@ -95,29 +106,24 @@ class Clean(Migration):
         (
             'delete_file', [
                 # /core
+                'core/action.py',
+                'core/cache.py',
+                'core/configuration.py',
                 'core/environment.py',
                 'core/eventing.py',
+                'core/logging_handler.py',
+                'core/logging_reporter.py',
+                'core/method_manager.py',
                 'core/model.py',
                 'core/network.py',
+                'core/numeric.py',
+                'core/task.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
 
-                # /data
-                'data/client.py',
-                'data/dict_object.py',
-                'data/model.py',
-                'data/user.py',
-
-                # /pts
-                'pts/activity.py',
-                'pts/activity_logging.py',
-                'pts/activity_websocket.py',
-
-                # /sync
-                'sync/base.py',
-                'sync/legacy.py',
-                'sync/manager.py',
-                'sync/task.py',
+                # /interface
+                'interface/main_menu.py',
+                'interface/sync_menu.py',
 
                 # /
                 'sync.py'
@@ -125,7 +131,10 @@ class Clean(Migration):
         ),
         (
             'delete_directory', [
-                'plex'
+                'data',
+                'plex',
+                'pts',
+                'sync'
             ], os.path.isdir
         )
     ]
@@ -133,6 +142,30 @@ class Clean(Migration):
     tasks_lib = [
         (
             'delete_file', [
+                # plugin
+                'Shared/plugin/core/event.py',
+                'Shared/plugin/core/io.py',
+                'Shared/plugin/core/jsonw.py',
+                'Shared/plugin/modules/base.py',
+                'Shared/plugin/modules/manager.py',
+                'Shared/plugin/preferences/options/core/base.py',
+                'Shared/plugin/sync/modes/core/base.py',
+                'Shared/plugin/sync/modes/fast_pull.py',
+                'Shared/plugin/sync/modes/pull.py',
+                'Shared/plugin/sync/modes/push.py',
+
+                # native
+                'FreeBSD/i386/apsw.so',
+                'FreeBSD/i386/llist.so',
+
+                'Windows/i386/apsw.pyd',
+                'Windows/i386/llist.pyd',
+
+                'Linux/i386/apsw.so',
+                'Linux/i386/llist.so',
+                'Linux/x86_64/apsw.so',
+                'Linux/x86_64/llist.so',
+
                 # asio
                 'Shared/asio.py',
                 'Shared/asio_base.py',
@@ -140,7 +173,23 @@ class Clean(Migration):
                 'Shared/asio_windows.py',
                 'Shared/asio_windows_interop.py',
 
-                # plex
+                # concurrent
+                'Shared/concurrent/futures/_compat.py',
+
+                # msgpack
+                'Shared/msgpack/_packer.pyx',
+                'Shared/msgpack/_unpacker.pyx',
+                'Shared/msgpack/pack.h',
+                'Shared/msgpack/pack_template.h',
+                'Shared/msgpack/sysdep.h',
+                'Shared/msgpack/unpack.h',
+                'Shared/msgpack/unpack_define.h',
+                'Shared/msgpack/unpack_template.h',
+
+                # playhouse
+                'Shared/playhouse/pskel',
+
+                # plex.py
                 'Shared/plex/core/compat.py',
                 'Shared/plex/core/event.py',
                 'Shared/plex/interfaces/library.py',
@@ -151,6 +200,7 @@ class Clean(Migration):
 
                 # requests
                 'Shared/requests/packages/urllib3/util.py',
+                'Shared/requests/packages/README.rst',
 
                 # trakt.py
                 'Shared/trakt/core/context.py',
@@ -159,15 +209,53 @@ class Clean(Migration):
                 'Shared/trakt/interfaces/rate.py',
                 'Shared/trakt/interfaces/sync/base.py',
                 'Shared/trakt/media_mapper.py',
-                'Shared/trakt/request.py'
+                'Shared/trakt/objects.py',
+                'Shared/trakt/request.py',
+
+                # tzlocal
+                'Shared/tzlocal/tests.py',
+
+                # websocket
+                'Shared/websocket.py'
             ], os.path.isfile
         ),
         (
             'delete_directory', [
+                # plugin
+                'Shared/plugin/core/collections',
+                'Shared/plugin/data',
+
+                # native
+                'MacOSX/universal',
+
+                # pytz
+                'Shared/pytz/tests',
+
+                # shove
+                'Shared/shove',
+
+                # stuf
+                'Shared/stuf',
+
                 # trakt.py
                 'Shared/trakt/interfaces/movie',
                 'Shared/trakt/interfaces/show',
-                'Shared/trakt/interfaces/user'
+                'Shared/trakt/interfaces/user',
+
+                # tzlocal
+                'Shared/tzlocal/test_data'
+            ], os.path.isdir
+        )
+    ]
+
+    tasks_tests = [
+        (
+            'delete_file', [
+            ], os.path.isfile
+        ),
+        (
+            'delete_directory', [
+                'tests/core/mock',
             ], os.path.isdir
         )
     ]
@@ -179,6 +267,7 @@ class Clean(Migration):
     def upgrade(self):
         self.execute(self.tasks_code, 'upgrade', self.code_path)
         self.execute(self.tasks_lib, 'upgrade', self.lib_path)
+        self.execute(self.tasks_tests, 'upgrade', self.tests_path)
 
     def execute(self, tasks, name, base_path):
         for action, paths, conditions in tasks:
@@ -189,7 +278,7 @@ class Clean(Migration):
                 conditions = [conditions]
 
             if not hasattr(self, action):
-                log.error('Unknown migration action "%s"', action)
+                Log.Error('Unknown migration action "%s"', action)
                 continue
 
             m = getattr(self, action)
@@ -200,11 +289,11 @@ class Clean(Migration):
 
                 # Remove file
                 if m(path, conditions):
-                    log.info('(%s) %s: "%s"', name, action, path)
+                    Log.Info('(%s) %s: "%s"', name, action, path)
 
                 # Remove .pyc files as-well
                 if path.endswith('.py') and m(path + 'c', conditions):
-                    log.info('(%s) %s: "%s"', name, action, path + 'c')
+                    Log.Info('(%s) %s: "%s"', name, action, path + 'c')
 
 
 class ForceLegacy(Migration):
@@ -215,7 +304,7 @@ class ForceLegacy(Migration):
 
     def upgrade(self):
         if not os.path.exists(self.preferences_path):
-            log.error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
+            Log.Error('Unable to find preferences file at "%s", unable to run migration', self.preferences_path)
             return
 
         preferences = self.get_preferences()
@@ -281,7 +370,7 @@ class SelectiveSync(Migration):
         if not changes:
             return
 
-        log.debug('Updating preferences with changes: %s', changes)
+        Log.Debug('Updating preferences with changes: %s', changes)
         self.set_preferences(changes)
 
 

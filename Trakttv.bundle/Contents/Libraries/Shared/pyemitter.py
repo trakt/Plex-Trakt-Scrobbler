@@ -176,7 +176,7 @@ class Emitter(object):
             callback(*args, **kwargs)
 
             return True
-        except Exception, e:
+        except Exception as ex:
             log.warn('Exception raised in callback %s for event "%s" - %s', callback, event, traceback.format_exc())
             return False
 

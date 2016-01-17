@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Implements the :class:`ArrowFactory <arrow.factory.ArrowFactory>` class,
 providing factory methods for common :class:`Arrow <arrow.arrow.Arrow>`
-contruction scenarios.
+construction scenarios.
 
-'''
+"""
 
 from __future__ import absolute_import
 
 from arrow.arrow import Arrow
 from arrow import parser
-from arrow.util import isstr
+from arrow.util import is_timestamp, isstr
 
 from datetime import datetime, tzinfo, date
 from dateutil import tz as dateutil_tz
+from time import struct_time
+import calendar
 
 
 class ArrowFactory(object):
@@ -62,7 +64,7 @@ class ArrowFactory(object):
             <Arrow [2013-05-08T05:54:34.293378+00:00]>
 
             >>> arrow.get('1367992474')
-            <Arrow [2013-05-08T05:54:34+00:00]>
+            <Arrow [2013-05-08T05:54:34+0struct_time0:00]>
 
         **One** ISO-8601-formatted ``str``, to parse it::
 
@@ -113,13 +115,21 @@ class ArrowFactory(object):
 
             >>> arrow.get(2013, 5, 5, 12, 30, 45)
             <Arrow [2013-05-05T12:30:45+00:00]>
+
+        **One** time.struct time::
+            >>> arrow.get(gmtime(0))
+            <Arrow [1970-01-01T00:00:00+00:00]>
+
         '''
 
         arg_count = len(args)
         locale = kwargs.get('locale', 'en_us')
+        tz = kwargs.get('tzinfo', None)
 
         # () -> now, @ utc.
         if arg_count == 0:
+            if isinstance(tz, tzinfo):
+                return self.type.now(tz)
             return self.type.utcnow()
 
         if arg_count == 1:
@@ -130,10 +140,8 @@ class ArrowFactory(object):
                 return self.type.utcnow()
 
             # try (int, float, str(int), str(float)) -> utc, from timestamp.
-            try:
+            if is_timestamp(arg):
                 return self.type.utcfromtimestamp(arg)
-            except:
-                pass
 
             # (Arrow) -> from the object's datetime.
             if isinstance(arg, Arrow):
@@ -155,6 +163,10 @@ class ArrowFactory(object):
             elif isstr(arg):
                 dt = parser.DateTimeParser(locale).parse_iso(arg)
                 return self.type.fromdatetime(dt)
+
+            # (struct_time) -> from struct_time
+            elif isinstance(arg, struct_time):
+                return self.type.utcfromtimestamp(calendar.timegm(arg))
 
             else:
                 raise TypeError('Can\'t parse single argument type of \'{0}\''.format(type(arg)))
@@ -184,7 +196,7 @@ class ArrowFactory(object):
             # (str, format) -> parse.
             elif isstr(arg_1) and (isstr(arg_2) or isinstance(arg_2, list)):
                 dt = parser.DateTimeParser(locale).parse(args[0], args[1])
-                return self.type.fromdatetime(dt)
+                return self.type.fromdatetime(dt, tzinfo=tz)
 
             else:
                 raise TypeError('Can\'t parse two arguments of types \'{0}\', \'{1}\''.format(
