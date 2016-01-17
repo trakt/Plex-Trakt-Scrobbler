@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 from dateutil import tz
-
-import calendar
 import re
 
 from arrow import locales
@@ -43,8 +41,6 @@ class DateTimeParser(object):
         'm': _ONE_OR_TWO_DIGIT_RE,
         'ss': _TWO_DIGIT_RE,
         's': _ONE_OR_TWO_DIGIT_RE,
-        'a': re.compile('(a|A|p|P)'),
-        'A': re.compile('(am|AM|pm|PM)'),
         'X': re.compile('\d+'),
         'ZZ': _TZ_RE,
         'Z': _TZ_RE,
@@ -56,6 +52,9 @@ class DateTimeParser(object):
         'S': re.compile('\d'),
     }
 
+    MARKERS = ['YYYY', 'MM', 'DD']
+    SEPARATORS = ['-', '/', '.']
+
     def __init__(self, locale='en_us'):
 
         self.locale = locales.get_locale(locale)
@@ -64,7 +63,13 @@ class DateTimeParser(object):
             'MMMM': self._choice_re(self.locale.month_names[1:], re.IGNORECASE),
             'MMM': self._choice_re(self.locale.month_abbreviations[1:],
                                    re.IGNORECASE),
-            'Do': re.compile(self.locale.ordinal_day_re)
+            'Do': re.compile(self.locale.ordinal_day_re),
+            'a': self._choice_re(
+                (self.locale.meridians['am'], self.locale.meridians['pm'])
+            ),
+            # note: 'A' token accepts both 'am/pm' and 'AM/PM' formats to
+            # ensure backwards compatibility of this token
+            'A': self._choice_re(self.locale.meridians.values())
         })
 
     def parse_iso(self, string):
@@ -74,9 +79,9 @@ class DateTimeParser(object):
 
         if has_time:
             if space_divider:
-               date_string, time_string = string.split(' ', 1)
+                date_string, time_string = string.split(' ', 1)
             else:
-               date_string, time_string = string.split('T', 1)
+                date_string, time_string = string.split('T', 1)
             time_parts = re.split('[+-]', time_string, 1)
             has_tz = len(time_parts) > 1
             has_seconds = time_parts[0].count(':') > 1
@@ -91,11 +96,12 @@ class DateTimeParser(object):
                 formats = ['YYYY-MM-DDTHH:mm']
         else:
             has_tz = False
-            formats = [
-                'YYYY-MM-DD',
-                'YYYY-MM',
-                'YYYY',
-            ]
+            # generate required formats: YYYY-MM-DD, YYYY-MM-DD, YYYY
+            # using various separators: -, /, .
+            l = len(self.MARKERS)
+            formats = [separator.join(self.MARKERS[:l-i])
+                        for i in range(l)
+                        for separator in self.SEPARATORS]
 
         if has_time and has_tz:
             formats = [f + 'Z' for f in formats]
@@ -110,56 +116,38 @@ class DateTimeParser(object):
         if isinstance(fmt, list):
             return self._parse_multiformat(string, fmt)
 
-        original_string = string
-        tokens = self._FORMAT_RE.findall(fmt)
-        token_values = []
-        separators = self._parse_separators(fmt, tokens)
-        parts = {}
-
-        for token in tokens:
+        # fmt is a string of tokens like 'YYYY-MM-DD'
+        # we construct a new string by replacing each
+        # token by its pattern:
+        # 'YYYY-MM-DD' -> '(?P<YYYY>\d{4})-(?P<MM>\d{2})-(?P<DD>\d{2})'
+        fmt_pattern = fmt
+        tokens = []
+        offset = 0
+        for m in self._FORMAT_RE.finditer(fmt):
+            token = m.group(0)
             try:
                 input_re = self._input_re_map[token]
             except KeyError:
                 raise ParserError('Unrecognized token \'{0}\''.format(token))
-
-            match = input_re.search(string)
-
-            if match:
-                token_values.append(match.group(0))
-                if 'value' in match.groupdict():
-                    self._parse_token(token, match.groupdict()['value'], parts)
-                else:
-                    self._parse_token(token, match.group(0), parts)
-                index = match.span(0)[1]
-                string = string[index:]
-
+            input_pattern = '(?P<{0}>{1})'.format(token, input_re.pattern)
+            tokens.append(token)
+            # a pattern doesn't have the same length as the token
+            # it replaces! We keep the difference in the offset variable.
+            # This works because the string is scanned left-to-right and matches
+            # are returned in the order found by finditer.
+            fmt_pattern = fmt_pattern[:m.start() + offset] + input_pattern + fmt_pattern[m.end() + offset:]
+            offset += len(input_pattern) - (m.end() - m.start())
+        match = re.search(fmt_pattern, string, flags=re.IGNORECASE)
+        if match is None:
+            raise ParserError('Failed to match \'{0}\' when parsing \'{1}\''.format(fmt_pattern, string))
+        parts = {}
+        for token in tokens:
+            if token == 'Do':
+                value = match.group('value')
             else:
-                raise ParserError('Failed to match token \'{0}\' when parsing \'{1}\''.format(token, original_string))
-
-        parsed = ''.join(self._interleave_lists(token_values, separators))
-        if parsed not in original_string:
-            raise ParserError('Failed to match format \'{0}\' when parsing \'{1}\''.format(fmt, original_string))
-
+                value = match.group(token)
+            self._parse_token(token, value, parts)
         return self._build_datetime(parts)
-
-    def _interleave_lists(self, tokens, separators):
-
-        joined = tokens + separators
-        joined[::2] = tokens
-        joined[1::2] = separators
-
-        return joined
-
-    def _parse_separators(self, fmt, tokens):
-
-        separators = []
-
-        for i in range(len(tokens) - 1):
-            start_index = fmt.find(tokens[i]) + len(tokens[i])
-            end_index = fmt.find(tokens[i + 1])
-            separators.append(fmt[start_index:end_index])
-
-        return separators
 
     def _parse_token(self, token, value, parts):
 
@@ -210,13 +198,19 @@ class DateTimeParser(object):
             parts['tzinfo'] = TzinfoParser.parse(value)
 
         elif token in ['a', 'A']:
-            if value in ['a', 'A', 'am', 'AM']:
+            if value in (
+                    self.locale.meridians['am'],
+                    self.locale.meridians['AM']
+            ):
                 parts['am_pm'] = 'am'
-            elif value in ['p', 'P', 'pm', 'PM']:
+            elif value in (
+                    self.locale.meridians['pm'],
+                    self.locale.meridians['PM']
+            ):
                 parts['am_pm'] = 'pm'
 
-    @classmethod
-    def _build_datetime(cls, parts):
+    @staticmethod
+    def _build_datetime(parts):
 
         timestamp = parts.get('timestamp')
 
@@ -253,24 +247,24 @@ class DateTimeParser(object):
 
         return _datetime
 
-    @classmethod
-    def _map_lookup(cls, input_map, key):
+    @staticmethod
+    def _map_lookup(input_map, key):
 
         try:
             return input_map[key]
         except KeyError:
             raise ParserError('Could not match "{0}" to {1}'.format(key, input_map))
 
-    @classmethod
-    def _try_timestamp(cls, string):
+    @staticmethod
+    def _try_timestamp(string):
 
         try:
             return float(string)
         except:
             return None
 
-    @classmethod
-    def _choice_re(cls, choices, flags=0):
+    @staticmethod
+    def _choice_re(choices, flags=0):
         return re.compile('({0})'.format('|'.join(choices)), flags=flags)
 
 

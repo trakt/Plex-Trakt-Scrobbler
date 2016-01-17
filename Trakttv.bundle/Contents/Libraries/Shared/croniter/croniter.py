@@ -155,7 +155,7 @@ class croniter(object):
         if d.tzinfo is not None:
             d = d.replace(tzinfo=None) - d.utcoffset()
 
-        return (d - datetime.datetime(1970, 1, 1)).total_seconds()
+        return self._timedelta_to_seconds(d - datetime.datetime(1970, 1, 1))
 
     def _timestamp_to_datetime(self, timestamp):
         """
@@ -166,6 +166,17 @@ class croniter(object):
             result = result.replace(tzinfo=tzutc()).astimezone(self.tzinfo)
 
         return result
+
+    @classmethod
+    def _timedelta_to_seconds(cls, td):
+        """
+        Converts a 'datetime.timedelta' object `td` into seconds contained in
+        the duration.
+        Note: We cannot use `timedelta.total_seconds()` because this is not
+        supported by Python 2.6.
+        """
+        return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) \
+            / 10**6
 
     # iterator protocol, to enable direct use of croniter
     # objects in a loop, like "for dt in croniter('5 0 * * *'): ..."
@@ -260,6 +271,8 @@ class croniter(object):
                 days = DAYS[month - 1]
                 if month == 2 and self.is_leap(year) is True:
                     days += 1
+                if 'l' in expanded[2] and days==d.day:
+                    return False, d
 
                 if is_prev:
                     days_in_prev_month = DAYS[
@@ -339,6 +352,7 @@ class croniter(object):
             for proc in procs:
                 (changed, dst) = proc(dst)
                 if changed:
+                    day, month, year = dst.day, dst.month, dst.year
                     next = True
                     break
             if next:
@@ -375,8 +389,10 @@ class croniter(object):
         candidates = to_check[:]
         candidates.reverse()
         for d in candidates:
-            if d <= x:
+            if d != 'l' and d <= x:
                 return d - x
+        if 'l' in candidates:
+            return -x
         candidate = candidates[0]
         for c in candidates:
             if c < range_val:

@@ -74,14 +74,14 @@ def create_connection(url, timeout=None, **options):
              it means "use default_timeout value"
 
 
-    options: "header" -> custom http header list.
+    options: "header" -> custom http header list or dict.
              "cookie" -> cookie value.
              "origin" -> custom origin url.
              "host"   -> custom host header string.
              "http_proxy_host" - http proxy host name.
              "http_proxy_port" - http proxy port. If not set, set to 80.
              "http_no_proxy"   - host names, which doesn't use proxy.
-             "http_proxy_auth" - http proxy auth infomation.
+             "http_proxy_auth" - http proxy auth information.
                                     tuple of username and password.
                                     default is None
              "enable_multithread" -> enable lock for multithread.
@@ -90,6 +90,7 @@ def create_connection(url, timeout=None, **options):
              "subprotocols" - array of available sub protocols.
                               default is None.
              "skip_utf8_validation" - skip utf8 validation.
+             "socket" - pre-initialized stream socket.
     """
     sockopt = options.get("sockopt", [])
     sslopt = options.get("sslopt", {})
@@ -112,8 +113,8 @@ class WebSocket(object):
       The WebSocket protocol draft-hixie-thewebsocketprotocol-76
       http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
 
-    We can connect to the websocket server and send/recieve data.
-    The following example is a echo client.
+    We can connect to the websocket server and send/receive data.
+    The following example is an echo client.
 
     >>> import websocket
     >>> ws = websocket.WebSocket()
@@ -126,7 +127,7 @@ class WebSocket(object):
     get_mask_key: a callable to produce new mask keys, see the set_mask_key
       function's docstring for more details
     sockopt: values for socket.setsockopt.
-        sockopt must be tuple and each element is argument of sock.setscokopt.
+        sockopt must be tuple and each element is argument of sock.setsockopt.
     sslopt: dict object for ssl socket option.
     fire_cont_frame: fire recv event for each cont frame. default is False
     enable_multithread: if set to True, lock send method.
@@ -137,7 +138,7 @@ class WebSocket(object):
                  fire_cont_frame=False, enable_multithread=False,
                  skip_utf8_validation=False):
         """
-        Initalize WebSocket object.
+        Initialize WebSocket object.
         """
         self.sock_opt = sock_opt(sockopt, sslopt)
         self.handshake_response = None
@@ -172,12 +173,12 @@ class WebSocket(object):
 
     def set_mask_key(self, func):
         """
-        set function to create musk key. You can custumize mask key generator.
+        set function to create musk key. You can customize mask key generator.
         Mainly, this is for testing purpose.
 
-        func: callable object. the fuct must 1 argument as integer.
+        func: callable object. the func takes 1 argument as integer.
               The argument means length of mask key.
-              This func must be return string(byte array),
+              This func must return string(byte array),
               which length is argument specified.
         """
         self.get_mask_key = func
@@ -249,21 +250,23 @@ class WebSocket(object):
                  if you set None for this value,
                  it means "use default_timeout value"
 
-        options: "header" -> custom http header list.
+        options: "header" -> custom http header list or dict.
                  "cookie" -> cookie value.
                  "origin" -> custom origin url.
                  "host"   -> custom host header string.
                  "http_proxy_host" - http proxy host name.
                  "http_proxy_port" - http proxy port. If not set, set to 80.
                  "http_no_proxy"   - host names, which doesn't use proxy.
-                 "http_proxy_auth" - http proxy auth infomation.
+                 "http_proxy_auth" - http proxy auth information.
                                      tuple of username and password.
-                                     defualt is None
+                                     default is None
                  "subprotocols" - array of available sub protocols.
                                   default is None.
+                 "socket" - pre-initialized stream socket.
 
         """
-        self.sock, addrs = connect(url, self.sock_opt, proxy_info(**options))
+        self.sock, addrs = connect(url, self.sock_opt, proxy_info(**options),
+                                   options.pop('socket', None))
 
         try:
             self.handshake_response = handshake(self.sock, *addrs, **options)
@@ -355,7 +358,7 @@ class WebSocket(object):
 
     def recv_data(self, control_frame=False):
         """
-        Recieve data with operation code.
+        Receive data with operation code.
 
         control_frame: a boolean flag indicating whether to return control frame
         data, defaults to False
@@ -367,7 +370,7 @@ class WebSocket(object):
 
     def recv_data_frame(self, control_frame=False):
         """
-        Recieve data with operation code.
+        Receive data with operation code.
 
         control_frame: a boolean flag indicating whether to return control frame
         data, defaults to False
@@ -403,7 +406,7 @@ class WebSocket(object):
 
     def recv_frame(self):
         """
-        recieve data as frame from server.
+        receive data as frame from server.
 
         return value: ABNF frame object.
         """
@@ -422,13 +425,16 @@ class WebSocket(object):
         self.connected = False
         self.send(struct.pack('!H', status) + reason, ABNF.OPCODE_CLOSE)
 
-    def close(self, status=STATUS_NORMAL, reason=six.b("")):
+    def close(self, status=STATUS_NORMAL, reason=six.b(""), timeout=3):
         """
         Close Websocket object
 
         status: status code to send. see STATUS_XXX.
 
         reason: the reason to close. This must be string.
+
+        timeout: timeout until receive a close frame.
+            If None, it will wait forever until receive a close frame.
         """
         if self.connected:
             if status < 0 or status >= ABNF.LENGTH_16:
@@ -437,8 +443,8 @@ class WebSocket(object):
             try:
                 self.connected = False
                 self.send(struct.pack('!H', status) + reason, ABNF.OPCODE_CLOSE)
-                timeout = self.sock.gettimeout()
-                self.sock.settimeout(3)
+                sock_timeout = self.sock.gettimeout()
+                self.sock.settimeout(timeout)
                 try:
                     frame = self.recv_frame()
                     if isEnabledForError():
@@ -447,7 +453,7 @@ class WebSocket(object):
                             error("close status: " + repr(recv_status))
                 except:
                     pass
-                self.sock.settimeout(timeout)
+                self.sock.settimeout(sock_timeout)
                 self.sock.shutdown(socket.SHUT_RDWR)
             except:
                 pass
@@ -456,7 +462,7 @@ class WebSocket(object):
 
     def abort(self):
         """
-        Low-level asynchonous abort, wakes up other threads that are waiting in recv_*
+        Low-level asynchronous abort, wakes up other threads that are waiting in recv_*
         """
         if self.connected:
             self.sock.shutdown(socket.SHUT_RDWR)

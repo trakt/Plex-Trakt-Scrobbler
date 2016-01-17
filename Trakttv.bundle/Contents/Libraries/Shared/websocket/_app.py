@@ -33,7 +33,7 @@ import six
 from ._core import WebSocket, getdefaulttimeout
 from ._exceptions import *
 from ._logging import *
-from websocket._abnf import ABNF
+from ._abnf import ABNF
 
 __all__ = ["WebSocketApp"]
 
@@ -48,29 +48,38 @@ class WebSocketApp(object):
                  on_close=None, on_ping=None, on_pong=None,
                  on_cont_message=None,
                  keep_running=True, get_mask_key=None, cookie=None,
-                 subprotocols=None):
+                 subprotocols=None,
+                 on_data=None):
         """
         url: websocket url.
         header: custom header for websocket handshake.
         on_open: callable object which is called at opening websocket.
-          this function has one argument. The arugment is this class object.
-        on_message: callbale object which is called when recieved data.
+          this function has one argument. The argument is this class object.
+        on_message: callable object which is called when received data.
          on_message has 2 arguments.
-         The 1st arugment is this class object.
-         The passing 2nd arugment is utf-8 string which we get from the server.
+         The 1st argument is this class object.
+         The 2nd argument is utf-8 string which we get from the server.
         on_error: callable object which is called when we get error.
          on_error has 2 arguments.
-         The 1st arugment is this class object.
-         The passing 2nd arugment is exception object.
+         The 1st argument is this class object.
+         The 2nd argument is exception object.
         on_close: callable object which is called when closed the connection.
-         this function has one argument. The arugment is this class object.
-        on_cont_message: callback object which is called when recieve continued
+         this function has one argument. The argument is this class object.
+        on_cont_message: callback object which is called when receive continued
          frame data.
          on_message has 3 arguments.
-         The 1st arugment is this class object.
-         The passing 2nd arugment is utf-8 string which we get from the server.
-         The 3rd arugment is continue flag. if 0, the data continue
+         The 1st argument is this class object.
+         The 2nd argument is utf-8 string which we get from the server.
+         The 3rd argument is continue flag. if 0, the data continue
          to next frame data
+        on_data: callback object which is called when a message received.
+          This is called before on_message or on_cont_message,
+          and then on_message or on_cont_message is called.
+          on_data has 4 argument.
+          The 1st argument is this class object.
+          The 2nd argument is utf-8 string which we get from the server.
+          The 3rd argument is data type. ABNF.OPCODE_TEXT or ABNF.OPCODE_BINARY will be came.
+          The 4rd argument is continue flag. if 0, the data continue
         keep_running: a boolean flag indicating whether the app's main loop
           should keep running, defaults to True
         get_mask_key: a callable to produce new mask keys,
@@ -82,6 +91,7 @@ class WebSocketApp(object):
         self.cookie = cookie
         self.on_open = on_open
         self.on_message = on_message
+        self.on_data = on_data
         self.on_error = on_error
         self.on_close = on_close
         self.on_ping = on_ping
@@ -129,12 +139,12 @@ class WebSocketApp(object):
         This loop is infinite loop and is alive during websocket is available.
         sockopt: values for socket.setsockopt.
             sockopt must be tuple
-            and each element is argument of sock.setscokopt.
+            and each element is argument of sock.setsockopt.
         sslopt: ssl socket optional dict.
         ping_interval: automatically send "ping" command
             every specified period(second)
             if set to 0, not send automatically.
-        ping_timeout: timeout(second) if the pong message is not recieved.
+        ping_timeout: timeout(second) if the pong message is not received.
         http_proxy_host: http proxy host name.
         http_proxy_port: http proxy port. If not set, set to 80.
         http_no_proxy: host names, which doesn't use proxy.
@@ -192,11 +202,13 @@ class WebSocketApp(object):
                     elif op_code == ABNF.OPCODE_PONG:
                         self._callback(self.on_pong, frame.data)
                     elif op_code == ABNF.OPCODE_CONT and self.on_cont_message:
+                        self._callback(self.on_data, data, frame.opcode, frame.fin)
                         self._callback(self.on_cont_message, frame.data, frame.fin)
                     else:
                         data = frame.data
                         if six.PY3 and frame.opcode == ABNF.OPCODE_TEXT:
                             data = data.decode("utf-8")
+                        self._callback(self.on_data, data, frame.opcode, True)
                         self._callback(self.on_message, data)
         except Exception as e:
             self._callback(self.on_error, e)
@@ -215,8 +227,12 @@ class WebSocketApp(object):
         if they exists, and if the self.on_close except three arguments """
         import inspect
         # if the on_close callback is "old", just return empty list
-        if not self.on_close or len(inspect.getargspec(self.on_close).args) != 3:
-            return []
+        if sys.version_info < (3, 0):
+            if not self.on_close or len(inspect.getargspec(self.on_close).args) != 3:
+                return []
+        else:
+            if not self.on_close or len(inspect.getfullargspec(self.on_close).args) != 3:
+                return []
 
         if data and len(data) >= 2:
             code = 256*six.byte2int(data[0:1]) + six.byte2int(data[1:2])
@@ -230,7 +246,7 @@ class WebSocketApp(object):
             try:
                 callback(self, *args)
             except Exception as e:
-                error(e)
+                error("error from callback {}: {}".format(callback, e))
                 if isEnabledForDebug():
                     _, _, tb = sys.exc_info()
                     traceback.print_tb(tb)

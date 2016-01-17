@@ -67,16 +67,17 @@ class Locale(object):
 
         self._month_name_to_ordinal = None
 
-    def describe(self, timeframe, delta=0):
+    def describe(self, timeframe, delta=0, only_distance=False):
         ''' Describes a delta within a timeframe in plain language.
 
         :param timeframe: a string representing a timeframe.
         :param delta: a quantity representing a delta in a timeframe.
-
+        :param only_distance: return only distance eg: "11 seconds" without "in" or "ago" keywords
         '''
 
         humanized = self._format_timeframe(timeframe, delta)
-        humanized = self._format_relative(humanized, timeframe, delta)
+        if not only_distance:
+            humanized = self._format_relative(humanized, timeframe, delta)
 
         return humanized
 
@@ -128,6 +129,20 @@ class Locale(object):
             self._month_name_to_ordinal.update(self._name_to_ordinal(self.month_abbreviations))
 
         return self._month_name_to_ordinal.get(name)
+
+    def year_full(self, year):
+        '''  Returns the year for specific locale if available
+
+        :param name: the ``int`` year (4-digit)
+        '''
+        return '{0:04d}'.format(year)
+
+    def year_abbreviation(self, year):
+        ''' Returns the year for specific locale if available
+
+        :param name: the ``int`` year (4-digit)
+        '''
+        return '{0:04d}'.format(year)[2:]
 
     def meridian(self, hour, token):
         ''' Returns the meridian indicator for a specified hour and format token.
@@ -615,6 +630,36 @@ class SlavicBaseLocale(Locale):
                 form = form[2]
 
         return form.format(delta)
+
+class BelarusianLocale(SlavicBaseLocale):
+
+    names = ['be', 'be_by']
+
+    past = '{0} таму'
+    future = 'праз {0}'
+
+    timeframes = {
+        'now': 'зараз',
+        'seconds': 'некалькі секунд',
+        'minute': 'хвіліну',
+        'minutes': ['{0} хвіліну', '{0} хвіліны', '{0} хвілін'],
+        'hour': 'гадзіну',
+        'hours': ['{0} гадзіну', '{0} гадзіны', '{0} гадзін'],
+        'day': 'дзень',
+        'days': ['{0} дзень', '{0} дні', '{0} дзён'],
+        'month': 'месяц',
+        'months': ['{0} месяц', '{0} месяцы', '{0} месяцаў'],
+        'year': 'год',
+        'years': ['{0} год', '{0} гады', '{0} гадоў'],
+    }
+
+    month_names = ['', 'студзеня', 'лютага', 'сакавіка', 'красавіка', 'траўня', 'чэрвеня',
+        'ліпеня', 'жніўня', 'верасня', 'кастрычніка', 'лістапада', 'снежня']
+    month_abbreviations = ['', 'студ', 'лют', 'сак', 'крас', 'трав', 'чэрв', 'ліп', 'жнів',
+        'вер', 'каст', 'ліст', 'снеж']
+
+    day_names = ['', 'панядзелак', 'аўторак', 'серада', 'чацвер', 'пятніца', 'субота', 'нядзеля']
+    day_abbreviations = ['', 'пн', 'ат', 'ср', 'чц', 'пт', 'сб', 'нд']
 
 
 class PolishLocale(SlavicBaseLocale):
@@ -1215,14 +1260,14 @@ class CzechLocale(Locale):
     past = 'Před {0}'
     future = 'Za {0}'
 
-    month_names = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+    month_names = ['', 'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
         'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec']
-    month_abbreviations = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc',
+    month_abbreviations = ['', 'Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc',
         'Srp', 'Zář', 'Říj', 'Lis', 'Pro']
 
-    day_names = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek',
+    day_names = ['', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek',
         'Sobota', 'Neděle']
-    day_abbreviations = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
+    day_abbreviations = ['', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
 
     def _format_timeframe(self, timeframe, delta):
@@ -1527,6 +1572,68 @@ class HungarianLocale(Locale):
                 form = form['past']
 
         return form.format(abs(delta))
+
+
+class ThaiLocale(Locale):
+
+    names = ['th', 'th_th']
+
+    past = '{0}{1}ที่ผ่านมา'
+    future = 'ในอีก{1}{0}'
+
+    timeframes = {
+        'now': 'ขณะนี้',
+        'seconds': 'ไม่กี่วินาที',
+        'minute': '1 นาที',
+        'minutes': '{0} นาที',
+        'hour': '1 ชั่วโมง',
+        'hours': '{0} ชั่วโมง',
+        'day': '1 วัน',
+        'days': '{0} วัน',
+        'month': '1 เดือน',
+        'months': '{0} เดือน',
+        'year': '1 ปี',
+        'years': '{0} ปี',
+    }
+
+    month_names = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+                   'พฤษภาคม', 'มิถุนายน', 'กรกฏาคม', 'สิงหาคม',
+                   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
+    month_abbreviations = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.',
+                           'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.',
+                           'พ.ย.', 'ธ.ค.']
+
+    day_names = ['', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์',
+                 'เสาร์', 'อาทิตย์']
+    day_abbreviations = ['', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']
+
+    meridians = {
+        'am': 'am',
+        'pm': 'pm',
+        'AM': 'AM',
+        'PM': 'PM',
+    }
+
+    BE_OFFSET = 543
+
+    def year_full(self, year):
+        '''Thai always use Buddhist Era (BE) which is CE + 543'''
+        year += self.BE_OFFSET
+        return '{0:04d}'.format(year)
+
+    def year_abbreviation(self, year):
+        '''Thai always use Buddhist Era (BE) which is CE + 543'''
+        year += self.BE_OFFSET
+        return '{0:04d}'.format(year)[2:]
+
+    def _format_relative(self, humanized, timeframe, delta):
+        '''Thai normally doesn't have any space between words'''
+        if timeframe == 'now':
+            return humanized
+        space = '' if timeframe == 'seconds' else ' '
+        direction = self.past if delta < 0 else self.future
+
+        return direction.format(humanized, space)
 
 
 _locales = _map_locales()
