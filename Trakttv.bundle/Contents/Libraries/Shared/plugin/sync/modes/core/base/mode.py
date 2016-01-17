@@ -167,15 +167,19 @@ class Mode(object):
         return True
 
     def sections(self, section_type=None):
+        # Retrieve "section" for current task
+        section_key = self.current.kwargs.get('section', None)
+
+        # Fetch sections from server
         p_sections = Plex['library'].sections()
 
         if p_sections is None:
             return None
 
-        # Retrieve sections
+        # Filter sections, map to dictionary
         result = {}
 
-        for section in p_sections.filter(section_type):
+        for section in p_sections.filter(section_type, section_key):
             # Apply section name filter
             if not Filters.is_valid_section_name(section.title):
                 continue

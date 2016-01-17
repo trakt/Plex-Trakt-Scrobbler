@@ -160,7 +160,8 @@ class SyncTask(object):
         # Get/Create sync status
         status, created = SyncStatus.get_or_create(
             account=account,
-            mode=mode
+            mode=mode,
+            section=kwargs.get('section', None)
         )
 
         # Create sync result

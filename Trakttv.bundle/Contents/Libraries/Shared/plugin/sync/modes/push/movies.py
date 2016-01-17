@@ -117,6 +117,10 @@ class Movies(Base):
     def process_missing_movies(self):
         """Trigger actions for movies that are in trakt, but was unable to be found in plex"""
 
+        if self.current.kwargs.get('section'):
+            # Collection cleaning disabled for individual syncs
+            return
+
         # Increment progress steps
         self.current.progress.group(Movies, 'missing:movies').add(len(self.p_pending))
 
