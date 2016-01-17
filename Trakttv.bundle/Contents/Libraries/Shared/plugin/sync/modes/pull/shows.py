@@ -29,7 +29,6 @@ class Shows(Base):
 
         # Calculate total number of episodes
         pending = {}
-        total = 0
 
         for data in self.get_data(SyncMedia.Episodes):
             t_episodes = [
@@ -44,20 +43,17 @@ class Shows(Base):
 
             for key in t_episodes:
                 pending[data][key] = False
-                total += 1
 
         # Task started
         unsupported_shows = {}
 
-        self.current.progress.start(total)
-
         # Process shows
-        for sh_id, p_guid, p_show in p_shows:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
+        for sh_id, guid, p_show in p_shows:
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(unsupported_shows, sh_id, guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -83,12 +79,12 @@ class Shows(Base):
                 )
 
         # Process episodes
-        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
+        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(unsupported_shows, ids['show'], guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -137,6 +133,3 @@ class Shows(Base):
         # Log details
         log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
         log.debug('Pending: %r', pending)
-
-        # Task stopped
-        self.current.progress.stop()

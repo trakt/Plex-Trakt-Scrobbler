@@ -17,9 +17,7 @@ class Lists(PullListsMode):
                 continue
 
             for action, t_items in result.changes['lists'].items():
-                for t_list_key, t_item in t_items.items():
-                    _, t_list_id = t_list_key
-
+                for t_list_id, t_item in t_items.items():
                     # Try retrieve trakt list
                     t_list = self.trakt[key].get(t_list_id)
 
@@ -30,7 +28,7 @@ class Lists(PullListsMode):
 
                         p_playlists=p_playlists,
 
-                        key=t_list_key,
+                        key=t_list_id,
 
                         t_list=t_list
                     )

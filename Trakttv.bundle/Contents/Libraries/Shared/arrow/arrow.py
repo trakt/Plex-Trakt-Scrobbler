@@ -270,7 +270,7 @@ class Arrow(object):
 
         '''
         tzinfo = cls._get_tzinfo(start.tzinfo if tz is None else tz)
-        start = cls.fromdate(start, tzinfo).span(frame)[0]
+        start = cls.fromdatetime(start, tzinfo).span(frame)[0]
         _range = cls.range(frame, start, end, tz, limit)
         return [r.span(frame) for r in _range]
 
@@ -464,7 +464,7 @@ class Arrow(object):
         dt = self._datetime.astimezone(tz)
 
         return self.__class__(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
-            dt.microsecond, tz)
+            dt.microsecond, dt.tzinfo)
 
     def span(self, frame, count=1):
         ''' Returns two new :class:`Arrow <arrow.arrow.Arrow>` objects, representing the timespan
@@ -580,13 +580,13 @@ class Arrow(object):
         return formatter.DateTimeFormatter(locale).format(self._datetime, fmt)
 
 
-    def humanize(self, other=None, locale='en_us'):
+    def humanize(self, other=None, locale='en_us', only_distance=False):
         ''' Returns a localized, humanized representation of a relative difference in time.
 
         :param other: (optional) an :class:`Arrow <arrow.arrow.Arrow>` or ``datetime`` object.
             Defaults to now in the current :class:`Arrow <arrow.arrow.Arrow>` object's timezone.
         :param locale: (optional) a ``str`` specifying a locale.  Defaults to 'en_us'.
-
+        :param only_distance: (optional) returns only time difference eg: "11 seconds" without "in" or "ago" part.
         Usage::
 
             >>> earlier = arrow.utcnow().replace(hours=-2)
@@ -623,43 +623,43 @@ class Arrow(object):
         delta = diff
 
         if diff < 10:
-            return locale.describe('now')
+            return locale.describe('now', only_distance=only_distance)
 
         if diff < 45:
-            return locale.describe('seconds', sign)
+            return locale.describe('seconds', sign, only_distance=only_distance)
 
         elif diff < 90:
-            return locale.describe('minute', sign)
+            return locale.describe('minute', sign, only_distance=only_distance)
         elif diff < 2700:
             minutes = sign * int(max(delta / 60, 2))
-            return locale.describe('minutes', minutes)
+            return locale.describe('minutes', minutes, only_distance=only_distance)
 
         elif diff < 5400:
-            return locale.describe('hour', sign)
+            return locale.describe('hour', sign, only_distance=only_distance)
         elif diff < 79200:
             hours = sign * int(max(delta / 3600, 2))
-            return locale.describe('hours', hours)
+            return locale.describe('hours', hours, only_distance=only_distance)
 
         elif diff < 129600:
-            return locale.describe('day', sign)
+            return locale.describe('day', sign, only_distance=only_distance)
         elif diff < 2160000:
             days = sign * int(max(delta / 86400, 2))
-            return locale.describe('days', days)
+            return locale.describe('days', days, only_distance=only_distance)
 
         elif diff < 3888000:
-            return locale.describe('month', sign)
+            return locale.describe('month', sign, only_distance=only_distance)
         elif diff < 29808000:
             self_months = self._datetime.year * 12 + self._datetime.month
             other_months = dt.year * 12 + dt.month
             months = sign * abs(other_months - self_months)
 
-            return locale.describe('months', months)
+            return locale.describe('months', months, only_distance=only_distance)
 
         elif diff < 47260800:
-            return locale.describe('year', sign)
+            return locale.describe('year', sign, only_distance=only_distance)
         else:
             years = sign * int(max(delta / 31536000, 2))
-            return locale.describe('years', years)
+            return locale.describe('years', years, only_distance=only_distance)
 
 
     # math
@@ -669,7 +669,7 @@ class Arrow(object):
         if isinstance(other, (timedelta, relativedelta)):
             return self.fromdatetime(self._datetime + other, self._datetime.tzinfo)
 
-        raise NotImplementedError()
+        raise TypeError()
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -685,7 +685,7 @@ class Arrow(object):
         elif isinstance(other, Arrow):
             return self._datetime - other._datetime
 
-        raise NotImplementedError()
+        raise TypeError()
 
     def __rsub__(self, other):
         return self.__sub__(other)
@@ -828,8 +828,8 @@ class Arrow(object):
 
     # internal tools.
 
-    @classmethod
-    def _get_tzinfo(cls, tz_expr):
+    @staticmethod
+    def _get_tzinfo(tz_expr):
 
         if tz_expr is None:
             return dateutil_tz.tzutc()
@@ -882,8 +882,8 @@ class Arrow(object):
         else:
             return end, sys.maxsize
 
-    @classmethod
-    def _get_timestamp_from_input(cls, timestamp):
+    @staticmethod
+    def _get_timestamp_from_input(timestamp):
 
         try:
             return float(timestamp)

@@ -13,51 +13,76 @@ log = logging.getLogger(__name__)
 class Shows(Mode):
     mode = SyncMode.FastPull
 
+    def __init__(self, task):
+        super(Shows, self).__init__(task)
+
+        # Sections
+        self.p_sections = None
+        self.p_sections_map = None
+
+        # Shows
+        self.p_shows = None
+        self.p_shows_count = None
+        self.p_shows_unsupported = None
+
+        # Seasons
+        self.p_seasons = None
+
+        # Episodes
+        self.p_episodes = None
+        self.p_episodes_count = None
+
+    @elapsed.clock
+    def construct(self):
+        # Retrieve show sections
+        self.p_sections, self.p_sections_map = self.sections('show')
+
+        # Determine number of shows that will be processed
+        self.p_shows_count = self.plex.library.shows.count(
+            self.p_sections
+        )
+
+        # Determine number of shows that will be processed
+        self.p_episodes_count = self.plex.library.episodes.count_items(
+            self.p_sections
+        )
+
+        # Increment progress steps total
+        self.current.progress.group(Shows, 'shows').add(self.p_shows_count)
+        self.current.progress.group(Shows, 'episodes').add(self.p_episodes_count)
+
+    @elapsed.clock
+    def start(self):
+        # Fetch episodes with account settings
+        self.p_shows, self.p_seasons, self.p_episodes = self.plex.library.episodes.mapped(
+            self.p_sections, ([
+                MetadataItem.library_section
+            ], [], []),
+            account=self.current.account.plex.key,
+            parse_guid=True
+        )
+
+        # Reset state
+        self.p_shows_unsupported = {}
+
     @elapsed.clock
     def run(self):
-        # Retrieve show sections
-        p_sections, p_sections_map = self.sections('show')
-
-        with elapsed.clock(Shows, 'run:fetch'):
-            # Fetch episodes with account settings
-            p_shows, p_seasons, p_episodes = self.plex.library.episodes.mapped(
-                p_sections, ([
-                    MetadataItem.library_section
-                ], [], []),
-                account=self.current.account.plex.key,
-                parse_guid=True
-            )
-
         # TODO process seasons
-
-        # Calculate total number of episode changes
-        total = 0
-
-        for key, result in self.trakt.changes:
-            media, data = key[0:2]
-
-            if media != SyncMedia.Episodes:
-                # Ignore changes that aren't for episodes
-                continue
-
-            data_name = Cache.Data.get(data)
-
-            for count in result.metrics.episodes.get(data_name, {}).itervalues():
-                total += count
-
-        # Task started
-        unsupported_shows = {}
-
-        self.current.progress.start(total)
 
         with elapsed.clock(Shows, 'run:shows'):
             # Process shows
-            for sh_id, p_guid, p_show in p_shows:
-                if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
+            for sh_id, guid, p_show in self.p_shows:
+                # Increment one step
+                self.current.progress.group(Shows, 'shows').step()
+
+                # Ensure `guid` is available
+                if not guid or guid.agent not in GUID_AGENTS:
+                    mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
                     continue
 
-                key = (p_guid.agent, p_guid.sid)
+                key = (guid.agent, guid.sid)
+
+                log.debug('Processing show: %s', key)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
@@ -109,14 +134,23 @@ class Shows(Mode):
                             t_item=t_show
                         )
 
+        # Stop progress group
+        self.current.progress.group(Shows, 'shows').stop()
+
         with elapsed.clock(Shows, 'run:episodes'):
             # Process episodes
-            for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-                if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
+            for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+                # Increment one step
+                self.current.progress.group(Shows, 'episodes').step()
+
+                # Ensure `guid` is available
+                if not guid or guid.agent not in GUID_AGENTS:
+                    mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
                     continue
 
-                key = (p_guid.agent, p_guid.sid)
+                key = (guid.agent, guid.sid)
+
+                log.debug('Processing episode: %s - S%02dE%02d', key, season_num, episode_num)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
@@ -174,14 +208,11 @@ class Shows(Mode):
                             t_item=t_episode
                         )
 
-                        # Increment one step
-                        self.current.progress.step()
-
                 # Task checkpoint
                 self.checkpoint()
 
-        # Log details
-        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
+        # Stop progress group
+        self.current.progress.group(Shows, 'episodes').stop()
 
-        # Task stopped
-        self.current.progress.stop()
+        # Log details
+        log_unsupported(log, 'Found %d unsupported show(s)\n%s', self.p_shows_unsupported)

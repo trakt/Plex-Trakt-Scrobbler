@@ -33,8 +33,14 @@ class SyncSource(Source):
         self._show_differ = ShowDiffer()
 
     def refresh(self, username):
+        # Emit "started" event
+        self.events.emit('refresh.sync.started', source='sync', total=self.steps())
+        current_step = 0
+
+        # Fetch sync activity timestamps
         activities = Trakt['sync'].last_activities(exceptions=True)
 
+        # Refresh each data set
         for m in self.media:
             media = enums.Media.get(m)
 
@@ -44,6 +50,10 @@ class SyncSource(Source):
                 if not self.exists(d, m):
                     # Unsupported media + data combination
                     continue
+
+                # Update `current` progress, emit "progress" event
+                self.events.emit('refresh.sync.progress', source='sync', current=current_step)
+                current_step += 1
 
                 # Retrieve collection from database
                 collection = self.get_collection(username, media, data)
@@ -84,6 +94,23 @@ class SyncSource(Source):
 
                 # Return collection changes
                 yield self._collection_key(m, d), changes
+
+        # Emit "finished" event
+        self.events.emit('refresh.sync.finished', source='sync', current=current_step)
+
+    def steps(self):
+        result = 0
+
+        # Iterate over each data set and increment `result`
+        for m in self.media:
+            for d in self.data:
+                if not self.exists(d, m):
+                    # Unsupported media + data combination
+                    continue
+
+                result += 1
+
+        return result
 
     def diff(self, media, data, base, current):
         if not base:

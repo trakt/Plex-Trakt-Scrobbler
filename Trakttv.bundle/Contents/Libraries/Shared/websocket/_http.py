@@ -51,8 +51,12 @@ class proxy_info(object):
             self.auth = None
             self.no_proxy = None
 
-def connect(url, options, proxy):
+def connect(url, options, proxy, socket):
     hostname, port, resource, is_secure = parse_url(url)
+
+    if socket:
+        return socket, (hostname, port, resource)
+
     addrinfo_list, need_tunnel, auth = _get_addrinfo_list(hostname, port, is_secure, proxy)
     if not addrinfo_list:
         raise WebSocketException(
@@ -119,19 +123,29 @@ def _open_socket(addrinfo_list, sockopt, timeout):
 
 
 def _can_use_sni():
-    return (six.PY2 and sys.version_info[1] >= 7 and sys.version_info[2] >= 9) or (six.PY3 and sys.version_info[2] >= 2)
+    return six.PY2 and sys.version_info >= (2, 7, 9) or sys.version_info >= (3, 2)
 
 
 def _wrap_sni_socket(sock, sslopt, hostname, check_hostname):
     context = ssl.SSLContext(sslopt.get('ssl_version', ssl.PROTOCOL_SSLv23))
 
-    context.load_verify_locations(cafile=sslopt.get('ca_certs', None))
+    if sslopt.get('cert_reqs', ssl.CERT_NONE) != ssl.CERT_NONE:
+        context.load_verify_locations(cafile=sslopt.get('ca_certs', None))
+    if sslopt.get('certfile', None):
+        context.load_cert_chain(
+            sslopt['certfile'],
+            sslopt.get('keyfile', None),
+            sslopt.get('password', None),
+        )
     # see https://github.com/liris/websocket-client/commit/b96a2e8fa765753e82eea531adb19716b52ca3ca#commitcomment-10803153
     context.verify_mode = sslopt['cert_reqs']
     if HAVE_CONTEXT_CHECK_HOSTNAME:
         context.check_hostname = check_hostname
     if 'ciphers' in sslopt:
         context.set_ciphers(sslopt['ciphers'])
+    if 'cert_chain' in sslopt :
+        certfile,keyfile,password = sslopt['cert_chain']
+        context.load_cert_chain(certfile, keyfile, password)
 
     return context.wrap_socket(
         sock,
@@ -143,11 +157,12 @@ def _wrap_sni_socket(sock, sslopt, hostname, check_hostname):
 
 def _ssl_socket(sock, user_sslopt, hostname):
     sslopt = dict(cert_reqs=ssl.CERT_REQUIRED)
+    sslopt.update(user_sslopt)
+    
     certPath = os.path.join(
         os.path.dirname(__file__), "cacert.pem")
-    if os.path.isfile(certPath):
+    if os.path.isfile(certPath) and user_sslopt.get('ca_certs', None) == None:
         sslopt['ca_certs'] = certPath
-    sslopt.update(user_sslopt)
     check_hostname = sslopt["cert_reqs"] != ssl.CERT_NONE and sslopt.pop('check_hostname', True)
 
     if _can_use_sni():
@@ -183,7 +198,7 @@ def _tunnel(sock, host, port, auth):
 
     if status != 200:
         raise WebSocketProxyException(
-            "failed CONNECT via proxy status: %r" + status)
+            "failed CONNECT via proxy status: %r" % status)
     
     return sock
 

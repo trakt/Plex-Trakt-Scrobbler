@@ -13,7 +13,7 @@ class SyncListsLikedOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists', 'Liked')
+    group = ('Sync - Lists (Beta)', 'Liked')
     label = 'Mode'
     order = 300
 
@@ -49,7 +49,7 @@ class SyncListsLikedPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists', 'Liked')
+    group = ('Sync - Lists (Beta)', 'Liked')
     label = 'Create playlists in plex'
     order = 301
 

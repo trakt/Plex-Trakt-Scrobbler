@@ -26,7 +26,7 @@ class Movies(Base):
     media = SyncMedia.Movies
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
+    def on_added(self, key, guid, p_item, p_value, t_value, **kwargs):
         # Retrieve plex `view_count`
         p_settings = p_item.get('settings', {})
         p_view_count = p_settings.get('view_count', 0)
@@ -36,7 +36,7 @@ class Movies(Base):
         if t_value:
             return
 
-        self.store_movie('add', p_guid,
+        self.store_movie('add', guid,
             p_item,
             watched_at=p_value
         )
@@ -50,7 +50,7 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, p_guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
+    def on_added(self, key, guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
         # Retrieve plex `view_count`
         p_settings = p_item.get('settings', {})
         p_view_count = p_settings.get('view_count', 0)
@@ -60,7 +60,7 @@ class Episodes(Base):
         if t_value:
             return
 
-        self.store_episode('add', p_guid,
+        self.store_episode('add', guid,
             identifier, p_show,
             watched_at=p_value
         )

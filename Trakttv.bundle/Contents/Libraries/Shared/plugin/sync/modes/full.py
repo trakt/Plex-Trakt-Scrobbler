@@ -8,19 +8,41 @@ class Full(Mode):
     mode = SyncMode.Full
 
     @elapsed.clock
-    def run(self):
+    def construct(self):
+        # Start progress tracking
+        self.current.progress.start()
+
+        # Construct children
+        self.modes[SyncMode.FastPull].execute_children('construct')
+        self.modes[SyncMode.Push].execute_children('construct')
+
+    @elapsed.clock
+    def start(self):
         # Fetch changes from trakt.tv
         self.trakt.refresh()
 
         # Build key table for lookups
         self.trakt.build_table()
 
-        with self.plex.prime():
-            # Run fast pull
-            self.modes[SyncMode.FastPull].execute_children()
+        # Start children
+        self.modes[SyncMode.FastPull].execute_children('start')
+        self.modes[SyncMode.Push].execute_children('start')
 
-            # Run push
-            self.modes[SyncMode.Push].execute_children()
+    @elapsed.clock
+    def run(self):
+        with self.plex.prime():
+            # Run children
+            self.modes[SyncMode.FastPull].execute_children('run')
+            self.modes[SyncMode.Push].execute_children('run')
 
         # Send artifacts to trakt
         self.current.artifacts.send()
+
+    @elapsed.clock
+    def stop(self):
+        # Stop children
+        self.modes[SyncMode.FastPull].execute_children('stop')
+        self.modes[SyncMode.Push].execute_children('stop')
+
+        # Stop progress tracking
+        self.current.progress.stop()

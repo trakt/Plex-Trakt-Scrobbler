@@ -3,8 +3,7 @@
 # Sorted dict implementation.
 
 from .sortedset import SortedSet
-from .sortedlist import SortedList, recursive_repr
-from .sortedlistwithkey import SortedListWithKey
+from .sortedlist import SortedList, recursive_repr, SortedListWithKey
 from collections import Set, Sequence
 from collections import KeysView as AbstractKeysView
 from collections import ValuesView as AbstractValuesView
@@ -134,7 +133,7 @@ class SortedDict(dict):
         self._pop = _dict.pop
         self._setdefault = _dict.setdefault
         self._setitem = _dict.__setitem__
-        self._update = _dict.update
+        self._dict_update = _dict.update
 
         # Cache function pointers to SortedList methods.
 
@@ -159,7 +158,7 @@ class SortedDict(dict):
 
         self.iloc = _IlocWrapper(self)
 
-        self.update(*args, **kwargs)
+        self._update(*args, **kwargs)
 
     def clear(self):
         """Remove all elements from the dictionary."""
@@ -175,12 +174,20 @@ class SortedDict(dict):
         self._list_remove(key)
 
     def __iter__(self):
-        """Create an iterator over the sorted keys of the dictionary."""
+        """
+        Return an iterator over the sorted keys of the dictionary.
+
+        Iterating the Mapping while adding or deleting keys may raise a
+        `RuntimeError` or fail to iterate over all entries.
+        """
         return iter(self._list)
 
     def __reversed__(self):
         """
-        Create a reversed iterator over the sorted keys of the dictionary.
+        Return a reversed iterator over the sorted keys of the dictionary.
+
+        Iterating the Mapping while adding or deleting keys may raise a
+        `RuntimeError` or fail to iterate over all entries.
         """
         return reversed(self._list)
 
@@ -192,7 +199,7 @@ class SortedDict(dict):
 
     def copy(self):
         """Return a shallow copy of the sorted dictionary."""
-        return self.__class__(self._key, self._load, self.iteritems())
+        return self.__class__(self._key, self._load, self._iteritems())
 
     __copy__ = copy
 
@@ -208,7 +215,7 @@ class SortedDict(dict):
             """
             Return a list of the dictionary's items (``(key, value)`` pairs).
             """
-            return list(self.iteritems())
+            return list(self._iteritems())
     else:
         def items(self):
             """
@@ -219,8 +226,15 @@ class SortedDict(dict):
             return ItemsView(self)
 
     def iteritems(self):
-        """Return an iterable over the items (``(key, value)`` pairs)."""
+        """
+        Return an iterator over the items (``(key, value)`` pairs).
+
+        Iterating the Mapping while adding or deleting keys may raise a
+        `RuntimeError` or fail to iterate over all entries.
+        """
         return iter((key, self[key]) for key in self._list)
+
+    _iteritems = iteritems
 
     if hexversion < 0x03000000:
         def keys(self):
@@ -236,13 +250,18 @@ class SortedDict(dict):
             return KeysView(self)
 
     def iterkeys(self):
-        """Return an iterable over the keys of the dictionary."""
+        """
+        Return an iterator over the sorted keys of the Mapping.
+
+        Iterating the Mapping while adding or deleting keys may raise a
+        `RuntimeError` or fail to iterate over all entries.
+        """
         return iter(self._list)
 
     if hexversion < 0x03000000:
         def values(self):
             """Return a list of the dictionary's values."""
-            return list(self.itervalues())
+            return list(self._itervalues())
     else:
         def values(self):
             """
@@ -253,8 +272,15 @@ class SortedDict(dict):
             return ValuesView(self)
 
     def itervalues(self):
-        """Return an iterable over the values of the dictionary."""
+        """
+        Return an iterator over the values of the Mapping.
+
+        Iterating the Mapping while adding or deleting keys may raise a
+        `RuntimeError` or fail to iterate over all entries.
+        """
         return iter(self[key] for key in self._list)
+
+    _itervalues = itervalues
 
     def pop(self, key, default=_NotGiven):
         """
@@ -312,7 +338,7 @@ class SortedDict(dict):
         those key/value pairs: ``d.update(red=1, blue=2)``.
         """
         if not len(self):
-            self._update(*args, **kwargs)
+            self._dict_update(*args, **kwargs)
             self._list_update(self._iter())
             return
 
@@ -322,12 +348,14 @@ class SortedDict(dict):
             pairs = dict(*args, **kwargs)
 
         if (10 * len(pairs)) > len(self):
-            self._update(pairs)
+            self._dict_update(pairs)
             self._list_clear()
             self._list_update(self._iter())
         else:
             for key in pairs:
                 self[key] = pairs[key]
+
+    _update = update
 
     @not26
     def viewkeys(self):
@@ -360,7 +388,7 @@ class SortedDict(dict):
         return ItemsView(self)
 
     def __reduce__(self):
-        return (self.__class__, (self._key, self._load, list(self.iteritems())))
+        return (self.__class__, (self._key, self._load, list(self._iteritems())))
 
     @recursive_repr
     def __repr__(self):
@@ -416,7 +444,7 @@ class KeysView(AbstractKeysView, Set, Sequence):
         over in their sorted order.
 
         Iterating views while adding or deleting entries in the dictionary may
-        raise a RuntimeError or fail to iterate over all entries.
+        raise a `RuntimeError` or fail to iterate over all entries.
         """
         return iter(self._list)
     def __getitem__(self, index):
@@ -515,7 +543,7 @@ class ValuesView(AbstractValuesView, Sequence):
         return len(self._dict)
     def __contains__(self, value):
         """
-        Return True if and only if *value* is on the underlying dictionary's
+        Return True if and only if *value* is in the underlying Mapping's
         values.
         """
         return value in self._view
@@ -568,7 +596,7 @@ class ValuesView(AbstractValuesView, Sequence):
     else:
         def count(self, value):
             """Return the number of occurrences of *value* in self."""
-            return sum(1 for val in _dict.values() if val == value)
+            return sum(1 for val in self._dict.values() if val == value)
     def __lt__(self, that):
         raise TypeError
     def __gt__(self, that):
@@ -632,7 +660,7 @@ class ItemsView(AbstractItemsView, Set, Sequence):
         over in their sorted order.
 
         Iterating views while adding or deleting entries in the dictionary may
-        raise a RuntimeError or fail to iterate over all entries.
+        raise a `RuntimeError` or fail to iterate over all entries.
         """
         _dict = self._dict
         return iter((key, _dict[key]) for key in self._list)

@@ -26,10 +26,8 @@ class MatcherOption(SimpleOption):
         # Update matcher configuration
         extended = value == MatcherMode.PlexExtended
 
-        plex_metadata.Matcher.configure(
-            caper_enabled=extended,
-            extend_enabled=extended
-        )
+        plex_metadata.Matcher.caper_enabled = extended
+        plex_metadata.Matcher.extend_enabled = extended
 
         log.debug('Configured matcher, extended: %r', extended)
 

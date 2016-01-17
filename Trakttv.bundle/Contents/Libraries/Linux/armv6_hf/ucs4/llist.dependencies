@@ -1,0 +1,29 @@
+
+Dynamic section at offset 0x5f10 contains 26 entries:
+  Tag        Type                         Name/Value
+ 0x00000001 (NEEDED)                     Shared library: [libpthread.so.0]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.6]
+ 0x0000000c (INIT)                       0x12b8
+ 0x0000000d (FINI)                       0x5210
+ 0x00000019 (INIT_ARRAY)                 0x15f04
+ 0x0000001b (INIT_ARRAYSZ)               4 (bytes)
+ 0x0000001a (FINI_ARRAY)                 0x15f08
+ 0x0000001c (FINI_ARRAYSZ)               4 (bytes)
+ 0x00000004 (HASH)                       0x118
+ 0x6ffffef5 (GNU_HASH)                   0x378
+ 0x00000005 (STRTAB)                     0x7a8
+ 0x00000006 (SYMTAB)                     0x418
+ 0x0000000a (STRSZ)                      878 (bytes)
+ 0x0000000b (SYMENT)                     16 (bytes)
+ 0x00000003 (PLTGOT)                     0x16000
+ 0x00000002 (PLTRELSZ)                   224 (bytes)
+ 0x00000014 (PLTREL)                     REL
+ 0x00000017 (JMPREL)                     0x11d8
+ 0x00000011 (REL)                        0xbc8
+ 0x00000012 (RELSZ)                      1552 (bytes)
+ 0x00000013 (RELENT)                     8 (bytes)
+ 0x6ffffffe (VERNEED)                    0xb88
+ 0x6fffffff (VERNEEDNUM)                 2
+ 0x6ffffff0 (VERSYM)                     0xb16
+ 0x6ffffffa (RELCOUNT)                   178
+ 0x00000000 (NULL)                       0x0

@@ -9,15 +9,15 @@ log = logging.getLogger(__name__)
 class MediaHandler(object):
     media = None
 
-    def __init__(self, data, main):
+    def __init__(self, data, task):
         self.__parent = data
-        self.__main = main
+        self.__task = task
 
         self.__handlers = {}
 
     @property
     def configuration(self):
-        return self.__main.current.configuration
+        return self.__task.configuration
 
     @property
     def parent(self):
@@ -67,11 +67,11 @@ class MediaHandler(object):
 
     @property
     def current(self):
-        return self.__main.current
+        return self.__task
 
     @property
     def handlers(self):
-        return self.__main.handlers
+        return self.__task.handlers
 
     @staticmethod
     def build_action(*args, **kwargs):
@@ -159,11 +159,11 @@ class MediaHandler(object):
     # Artifacts
     #
 
-    def store_show(self, action, p_guid, p_show=None, **kwargs):
-        return self.current.artifacts.store_show(self.parent.data, action, p_guid, p_show, **kwargs)
+    def store_show(self, action, guid, p_show=None, **kwargs):
+        return self.current.artifacts.store_show(self.parent.data, action, guid, p_show, **kwargs)
 
-    def store_episode(self, action, p_guid, identifier, p_show=None, **kwargs):
-        return self.current.artifacts.store_episode(self.parent.data, action, p_guid, identifier, p_show, **kwargs)
+    def store_episode(self, action, guid, identifier, p_show=None, **kwargs):
+        return self.current.artifacts.store_episode(self.parent.data, action, guid, identifier, p_show, **kwargs)
 
-    def store_movie(self, action, p_guid, p_movie=None, **kwargs):
-        return self.current.artifacts.store_movie(self.parent.data, action, p_guid, p_movie, **kwargs)
+    def store_movie(self, action, guid, p_movie=None, **kwargs):
+        return self.current.artifacts.store_movie(self.parent.data, action, guid, p_movie, **kwargs)

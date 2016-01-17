@@ -55,21 +55,21 @@
     {
         "id": "sync_liked_lists",
         "type": "enum",
-        "label": "Sync - Liked Lists",
+        "label": "Sync - Liked Lists (Beta)",
         "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
         "default": "Disabled"
     },
     {
         "id": "sync_personal_lists",
         "type": "enum",
-        "label": "Sync - Personal Lists",
+        "label": "Sync - Personal Lists (Beta)",
         "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
         "default": "Disabled"
     },
     {
         "id": "sync_watchlist",
         "type": "enum",
-        "label": "Sync - Watchlist",
+        "label": "Sync - Watchlist (Beta)",
         "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
         "default": "Disabled"
     },

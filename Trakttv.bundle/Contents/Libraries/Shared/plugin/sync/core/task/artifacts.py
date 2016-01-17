@@ -159,8 +159,8 @@ class SyncArtifacts(object):
     # Artifact storage
     #
 
-    def store_show(self, data, action, p_guid, p_show=None, **kwargs):
-        key = (p_guid.agent, p_guid.sid)
+    def store_show(self, data, action, guid, p_show=None, **kwargs):
+        key = (guid.agent, guid.sid)
 
         shows = dict_path(self.artifacts, [
             data,
@@ -172,7 +172,7 @@ class SyncArtifacts(object):
         if key in shows:
             show = shows[key]
         else:
-            show = self._build_request(p_guid, p_show, **kwargs)
+            show = self._build_request(guid, p_show, **kwargs)
 
             if show is None:
                 return False
@@ -184,8 +184,8 @@ class SyncArtifacts(object):
         self._set_kwargs(show, kwargs)
         return True
 
-    def store_episode(self, data, action, p_guid, identifier, p_show=None, **kwargs):
-        key = (p_guid.agent, p_guid.sid)
+    def store_episode(self, data, action, guid, identifier, p_show=None, **kwargs):
+        key = (guid.agent, guid.sid)
         season_num, episode_num = identifier
 
         shows = dict_path(self.artifacts, [
@@ -198,7 +198,7 @@ class SyncArtifacts(object):
         if key in shows:
             show = shows[key]
         else:
-            show = self._build_request(p_guid, p_show)
+            show = self._build_request(guid, p_show)
 
             if show is None:
                 return False
@@ -226,8 +226,8 @@ class SyncArtifacts(object):
         self._set_kwargs(episode, kwargs)
         return True
 
-    def store_movie(self, data, action, p_guid, p_movie=None, **kwargs):
-        key = (p_guid.agent, p_guid.sid)
+    def store_movie(self, data, action, guid, p_movie=None, **kwargs):
+        key = (guid.agent, guid.sid)
 
         movies = dict_path(self.artifacts, [
             data,
@@ -239,7 +239,7 @@ class SyncArtifacts(object):
         if key in movies:
             movie = movies[key]
         else:
-            movie = self._build_request(p_guid, p_movie, **kwargs)
+            movie = self._build_request(guid, p_movie, **kwargs)
 
             if movie is None:
                 return False
@@ -252,9 +252,9 @@ class SyncArtifacts(object):
         return True
 
     @classmethod
-    def _build_request(cls, p_guid, p_item, **kwargs):
+    def _build_request(cls, guid, p_item, **kwargs):
         # Validate request
-        if not cls._validate_request(p_guid, p_item):
+        if not cls._validate_request(guid, p_item):
             return None
 
         # Build request
@@ -263,7 +263,7 @@ class SyncArtifacts(object):
         }
 
         # Set identifier
-        request['ids'][p_guid.agent] = p_guid.sid
+        request['ids'][guid.agent] = guid.sid
 
         # Set extra attributes
         cls._set_kwargs(request, kwargs)
@@ -271,24 +271,24 @@ class SyncArtifacts(object):
         return request
 
     @classmethod
-    def _validate_request(cls, p_guid, p_item):
+    def _validate_request(cls, guid, p_item):
         # Build item identifier
         if p_item:
             identifier = '<%r (%r)>' % (p_item.get('title'), p_item.get('year'))
         else:
-            identifier = repr(p_guid)
+            identifier = repr(guid)
 
         # Validate parameters
         if p_item is not None and (not p_item.get('title') or not p_item.get('year')):
             log.warn('Invalid "title" or "year" attribute on %s', identifier)
             return False
 
-        if not p_guid:
+        if not guid:
             log.warn('Invalid GUID attribute on %s', identifier)
             return False
 
-        if not p_guid or p_guid.agent not in GUID_AGENTS:
-            log.warn('GUID agent %r is not supported on %s', p_guid.agent if p_guid else None, identifier)
+        if not guid or guid.agent not in GUID_AGENTS:
+            log.warn('GUID agent %r is not supported on %s', guid.agent if guid else None, identifier)
             return False
 
         return True

@@ -2,8 +2,7 @@
 #
 # Sorted set implementation.
 
-from .sortedlist import SortedList, recursive_repr
-from .sortedlistwithkey import SortedListWithKey
+from .sortedlist import SortedList, recursive_repr, SortedListWithKey
 from collections import Set, MutableSet, Sequence
 from itertools import chain
 import operator as op
@@ -67,7 +66,7 @@ class SortedSet(MutableSet, Sequence):
             self.irange_key = _list.irange_key
 
         if iterable is not None:
-            self.update(iterable)
+            self._update(iterable)
 
     def __contains__(self, value):
         """Return True if and only if *value* is an element in the set."""
@@ -103,19 +102,20 @@ class SortedSet(MutableSet, Sequence):
             elif isinstance(that, Set):
                 return set_op(self._set, that)
             else:
-                raise TypeError('can only compare to a Set')
+                return NotImplemented
 
         comparer.__name__ = '__{0}__'.format(set_op.__name__)
-        comparer.__doc__ = 'Return True if and only if ' + doc
+        doc_str = 'Return True if and only if Set is {0} `that`.'
+        comparer.__doc__ = doc_str.format(doc)
 
         return comparer
 
-    __eq__ = _make_cmp(op.eq, 'self and *that* are equal sets.')
-    __ne__ = _make_cmp(op.ne, 'self and *that* are inequal sets.')
-    __lt__ = _make_cmp(op.lt, 'self is a proper subset of *that*.')
-    __gt__ = _make_cmp(op.gt, 'self is a proper superset of *that*.')
-    __le__ = _make_cmp(op.le, 'self is a subset of *that*.')
-    __ge__ = _make_cmp(op.ge, 'self is a superset of *that*.')
+    __eq__ = _make_cmp(op.eq, 'equal to')
+    __ne__ = _make_cmp(op.ne, 'not equal to')
+    __lt__ = _make_cmp(op.lt, 'a proper subset of')
+    __gt__ = _make_cmp(op.gt, 'a proper superset of')
+    __le__ = _make_cmp(op.le, 'a subset of')
+    __ge__ = _make_cmp(op.ge, 'a superset of')
 
     def __len__(self):
         """Return the number of elements in the set."""
@@ -123,15 +123,21 @@ class SortedSet(MutableSet, Sequence):
 
     def __iter__(self):
         """
-        Return an iterator over the SortedSet. Elements are iterated over
-        in their sorted order.
+        Return an iterator over the Set. Elements are iterated in their sorted
+        order.
+
+        Iterating the Set while adding or deleting values may raise a
+        `RuntimeError` or fail to iterate over all entries.
         """
         return iter(self._list)
 
     def __reversed__(self):
         """
-        Return an iterator over the SortedSet. Elements are iterated over
-        in their reversed sorted order.
+        Return an iterator over the Set. Elements are iterated in their reverse
+        sorted order.
+
+        Iterating the Set while adding or deleting values may raise a
+        `RuntimeError` or fail to iterate over all entries.
         """
         return reversed(self._list)
 
@@ -280,7 +286,8 @@ class SortedSet(MutableSet, Sequence):
                 _add(value)
         return self
 
-    __ior__ = union
+    __ior__ = update
+    _update = update
 
     def __reduce__(self):
         return (self.__class__, ((), self._key, self._load, self._set))

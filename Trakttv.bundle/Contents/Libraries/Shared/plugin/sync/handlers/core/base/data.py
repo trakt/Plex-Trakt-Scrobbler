@@ -9,19 +9,19 @@ class DataHandler(object):
 
     children = None
 
-    def __init__(self, main):
-        self.__main = main
-        self.__children = dict(self.__construct_children(main))
+    def __init__(self, task):
+        self.__task = task
+        self.__children = dict(self.__construct_children(task))
 
     @property
     def current(self):
-        return self.__main.current
+        return self.__task
 
     @property
     def handlers(self):
-        return self.__main.handlers
+        return self.__task.handlers
 
-    def __construct_children(self, main):
+    def __construct_children(self, task):
         if self.children is None:
             return
 
@@ -30,7 +30,7 @@ class DataHandler(object):
                 log.warn('%r does not has a valid "media" attribute', cls)
                 continue
 
-            obj = cls(self, main)
+            obj = cls(self, task)
             obj.discover()
 
             yield cls.media, obj

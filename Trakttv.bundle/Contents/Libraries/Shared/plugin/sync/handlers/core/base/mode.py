@@ -7,11 +7,11 @@ class ModeHandler(object):
     data = None
     children = None
 
-    def __init__(self, main):
-        self.__main = main
-        self.__children = dict(self.__construct_children(main))
+    def __init__(self, task):
+        self.__task = task
+        self.__children = dict(self.__construct_children(task))
 
-    def __construct_children(self, main):
+    def __construct_children(self, task):
         if self.children is None:
             return
 
@@ -27,7 +27,7 @@ class ModeHandler(object):
                 modes = [cls.mode]
 
             # Construct child module
-            obj = cls(main)
+            obj = cls(task)
 
             for mode in modes:
                 yield mode, obj

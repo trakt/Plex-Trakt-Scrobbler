@@ -55,7 +55,7 @@ class HttpClient(object):
         return self
 
     def request(self, method, path=None, params=None, data=None, query=None, authenticated=False, **kwargs):
-        # retrieve configuration
+        # Retrieve configuration
         ctx = self.configuration.pop()
 
         retry = self.client.configuration.get('http.retry', DEFAULT_HTTP_RETRY)
@@ -63,20 +63,12 @@ class HttpClient(object):
         retry_sleep = self.client.configuration.get('http.retry_sleep', DEFAULT_HTTP_RETRY_SLEEP)
         timeout = self.client.configuration.get('http.timeout', DEFAULT_HTTP_TIMEOUT)
 
-        # build request
-        if ctx.base_path and path:
-            # Prepend `base_path` to relative `path`s
-            if not path.startswith('/'):
-                path = ctx.base_path + '/' + path
-
-        elif ctx.base_path:
-            path = ctx.base_path
-
+        # Build request
         request = TraktRequest(
             self.client,
             method=method,
 
-            path=path,
+            path=self._build_path(ctx, path),
             params=params,
 
             data=data,
@@ -165,6 +157,21 @@ class HttpClient(object):
             return self._validate_oauth()
 
         return False
+
+    def _build_path(self, ctx, path):
+        if not ctx:
+            # No context available
+            return path
+
+        if ctx.base_path and path:
+            # Prepend `base_path` to relative `path`s
+            if not path.startswith('/'):
+                path = ctx.base_path + '/' + path
+        elif ctx.base_path:
+            # Set path to `base_path
+            path = ctx.base_path
+
+        return path
 
     @synchronized(lambda self: self._validate_oauth_lock)
     def _validate_oauth(self):

@@ -13,53 +13,68 @@ log = logging.getLogger(__name__)
 class Movies(Mode):
     mode = SyncMode.FastPull
 
-    @elapsed.clock
-    def run(self):
-        # Retrieve movie sections
-        p_sections, p_sections_map = self.sections('movie')
+    def __init__(self, task):
+        super(Movies, self).__init__(task)
 
+        # Sections
+        self.p_sections = None
+        self.p_sections_map = None
+
+        # Items
+        self.p_count = None
+        self.p_movies = None
+
+        self.p_unsupported = None
+
+    @elapsed.clock
+    def construct(self):
+        # Retrieve movie sections
+        self.p_sections, self.p_sections_map = self.sections('movie')
+
+        # Determine number of movies that will be processed
+        self.p_count = self.plex.library.movies.count(
+            self.p_sections,
+            account=self.current.account.plex.key
+        )
+
+        # Increment progress steps total
+        self.current.progress.group(Movies).add(self.p_count)
+
+    @elapsed.clock
+    def start(self):
         # Fetch movies with account settings
-        p_items = self.plex.library.movies.mapped(
-            p_sections, [
+        self.p_movies = self.plex.library.movies.mapped(
+            self.p_sections, [
                 MetadataItem.library_section
             ],
             account=self.current.account.plex.key,
             parse_guid=True
         )
 
-        # Calculate total number of steps
-        total = 0
+        # Reset state
+        self.p_unsupported = {}
 
-        for key, result in self.trakt.changes:
-            media, data = key[0:2]
-
-            if media != SyncMedia.Movies:
-                # Ignore changes that aren't for episodes
-                continue
-
-            data_name = Cache.Data.get(data)
-
-            for count in result.metrics.movies.get(data_name, {}).itervalues():
-                total += count
-
-        # Task started
-        unsupported_movies = {}
-
-        self.current.progress.start(total)
-
+    @elapsed.clock
+    def run(self):
         # Process movies
-        for rating_key, p_guid, p_item in p_items:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
+        for mo_id, guid, p_item in self.p_movies:
+            # Increment one step
+            self.current.progress.group(Movies).step()
+
+            # Ensure `guid` is available
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(self.p_unsupported, mo_id, guid, p_item)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
+
+            log.debug('Processing movie: %s', key)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
 
             # Store in item map
-            self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])
+            self.current.map.add(p_item.get('library_section'), mo_id, [key, pk])
 
             if pk is None:
                 # No `pk` found
@@ -97,20 +112,17 @@ class Movies(Mode):
                     self.execute_handlers(
                         SyncMedia.Movies, data,
                         action=action,
-                        key=rating_key,
+                        key=mo_id,
 
                         p_item=p_item,
                         t_item=t_item
                     )
 
-                    # Increment one step
-                    self.current.progress.step()
-
             # Task checkpoint
             self.checkpoint()
 
-        # Log details
-        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
+        # Stop progress group
+        self.current.progress.group(Movies).stop()
 
-        # Task stopped
-        self.current.progress.stop()
+        # Log details
+        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)
