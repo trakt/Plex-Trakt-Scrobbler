@@ -13,7 +13,7 @@ class SyncListsPersonalOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists', 'Personal')
+    group = ('Sync - Lists (Beta)', 'Personal')
     label = 'Mode'
     order = 310
 
@@ -49,7 +49,7 @@ class SyncListsPersonalPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists', 'Personal')
+    group = ('Sync - Lists (Beta)', 'Personal')
     label = 'Create playlists in plex'
     order = 311
 

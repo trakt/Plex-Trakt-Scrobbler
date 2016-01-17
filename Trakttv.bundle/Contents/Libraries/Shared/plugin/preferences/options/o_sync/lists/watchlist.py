@@ -13,7 +13,7 @@ class SyncListsWatchlistOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists', 'Watchlist')
+    group = ('Sync - Lists (Beta)', 'Watchlist')
     label = 'Mode'
     order = 320
 
@@ -49,7 +49,7 @@ class SyncListsWatchlistPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists', 'Watchlist')
+    group = ('Sync - Lists (Beta)', 'Watchlist')
     label = 'Create playlist in plex'
     order = 321
 
