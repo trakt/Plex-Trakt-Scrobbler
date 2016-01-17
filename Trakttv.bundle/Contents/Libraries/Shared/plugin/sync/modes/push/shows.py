@@ -100,16 +100,16 @@ class Shows(Base):
     @elapsed.clock
     def process_matched_shows(self):
         # Iterate over plex shows
-        for sh_id, p_guid, p_show in self.p_shows:
+        for sh_id, guid, p_show in self.p_shows:
             # Increment one step
             self.current.progress.group(Shows, 'matched:shows').step()
 
-            # Ensure `p_guid` is available
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(self.p_shows_unsupported, sh_id, p_guid, p_show)
+            # Ensure `guid` is available
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -121,7 +121,7 @@ class Shows(Base):
                 self.execute_handlers(
                     SyncMedia.Shows, data,
                     key=sh_id,
-                    p_guid=p_guid,
+                    guid=guid,
 
                     p_item=p_show,
 
@@ -169,7 +169,7 @@ class Shows(Base):
 
                     key=None,
 
-                    p_guid=Guid(*pk),
+                    guid=Guid(*pk),
                     p_item=None,
 
                     t_item=t_show
@@ -197,16 +197,16 @@ class Shows(Base):
     @elapsed.clock
     def process_matched_episodes(self):
         # Iterate over plex episodes
-        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
             # Increment one step
             self.current.progress.group(Shows, 'matched:episodes').step()
 
-            # Ensure `p_guid` is available
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(self.p_shows_unsupported, ids['show'], p_guid, p_show)
+            # Ensure `guid` is available
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
             identifier = (season_num, episode_num)
 
             # Try retrieve `pk` for `key`
@@ -227,7 +227,7 @@ class Shows(Base):
                         key=ids['episode'],
                         identifier=identifier,
 
-                        p_guid=p_guid,
+                        guid=guid,
                         p_show=p_show,
                         p_item=p_episode,
 
@@ -281,7 +281,7 @@ class Shows(Base):
                         SyncMedia.Episodes, data,
                         key=None,
                         identifier=identifier,
-                        p_guid=Guid(*pk),
+                        guid=Guid(*pk),
 
                         p_show=None,
                         p_item=None,

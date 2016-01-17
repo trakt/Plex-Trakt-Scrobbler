@@ -73,16 +73,16 @@ class Movies(Base):
         """Trigger actions for movies that have been matched in plex"""
 
         # Iterate over movies
-        for rating_key, p_guid, p_item in self.p_movies:
+        for rating_key, guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies, 'matched:movies').step()
 
-            # Ensure `p_guid` is available
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(self.p_unsupported, rating_key, p_guid, p_item)
+            # Ensure `guid` is available
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(self.p_unsupported, rating_key, guid, p_item)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -95,7 +95,7 @@ class Movies(Base):
 
                     key=rating_key,
 
-                    p_guid=p_guid,
+                    guid=guid,
                     p_item=p_item,
 
                     t_item=t_movie
@@ -146,7 +146,7 @@ class Movies(Base):
 
                     key=None,
 
-                    p_guid=Guid(*pk),
+                    guid=Guid(*pk),
                     p_item=None,
 
                     t_item=t_movie

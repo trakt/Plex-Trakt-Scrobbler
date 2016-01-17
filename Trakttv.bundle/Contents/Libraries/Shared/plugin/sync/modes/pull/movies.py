@@ -38,12 +38,12 @@ class Movies(Base):
         # Task started
         unsupported_movies = {}
 
-        for rating_key, p_guid, p_item in p_items:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
+        for rating_key, guid, p_item in p_items:
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(unsupported_movies, rating_key, guid, p_item)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

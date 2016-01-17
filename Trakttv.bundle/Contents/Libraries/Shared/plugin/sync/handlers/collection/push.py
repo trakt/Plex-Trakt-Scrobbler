@@ -118,56 +118,56 @@ class Movies(Base):
     media = SyncMedia.Movies
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, p_guid, p_item, p_value, t_value, **kwargs):
+    def on_added(self, key, guid, p_item, p_value, t_value, **kwargs):
         log.debug('Movies.on_added(%r, ...)', key)
 
         if t_value:
             return
 
-        self.store_movie('add', p_guid,
+        self.store_movie('add', guid,
             p_item,
             collected_at=p_value,
             **self.build_metadata(p_item)
         )
 
     @bind('removed', [SyncMode.Full])
-    def on_removed(self, p_guid, **kwargs):
+    def on_removed(self, guid, **kwargs):
         if not self.configuration['sync.collection.clean']:
             # Collection cleaning hasn't been enabled
             return
 
-        log.debug('Movies.on_removed(%r) - %r', p_guid, kwargs)
+        log.debug('Movies.on_removed(%r) - %r', guid, kwargs)
 
         # Store action in artifacts
-        self.store_movie('remove', p_guid)
+        self.store_movie('remove', guid)
 
 
 class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, p_guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
+    def on_added(self, key, guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
         log.debug('Episodes.on_added(%r, ...)', key)
 
         if t_value:
             return
 
-        self.store_episode('add', p_guid,
+        self.store_episode('add', guid,
             identifier, p_show,
             collected_at=p_value,
             **self.build_metadata(p_item)
         )
 
     @bind('removed', [SyncMode.Full])
-    def on_removed(self, p_guid, identifier, **kwargs):
+    def on_removed(self, guid, identifier, **kwargs):
         if not self.configuration['sync.collection.clean']:
             # Collection cleaning hasn't been enabled
             return
 
-        log.debug('Episodes.on_removed(%r) - %r', p_guid, kwargs)
+        log.debug('Episodes.on_removed(%r) - %r', guid, kwargs)
 
         # Store action in artifacts
-        self.store_episode('remove', p_guid, identifier)
+        self.store_episode('remove', guid, identifier)
 
 
 class Push(DataHandler):

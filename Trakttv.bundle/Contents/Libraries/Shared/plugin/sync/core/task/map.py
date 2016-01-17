@@ -23,7 +23,7 @@ class SyncMap(object):
 
         p_key = int(p_key)
 
-        # Flatten `p_guid`
+        # Flatten `guid`
         if type(guid) is not tuple:
             guid = (guid.agent, guid.sid)
 
@@ -45,7 +45,7 @@ class SyncMap(object):
         return True
 
     def by_guid(self, guid):
-        # Flatten `p_guid`
+        # Flatten `guid`
         if type(guid) is not tuple:
             guid = (guid.agent, guid.sid)
 

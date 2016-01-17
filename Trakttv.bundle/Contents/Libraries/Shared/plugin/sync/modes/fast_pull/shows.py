@@ -71,16 +71,16 @@ class Shows(Mode):
 
         with elapsed.clock(Shows, 'run:shows'):
             # Process shows
-            for sh_id, p_guid, p_show in self.p_shows:
+            for sh_id, guid, p_show in self.p_shows:
                 # Increment one step
                 self.current.progress.group(Shows, 'shows').step()
 
-                # Ensure `p_guid` is available
-                if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(self.p_shows_unsupported, sh_id, p_guid, p_show)
+                # Ensure `guid` is available
+                if not guid or guid.agent not in GUID_AGENTS:
+                    mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
                     continue
 
-                key = (p_guid.agent, p_guid.sid)
+                key = (guid.agent, guid.sid)
 
                 log.debug('Processing show: %s', key)
 
@@ -139,16 +139,16 @@ class Shows(Mode):
 
         with elapsed.clock(Shows, 'run:episodes'):
             # Process episodes
-            for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+            for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
                 # Increment one step
                 self.current.progress.group(Shows, 'episodes').step()
 
-                # Ensure `p_guid` is available
-                if not p_guid or p_guid.agent not in GUID_AGENTS:
-                    mark_unsupported(self.p_shows_unsupported, ids['show'], p_guid, p_show)
+                # Ensure `guid` is available
+                if not guid or guid.agent not in GUID_AGENTS:
+                    mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
                     continue
 
-                key = (p_guid.agent, p_guid.sid)
+                key = (guid.agent, guid.sid)
 
                 log.debug('Processing episode: %s - S%02dE%02d', key, season_num, episode_num)
 

@@ -48,12 +48,12 @@ class Shows(Base):
         unsupported_shows = {}
 
         # Process shows
-        for sh_id, p_guid, p_show in p_shows:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_shows, sh_id, p_guid, p_show)
+        for sh_id, guid, p_show in p_shows:
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(unsupported_shows, sh_id, guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -79,12 +79,12 @@ class Shows(Base):
                 )
 
         # Process episodes
-        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_shows, ids['show'], p_guid, p_show)
+        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(unsupported_shows, ids['show'], guid, p_show)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

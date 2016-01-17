@@ -57,16 +57,16 @@ class Movies(Mode):
     @elapsed.clock
     def run(self):
         # Process movies
-        for mo_id, p_guid, p_item in self.p_movies:
+        for mo_id, guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies).step()
 
-            # Ensure `p_guid` is available
-            if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(self.p_unsupported, mo_id, p_guid, p_item)
+            # Ensure `guid` is available
+            if not guid or guid.agent not in GUID_AGENTS:
+                mark_unsupported(self.p_unsupported, mo_id, guid, p_item)
                 continue
 
-            key = (p_guid.agent, p_guid.sid)
+            key = (guid.agent, guid.sid)
 
             log.debug('Processing movie: %s', key)
 
