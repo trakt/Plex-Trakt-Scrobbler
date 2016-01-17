@@ -8,16 +8,18 @@ import pytest
 
 
 def construct_handler(handler_cls, media):
+    task = SyncTask(None, SyncMode.Full, handler_cls.data, media, None, None)
+
     main = Main()
-    main.current = SyncTask(None, SyncMode.Full, handler_cls.data, media, None, None)
+    main.current = task
 
     # Construct data handler
-    handler = handler_cls(main)
+    handler = handler_cls(task)
 
     # Construct media handler
     for cls in handler.children:
         if cls.media == media:
-            return cls(handler, main)
+            return cls(handler, task)
 
     raise ValueError("Unknown media type: %r", media)
 
