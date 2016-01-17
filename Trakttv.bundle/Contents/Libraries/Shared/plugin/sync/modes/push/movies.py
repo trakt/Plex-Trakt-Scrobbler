@@ -12,14 +12,40 @@ log = logging.getLogger(__name__)
 
 
 class Movies(Base):
-    @elapsed.clock
-    def run(self):
-        # Retrieve movie sections
-        p_sections, p_sections_map = self.sections('movie')
+    def __init__(self, task):
+        super(Movies, self).__init__(task)
 
+        # Sections
+        self.p_sections = None
+        self.p_sections_map = None
+
+        # Items
+        self.p_count = None
+        self.p_movies = None
+
+        self.p_pending = None
+        self.p_unsupported = None
+
+    @elapsed.clock
+    def construct(self):
+        # Retrieve movie sections
+        self.p_sections, self.p_sections_map = self.sections('movie')
+
+        # Determine number of movies that will be processed
+        self.p_count = self.plex.library.movies.count(
+            self.p_sections,
+            account=self.current.account.plex.key
+        )
+
+        # Increment progress steps total
+        self.current.progress.group(Movies, 'matched:movies').add(self.p_count)
+        self.current.progress.group(Movies, 'missing:movies')
+
+    @elapsed.clock
+    def start(self):
         # Fetch movies with account settings
-        p_items = self.plex.library.movies.mapped(
-            p_sections, [
+        self.p_movies = self.plex.library.movies.mapped(
+            self.p_sections, [
                 MetadataItem.added_at,
                 MetadataItem.title,
                 MetadataItem.year,
@@ -33,14 +59,27 @@ class Movies(Base):
             parse_guid=True
         )
 
-        # Task started
-        pending_movies = self.trakt.table.movies.copy()
-        unsupported_movies = {}
+        # Reset state
+        self.p_pending = self.trakt.table.movies.copy()
+        self.p_unsupported = {}
 
-        # Iterate over plex movies
-        for rating_key, p_guid, p_item in p_items:
+    @elapsed.clock
+    def run(self):
+        # Process movies
+        self.process_matched_movies()
+        self.process_missing_movies()
+
+    def process_matched_movies(self):
+        """Trigger actions for movies that have been matched in plex"""
+
+        # Iterate over movies
+        for rating_key, p_guid, p_item in self.p_movies:
+            # Increment one step
+            self.current.progress.group(Movies, 'matched:movies').step()
+
+            # Ensure `p_guid` is available
             if not p_guid or p_guid.agent not in GUID_AGENTS:
-                mark_unsupported(unsupported_movies, rating_key, p_guid, p_item)
+                mark_unsupported(self.p_unsupported, rating_key, p_guid, p_item)
                 continue
 
             key = (p_guid.agent, p_guid.sid)
@@ -63,17 +102,32 @@ class Movies(Base):
                 )
 
             # Remove movie from `pending` set
-            if pk and pk in pending_movies:
-                pending_movies.remove(pk)
+            if pk and pk in self.p_pending:
+                self.p_pending.remove(pk)
 
             # Task checkpoint
             self.checkpoint()
 
-        # Iterate over trakt movies (that aren't in plex)
-        for pk in list(pending_movies):
-            triggered = False
+        # Stop progress group
+        self.current.progress.group(Movies, 'matched:movies').stop()
+
+        # Report unsupported movies (unsupported guid)
+        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)
+
+    def process_missing_movies(self):
+        """Trigger actions for movies that are in trakt, but was unable to be found in plex"""
+
+        # Increment progress steps
+        self.current.progress.group(Movies, 'missing:movies').add(len(self.p_pending))
+
+        # Iterate over movies
+        for pk in list(self.p_pending):
+            # Increment one step
+            self.current.progress.group(Movies, 'missing:movies').step()
 
             # Iterate over data handlers
+            triggered = False
+
             for data in self.get_data(SyncMedia.Movies):
                 if data not in [SyncData.Collection]:
                     continue
@@ -106,8 +160,10 @@ class Movies(Base):
                 continue
 
             # Remove movie from `pending` set
-            pending_movies.remove(pk)
+            self.p_pending.remove(pk)
 
-        # Log details
-        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
-        self.log_pending('Unable to process %d movie(s)\n%s', pending_movies)
+        # Stop progress group
+        self.current.progress.group(Movies, 'missing:movies').stop()
+
+        # Report pending movies (no actions triggered)
+        self.log_pending('Unable to process %d movie(s)\n%s', self.p_pending)

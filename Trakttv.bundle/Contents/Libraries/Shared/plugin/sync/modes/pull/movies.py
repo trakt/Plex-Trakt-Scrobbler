@@ -27,7 +27,6 @@ class Movies(Base):
 
         # Calculate total number of movies
         pending = {}
-        total = 0
 
         for data in self.get_data(SyncMedia.Movies):
             if data not in pending:
@@ -35,12 +34,9 @@ class Movies(Base):
 
             for pk in self.trakt[(SyncMedia.Movies, data)]:
                 pending[data][pk] = False
-                total += 1
 
         # Task started
         unsupported_movies = {}
-
-        self.current.progress.start(total)
 
         for rating_key, p_guid, p_item in p_items:
             if not p_guid or p_guid.agent not in GUID_AGENTS:
@@ -80,6 +76,3 @@ class Movies(Base):
         # Log details
         log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
         log.debug('Pending: %r', pending)
-
-        # Task stopped
-        self.current.progress.stop()

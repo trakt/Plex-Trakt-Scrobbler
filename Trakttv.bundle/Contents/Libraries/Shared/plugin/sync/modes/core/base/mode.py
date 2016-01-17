@@ -48,26 +48,26 @@ class Mode(object):
     mode = None
     children = []
 
-    def __init__(self, main):
-        self.__main = main
+    def __init__(self, task):
+        self.__task = task
 
-        self.children = [c(self) for c in self.children]
+        self.children = [c(task) for c in self.children]
 
     @property
     def current(self):
-        return self.__main.current
+        return self.__task
 
     @property
     def configuration(self):
-        return self.__main.current.configuration
+        return self.__task.configuration
 
     @property
     def handlers(self):
-        return self.__main.handlers
+        return self.__task.handlers
 
     @property
     def modes(self):
-        return self.__main.modes
+        return self.__task.modes
 
     @property
     def plex(self):
@@ -83,8 +83,17 @@ class Mode(object):
 
         return self.current.state.trakt
 
+    def construct(self):
+        pass
+
+    def start(self):
+        pass
+
     def run(self):
         raise NotImplementedError
+
+    def stop(self):
+        pass
 
     def checkpoint(self):
         if self.current is None:
@@ -92,10 +101,17 @@ class Mode(object):
 
         self.current.checkpoint()
 
-    def execute_children(self):
+    def execute_children(self, name):
         for c in self.children:
-            log.info('Running child: %r', c)
-            c.run()
+            log.info('Executing %s() on child: %r', name, c)
+
+            func = getattr(c, name, None)
+
+            if not func:
+                log.warn('Unknown method: %r', name)
+                continue
+
+            func()
 
     @elapsed.clock
     def execute_handlers(self, media, data, *args, **kwargs):

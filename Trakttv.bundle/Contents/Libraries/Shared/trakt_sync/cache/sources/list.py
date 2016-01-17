@@ -22,15 +22,30 @@ class ListSource(Source):
         if enums.Media.Lists not in self.media:
             return
 
+        # Emit "started" event
+        self.events.emit('refresh.list.started', source='list', total=self.steps())
+        current_step = 0
+
         if enums.Data.Liked in self.data:
+            # Update `current` progress, emit "progress" event
+            self.events.emit('refresh.list.progress', source='list', current=current_step)
+            current_step += 1
+
             # Refresh liked lists, yield changes
             for change in self.refresh_lists(username, enums.Data.Liked, Trakt['users'].likes('lists')):
                 yield change
 
         if enums.Data.Personal in self.data:
+            # Update `current` progress, emit "progress" event
+            self.events.emit('refresh.list.progress', source='list', current=current_step)
+            current_step += 1
+
             # Refresh personal lists, yield changes
             for change in self.refresh_lists(username, enums.Data.Personal, Trakt['users/*/lists'].get(username)):
                 yield change
+
+        # Emit "finished" event
+        self.events.emit('refresh.list.finished', source='list', current=current_step)
 
     def refresh_lists(self, username, data, lists):
         key = (enums.Media.Lists, data)
@@ -96,6 +111,17 @@ class ListSource(Source):
             return
 
         yield self._collection_key(*key), changes
+
+    def steps(self):
+        result = 0
+
+        if enums.Data.Liked in self.data:
+            result += 1
+
+        if enums.Data.Personal in self.data:
+            result += 1
+
+        return result
 
     def diff(self, key, base, current):
         media, data, list_id = (None, None, None)
