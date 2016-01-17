@@ -149,9 +149,13 @@ class SyncProgress(SyncProgressBase):
         Environment.dict['sync.progress.group_speeds'] = self.group_speeds
 
     def _group_speed(self, group):
+        if not group.speed_min:
+            # No group speed calculated yet
+            return
+
         speed = self.group_speeds.get(group.tag)
 
-        if speed is None:
+        if not speed:
             # First sample
             return group.speed_min
 
