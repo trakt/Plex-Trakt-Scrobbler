@@ -140,6 +140,10 @@ class Shows(Base):
 
     @elapsed.clock
     def process_missing_shows(self):
+        if self.current.kwargs.get('section'):
+            # Collection cleaning disabled for individual syncs
+            return
+
         # Increment progress steps
         self.current.progress.group(Shows, 'missing:shows').add(len(self.p_shows_pending))
 
@@ -247,6 +251,10 @@ class Shows(Base):
 
     @elapsed.clock
     def process_missing_episodes(self):
+        if self.current.kwargs.get('section'):
+            # Collection cleaning disabled for individual syncs
+            return
+
         # Increment progress steps
         self.current.progress.group(Shows, 'missing:episodes').add(len(self.p_episodes_pending))
 

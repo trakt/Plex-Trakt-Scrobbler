@@ -109,6 +109,9 @@ class SyncProgress(SyncProgressBase):
         return sum(samples)
 
     def group(self, *tag):
+        if self.groups is None:
+            raise Exception("Progress tracking hasn't been started")
+
         # Resolve tag to string
         tag = self._resolve_tag(tag)
 
@@ -146,9 +149,13 @@ class SyncProgress(SyncProgressBase):
         Environment.dict['sync.progress.group_speeds'] = self.group_speeds
 
     def _group_speed(self, group):
+        if not group.speed_min:
+            # No group speed calculated yet
+            return
+
         speed = self.group_speeds.get(group.tag)
 
-        if speed is None:
+        if not speed:
             # First sample
             return group.speed_min
 

@@ -22,12 +22,33 @@ class Pull(Mode):
     ]
 
     @elapsed.clock
-    def run(self):
+    def construct(self):
+        # Start progress tracking
+        self.current.progress.start()
+
+        # Construct children
+        self.execute_children('construct')
+
+    @elapsed.clock
+    def start(self):
         # Fetch changes from trakt.tv
         self.trakt.refresh()
 
         # Build key table for lookups
         self.trakt.build_table()
 
+        # Start children
+        self.execute_children('start')
+
+    @elapsed.clock
+    def run(self):
         # Run children
         self.execute_children('run')
+
+    @elapsed.clock
+    def stop(self):
+        # Stop children
+        self.execute_children('stop')
+
+        # Stop progress tracking
+        self.current.progress.stop()

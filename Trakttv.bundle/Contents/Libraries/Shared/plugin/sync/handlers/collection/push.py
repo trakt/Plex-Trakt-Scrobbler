@@ -132,7 +132,7 @@ class Movies(Base):
 
     @bind('removed', [SyncMode.Full])
     def on_removed(self, guid, **kwargs):
-        if not self.configuration['sync.collection.clean']:
+        if not self.configuration['sync.collection.clean'] or self.current.kwargs.get('section'):
             # Collection cleaning hasn't been enabled
             return
 
@@ -160,7 +160,7 @@ class Episodes(Base):
 
     @bind('removed', [SyncMode.Full])
     def on_removed(self, guid, identifier, **kwargs):
-        if not self.configuration['sync.collection.clean']:
+        if not self.configuration['sync.collection.clean'] or self.current.kwargs.get('section'):
             # Collection cleaning hasn't been enabled
             return
 
