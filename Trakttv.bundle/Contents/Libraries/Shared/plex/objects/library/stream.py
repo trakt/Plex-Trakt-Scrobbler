@@ -11,6 +11,9 @@ class Stream(Descriptor):
     title = Property
     duration = Property(type=int)
 
+    language = Property
+    language_code = Property('languageCode')
+
     codec = Property
     codec_id = Property('codecID')
 

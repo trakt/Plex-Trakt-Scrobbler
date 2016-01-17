@@ -18,6 +18,9 @@ class Detail(Container):
     allow_channel_access = Property('allowChannelAccess', [int, bool])
     allow_sync = Property('allowSync', [int, bool])
 
+    background_processing = Property('backgroundProcessing', [int, bool])
+    companion_proxy = Property('companionProxy', [int, bool])
+
     certificate = Property(type=[int, bool])
     multiuser = Property(type=[int, bool])
     sync = Property(type=[int, bool])
@@ -53,6 +56,9 @@ class MyPlexDetail(Descriptor):
 
 class TranscoderDetail(Descriptor):
     audio = Property('transcoderAudio', [int, bool])
+    lyrics = Property('transcoderLyrics', [int, bool])
+    photo = Property('transcoderPhoto', [int, bool])
+    subtitles = Property('transcoderSubtitles', [int, bool])
     video = Property('transcoderVideo', [int, bool])
 
     video_bitrates = Property('transcoderVideoBitrates')
