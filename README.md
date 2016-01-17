@@ -1,5 +1,7 @@
 # trakt (for Plex)
 
+[![Join the chat at https://gitter.im/trakt/Plex-Trakt-Scrobbler](https://badges.gitter.im/trakt/Plex-Trakt-Scrobbler.svg)](https://gitter.im/trakt/Plex-Trakt-Scrobbler?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![GitHub issues](https://img.shields.io/github/issues/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) [![](https://img.shields.io/github/release/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/releases)
 
 **WARNING:** If you have multiple users on your server, please ensure you have filters set. The default configuration will scrobble all media playing on your server to your trakt.tv account.
