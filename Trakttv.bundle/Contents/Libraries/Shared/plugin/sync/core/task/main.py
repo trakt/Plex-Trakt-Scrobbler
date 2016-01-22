@@ -241,36 +241,47 @@ class SyncTask(object):
         )
 
     @classmethod
-    def get_enabled_data(cls, configuration, mode):
-        enabled = []
-
+    def get_enabled_data(cls, config, mode):
         # Determine accepted modes
-        modes = [SyncMode.Full, mode]
+        modes = [SyncMode.Full]
 
-        if mode == SyncMode.FastPull:
-            modes.append(SyncMode.Pull)
+        if mode == SyncMode.Full:
+            modes.extend([
+                SyncMode.FastPull,
+                SyncMode.Pull,
+                SyncMode.Push
+            ])
+        elif mode == SyncMode.FastPull:
+            modes.extend([
+                mode,
+                SyncMode.Pull
+            ])
+        else:
+            modes.append(mode)
 
         # Retrieve enabled data
-        if configuration['sync.watched.mode'] in modes:
+        enabled = []
+
+        if config['sync.watched.mode'] in modes:
             enabled.append(SyncData.Watched)
 
-        if configuration['sync.ratings.mode'] in modes:
+        if config['sync.ratings.mode'] in modes:
             enabled.append(SyncData.Ratings)
 
-        if configuration['sync.playback.mode'] in modes:
+        if config['sync.playback.mode'] in modes:
             enabled.append(SyncData.Playback)
 
-        if configuration['sync.collection.mode'] in modes:
+        if config['sync.collection.mode'] in modes:
             enabled.append(SyncData.Collection)
 
         # Lists
-        if configuration['sync.lists.watchlist.mode'] in modes:
+        if config['sync.lists.watchlist.mode'] in modes:
             enabled.append(SyncData.Watchlist)
 
-        if configuration['sync.lists.liked.mode'] in modes:
+        if config['sync.lists.liked.mode'] in modes:
             enabled.append(SyncData.Liked)
 
-        if configuration['sync.lists.personal.mode'] in modes:
+        if config['sync.lists.personal.mode'] in modes:
             enabled.append(SyncData.Personal)
 
         # Convert to enum value
