@@ -13,11 +13,6 @@ class PersonalLists(Lists):
 
     @elapsed.clock
     def run(self):
-        # Check if data is enabled
-        if not self.is_data_enabled(SyncData.Personal):
-            log.debug('Personal list syncing has not been enabled')
-            return
-
         # Retrieve sections
         p_sections, p_sections_map = self.sections()
 

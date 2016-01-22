@@ -13,11 +13,6 @@ class LikedLists(Lists):
 
     @elapsed.clock
     def run(self):
-        # Check if data is enabled
-        if not self.is_data_enabled(SyncData.Liked):
-            log.debug('Liked list syncing is not enabled')
-            return
-
         # Retrieve plex sections
         p_sections, p_sections_map = self.sections()
 
