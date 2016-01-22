@@ -1,10 +1,11 @@
-from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.modes.core.base import Mode
 
 import elapsed
 
 
 class Full(Mode):
+    data = SyncData.All
     mode = SyncMode.Full
 
     @elapsed.clock

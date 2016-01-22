@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class Watchlist(Lists):
+    data = [SyncData.Watchlist]
     mode = SyncMode.FastPull
 
     @elapsed.clock

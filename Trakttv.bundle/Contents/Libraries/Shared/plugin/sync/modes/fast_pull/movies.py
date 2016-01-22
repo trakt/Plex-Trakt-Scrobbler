@@ -11,6 +11,12 @@ log = logging.getLogger(__name__)
 
 
 class Movies(Mode):
+    data = [
+        SyncData.Collection,
+        SyncData.Playback,
+        SyncData.Ratings,
+        SyncData.Watched
+    ]
     mode = SyncMode.FastPull
 
     def __init__(self, task):

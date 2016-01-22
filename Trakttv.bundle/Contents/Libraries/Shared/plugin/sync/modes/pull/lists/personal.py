@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class PersonalLists(Lists):
+    data = [SyncData.Personal]
     mode = SyncMode.Pull
 
     @elapsed.clock

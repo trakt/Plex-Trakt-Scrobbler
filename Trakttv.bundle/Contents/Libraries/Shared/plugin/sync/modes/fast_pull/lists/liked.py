@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 
 class LikedLists(Lists):
+    data = [SyncData.Liked]
     mode = SyncMode.FastPull
 
     @elapsed.clock

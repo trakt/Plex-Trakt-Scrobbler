@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.modes.core.base import Mode
 from plugin.sync.modes.push.movies import Movies
 from plugin.sync.modes.push.shows import Shows
@@ -7,6 +7,7 @@ import elapsed
 
 
 class Push(Mode):
+    data = SyncData.All
     mode = SyncMode.Push
 
     children = [

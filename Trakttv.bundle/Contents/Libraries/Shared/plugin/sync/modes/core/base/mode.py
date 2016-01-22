@@ -45,7 +45,9 @@ DATA_PREFERENCE_MAP = {
 
 
 class Mode(object):
+    data = None
     mode = None
+
     children = []
 
     def __init__(self, task):
@@ -59,9 +61,7 @@ class Mode(object):
         # Determine if mode should be enabled
         self.enabled = len(self.enabled_data) > 0
 
-        if self.enabled:
-            log.debug('Data %r is enabled on: %r', self.enabled_data, self)
-        else:
+        if not self.enabled:
             log.debug('Mode %r disabled on: %r', self.mode, self)
 
     @property
@@ -170,31 +170,42 @@ class Mode(object):
             modes.append(self.mode)
 
         # Retrieve enabled data
-        enabled = []
+        result = []
 
         if config['sync.watched.mode'] in modes:
-            enabled.append(SyncData.Watched)
+            result.append(SyncData.Watched)
 
         if config['sync.ratings.mode'] in modes:
-            enabled.append(SyncData.Ratings)
+            result.append(SyncData.Ratings)
 
         if config['sync.playback.mode'] in modes:
-            enabled.append(SyncData.Playback)
+            result.append(SyncData.Playback)
 
         if config['sync.collection.mode'] in modes:
-            enabled.append(SyncData.Collection)
+            result.append(SyncData.Collection)
 
         # Lists
         if config['sync.lists.watchlist.mode'] in modes:
-            enabled.append(SyncData.Watchlist)
+            result.append(SyncData.Watchlist)
 
         if config['sync.lists.liked.mode'] in modes:
-            enabled.append(SyncData.Liked)
+            result.append(SyncData.Liked)
 
         if config['sync.lists.personal.mode'] in modes:
-            enabled.append(SyncData.Personal)
+            result.append(SyncData.Personal)
 
-        return enabled
+        # Filter `result` to data provided by this mode
+        if self.data is None:
+            log.warn('No "data" property defined on %r', self)
+            return result
+
+        if self.data == SyncData.All:
+            return result
+
+        return [
+            data for data in result
+            if data in self.data
+        ]
 
     def get_data(self, media):
         for data in TRAKT_DATA_MAP[media]:
