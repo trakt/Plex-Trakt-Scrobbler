@@ -86,6 +86,9 @@ class SyncTask(object):
         log.debug('Sync Data: %r', self.data)
         log.debug('Sync Media: %r', self.media)
 
+        if self.data is None:
+            raise ValueError('No collections enabled for sync')
+
         # Load children
         self.profiler.load()
         self.state.load()
