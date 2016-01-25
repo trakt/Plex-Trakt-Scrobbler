@@ -14,14 +14,15 @@
 
 ### Navigation
 
-| [Install][install]                             | [FAQ][faq]                                   | [Settings][settings]                       | [Support][support]                    | [Issues][issues]                           | [Credits][credits]                      |
-|:----------------------------------------------:|:--------------------------------------------:|:------------------------------------------:|:-------------------------------------:|:------------------------------------------:|:---------------------------------------:|
-| [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/file_download.png)][install] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/question_answer.png)][faq] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/settings.png)][settings] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/help.png)][support] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/bug_report.png)][issues] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/people.png)][credits] |
+| [Install][install] | [FAQ][faq] | [Settings][settings] | [Support][support] | [KB][knowledge-base] | [Issues][issues] | [Credits][credits] |
+|:------------------:|:----------:|:--------------------:|:------------------:|:-------------------:|:----------------:|:------------------:|
+| [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/file_download.png)][install] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/question_answer.png)][faq] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/settings.png)][settings] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/help.png)][support] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/bug_report.png)][knowledge-base] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/message.png)][issues] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/people.png)][credits] |
 
 [install]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Installation
 [faq]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Frequently-asked-questions
 [settings]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Configuration
 [support]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Support
+[knowledge-base]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/KB
 [issues]: https://github.com/trakt/Plex-Trakt-Scrobbler/issues
 [credits]: https://github.com/trakt/Plex-Trakt-Scrobbler/blob/master/Trakttv.bundle/CREDITS.md
 
