@@ -10,6 +10,10 @@ class MessageCode(object):
     # - Downgrade (0x1002)
     DowngradeUnclean = 0x100201
 
+    # Network (0x11)
+    # - Trakt (0x1101)
+    TraktTimeout = 0x110101
+
     # TODO check for conflicting codes
 
 
