@@ -124,6 +124,26 @@ class Libraries(object):
 
             Log.Info('[PATH] %s', StorageHelper.to_relative_path(path))
 
+    @staticmethod
+    def test():
+        Log.Info('Testing native library support...')
+
+        # Check "apsw" availability
+        try:
+            import apsw
+
+            Log.Info(' - apsw: %r, sqlite: %r', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
+        except Exception, ex:
+            Log.Error(' - Unable to import "apsw": %s', ex)
+
+        # Check "llist" availability
+        try:
+            import llist
+
+            Log.Info(' - llist: available')
+        except Exception, ex:
+            Log.Warn(' - Unable to import "llist": %s', ex)
+
     @classmethod
     def reset(cls):
         """Remove all the native library directives from `sys.path`"""
