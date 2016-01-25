@@ -1,5 +1,5 @@
 from plugin.sync.core.constants import GUID_AGENTS
-from plugin.sync.core.enums import SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
 
@@ -11,6 +11,13 @@ log = logging.getLogger(__name__)
 
 
 class Shows(Base):
+    data = [
+        SyncData.Collection,
+        SyncData.Playback,
+        SyncData.Ratings,
+        SyncData.Watched
+    ]
+
     @elapsed.clock
     def run(self):
         # Retrieve show sections

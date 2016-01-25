@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.modes.core.base import Mode
 from plugin.sync.modes.pull.movies import Movies
 from plugin.sync.modes.pull.shows import Shows
@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class Pull(Mode):
+    data = SyncData.All
     mode = SyncMode.Pull
 
     children = [

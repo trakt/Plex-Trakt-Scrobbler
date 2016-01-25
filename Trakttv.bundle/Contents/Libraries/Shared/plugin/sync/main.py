@@ -69,7 +69,7 @@ class Main(object):
             task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
         except Exception, ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
-            raise QueueError("Error", "Unable to construct task")
+            raise QueueError('Error', 'Unable to construct task: %s' % ex)
 
         with self._queue_lock:
             # Ensure we only have one task queued per account
