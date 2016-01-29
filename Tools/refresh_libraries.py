@@ -41,7 +41,7 @@ DELETE_EXTENSIONS = [
 ]
 
 
-def install():
+def run_install():
     call([
         "pip", "install",
         "--no-compile",
@@ -52,7 +52,7 @@ def install():
     ])
 
 
-def compact():
+def run_compact():
     # Delete directories
     for path in DELETE_DIRECTORIES:
         try:
@@ -86,9 +86,28 @@ def compact():
                     print "Unable to delete file: %r - %s" % (path, ex)
 
 
+def run_extras():
+    # Create "ndg/__init__.py" file
+    touch(os.path.join('ndg', '__init__.py'))
+
+
+def write(path, content):
+    path = os.path.join(BASE_PATH, path)
+
+    with open(path, 'wb') as fp:
+        fp.write(content)
+
+
+def touch(path):
+    return write(path, '')
+
+
 if __name__ == '__main__':
     print "Installing libraries..."
-    install()
+    run_install()
 
     print "Compacting libraries..."
-    compact()
+    run_compact()
+
+    print "Running extra tasks on libraries..."
+    run_extras()
