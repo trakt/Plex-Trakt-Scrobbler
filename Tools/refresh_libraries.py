@@ -8,6 +8,9 @@ DELETE_DIRECTORIES = [
     'futures',
 
     os.path.join('croniter', 'tests'),
+    os.path.join('enum', 'doc'),
+    os.path.join('ndg', 'httpsclient', 'test'),
+    os.path.join('OpenSSL', 'test'),
     os.path.join('shove', 'tests'),
     os.path.join('tzlocal', 'test_data'),
     os.path.join('websocket', 'tests'),
@@ -24,8 +27,11 @@ DELETE_DIRECTORIES = [
 ]
 
 DELETE_FILES = [
+    os.path.join('enum', 'README'),
+    os.path.join('enum', 'test_enum.py'),
     os.path.join('tzlocal', 'tests.py'),
 
+    'ndg_httpsclient-0.4.0-py2.7-nspkg.pth',
     'pwiz.py',
     'setup.py'
 ]
