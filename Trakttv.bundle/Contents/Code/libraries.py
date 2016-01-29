@@ -132,7 +132,7 @@ class Libraries(object):
         try:
             import apsw
 
-            Log.Info(' - apsw: %r, sqlite: %r', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
+            Log.Info(' - apsw: available (v%s) [sqlite: %s]', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
         except Exception, ex:
             Log.Error(' - Unable to import "apsw": %s', ex)
 
@@ -143,6 +143,51 @@ class Libraries(object):
             Log.Info(' - llist: available')
         except Exception, ex:
             Log.Warn(' - Unable to import "llist": %s', ex)
+
+        # Check "lxml" availability
+        try:
+            import lxml
+
+            Log.Info(' - lxml: available')
+        except Exception, ex:
+            Log.Warn(' - Unable to import "lxml": %s', ex)
+
+        # Check "cryptography" availability
+        cryptography_available = False
+
+        try:
+            import cryptography
+            from cryptography.hazmat.bindings.openssl.binding import Binding
+
+            cryptography_version = getattr(cryptography, '__version__', None)
+            openssl_version = Binding.lib.SSLeay()
+
+            Log.Info(' - cryptography: available (v%s) [openssl: %s]', cryptography_version, openssl_version)
+            cryptography_available = True
+        except Exception, ex:
+            Log.Warn(' - Unable to import "cryptography": %s', ex)
+
+        # Check "OpenSSL" availability
+        openssl_available = False
+
+        try:
+            import OpenSSL
+
+            Log.Info(' - pyopenssl: available (v%s)', getattr(OpenSSL, '__version__', None))
+            openssl_available = True
+        except Exception, ex:
+            Log.Warn(' - Unable to import "pyopenssl": %s', ex)
+
+        # Inject pyopenssl into requests/urllib3 (if supported)
+        if cryptography_available and openssl_available:
+            try:
+                from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
+
+                inject_into_urllib3()
+
+                Log.Info(' - requests + pyopenssl: available')
+            except Exception, ex:
+                Log.Warn(' - Unable to inject "pyopenssl": %s', ex)
 
     @classmethod
     def reset(cls):
