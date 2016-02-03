@@ -1,7 +1,8 @@
 build:
     dependencies:
         before:
-            - pip install -r Trakttv.bundle/Contents/Tests/requirements.txt
+            - pip install -t _packages/ https://github.com/FragLegs/pip/archive/patch-for-issue-2953.zip
+            - PYTHONPATH=_packages/ python _packages/pip/__main__.py install -r Trakttv.bundle/Contents/Tests/requirements.txt
     environment:
         python: 2.7.7
     tests:
