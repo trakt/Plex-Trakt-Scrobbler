@@ -1,0 +1,12 @@
+================================== BUILD ===================================
+ID: 56
+
+Revision: 1be8f228f8b337f33f1a88ee55f61915133dd9b4
+Tag: 1be8f22
+
+================================== HEADER ==================================
+
+
+=============================== DEPENDENCIES ===============================
+/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1197.1.1)
+/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 2577.0.0)
