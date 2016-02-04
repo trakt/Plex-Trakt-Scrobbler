@@ -13,7 +13,9 @@ import platform
 
 class ErrorReporter(SentryHandler):
     def _emit(self, record, **kwargs):
-        data = {}
+        data = {
+            'user': {'id': self.client.name}
+        }
 
         extra = getattr(record, 'data', None)
         if not isinstance(extra, dict):
