@@ -1,25 +1,15 @@
-from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH, PMS_PATH
+from plugin.core.helpers.error import ErrorHasher
 from plugin.managers.core.base import Manager, Create
 from plugin.managers.message import MessageManager
 from plugin.models.exception import Exception
 
 from datetime import datetime
-import hashlib
 import logging
 import os
 import re
 import sys
-import traceback
 
-def get_base_path():
-    file_path = __file__.lower()
-
-    if 'plug-ins' not in file_path:
-        return None
-
-    return __file__[:file_path.index('plug-ins')]
-
-BASE_PATH = get_base_path()
 VERSION_BASE = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 VERSION_BRANCH = PLUGIN_VERSION_BRANCH
 
@@ -50,7 +40,7 @@ class CreateException(Create):
         )
 
         # Calculate exception hash
-        exception.hash = self.manager.hash(exception)
+        exception.hash = ErrorHasher.hash(exception)
 
         # Create/Lookup message for exception
         exception.error = MessageManager.get.from_exception(exception)
@@ -82,7 +72,7 @@ class CreateException(Create):
         )
 
         # Calculate exception hash
-        exception.hash = self.manager.hash(exception)
+        exception.hash = ErrorHasher.hash(exception)
 
         # Create/Lookup message for exception
         exception.error = MessageManager.get.from_exception(exception)
@@ -111,7 +101,7 @@ class CreateException(Create):
                 continue
 
             # Convert path to relative
-            path = os.path.relpath(line[path_start:path_end], BASE_PATH)
+            path = os.path.relpath(line[path_start:path_end], PMS_PATH)
 
             # Update line
             lines[x] = line[:path_start] + path + line[path_end:]
@@ -123,43 +113,3 @@ class ExceptionManager(Manager):
     create = CreateException
 
     model = Exception
-
-    @staticmethod
-    def exc_type(type):
-        return type.__name__
-
-    @staticmethod
-    def exc_message(exception):
-        return getattr(exception, 'message', None)
-
-    @staticmethod
-    def exc_traceback(tb):
-        """Format traceback with relative paths"""
-        tb_list = traceback.extract_tb(tb)
-
-        return ''.join(traceback.format_list([
-            (os.path.relpath(filename, BASE_PATH), line_num, name, line)
-            for (filename, line_num, name, line) in tb_list
-        ]))
-
-    @classmethod
-    def hash(cls, exception=None, exc_info=None):
-        if exception is not None:
-            # Retrieve hash parameters from `Exception` object
-            type = exception.type
-            message = exception.message
-            tb = exception.traceback
-        elif exc_info is not None:
-            # Build hash parameters from `exc_info`
-            type = cls.exc_type(exc_info[0])
-            message = cls.exc_message(exc_info[1])
-            tb = cls.exc_traceback(exc_info[2])
-        else:
-            raise ValueError
-
-        m = hashlib.md5()
-        m.update(str(type))
-        m.update(str(message))
-        m.update(str(tb))
-
-        return m.hexdigest()

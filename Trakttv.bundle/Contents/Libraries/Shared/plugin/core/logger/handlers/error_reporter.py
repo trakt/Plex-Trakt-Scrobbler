@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.helpers.error import ErrorHasher
 from plugin.core.logger.filters import RequestsFilter
-from plugin.managers import ExceptionManager
 
 from raven import Client
 from raven.handlers.logging import SentryHandler, RESERVED
@@ -71,7 +71,7 @@ class ErrorReporter(SentryHandler):
             handler_kwargs = {'exc_info': record.exc_info}
 
             # Calculate exception hash
-            exception_hash = ExceptionManager.hash(exc_info=record.exc_info)
+            exception_hash = ErrorHasher.hash(exc_info=record.exc_info)
 
         # HACK: discover a culprit when we normally couldn't
         elif not (data.get('stacktrace') or data.get('culprit')) and (record.name or record.funcName):

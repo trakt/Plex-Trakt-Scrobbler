@@ -1,8 +1,15 @@
-from plugin.core.environment import Environment
-
 import collections
 import re
 import unicodedata
+
+
+def pms_path():
+    file_path = __file__.lower()
+
+    if 'plug-ins' not in file_path:
+        return None
+
+    return __file__[:file_path.index('plug-ins')]
 
 
 def dict_path(d, path):

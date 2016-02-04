@@ -18,6 +18,13 @@ try:
     Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
 except Exception, ex:
     Log.Warn('Unable to update locale: %s', ex)
+
+# ------------------------------------------------
+# Logger
+# ------------------------------------------------
+from plugin.core.logger import LoggerManager
+
+LoggerManager.setup(storage=False)
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
@@ -72,6 +79,10 @@ def Start():
     if not Singleton.acquire():
         log.warn('Unable to acquire plugin instance')
 
+    # Complete logger initialization
+    LoggerManager.setup(storage=True)
+
+    # Startup plugin
     m = Main()
     m.start()
 

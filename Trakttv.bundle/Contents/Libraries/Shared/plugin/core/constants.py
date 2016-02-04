@@ -1,4 +1,5 @@
 from plugin.core.enums import ActivityMode
+from plugin.core.helpers.variable import pms_path
 
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
@@ -11,6 +12,8 @@ PLUGIN_VERSION = ''.join([
     '.'.join([str(x) for x in PLUGIN_VERSION_BASE]),
     '-' + PLUGIN_VERSION_BRANCH if PLUGIN_VERSION_BRANCH else ''
 ])
+
+PMS_PATH = pms_path()
 
 ACTIVITY_MODE = {
     ActivityMode.Automatic: None,
