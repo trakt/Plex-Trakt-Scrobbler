@@ -21,10 +21,10 @@ except Exception, ex:
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
-from libraries import Libraries
+from plugin.core.libraries import LibrariesManager
 
-Libraries.setup(cache=True)
-Libraries.test()
+LibrariesManager.setup(cache=True)
+LibrariesManager.test()
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
