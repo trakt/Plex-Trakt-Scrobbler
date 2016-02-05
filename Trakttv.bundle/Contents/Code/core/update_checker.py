@@ -13,7 +13,7 @@ class UpdateChecker(object):
     # interval = 24 hours + random offset between 0 - 60 minutes
     interval = (24 * 60 * 60) + (random.randint(0, 60) * 60)
 
-    server = 'http://pts.skipthe.net'
+    server = 'https://pts.skipthe.net'
 
     def __init__(self):
         self.timer = None
