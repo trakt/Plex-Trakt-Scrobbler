@@ -1,5 +1,8 @@
 from plugin.core.environment import Environment
+from plugin.core.helpers.variable import merge
 from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelper
+from plugin.core.libraries.tests import LIBRARY_TESTS
+from plugin.core.logger.handlers.error_reporter import RAVEN
 
 import logging
 import os
@@ -120,66 +123,51 @@ class LibrariesManager(object):
     def test():
         log.info('Testing native library support...')
 
-        # Check "apsw" availability
-        try:
-            import apsw
+        metadata = {}
 
-            log.info(' - apsw: available (v%s) [sqlite: %s]', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
-        except Exception, ex:
-            log.error(' - Unable to import "apsw": %s', ex)
+        for test in LIBRARY_TESTS:
+            # Run tests
+            result = test.run()
 
-        # Check "llist" availability
-        try:
-            import llist
+            if not result.get('success'):
+                # Format error message
+                message = '%s: unavailable - %s' % (test.name, result.get('message'))
 
-            log.info(' - llist: available')
-        except Exception, ex:
-            log.warn(' - Unable to import "llist": %s', ex)
+                # Write message to logfile
+                log.error(message, exc_info=result.get('exc_info'))
 
-        # Check "lxml" availability
-        try:
-            import lxml
+                if not test.optional:
+                    return
 
-            log.info(' - lxml: available')
-        except Exception, ex:
-            log.warn(' - Unable to import "lxml": %s', ex)
+                continue
 
-        # Check "cryptography" availability
-        cryptography_available = False
+            # Test successful
+            t_metadata = result.get('metadata') or {}
+            t_versions = t_metadata.get('versions')
 
-        try:
-            import cryptography
-            from cryptography.hazmat.bindings.openssl.binding import Binding
+            if t_versions:
+                if len(t_versions) > 1:
+                    log.info('%s: available (%s)', test.name, ', '.join([
+                        '%s: %s' % (key, value)
+                        for key, value in t_versions.items()
+                    ]))
+                else:
+                    key = t_versions.keys()[0]
 
-            cryptography_version = getattr(cryptography, '__version__', None)
-            openssl_version = Binding.lib.SSLeay()
+                    log.info('%s: available (%s)', test.name, t_versions[key])
+            else:
+                log.info('%s: available', test.name)
 
-            log.info(' - cryptography: available (v%s) [openssl: %s]', cryptography_version, openssl_version)
-            cryptography_available = True
-        except Exception, ex:
-            log.warn(' - Unable to import "cryptography": %s', ex)
+            # Merge result into `metadata`
+            merge(metadata, t_metadata, recursive=True)
 
-        # Check "OpenSSL" availability
-        openssl_available = False
+        # Include versions in error reports
+        versions = metadata.get('versions') or {}
 
-        try:
-            import OpenSSL
-
-            log.info(' - pyopenssl: available (v%s)', getattr(OpenSSL, '__version__', None))
-            openssl_available = True
-        except Exception, ex:
-            log.warn(' - Unable to import "pyopenssl": %s', ex)
-
-        # Inject pyopenssl into requests/urllib3 (if supported)
-        if cryptography_available and openssl_available:
-            try:
-                from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
-
-                inject_into_urllib3()
-
-                log.info(' - requests + pyopenssl: available')
-            except Exception, ex:
-                log.warn(' - Unable to inject "pyopenssl": %s', ex)
+        RAVEN.tags.update(dict([
+            ('%s.version' % key, value)
+            for key, value in versions.items()
+        ]))
 
     @classmethod
     def reset(cls):
