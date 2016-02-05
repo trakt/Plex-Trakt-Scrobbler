@@ -1,7 +1,8 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.environment import Environment
+from plugin.core.helpers.variable import md5
 from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter, RequestsFilter
-from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
+from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER, RAVEN
 
 from logging.handlers import RotatingFileHandler
 import logging
@@ -58,8 +59,15 @@ class LoggerManager(object):
 
         return None
 
+    @classmethod
+    def setup(cls, storage=True):
+        cls.setup_logging(storage)
+        cls.setup_raven()
+
+        log.debug('Initialized logging (storage: %r)', storage)
+
     @staticmethod
-    def setup(storage=True):
+    def setup_logging(storage=True):
         # Setup root logger
         rootLogger = logging.getLogger()
 
@@ -83,7 +91,14 @@ class LoggerManager(object):
         # Set level
         rootLogger.setLevel(logging.DEBUG)
 
-        log.debug('Initialized logging (storage: %r)', storage)
+    @staticmethod
+    def setup_raven():
+        # Set client name to a hash of `machine_identifier`
+        RAVEN.name = md5(Environment.platform.machine_identifier)
+
+        RAVEN.tags.update({
+            'server.version': Environment.platform.server_version
+        })
 
     @classmethod
     def refresh(cls):

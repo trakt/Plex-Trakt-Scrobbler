@@ -1,4 +1,5 @@
 import collections
+import hashlib
 import re
 import unicodedata
 
@@ -61,6 +62,14 @@ def merge(a, b, recursive=False):
             a[k] = b[k]
 
     return a
+
+
+def md5(value):
+    # Generate MD5 hash of `value`
+    m = hashlib.md5()
+    m.update(value)
+
+    return m.hexdigest()
 
 
 def normalize(text):
