@@ -12,6 +12,11 @@ log = logging.getLogger(__name__)
 class CacheManager(object):
     @classmethod
     def sync(cls):
+        """Synchronize native libraries cache, adding/updating/removing items to match bundled libraries.
+
+        :rtype: str
+        """
+
         source, destination = cls.get_paths()
 
         # Compare directories, discover tasks
@@ -26,20 +31,30 @@ class CacheManager(object):
 
     @classmethod
     def discover(cls, changes, base_path='', tasks=None):
+        """"Discover actions required to update the cache.
+
+        :param changes: Changes between bundle + cache directories
+        :type changes: filecmp.dircmp
+
+        :param base_path: Current directory of changes
+        :type base_path: str
+
+        :param tasks: Current tasks
+        :type tasks: list or None
+
+        :rtype: list
+        """
         if tasks is None:
             tasks = []
 
-        # Add files to cache
-        for name in changes.left_only:
-            tasks.append(('add', os.path.join(base_path, name)))
+        def process(action, names):
+            for name in names:
+                tasks.append((action, os.path.join(base_path, name)))
 
-        # Delete files from cache
-        for name in changes.right_only:
-            tasks.append(('delete', os.path.join(base_path, name)))
-
-        # Update files in cache
-        for name in changes.diff_files:
-            tasks.append(('update', os.path.join(base_path, name)))
+        # Create tasks from `changes`
+        process('add', changes.left_only)
+        process('delete', changes.right_only)
+        process('update', changes.diff_files)
 
         # Process sub directories
         for name, child in changes.subdirs.items():
@@ -50,6 +65,19 @@ class CacheManager(object):
 
     @classmethod
     def execute(cls, source, destination, tasks):
+        """Execute tasks on directories
+
+        :param source: Native libraries source directory
+        :type source: str
+
+        :param destination: Native libraries cache directory
+        :type destination: str
+
+        :param tasks: Tasks to execute
+        :type tasks: list
+
+        :rtype: bool
+        """
         success = True
 
         for action, path in tasks:
@@ -68,6 +96,10 @@ class CacheManager(object):
 
     @staticmethod
     def get_paths():
+        """Retrieve system-specific native libraries source + destination path
+
+        :rtype: (str, str)
+        """
         # Retrieve system details
         system = SystemHelper.name()
         architecture = SystemHelper.architecture()

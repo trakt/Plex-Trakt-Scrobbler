@@ -16,7 +16,11 @@ log = logging.getLogger(__name__)
 class LibrariesManager(object):
     @classmethod
     def setup(cls, cache=False):
-        """Setup native library directories"""
+        """Setup native library directories
+
+        :param cache: Enable native library caching
+        :type cache: bool
+        """
 
         # Retrieve libraries path
         libraries_path = cls.get_path(cache)
@@ -57,6 +61,7 @@ class LibrariesManager(object):
 
     @staticmethod
     def test():
+        """Test native libraries to ensure they can be correctly loaded"""
         log.info('Testing native library support...')
 
         metadata = {}
@@ -104,7 +109,11 @@ class LibrariesManager(object):
 
     @classmethod
     def get_path(cls, cache=False):
-        """Retrieve the native libraries base directory (and caching the libraries if enabled)"""
+        """Retrieve the native libraries base directory (and cache the libraries if enabled)
+
+        :param cache: Enable native library caching
+        :type cache: bool
+        """
 
         if not cache:
             return Environment.path.libraries

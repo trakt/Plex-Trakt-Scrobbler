@@ -14,7 +14,10 @@ class StorageHelper(object):
 
     @classmethod
     def create_directories(cls, path, *args, **kwargs):
-        """Create directory at `path` include any parent directories"""
+        """Create directory at `path` include any parent directories
+
+        :type path: str
+        """
 
         try:
             os.makedirs(path, *args, **kwargs)
@@ -32,7 +35,11 @@ class StorageHelper(object):
 
     @classmethod
     def copy(cls, source, destination):
-        """Copy the file at `source` to `destination`"""
+        """Copy the file at `source` to `destination`
+
+        :type source: str
+        :type destination: str
+        """
 
         if os.path.isdir(source):
             return cls.copy_tree(source, destination)
@@ -49,7 +56,11 @@ class StorageHelper(object):
 
     @classmethod
     def copy_tree(cls, source, destination):
-        """Copy the directory at `source` to `destination`"""
+        """Copy the directory at `source` to `destination`
+
+        :type source: str
+        :type destination: str
+        """
 
         try:
             shutil.copytree(source, destination)
@@ -63,7 +74,10 @@ class StorageHelper(object):
 
     @classmethod
     def delete(cls, path):
-        """Delete the file (at `path`)"""
+        """Delete the file (at `path`)
+
+        :type path: str
+        """
 
         try:
             os.remove(path)
@@ -77,7 +91,10 @@ class StorageHelper(object):
 
     @classmethod
     def delete_tree(cls, path):
-        """Delete the directory (at `path`)"""
+        """Delete the directory (at `path`)
+
+        :type path: str
+        """
 
         try:
             shutil.rmtree(path)
@@ -91,7 +108,10 @@ class StorageHelper(object):
 
     @classmethod
     def to_relative_path(cls, path):
-        """Convert `path` to be relative to `StorageHelper.base_names`"""
+        """Convert `path` to be relative to `StorageHelper.base_names`
+
+        :type path: str
+        """
 
         path_lower = path.lower()
 
@@ -115,7 +135,10 @@ class StorageHelper(object):
 
     @classmethod
     def is_relative_path(cls, path):
-        """Check if `path` is relative to `StorageHelper.base_names`"""
+        """Check if `path` is relative to `StorageHelper.base_names`
+
+        :type path: str
+        """
 
         path_lower = path.lower()
 
