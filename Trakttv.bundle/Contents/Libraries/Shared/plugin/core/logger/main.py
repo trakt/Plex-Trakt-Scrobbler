@@ -154,5 +154,7 @@ class LoggerManager(object):
 
 # Get the logging file handler
 LOG_HANDLER = LoggerManager.get_handler()
-LOG_HANDLER.addFilter(AuthorizationFilter())
-LOG_HANDLER.addFilter(RequestsFilter())
+
+if LOG_HANDLER:
+    LOG_HANDLER.addFilter(AuthorizationFilter())
+    LOG_HANDLER.addFilter(RequestsFilter())
