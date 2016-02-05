@@ -1,5 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import merge
+from plugin.core.libraries.cache import CacheManager
 from plugin.core.libraries.constants import CONTENTS_PATH, NATIVE_DIRECTORIES, UNICODE_MAP
 from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelper
 from plugin.core.libraries.tests import LIBRARY_TESTS
@@ -14,63 +15,15 @@ log = logging.getLogger(__name__)
 
 class LibrariesManager(object):
     @classmethod
-    def cache(cls):
-        """Cache native libraries into the plugin data directory"""
-
-        # Retrieve library platforms
-        libraries_path = os.path.join(CONTENTS_PATH, 'Libraries')
-        platforms = os.listdir(libraries_path)
-
-        if 'Shared' in platforms:
-            platforms.remove('Shared')
-
-        # Create destination directory
-        destination = os.path.join(Environment.path.plugin_data, 'Libraries')
-
-        # Ensure destination exists
-        StorageHelper.create_directories(destination)
-
-        # Delete existing libraries
-        for name in os.listdir(destination):
-            path = os.path.join(destination, name)
-
-            StorageHelper.delete_tree(path)
-
-        # Copy libraries to directory
-        for name in platforms:
-            p_source = os.path.join(libraries_path, name)
-            p_destination = os.path.join(destination, name)
-
-            if not StorageHelper.copy_tree(p_source, p_destination):
-                return None
-
-        log.debug('Cached native libraries to %r', StorageHelper.to_relative_path(destination))
-        return destination
-
-    @classmethod
-    def get_libraries_path(cls, cache=False):
-        """Retrieve the native libraries base directory (and caching the libraries if enabled)"""
-
-        if not cache:
-            return Environment.path.libraries
-
-        # Cache native libraries
-        libraries_path = cls.cache()
-
-        if libraries_path:
-            # Reset native library directories in `sys.path`
-            cls.reset()
-
-            return libraries_path
-
-        return Environment.path.libraries
-
-    @classmethod
     def setup(cls, cache=False):
-        """Setup native library directories"""
+        """Setup native library directories
+
+        :param cache: Enable native library caching
+        :type cache: bool
+        """
 
         # Retrieve libraries path
-        libraries_path = cls.get_libraries_path(cache)
+        libraries_path = cls.get_path(cache)
 
         log.info('Using native libraries at %r', StorageHelper.to_relative_path(libraries_path))
 
@@ -108,6 +61,7 @@ class LibrariesManager(object):
 
     @staticmethod
     def test():
+        """Test native libraries to ensure they can be correctly loaded"""
         log.info('Testing native library support...')
 
         metadata = {}
@@ -152,6 +106,28 @@ class LibrariesManager(object):
             ('%s.version' % key, value)
             for key, value in versions.items()
         ]))
+
+    @classmethod
+    def get_path(cls, cache=False):
+        """Retrieve the native libraries base directory (and cache the libraries if enabled)
+
+        :param cache: Enable native library caching
+        :type cache: bool
+        """
+
+        if not cache:
+            return Environment.path.libraries
+
+        # Cache native libraries
+        libraries_path = CacheManager.sync()
+
+        if libraries_path:
+            # Reset native library directories in `sys.path`
+            cls.reset()
+
+            return libraries_path
+
+        return Environment.path.libraries
 
     @classmethod
     def reset(cls):

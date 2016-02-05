@@ -14,7 +14,10 @@ class StorageHelper(object):
 
     @classmethod
     def create_directories(cls, path, *args, **kwargs):
-        """Create directory at `path` include any parent directories"""
+        """Create directory at `path` include any parent directories
+
+        :type path: str
+        """
 
         try:
             os.makedirs(path, *args, **kwargs)
@@ -31,8 +34,33 @@ class StorageHelper(object):
         return False
 
     @classmethod
+    def copy(cls, source, destination):
+        """Copy the file at `source` to `destination`
+
+        :type source: str
+        :type destination: str
+        """
+
+        if os.path.isdir(source):
+            return cls.copy_tree(source, destination)
+
+        try:
+            shutil.copy2(source, destination)
+
+            log.debug('Copied %r to %r', cls.to_relative_path(source), cls.to_relative_path(destination))
+            return True
+        except Exception, ex:
+            log.warn('Unable to copy %r to %r - %s', cls.to_relative_path(source), cls.to_relative_path(destination), ex)
+
+        return False
+
+    @classmethod
     def copy_tree(cls, source, destination):
-        """Copy the directory at `source` to `destination`"""
+        """Copy the directory at `source` to `destination`
+
+        :type source: str
+        :type destination: str
+        """
 
         try:
             shutil.copytree(source, destination)
@@ -45,8 +73,28 @@ class StorageHelper(object):
         return False
 
     @classmethod
+    def delete(cls, path):
+        """Delete the file (at `path`)
+
+        :type path: str
+        """
+
+        try:
+            os.remove(path)
+
+            log.debug('Deleted %r', cls.to_relative_path(path))
+            return True
+        except Exception, ex:
+            log.warn('Unable to delete file: %r - %s', cls.to_relative_path(path), ex)
+
+        return False
+
+    @classmethod
     def delete_tree(cls, path):
-        """Delete the directory (at `path`"""
+        """Delete the directory (at `path`)
+
+        :type path: str
+        """
 
         try:
             shutil.rmtree(path)
@@ -60,7 +108,10 @@ class StorageHelper(object):
 
     @classmethod
     def to_relative_path(cls, path):
-        """Convert `path` to be relative to `StorageHelper.base_names`"""
+        """Convert `path` to be relative to `StorageHelper.base_names`
+
+        :type path: str
+        """
 
         path_lower = path.lower()
 
@@ -84,7 +135,10 @@ class StorageHelper(object):
 
     @classmethod
     def is_relative_path(cls, path):
-        """Check if `path` is relative to `StorageHelper.base_names`"""
+        """Check if `path` is relative to `StorageHelper.base_names`
+
+        :type path: str
+        """
 
         path_lower = path.lower()
 
