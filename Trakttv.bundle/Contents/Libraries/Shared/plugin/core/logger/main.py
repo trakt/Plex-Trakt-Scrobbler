@@ -2,7 +2,6 @@ from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import md5
 from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter, RequestsFilter
-from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER, RAVEN
 
 from logging.handlers import RotatingFileHandler
 import logging
@@ -60,14 +59,16 @@ class LoggerManager(object):
         return None
 
     @classmethod
-    def setup(cls, storage=True):
-        cls.setup_logging(storage)
-        cls.setup_raven()
+    def setup(cls, report=True, storage=True):
+        cls.setup_logging(report, storage)
 
-        log.debug('Initialized logging (storage: %r)', storage)
+        if report:
+            cls.setup_raven()
+
+        log.debug('Initialized logging (report: %r, storage: %r)', report, storage)
 
     @staticmethod
-    def setup_logging(storage=True):
+    def setup_logging(report=True, storage=True):
         # Setup root logger
         rootLogger = logging.getLogger()
 
@@ -76,23 +77,30 @@ class LoggerManager(object):
             FrameworkFilter()
         ]
 
+        # Set level
+        rootLogger.setLevel(logging.DEBUG)
+
         # Set handlers
         rootLogger.handlers = [
-            LOG_HANDLER,
-            ERROR_REPORTER_HANDLER
+            LOG_HANDLER
         ]
 
+        # Setup error reporting (if enabled)
+        if report:
+            from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
+
+            rootLogger.handlers.append(ERROR_REPORTER_HANDLER)
+
+        # Setup local error storage (if enabled)
         if storage:
-            # Only import the error storage handler if enabled (so `apsw` isn't required)
             from plugin.core.logger.handlers.error_storage import ERROR_STORAGE_HANDLER
 
             rootLogger.handlers.append(ERROR_STORAGE_HANDLER)
 
-        # Set level
-        rootLogger.setLevel(logging.DEBUG)
-
     @staticmethod
     def setup_raven():
+        from plugin.core.logger.handlers.error_reporter import RAVEN
+
         # Set client name to a hash of `machine_identifier`
         RAVEN.name = md5(Environment.platform.machine_identifier)
 
