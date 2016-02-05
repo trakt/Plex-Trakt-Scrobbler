@@ -10,10 +10,67 @@ import datetime
 import logging
 import platform
 
+log = logging.getLogger(__name__)
 
-class ErrorReporter(SentryHandler):
+
+VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
+
+PARAMS = {
+    # Message processors + filters
+    'processors': [
+        'raven.processors.RemoveStackLocalsProcessor',
+        'plugin.raven.processors.RelativePathProcessor'
+    ],
+
+    # Plugin + System details
+    'release': VERSION,
+    'tags': {
+        # Plugin
+        'plugin.version': VERSION,
+        'plugin.branch': PLUGIN_VERSION_BRANCH,
+
+        # System
+        'os.system': platform.system(),
+        'os.release': platform.release(),
+        'os.version': platform.version()
+    }
+}
+
+
+class ErrorReporter(Client):
+    server = 'sentry.skipthe.net'
+    key = '6bd64b4a32ac4ce280e809db6845210d:c7051e89810f4f4f9e543a0f142f533b'
+    project = 1
+
+    def __init__(self, dsn=None, raise_send_errors=False, **options):
+        # Build URI
+        if dsn is None:
+            dsn = self.build_dsn()
+
+        # Construct raven client
+        super(ErrorReporter, self).__init__(dsn, raise_send_errors, **options)
+
+    def build_dsn(self, protocol='requests+http'):
+        return '%s://%s@%s/%s' % (
+            protocol,
+            self.key,
+            self.server,
+            self.project
+        )
+
+    def set_protocol(self, protocol):
+        # Build new DSN URI
+        dsn = self.build_dsn(protocol)
+
+        # Update client DSN
+        self.set_dsn(dsn)
+
+
+class ErrorReporterHandler(SentryHandler):
     def _emit(self, record, **kwargs):
-        data = {}
+        data = {
+            'user': {'id': self.client.name}
+        }
 
         extra = getattr(record, 'data', None)
         if not isinstance(extra, dict):
@@ -102,31 +159,8 @@ class ErrorReporter(SentryHandler):
 
 
 # Build client
-VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
-
-PARAMS = {
-    'dsn': 'requests+https://6bd64b4a32ac4ce280e809db6845210d:c7051e89810f4f4f9e543a0f142f533b@sentry.skipthe.net/1',
-
-    'processors': [
-        'raven.processors.RemoveStackLocalsProcessor',
-        'plugin.raven.processors.RelativePathProcessor'
-    ],
-
-    'release': VERSION,
-    'tags': {
-        # Plugin
-        'plugin.version': VERSION,
-        'plugin.branch': PLUGIN_VERSION_BRANCH,
-
-        # System
-        'os.system': platform.system(),
-        'os.release': platform.release(),
-        'os.version': platform.version()
-    }
-}
-
-RAVEN = Client(**PARAMS)
+RAVEN = ErrorReporter(**PARAMS)
 
 # Construct logging handler
-ERROR_REPORTER_HANDLER = ErrorReporter(RAVEN, level=logging.ERROR)
+ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.ERROR)
 ERROR_REPORTER_HANDLER.addFilter(RequestsFilter())

@@ -53,6 +53,10 @@ class PlatformEnvironment(object):
     def machine_identifier(self):
         return self._platform.MachineIdentifier
 
+    @property
+    def server_version(self):
+        return self._platform.ServerVersion
+
 
 class Environment(object):
     dict = None

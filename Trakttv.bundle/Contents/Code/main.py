@@ -43,9 +43,6 @@ class Main(object):
 
         ModuleManager.initialize()
 
-        # Initialize sentry error reporting
-        self.init_raven()
-
         # Construct main thread
         self.thread = Thread(target=self.run, name='main')
 
@@ -60,21 +57,6 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
-
-    @classmethod
-    def init_raven(cls):
-        # Retrieve server details
-        server = Plex.detail()
-
-        if not server:
-            return
-
-        # Set client name to a hash of `machine_identifier`
-        RAVEN.name = md5(server.machine_identifier)
-
-        RAVEN.tags.update({
-            'server.version': server.version
-        })
 
     @staticmethod
     def init_plex():

@@ -117,11 +117,8 @@ class LibrariesManager(object):
             result = test.run()
 
             if not result.get('success'):
-                # Format error message
-                message = '%s: unavailable - %s' % (test.name, result.get('message'))
-
                 # Write message to logfile
-                log.error(message, exc_info=result.get('exc_info'))
+                log.error('%s: unavailable - %s', test.name, result.get('message'), exc_info=result.get('exc_info'))
 
                 if not test.optional:
                     return
