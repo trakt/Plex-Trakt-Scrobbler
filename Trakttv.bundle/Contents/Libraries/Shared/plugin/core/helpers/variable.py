@@ -1,5 +1,3 @@
-from plugin.core.environment import Environment
-
 import collections
 import re
 import unicodedata
@@ -75,6 +73,15 @@ def normalize(text):
 
     # Ensure text is ASCII, ignore unknown characters
     return text.encode('ascii', 'ignore')
+
+
+def pms_path():
+    file_path = __file__.lower()
+
+    if 'plug-ins' not in file_path:
+        return None
+
+    return __file__[:file_path.index('plug-ins')]
 
 
 def resolve(value, *args, **kwargs):

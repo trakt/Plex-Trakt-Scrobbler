@@ -6,7 +6,7 @@ from core.update_checker import UpdateChecker
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
-from plugin.core.logger import LOG_HANDLER, update_loggers
+from plugin.core.logger import LOG_HANDLER, LoggerManager
 from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.managers import TraktAccountManager
 from plugin.models import TraktAccount
@@ -35,7 +35,7 @@ class Main(object):
     def __init__(self):
         Header.show(self)
 
-        update_loggers()
+        LoggerManager.refresh()
 
         self.init_trakt()
         self.init_plex()
@@ -226,4 +226,4 @@ class Main(object):
 
     @staticmethod
     def on_configuration_changed():
-        update_loggers()
+        LoggerManager.refresh()
