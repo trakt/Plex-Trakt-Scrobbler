@@ -1,5 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import merge
+from plugin.core.libraries.constants import CONTENTS_PATH, NATIVE_DIRECTORIES, UNICODE_MAP
 from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelper
 from plugin.core.libraries.tests import LIBRARY_TESTS
 from plugin.core.logger.handlers.error_reporter import RAVEN
@@ -12,26 +13,12 @@ log = logging.getLogger(__name__)
 
 
 class LibrariesManager(object):
-    contents_path = os.path.abspath(os.path.join(Environment.path.code, '..'))
-
-    native_directories = [
-        'Libraries\\FreeBSD',
-        'Libraries\\Linux',
-        'Libraries\\MacOSX',
-        'Libraries\\Windows'
-    ]
-
-    unicode_map = {
-        65535:      'ucs2',
-        1114111:    'ucs4'
-    }
-
     @classmethod
     def cache(cls):
         """Cache native libraries into the plugin data directory"""
 
         # Retrieve library platforms
-        libraries_path = os.path.join(cls.contents_path, 'Libraries')
+        libraries_path = os.path.join(CONTENTS_PATH, 'Libraries')
         platforms = os.listdir(libraries_path)
 
         if 'Shared' in platforms:
@@ -107,8 +94,8 @@ class LibrariesManager(object):
             PathHelper.insert(libraries_path, system, architecture)
 
             # UCS
-            if sys.maxunicode in cls.unicode_map:
-                PathHelper.insert(libraries_path, system, architecture, cls.unicode_map[sys.maxunicode])
+            if sys.maxunicode in UNICODE_MAP:
+                PathHelper.insert(libraries_path, system, architecture, UNICODE_MAP[sys.maxunicode])
 
         # Log library paths
         for path in sys.path:
@@ -176,17 +163,17 @@ class LibrariesManager(object):
         for path in sys.path:
             path = os.path.abspath(path)
 
-            if not path.lower().startswith(cls.contents_path.lower()):
+            if not path.lower().startswith(CONTENTS_PATH.lower()):
                 continue
 
             # Convert to relative path
-            path_rel = os.path.relpath(path, cls.contents_path)
+            path_rel = os.path.relpath(path, CONTENTS_PATH)
 
             # Take the first two fragments
             path_rel = os.path.sep.join(path_rel.split(os.path.sep)[:2])
 
             # Ignore non-native library directories
-            if path_rel not in cls.native_directories:
+            if path_rel not in NATIVE_DIRECTORIES:
                 continue
 
             # Remove from `sys.path`
