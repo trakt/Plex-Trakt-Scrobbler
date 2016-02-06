@@ -13,6 +13,11 @@ MACHINE_MAP = {
     ('32bit', 'i686'): 'i686'
 }
 
+MSVCR_MAP = {
+    'msvcr120.dll': 'vc12',
+    'msvcr130.dll': 'vc14'
+}
+
 NAME_MAP = {
     'Darwin': 'MacOSX'
 }
@@ -102,3 +107,21 @@ class SystemHelper(object):
             return 'sf'
 
         return None
+
+    @classmethod
+    def vcr_version(cls):
+        try:
+            import ctypes.util
+
+            # Retrieve linked msvcr dll
+            name = ctypes.util.find_msvcrt()
+
+            # Return VC++ version from map
+            if name not in MSVCR_MAP:
+                log.error('Unknown VC++ runtime: %r', name)
+                return None
+
+            return MSVCR_MAP[name]
+        except Exception:
+            log.error('Unable to retrieve VC++ runtime version', exc_info=True)
+            return None

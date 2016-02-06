@@ -22,35 +22,15 @@ class LibrariesManager(object):
         :type cache: bool
         """
 
-        # Retrieve libraries path
-        libraries_path = cls.get_path(cache)
+        # Retrieve libraries path (and cache libraries, if enabled)
+        libraries_path = cls._libraries_path(cache)
 
         log.info('Using native libraries at %r', StorageHelper.to_relative_path(libraries_path))
 
-        # Retrieve system details
-        system = SystemHelper.name()
-        system_architecture = SystemHelper.architecture()
+        # Insert platform specific library paths
+        cls._insert_paths(libraries_path)
 
-        if not system_architecture:
-            return
-
-        log.debug('System: %r, Architecture: %r', system, system_architecture)
-
-        architectures = [system_architecture]
-
-        if system_architecture == 'i686':
-            # Fallback to i386
-            architectures.append('i386')
-
-        for architecture in reversed(architectures + ['universal']):
-            # Common
-            PathHelper.insert(libraries_path, system, architecture)
-
-            # UCS
-            if sys.maxunicode in UNICODE_MAP:
-                PathHelper.insert(libraries_path, system, architecture, UNICODE_MAP[sys.maxunicode])
-
-        # Log library paths
+        # Display library paths in logfile
         for path in sys.path:
             path = os.path.abspath(path)
 
@@ -108,28 +88,6 @@ class LibrariesManager(object):
         ]))
 
     @classmethod
-    def get_path(cls, cache=False):
-        """Retrieve the native libraries base directory (and cache the libraries if enabled)
-
-        :param cache: Enable native library caching
-        :type cache: bool
-        """
-
-        if not cache:
-            return Environment.path.libraries
-
-        # Cache native libraries
-        libraries_path = CacheManager.sync()
-
-        if libraries_path:
-            # Reset native library directories in `sys.path`
-            cls.reset()
-
-            return libraries_path
-
-        return Environment.path.libraries
-
-    @classmethod
     def reset(cls):
         """Remove all the native library directives from `sys.path`"""
 
@@ -151,3 +109,99 @@ class LibrariesManager(object):
 
             # Remove from `sys.path`
             PathHelper.remove(path)
+
+    @classmethod
+    def _libraries_path(cls, cache=False):
+        """Retrieve the native libraries base directory (and cache the libraries if enabled)
+
+        :param cache: Enable native library caching
+        :type cache: bool
+        """
+
+        if not cache:
+            return Environment.path.libraries
+
+        # Cache native libraries
+        libraries_path = CacheManager.sync()
+
+        if libraries_path:
+            # Reset native library directories in `sys.path`
+            cls.reset()
+
+            return libraries_path
+
+        return Environment.path.libraries
+
+    @classmethod
+    def _insert_paths(cls, libraries_path):
+        # Retrieve system details
+        system = SystemHelper.name()
+        architecture = SystemHelper.architecture()
+
+        if not architecture:
+            return
+
+        log.debug('System: %r, Architecture: %r', system, architecture)
+
+        # Insert architecture specific libraries
+        architectures = [architecture]
+
+        if architecture == 'i686':
+            # Fallback to i386
+            architectures.append('i386')
+
+        for arch in reversed(architectures + ['universal']):
+            cls._insert_architecture_paths(libraries_path, system, arch)
+
+    @classmethod
+    def _insert_architecture_paths(cls, libraries_path, system, architecture):
+        architecture_path = os.path.join(libraries_path, system, architecture)
+
+        if not os.path.exists(architecture_path):
+            return
+
+        # Architecture libraries
+        PathHelper.insert(libraries_path, system, architecture)
+
+        # System libraries
+        if system == 'Windows':
+            # Windows libraries (VC++ specific)
+            cls._insert_paths_windows(libraries_path, system, architecture)
+        else:
+            # Darwin/FreeBSD/Linux libraries
+            cls._insert_paths_unix(libraries_path, system, architecture)
+
+    @staticmethod
+    def _insert_paths_unix(libraries_path, system, architecture):
+        ucs = UNICODE_MAP.get(sys.maxunicode)
+
+        log.debug('UCS: %r', ucs)
+
+        # UCS libraries
+        if ucs:
+            PathHelper.insert(libraries_path, system, architecture, ucs)
+
+        # Include attributes in error reports
+        RAVEN.tags.update({
+            'python.ucs': ucs
+        })
+
+    @staticmethod
+    def _insert_paths_windows(libraries_path, system, architecture):
+        vcr = SystemHelper.vcr_version() or 'vc12'  # Assume "vc12" if call fails
+        ucs = UNICODE_MAP.get(sys.maxunicode)
+
+        log.debug('VC++ Runtime: %r, UCS: %r', vcr, ucs)
+
+        # VC++ libraries
+        PathHelper.insert(libraries_path, system, architecture, vcr)
+
+        # UCS libraries
+        if ucs:
+            PathHelper.insert(libraries_path, system, architecture, vcr, ucs)
+
+        # Include attributes in error reports
+        RAVEN.tags.update({
+            'python.ucs': ucs,
+            'vcr.version': vcr
+        })
