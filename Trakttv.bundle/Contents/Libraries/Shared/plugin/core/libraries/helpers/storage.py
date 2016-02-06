@@ -79,6 +79,9 @@ class StorageHelper(object):
         :type path: str
         """
 
+        if os.path.isdir(path):
+            return cls.delete_tree(path)
+
         try:
             os.remove(path)
 
