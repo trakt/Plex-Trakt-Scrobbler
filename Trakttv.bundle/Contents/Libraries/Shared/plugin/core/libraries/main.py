@@ -191,7 +191,7 @@ class LibrariesManager(object):
         vcr = SystemHelper.vcr_version() or 'vc12'  # Assume "vc12" if call fails
         ucs = UNICODE_MAP.get(sys.maxunicode)
 
-        log.debug('VC++ Runtime: %r, UCS: %r', vcr, ucs)
+        log.debug('VCR: %r, UCS: %r', vcr, ucs)
 
         # VC++ libraries
         PathHelper.insert(libraries_path, system, architecture, vcr)
