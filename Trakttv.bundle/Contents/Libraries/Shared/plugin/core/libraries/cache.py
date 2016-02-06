@@ -49,6 +49,11 @@ class CacheManager(object):
 
         def process(action, names):
             for name in names:
+                # Ignore "*.pyc" files
+                if name.endswith('.pyc'):
+                    continue
+
+                # Append task to list
                 tasks.append((action, os.path.join(base_path, name)))
 
         # Create tasks from `changes`
