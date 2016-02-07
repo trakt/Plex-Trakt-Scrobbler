@@ -156,6 +156,11 @@ class Router(object):
 
         # Retrieve current specification
         db_migrations = sorted(self.db_migrations, key=lambda f: int(f.split('_')[0]))
+
+        if not db_migrations:
+            return True
+
+        # Validate migrations
         current = None
 
         for name in db_migrations:
