@@ -16,7 +16,8 @@ except ImportError:
     from peewee import DateTimeField
 
 
-LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 MIGRATE_TEMPLATE = op.join(
     op.abspath(op.dirname(__file__)),
     'migration.tmpl'
@@ -38,7 +39,7 @@ class Router(object):
     def __init__(self, migrate_dir, **options):
 
         if not op.exists(migrate_dir):
-            LOGGER.warn('Migration directory: %s does not exists.', migrate_dir)
+            log.warn('Migration directory: %s does not exists.', migrate_dir)
             md(migrate_dir)
 
         config = {}
@@ -49,7 +50,7 @@ class Router(object):
                 if not key.startswith('_'):
                     options[key] = config[key]
         else:
-            LOGGER.warn('Configuration file `conf.py` didnt found in migration directory')
+            log.warn('Configuration file `conf.py` didnt found in migration directory')
 
         self.migrate_dir = migrate_dir
 
@@ -64,7 +65,7 @@ class Router(object):
             assert self.proxy.database
             MigrateHistory.create_table()
         except (AttributeError, AssertionError):
-            LOGGER.error("Invalid database: %s", self.db)
+            log.error("Invalid database: %s", self.db)
             sys.exit(1)
         except Exception:
             pass
@@ -87,10 +88,22 @@ class Router(object):
         db = set(self.db_migrations)
         return [name for name in self.fs_migrations if name not in db]
 
+    def create(self, name):
+        """ Create a migration. """
+
+        log.info('Create a migration "%s"', name)
+
+        num = len(self.fs_migrations)
+        prefix = '{:03}_'.format(num)
+        name = prefix + name + '.py'
+        copy(MIGRATE_TEMPLATE, op.join(self.migrate_dir, name))
+
+        log.info('Migration has created %s', name)
+
     def run(self, name=None):
         """ Run migrations. """
 
-        LOGGER.info('Start migrations')
+        log.info('Running migrations...')
 
         migrator = Migrator(self.db)
 
@@ -102,51 +115,147 @@ class Router(object):
         db_migrations = self.db_migrations
 
         if db_migrations:
-            LOGGER.info('Database has %d migrations applied:\n  %s', len(db_migrations), '\n  '.join(db_migrations))
+            log.info('Database has %d migrations applied:\n  %s', len(db_migrations), '\n  '.join(db_migrations))
 
         # Run migrations that haven't been applied yet
         diff = self.diff
 
         if diff:
-            LOGGER.info('Applying %d database migrations:\n  %s', len(diff), '\n  '.join(diff))
+            log.info('Applying %d database migrations:\n  %s', len(diff), '\n  '.join(diff))
 
             for name in diff:
                 self.run_one(name, migrator)
         else:
-            LOGGER.info('Nothing to migrate')
+            log.info('Nothing to migrate')
 
     def run_one(self, name, migrator):
         """ Run a migration. """
 
-        LOGGER.info('Run "%s"', name)
+        log.info('Running migration "%s"...', name)
 
         try:
-            with open(op.join(self.migrate_dir, name + '.py')) as f:
-                with self.db.transaction():
-                    code = f.read()
-                    scope = {}
-                    exec_in(code, scope)
-                    migrate = scope.get('migrate', lambda m: None)
-                    logging.info('Start migration %s', name)
-                    migrate(migrator, self.db)
-                    MigrateHistory.create(name=name)
-                    logging.info('Migrated %s', name)
+            migration = self._migration(name)
+
+            with self.db.transaction():
+                migrate = migration.get('migrate', lambda m: None)
+
+                log.info('Start migration %s', name)
+                migrate(migrator, self.db)
+
+                MigrateHistory.create(name=name)
+                log.info('Migrated %s', name)
 
         except Exception as exc:
-            LOGGER.error(exc, exc_info=True)
+            log.error(exc, exc_info=True)
             self.db.rollback()
 
-    def create(self, name):
-        """ Create a migration. """
+    def validate(self):
+        specification = {}
 
-        LOGGER.info('Create a migration "%s"', name)
+        log.info('Validating migrations...')
 
-        num = len(self.fs_migrations)
-        prefix = '{:03}_'.format(num)
-        name = prefix + name + '.py'
-        copy(MIGRATE_TEMPLATE, op.join(self.migrate_dir, name))
+        # Retrieve current specification
+        db_migrations = sorted(self.db_migrations, key=lambda f: int(f.split('_')[0]))
+        current = None
 
-        LOGGER.info('Migration has created %s', name)
+        for name in db_migrations:
+            # Load migration from file
+            migration = self._migration(name)
+
+            # Retrieve specification for migration
+            spec = migration.get('SPEC')
+
+            if spec is None:
+                log.warn('Migration "%s" has no specification', name)
+                continue
+
+            # Update root specification
+            specification.update(spec)
+
+            # Validate migrations have been applied correctly
+            log.debug('Validating migration schema: %r', name)
+
+            if self._validate_schema(specification):
+                current = name
+            elif current:
+                break
+
+        log.info('Current migration: %r', current)
+
+        # Check database schema matches applied migrations
+        if db_migrations[-1] != current:
+            log.warn('Database schema doesn\'t match applied migrations (current: %r, latest: %r)', current, db_migrations[-1])
+            return False
+
+        return True
+
+    def _migration(self, name):
+        with open(op.join(self.migrate_dir, name + '.py')) as f:
+            code = f.read()
+
+        scope = {}
+        exec_in(code, scope)
+
+        return scope
+
+    def _table_schema(self, table):
+        rows = self.db.execute_sql('PRAGMA table_info(\'%s\')' % table).fetchall()
+        result = {}
+
+        for _, name, data_type, not_null, _, primary_key in rows:
+            parts = [data_type]
+
+            if primary_key:
+                parts.append('PRIMARY KEY')
+
+            if not_null:
+                parts.append('NOT NULL')
+
+            result[name] = ' '.join(parts)
+
+        return result
+
+    def _validate_schema(self, spec):
+        invalid = []
+
+        for table, fields in spec.items():
+            valid = True
+
+            # Retrieve table schema
+            schema = self._table_schema(table)
+            pending = set(schema.keys())
+
+            for name, definition in fields.items():
+                # Ensure field exists
+                if name not in schema:
+                    log.debug(' - [%-24s] (%-22s) Field not in table', table, name)
+                    valid = False
+                    continue
+
+                # Compare definition with table schema
+                if definition != schema[name]:
+                    log.debug(' - [%-24s] (%-22s) Definition mismatch (migration: %r, database: %r)', table, name, definition, schema[name])
+                    valid = False
+
+                # Mark field as completed
+                pending.remove(name)
+
+            # Ensure no fields have been skipped
+            if pending:
+                log.debug(' - [%-24s] Skipped %d field(s): %s', table, len(pending), ', '.join(pending))
+                valid = False
+
+            # Check table is valid
+            if not valid:
+                invalid.append(table)
+
+        # Report validation results
+        if invalid:
+            log.debug(' - Detected %d/%d invalid table(s)', len(invalid), len(spec))
+            return False
+
+        log.debug(' - Verified %d table(s)', len(spec))
+        return True
 
 
 class MigrateHistory(Model):
