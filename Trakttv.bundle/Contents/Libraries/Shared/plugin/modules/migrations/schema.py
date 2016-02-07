@@ -11,6 +11,12 @@ class SchemaMigration(Migration):
     def run(self):
         log.debug('migrations_path: %r', migrations_path)
 
-        # Run schema migrations
         router = Router(migrations_path, DATABASE=db)
+
+        # Validate current schema
+        if not router.validate():
+            log.info('TODO: rebuild database')
+            return
+
+        # Run schema migrations
         router.run()
