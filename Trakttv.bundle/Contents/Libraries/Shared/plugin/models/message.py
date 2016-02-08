@@ -4,6 +4,10 @@ from playhouse.apsw_ext import *
 
 
 class MessageCode(object):
+    # Database (0x09)
+    # - Schema (0x0901)
+    DatabaseSchemaCorruptionReset = 0x90101
+
     # Release / Version (0x10)
     # - Upgrade (0x1001)
     UpgradePerformed = 0x100101

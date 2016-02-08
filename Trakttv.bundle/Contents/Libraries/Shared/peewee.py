@@ -4129,18 +4129,20 @@ class Model(with_metaclass(BaseModel)):
         return cls._meta.db_table in cls._meta.database.get_tables(**kwargs)
 
     @classmethod
-    def create_table(cls, fail_silently=False):
+    def create_table(cls, fail_silently=False, db=None):
         if fail_silently and cls.table_exists():
             return
 
-        db = cls._meta.database
+        if db is None:
+            db = cls._meta.database
+
         pk = cls._meta.primary_key
         if db.sequences and pk.sequence:
             if not db.sequence_exists(pk.sequence):
                 db.create_sequence(pk.sequence)
 
         db.create_table(cls)
-        cls._create_indexes()
+        cls._create_indexes(db=db)
 
     @classmethod
     def _fields_to_index(cls):
@@ -4157,8 +4159,10 @@ class Model(with_metaclass(BaseModel)):
         return fields
 
     @classmethod
-    def _create_indexes(cls):
-        db = cls._meta.database
+    def _create_indexes(cls, db=None):
+        if db is None:
+            db = cls._meta.database
+
         for field in cls._fields_to_index():
             db.create_index(cls, [field], field.unique)
 
