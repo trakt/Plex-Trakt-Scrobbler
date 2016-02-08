@@ -4,52 +4,50 @@ from playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):
-    #
-    # plex
-    #
+    migrator.create_tables(
+        #
+        # Plex
+        #
+        PlexAccount,
 
-    PlexAccount.create_table()
+        PlexBasicCredential,
 
-    PlexBasicCredential.create_table()
+        #
+        # Sync
+        #
+        SyncStatus,
 
-    #
-    # sync
-    #
+        SyncResult,
+        SyncResultError,
+        SyncResultException,
 
-    SyncStatus.create_table()
+        #
+        # Trakt
+        #
+        TraktAccount,
 
-    SyncResult.create_table()
-    SyncResultError.create_table()
-    SyncResultException.create_table()
+        TraktBasicCredential,
+        TraktOAuthCredential,
 
-    #
-    # trakt
-    #
+        #
+        # Main
+        #
+        Account,
+        Exception,
+        Message,
+        Session,
 
-    TraktAccount.create_table()
+        ConfigurationOption,
 
-    TraktBasicCredential.create_table()
-    TraktOAuthCredential.create_table()
+        ActionHistory,
+        ActionQueue,
 
-    #
-    # main
-    #
+        Client,
+        ClientRule,
 
-    Account.create_table()
-    Exception.create_table()
-    Message.create_table()
-    Session.create_table()
-
-    ConfigurationOption.create_table()
-
-    ActionHistory.create_table()
-    ActionQueue.create_table()
-
-    Client.create_table()
-    ClientRule.create_table()
-
-    User.create_table()
-    UserRule.create_table()
+        User,
+        UserRule
+    )
 
 
 class Account(Model):

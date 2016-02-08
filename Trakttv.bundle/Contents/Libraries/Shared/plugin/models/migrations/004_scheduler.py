@@ -4,8 +4,10 @@ from playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):
-    SchedulerTask.create_table()
-    SchedulerJob.create_table()
+    migrator.create_tables(
+        SchedulerTask,
+        SchedulerJob
+    )
 
 
 class Account(Model):
