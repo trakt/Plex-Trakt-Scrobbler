@@ -131,39 +131,51 @@ class Router(object):
     def run_one(self, name, migrator):
         """ Run a migration. """
 
-        log.info('Running migration "%s"...', name)
-
         try:
             migration = self._migration(name)
+            migrate = migration.get('migrate', lambda m: None)
 
             with self.db.transaction():
-                migrate = migration.get('migrate', lambda m: None)
-
-                log.info('Start migration %s', name)
+                log.info('Running migration "%s"...', name)
                 migrate(migrator, self.db)
 
                 MigrateHistory.create(name=name)
-                log.info('Migrated %s', name)
+                log.info('Migrated "%s"', name)
 
         except Exception as exc:
             log.error(exc, exc_info=True)
             self.db.rollback()
 
     def validate(self):
+        # Retrieve database migrations
+        db_migrations = self.db_migrations
+
+        # Match specification against migration
+        current = self.match(db_migrations)
+
+        # Check database schema matches applied migrations
+        if db_migrations[-1] != current:
+            log.warn('Database schema doesn\'t match applied migrations (current: %r, latest: %r)', current, db_migrations[-1])
+            return False
+
+        return True
+
+    def match(self, migrations=None):
+        # Retrieve current specification
+        if migrations is None:
+            migrations = self.db_migrations
+
+        if not migrations:
+            return None
+
+        # Sort migrations by index
+        migrations = sorted(migrations, key=lambda f: int(f.split('_')[0]))
+
+        # Build complete migration specifications
+        migration_specs = []
         specification = {}
 
-        log.info('Validating migrations...')
-
-        # Retrieve current specification
-        db_migrations = sorted(self.db_migrations, key=lambda f: int(f.split('_')[0]))
-
-        if not db_migrations:
-            return True
-
-        # Validate migrations
-        current = None
-
-        for name in db_migrations:
+        for name in migrations:
             # Load migration from file
             migration = self._migration(name)
 
@@ -177,22 +189,18 @@ class Router(object):
             # Update root specification
             specification.update(spec)
 
+            # Store specification
+            migration_specs.append((name, specification.copy()))
+
+        # Validate migrations (latest migrations first)
+        for name, spec in reversed(migration_specs):
             # Validate migrations have been applied correctly
-            log.debug('Validating migration schema: %r', name)
+            log.debug('Validating migration "%s"...', name)
 
-            if self._validate_schema(specification):
-                current = name
-            elif current:
-                break
+            if self._validate_schema(spec):
+                return name
 
-        log.info('Current migration: %r', current)
-
-        # Check database schema matches applied migrations
-        if db_migrations[-1] != current:
-            log.warn('Database schema doesn\'t match applied migrations (current: %r, latest: %r)', current, db_migrations[-1])
-            return False
-
-        return True
+        return None
 
     def _migration(self, name):
         with open(op.join(self.migrate_dir, name + '.py')) as f:
@@ -203,8 +211,21 @@ class Router(object):
 
         return scope
 
+    def _tables(self):
+        rows = self.db.execute_sql(
+            'SELECT name FROM sqlite_master WHERE type=\'table\';'
+        ).fetchall()
+
+        return [
+            name for (name,) in rows
+        ]
+
     def _table_schema(self, table):
-        rows = self.db.execute_sql('PRAGMA table_info(\'%s\')' % table).fetchall()
+        rows = self.db.execute_sql(
+            'PRAGMA table_info(\'%s\')' % table
+        ).fetchall()
+
+        # Build list of fields from table information
         result = {}
 
         for _, name, data_type, not_null, _, primary_key in rows:
@@ -221,6 +242,13 @@ class Router(object):
         return result
 
     def _validate_schema(self, spec):
+        # Retrieve available tables from database
+        tables = set(self._tables())
+        tables.remove('migratehistory')  # Ignore migration history table
+
+        pending_tables = tables.copy()
+
+        # Iterate over table specifications
         invalid = []
 
         for table, fields in spec.items():
@@ -228,38 +256,45 @@ class Router(object):
 
             # Retrieve table schema
             schema = self._table_schema(table)
-            pending = set(schema.keys())
+            pending_fields = set(schema.keys())
 
             for name, definition in fields.items():
                 # Ensure field exists
                 if name not in schema:
-                    log.debug(' - [%-24s] (%-22s) Field not in table', table, name)
+                    log.warn('[%-24s] (%-22s) Field not in table', table, name)
                     valid = False
                     continue
 
                 # Compare definition with table schema
                 if definition != schema[name]:
-                    log.debug(' - [%-24s] (%-22s) Definition mismatch (migration: %r, database: %r)', table, name, definition, schema[name])
+                    log.warn('[%-24s] (%-22s) Definition mismatch (migration: %r, database: %r)', table, name, definition, schema[name])
                     valid = False
 
                 # Mark field as completed
-                pending.remove(name)
+                pending_fields.remove(name)
 
             # Ensure no fields have been skipped
-            if pending:
-                log.debug(' - [%-24s] Skipped %d field(s): %s', table, len(pending), ', '.join(pending))
+            if pending_fields:
+                log.warn('[%-24s] Skipped %d field(s): %s', table, len(pending_fields), ', '.join(pending_fields))
                 valid = False
 
             # Check table is valid
             if not valid:
                 invalid.append(table)
 
+            # Mark table as completed
+            pending_tables.remove(table)
+
         # Report validation results
         if invalid:
-            log.debug(' - Detected %d/%d invalid table(s)', len(invalid), len(spec))
+            log.warn('Errors detected on %d/%d table(s)', len(invalid), len(tables))
             return False
 
-        log.debug(' - Verified %d table(s)', len(spec))
+        if len(pending_tables) > 0:
+            log.warn('Skipped %d table(s): %s', len(pending_tables), ', '.join(pending_tables))
+            return False
+
+        log.info('Validated %d table(s)', len(tables))
         return True
 
 
@@ -283,10 +318,11 @@ class Migrator(object):
         self.migrator = SchemaMigrator.from_database(self.db)
 
     def create_table(self, model):
-        self.db.create_table(model)
+        model.create_table(db=self.db)
 
     def create_tables(self, *models):
-        self.db.create_tables(models)
+        for model in models:
+            self.create_table(model)
 
     def drop_table(self, model):
         self.db.drop_table(model)
