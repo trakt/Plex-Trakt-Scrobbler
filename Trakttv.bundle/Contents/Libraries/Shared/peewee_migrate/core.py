@@ -160,7 +160,7 @@ class Router(object):
 
         return True
 
-    def match(self, migrations=None):
+    def match(self, migrations=None, check_all=False):
         # Retrieve current specification
         if migrations is None:
             migrations = self.db_migrations
@@ -199,6 +199,8 @@ class Router(object):
 
             if self._validate_schema(spec):
                 return name
+            elif not check_all:
+                break
 
         return None
 
@@ -252,11 +254,16 @@ class Router(object):
         invalid = []
 
         for table, fields in spec.items():
-            valid = True
+            # Ensure table exists
+            if table not in pending_tables:
+                log.warn('[%-24s] Table doesn\'t exist', table)
+                invalid.append(table)
+                continue
 
             # Retrieve table schema
             schema = self._table_schema(table)
             pending_fields = set(schema.keys())
+            valid = True
 
             for name, definition in fields.items():
                 # Ensure field exists
@@ -287,14 +294,14 @@ class Router(object):
 
         # Report validation results
         if invalid:
-            log.warn('Errors detected on %d/%d table(s)', len(invalid), len(tables))
+            log.warn('Errors detected on %d/%d table(s)', len(invalid), len(spec))
             return False
 
         if len(pending_tables) > 0:
             log.warn('Skipped %d table(s): %s', len(pending_tables), ', '.join(pending_tables))
             return False
 
-        log.info('Validated %d table(s)', len(tables))
+        log.info('Validated %d table(s)', len(spec))
         return True
 
 
