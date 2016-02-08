@@ -17,6 +17,8 @@ SPEC = {
         'key':                      'INTEGER',
         'username':                 'VARCHAR(255)',
 
-        'thumb':                    'TEXT'
+        'thumb':                    'TEXT',
+
+        'refreshed_at':             'DATETIME'
     }
 }
