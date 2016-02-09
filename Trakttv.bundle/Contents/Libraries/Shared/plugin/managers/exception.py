@@ -30,9 +30,9 @@ class CreateException(Create):
 
         # Create exception
         exception = self.model(
-            type=self.manager.exc_type(exc_info[0]),
-            message=self.manager.exc_message(exc_info[1]),
-            traceback=self.manager.exc_traceback(exc_info[2]),
+            type=ErrorHasher.exc_type(exc_info[0]),
+            message=ErrorHasher.exc_message(exc_info[1]),
+            traceback=ErrorHasher.exc_traceback(exc_info[2]),
 
             timestamp=datetime.utcnow(),
             version_base=VERSION_BASE,
