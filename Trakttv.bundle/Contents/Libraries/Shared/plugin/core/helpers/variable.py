@@ -1,3 +1,4 @@
+from datetime import datetime
 import collections
 import hashlib
 import re
@@ -46,6 +47,13 @@ def flatten(text):
 
     # Convert to lower-case
     return text.lower()
+
+
+def json_date_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+
+    raise TypeError('Type %r is not serializable', type(obj))
 
 
 def merge(a, b, recursive=False):

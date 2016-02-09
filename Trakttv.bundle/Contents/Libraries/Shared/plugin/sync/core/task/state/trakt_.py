@@ -1,3 +1,4 @@
+from plugin.core.backup import BackupManager
 from plugin.core.database import Database
 
 from stash import ApswArchive
@@ -117,7 +118,18 @@ class SyncStateTrakt(object):
                 store.flush()
 
         # Store backup of trakt data
-        Database.backup(os.path.join('trakt', str(self.task.account.id)), Database.cache('trakt'))
+        group = os.path.join('trakt', str(self.task.account.id))
+
+        BackupManager.database.backup(group, Database.cache('trakt'), self.task.id, {
+            'account': {
+                'id': self.task.account.id,
+                'name': self.task.account.name,
+
+                'trakt': {
+                    'username': self.task.account.trakt.username
+                }
+            }
+        })
 
 
 class Table(object):
