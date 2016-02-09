@@ -115,18 +115,30 @@ class CacheManager(object):
         if not architecture:
             return None, None
 
-        # Build source path
-        source = os.path.join(CONTENTS_PATH, 'Libraries', system, architecture)
+        # Build list of acceptable architectures
+        architectures = [architecture]
 
-        # Ensure `source` directory exists
-        if not os.path.exists(source):
-            log.error('Unable to find native libraries for platform (name: %r, architecture: %r)', system, architecture)
-            return None, None
+        if architecture == 'i686':
+            # Fallback to i386
+            architectures.append('i386')
 
-        # Build path for native dependencies
-        destination = os.path.join(Environment.path.plugin_data, 'Libraries', system, architecture)
+        # Look for matching libraries
+        for arch in architectures + ['universal']:
+            # Build source path
+            source = os.path.join(CONTENTS_PATH, 'Libraries', system, arch)
 
-        # Ensure `destination` directory has been created
-        StorageHelper.create_directories(destination)
+            # Ensure `source` directory exists
+            if not os.path.exists(source):
+                continue
 
-        return source, destination
+            # Build path for native dependencies
+            destination = os.path.join(Environment.path.plugin_data, 'Libraries', system, arch)
+
+            # Ensure `destination` directory has been created
+            StorageHelper.create_directories(destination)
+
+            return source, destination
+
+        # No libraries could be found
+        log.error('Unable to find native libraries for platform (name: %r, architecture: %r)', system, architecture)
+        return None, None

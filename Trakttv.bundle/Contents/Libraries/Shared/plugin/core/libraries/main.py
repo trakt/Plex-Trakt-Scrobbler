@@ -150,7 +150,7 @@ class LibrariesManager(object):
             # Fallback to i386
             architectures.append('i386')
 
-        for arch in reversed(architectures + ['universal']):
+        for arch in architectures + ['universal']:
             cls._insert_architecture_paths(libraries_path, system, arch)
 
     @classmethod
