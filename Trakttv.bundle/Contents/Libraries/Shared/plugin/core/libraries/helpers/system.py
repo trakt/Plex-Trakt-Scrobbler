@@ -45,7 +45,7 @@ class SystemHelper(object):
         if bits in BITS_MAP:
             return BITS_MAP[bits]
 
-        log.info('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
+        log.error('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
         return None
 
     @classmethod

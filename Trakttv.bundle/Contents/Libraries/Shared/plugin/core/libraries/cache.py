@@ -19,6 +19,9 @@ class CacheManager(object):
 
         source, destination = cls.get_paths()
 
+        if not source or not destination:
+            return None
+
         # Compare directories, discover tasks
         changes = filecmp.dircmp(source, destination)
         tasks = cls.discover(changes)
@@ -110,7 +113,7 @@ class CacheManager(object):
         architecture = SystemHelper.architecture()
 
         if not architecture:
-            return
+            return None, None
 
         # Build source path
         source = os.path.join(CONTENTS_PATH, 'Libraries', system, architecture)
@@ -118,7 +121,7 @@ class CacheManager(object):
         # Ensure `source` directory exists
         if not os.path.exists(source):
             log.error('Unable to find native libraries for platform (name: %r, architecture: %r)', system, architecture)
-            return None
+            return None, None
 
         # Build path for native dependencies
         destination = os.path.join(Environment.path.plugin_data, 'Libraries', system, architecture)
