@@ -44,6 +44,9 @@ class DatabaseBackupManager(BackupManagerBase):
         # Write backup metadata
         cls.write_metadata(
             path + '.bme',
+            contents=[
+                name + '.db'
+            ],
             timestamp=timestamp,
             tag=tag,
             **(metadata or {})
