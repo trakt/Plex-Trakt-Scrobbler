@@ -3,11 +3,11 @@ from core.helpers import get_class_name, md5
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
+from plugin.core.backup import BackupManager
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, LoggerManager
-from plugin.core.logger.handlers.error_reporter import RAVEN
 from plugin.managers.account import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
@@ -181,6 +181,9 @@ class Main(object):
 
         # Start plex.activity.py
         Activity.start(ACTIVITY_MODE.get(Preferences.get('activity.mode')))
+
+        # Start backup maintenance
+        BackupManager.maintenance(block=False)
 
     @classmethod
     def process_server_state(cls):
