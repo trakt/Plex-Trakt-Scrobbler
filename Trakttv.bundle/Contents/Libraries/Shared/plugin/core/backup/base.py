@@ -14,7 +14,7 @@ class BackupManagerBase(object):
         # Build directory
         directory = os.path.join(
             BACKUP_PATH,
-            group,
+            group + '.bgr',
             str(timestamp.year),
             '%02d' % timestamp.month
         )
@@ -28,7 +28,7 @@ class BackupManagerBase(object):
             ('_%s' % tag) if tag else ''
         )
 
-        return directory, os.path.join(directory, name)
+        return directory, name, os.path.join(directory, name)
 
     @staticmethod
     def write_metadata(path, **metadata):

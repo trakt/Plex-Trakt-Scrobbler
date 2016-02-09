@@ -14,7 +14,7 @@ class DatabaseBackupManager(BackupManagerBase):
         timestamp = datetime.now()
 
         # Build backup directory/name
-        directory, path = cls.path(group, timestamp, tag)
+        directory, name, path = cls.path(group, timestamp, tag)
         destination_path = path + '.db'
 
         # Ensure directory exists
@@ -43,7 +43,7 @@ class DatabaseBackupManager(BackupManagerBase):
 
         # Write backup metadata
         cls.write_metadata(
-            path + '.bm',
+            path + '.bme',
             timestamp=timestamp,
             tag=tag,
             **(metadata or {})
