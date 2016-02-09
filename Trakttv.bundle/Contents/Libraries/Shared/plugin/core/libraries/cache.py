@@ -135,7 +135,9 @@ class CacheManager(object):
             destination = os.path.join(Environment.path.plugin_data, 'Libraries', system, arch)
 
             # Ensure `destination` directory has been created
-            StorageHelper.create_directories(destination)
+            if not StorageHelper.create_directories(destination):
+                # Directory couldn't be created
+                return None, None
 
             return source, destination
 
