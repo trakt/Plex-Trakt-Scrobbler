@@ -39,7 +39,7 @@ class Router(object):
     def __init__(self, migrate_dir, **options):
 
         if not op.exists(migrate_dir):
-            log.warn('Migration directory: %s does not exists.', migrate_dir)
+            log.warn('Migration directory: %s does not exist', migrate_dir)
             md(migrate_dir)
 
         config = {}
@@ -50,7 +50,7 @@ class Router(object):
                 if not key.startswith('_'):
                     options[key] = config[key]
         else:
-            log.warn('Configuration file `conf.py` didnt found in migration directory')
+            log.info('Configuration file `conf.py` wasn\'t found in the migration directory')
 
         self.migrate_dir = migrate_dir
 
