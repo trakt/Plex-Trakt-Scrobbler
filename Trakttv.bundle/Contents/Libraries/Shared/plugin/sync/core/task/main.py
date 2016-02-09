@@ -1,4 +1,4 @@
-from plugin.managers import ExceptionManager
+from plugin.managers.exception import ExceptionManager
 from plugin.models import *
 from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.core.exceptions import SyncAbort

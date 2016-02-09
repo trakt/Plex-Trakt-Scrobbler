@@ -1,7 +1,7 @@
 from core.helpers import pad_title, timestamp
 
 from plugin.core.constants import PLUGIN_PREFIX
-from plugin.managers import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
+from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
 from plugin.models import Exception, Message
 
 from ago import human

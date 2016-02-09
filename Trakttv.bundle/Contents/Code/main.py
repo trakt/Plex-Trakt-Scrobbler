@@ -8,7 +8,7 @@ from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, LoggerManager
 from plugin.core.logger.handlers.error_reporter import RAVEN
-from plugin.managers import TraktAccountManager
+from plugin.managers.account import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences

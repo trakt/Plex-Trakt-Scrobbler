@@ -36,7 +36,7 @@ class SchemaMigration(Migration):
         router.run()
 
         # Log message to channel menu
-        from plugin.managers import MessageManager
+        from plugin.managers.message import MessageManager
         from plugin.models import Message
 
         MessageManager.get.from_message(logging.WARNING,

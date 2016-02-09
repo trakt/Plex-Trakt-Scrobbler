@@ -1,4 +1,5 @@
-from plugin.managers import PlexAccountManager, TraktAccountManager
+from plugin.managers.m_plex.account import PlexAccountManager
+from plugin.managers.m_trakt.account import TraktAccountManager
 from plugin.managers.core.base import Manager, Update
 from plugin.models import Account, TraktAccount, PlexAccount
 import logging

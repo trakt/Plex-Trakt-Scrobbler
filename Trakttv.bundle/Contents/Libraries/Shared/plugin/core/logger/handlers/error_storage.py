@@ -1,5 +1,5 @@
+from plugin.managers.exception import ExceptionManager
 import logging
-from plugin.managers import ExceptionManager
 
 log = logging.getLogger(__name__)
 
