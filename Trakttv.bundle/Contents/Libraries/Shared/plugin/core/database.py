@@ -1,16 +1,11 @@
 from plugin.core.environment import Environment
+from plugin.core.helpers.database import db_connect, db_connection
 
-from datetime import datetime
 from threading import RLock
-from playhouse.apsw_ext import APSWDatabase
-import apsw
 import logging
 import os
 
 log = logging.getLogger(__name__)
-
-BACKUP_PATH = os.path.join(Environment.path.plugin_data, 'Backups')
-BUSY_TIMEOUT = 3000
 
 
 class Database(object):
@@ -71,7 +66,7 @@ class Database(object):
         log.info('[%s] Resetting database objects...', group)
 
         # Get `database` connection
-        conn = cls._connection(database)
+        conn = db_connection(database)
 
         # Drop all objects (index, table, trigger)
         conn.cursor().execute(
@@ -126,39 +121,13 @@ class Database(object):
 
         return directory, name
 
-    @classmethod
-    def _connect(cls, path, type):
-        # Connect to new database
-        if type == 'peewee':
-            db = APSWDatabase(path, autorollback=True, journal_mode='WAL', timeout=BUSY_TIMEOUT)
-        elif type == 'raw':
-            db = apsw.Connection(path, flags=apsw.SQLITE_OPEN_READWRITE | apsw.SQLITE_OPEN_CREATE | apsw.SQLITE_OPEN_WAL)
-            db.setbusytimeout(BUSY_TIMEOUT)
-        else:
-            raise ValueError('Unknown database type: %r' % type)
-
-        log.debug('Connected to database at %r', path)
-        return db
-
-    @classmethod
-    def _connection(cls, database):
-        if isinstance(database, APSWDatabase):
-            return database.get_conn()
-
-        if isinstance(database, apsw.Connection):
-            return database
-
-        raise ValueError('Unknown "database" parameter provided')
-
-    @classmethod
     def _get(cls, path, type):
         path = os.path.abspath(path)
         cache = cls._cache[type]
 
         with cls._lock:
             if path not in cache:
-                cache[path] = cls._connect(path, type)
+                cache[path] = db_connect(path, type)
 
             # Return cached connection
             return cache[path]
-
