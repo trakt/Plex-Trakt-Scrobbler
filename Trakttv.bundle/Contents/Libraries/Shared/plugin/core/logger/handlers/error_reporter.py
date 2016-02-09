@@ -162,5 +162,5 @@ class ErrorReporterHandler(SentryHandler):
 RAVEN = ErrorReporter(**PARAMS)
 
 # Construct logging handler
-ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.ERROR)
+ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 ERROR_REPORTER_HANDLER.addFilter(RequestsFilter())
