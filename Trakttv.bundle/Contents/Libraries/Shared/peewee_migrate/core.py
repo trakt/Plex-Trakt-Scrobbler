@@ -150,6 +150,10 @@ class Router(object):
         # Retrieve database migrations
         db_migrations = self.db_migrations
 
+        if not db_migrations:
+            # No migrations applied to database yet
+            return True
+
         # Match specification against migration
         current = self.match(db_migrations)
 
