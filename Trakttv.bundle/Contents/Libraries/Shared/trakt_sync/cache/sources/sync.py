@@ -142,6 +142,12 @@ class SyncSource(Source):
         return result
 
     def fetch(self, data, media):
+        # Ignore "sync/playback/shows" requests (not supported)
+        if data == enums.Data.Playback and media == enums.Media.Shows:
+            log.debug('Ignoring unsupported collection - data: %r, media: %r', data, media)
+            return None
+
+        # Find function to fetch the collection
         interface = enums.Data.get_interface(data)
         method = enums.Media.get(media)
 
@@ -159,6 +165,8 @@ class SyncSource(Source):
             return func(exceptions=True)
         except NotImplementedError:
             log.warn('Unable to fetch "%s", not implemented', path)
+
+        return None
 
     @staticmethod
     def fetch_func(data, media):
