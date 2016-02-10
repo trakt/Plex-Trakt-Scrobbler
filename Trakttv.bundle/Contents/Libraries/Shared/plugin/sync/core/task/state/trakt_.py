@@ -1,5 +1,5 @@
+from plugin.core.backup import BackupManager
 from plugin.core.database import Database
-from plugin.sync.core.enums import SyncData
 
 from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend
@@ -7,6 +7,7 @@ from trakt_sync.cache.main import Cache
 from trakt_sync.differ.core.base import KEY_AGENTS
 import elapsed
 import logging
+import os
 import trakt.objects
 
 log = logging.getLogger(__name__)
@@ -115,6 +116,20 @@ class SyncStateTrakt(object):
                 log.debug('[%-38s] Flushing collection...', '/'.join(key))
 
                 store.flush()
+
+        # Store backup of trakt data
+        group = os.path.join('trakt', str(self.task.account.id))
+
+        BackupManager.database.backup(group, Database.cache('trakt'), self.task.id, {
+            'account': {
+                'id': self.task.account.id,
+                'name': self.task.account.name,
+
+                'trakt': {
+                    'username': self.task.account.trakt.username
+                }
+            }
+        })
 
 
 class Table(object):
