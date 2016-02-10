@@ -72,7 +72,7 @@ class BackupRevision(object):
             metadata = json.load(fp)
 
         if not metadata:
-            return None
+            raise ValueError('Invalid revision metadata: %r' % metadata)
 
         # Parse timestamp
         timestamp = metadata.pop('timestamp')

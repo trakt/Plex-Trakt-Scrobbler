@@ -51,7 +51,7 @@ def flatten(text):
 
 def json_date_serializer(obj):
     if isinstance(obj, datetime):
-        return obj.isoformat()
+        return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     raise TypeError('Type %r is not serializable', type(obj))
 

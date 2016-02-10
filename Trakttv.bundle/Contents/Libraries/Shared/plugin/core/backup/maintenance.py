@@ -1,6 +1,7 @@
 from plugin.core.backup.constants import BACKUP_NAME_REGEX, BACKUP_PATH, BACKUP_PERIODS, BACKUP_RETENTION
 from plugin.core.backup.models import BackupGroup, BackupRevision
 from plugin.core.backup.tasks import ArchiveTask, CompactTask
+from plugin.core.helpers.variable import try_convert
 
 from datetime import datetime
 from fnmatch import fnmatch
@@ -47,9 +48,20 @@ class BackupMaintenanceManager(object):
             if base_path.startswith('\\\\?\\'):
                 base_path = base_path[4:]
 
+            # Ensure directory starts with a year
+            rel_path = os.path.relpath(base_path, group.path)
+
+            try:
+                year = rel_path[:rel_path.index(os.path.sep)]
+            except ValueError:
+                year = rel_path
+
+            if len(year) != 4 or try_convert(year, int) is None:
+                continue
+
             # Search for revision metadata files
             for name in files:
-                # Ignore files without the ".bre" extension
+                # Ensure file name matches the policy "files" filter
                 if not fnmatch(name, p_files):
                     continue
 
@@ -114,6 +126,6 @@ class BackupMaintenanceManager(object):
             return timestamp.year, timestamp.month
 
         if period == 'year':
-            return timestamp.year
+            return timestamp.year,
 
         raise ValueError('Unknown period: %r' % period)

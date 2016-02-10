@@ -25,10 +25,15 @@ class ArchiveTask(object):
         tar_path, files = cls.create_archive(base_path, revisions)
 
         # Construct archive metadata
-        archive = BackupArchive(key, [
-            os.path.relpath(path, base_path)
-            for path in files
-        ])
+        archive = BackupArchive(
+            date=key,
+            archive=os.path.basename(tar_path),
+
+            files=[
+                os.path.relpath(path, base_path)
+                for path in files
+            ]
+        )
 
         # Move archive to directory
         try:
@@ -130,8 +135,8 @@ class ArchiveTask(object):
 
         if period == 'year':
             return (
-                os.path.join(group.path, str(key)),
-                str(key)
+                os.path.join(group.path, '%d' % key),
+                '%d' % key
             )
 
         raise ValueError('Unsupported archive period: %r' % period)

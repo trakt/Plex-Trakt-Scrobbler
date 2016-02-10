@@ -13,7 +13,7 @@ BACKUP_PERIODS = [
     'day',
     'week',
     'month',
-    # 'year'
+    'year'
 ]
 
 BACKUP_RETENTION = {
@@ -21,7 +21,7 @@ BACKUP_RETENTION = {
         'files': '*.bar',
 
         # Compress monthly archives
-        # 'archive': True
+        'archive': True
     },
     'month': {
         'files': '*.bre',
@@ -49,4 +49,4 @@ BACKUP_RETENTION = {
     }
 }
 
-BACKUP_NAME_REGEX = re.compile('^(?P<day>\d+)_(?P<time>\d+)(_(?P<tag>\w+))?\.(bar|bre)$')
+BACKUP_NAME_REGEX = re.compile('^\d{2}(?:_\d{6}(?:_\w+)?)?\.(?:bar|bre)$')

@@ -1,33 +1,48 @@
+from plugin.core.backup.models.revision import BackupRevision
 from plugin.core.helpers.variable import json_date_serializer
 
 from datetime import datetime
 import json
 import logging
-import os
 
 log = logging.getLogger(__name__)
 
 
-class BackupArchive(object):
-    def __init__(self, date, contents, attributes=None, path=None):
-        self.date = date
-        self.contents = contents
+class BackupArchive(BackupRevision):
+    def __init__(self, date, archive, files, tag=None, attributes=None, path=None):
+        if type(date) is not tuple:
+            raise ValueError('Invalid value provided for "date" parameter')
 
-        self.attributes = attributes or {}
+        # Set attributes
+        if attributes is None:
+            attributes = {}
 
-        self.path = path
+        attributes['date'] = date
+        attributes['files'] = files
 
-    def dict(self):
-        # Construct dictionary of data
-        result = {
-            'date': self.date,
-            'contents': self.contents,
-        }
+        # Construct revision
+        super(BackupArchive, self).__init__(None, [archive], tag, attributes, path)
 
-        # Merge attributes
-        result.update(self.attributes)
+        # Set class properties
+        self.files = files
 
-        return result
+        # Parse "date" tuple into a datetime object
+        if len(date) == 2:
+            self.timestamp = datetime(date[0], date[1], 1)
+            self.period = 'month'
+        elif len(date) == 1:
+            self.timestamp = datetime(date[0], 1, 1)
+            self.period = 'year'
+
+    @property
+    def date(self):
+        if self.period == 'month':
+            return self.timestamp.year, self.timestamp.month
+
+        if self.period == 'year':
+            return self.timestamp.year,
+
+        raise ValueError('Invalid period: %r' % self.period)
 
     @classmethod
     def load(cls, path):
@@ -41,14 +56,13 @@ class BackupArchive(object):
         # Parse date
         date = metadata.pop('date')
 
-        if date:
-            date = datetime.strptime(date, '%Y-%m-%d')
-
         # Construct `BackupRevision` object
         return cls(
             date,
-            metadata.pop('contents'),
+            metadata.pop('contents')[0],
+            metadata.pop('files'),
 
+            tag=metadata.pop('tag', None),
             attributes=metadata,
             path=path
         )
@@ -74,7 +88,7 @@ class BackupArchive(object):
         properties = []
 
         if self.date:
-            properties.append(('date', self.date.isoformat()))
+            properties.append(('date', self.date))
 
         if self.path:
             properties.append(('path', self.path))
