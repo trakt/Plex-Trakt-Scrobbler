@@ -1,6 +1,6 @@
 from plugin.models import SchedulerJob
 from plugin.modules.core.base import Module
-from plugin.modules.scheduler.handlers import SyncIntervalHandler
+from plugin.modules.scheduler.handlers import BackupMaintenanceIntervalHandler, SyncIntervalHandler
 
 from datetime import datetime
 from threading import Thread
@@ -10,6 +10,7 @@ import time
 log = logging.getLogger(__name__)
 
 HANDLERS = [
+    BackupMaintenanceIntervalHandler,
     SyncIntervalHandler
 ]
 

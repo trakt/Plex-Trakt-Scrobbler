@@ -126,6 +126,7 @@ class Clean(Migration):
                 'interface/sync_menu.py',
 
                 # /
+                'libraries.py',
                 'sync.py'
             ], os.path.isfile
         ),
@@ -158,6 +159,24 @@ class Clean(Migration):
                 'FreeBSD/i386/apsw.so',
                 'FreeBSD/i386/llist.so',
 
+                'FreeBSD/i386/ucs2/apsw.dependencies',
+                'FreeBSD/i386/ucs2/apsw.file',
+                'FreeBSD/i386/ucs2/llist.dependencies',
+                'FreeBSD/i386/ucs2/llist.file',
+                'FreeBSD/i386/ucs4/apsw.dependencies',
+                'FreeBSD/i386/ucs4/apsw.file',
+                'FreeBSD/i386/ucs4/llist.dependencies',
+                'FreeBSD/i386/ucs4/llist.file',
+
+                'FreeBSD/x86_64/ucs2/apsw.dependencies',
+                'FreeBSD/x86_64/ucs2/apsw.file',
+                'FreeBSD/x86_64/ucs2/llist.dependencies',
+                'FreeBSD/x86_64/ucs2/llist.file',
+                'FreeBSD/x86_64/ucs4/apsw.dependencies',
+                'FreeBSD/x86_64/ucs4/apsw.file',
+                'FreeBSD/x86_64/ucs4/llist.dependencies',
+                'FreeBSD/x86_64/ucs4/llist.file',
+
                 'Windows/i386/apsw.pyd',
                 'Windows/i386/llist.pyd',
 
@@ -165,6 +184,59 @@ class Clean(Migration):
                 'Linux/i386/llist.so',
                 'Linux/x86_64/apsw.so',
                 'Linux/x86_64/llist.so',
+
+                'Linux/armv6_hf/ucs4/apsw.dependencies',
+                'Linux/armv6_hf/ucs4/apsw.file',
+                'Linux/armv6_hf/ucs4/apsw.header',
+                'Linux/armv6_hf/ucs4/llist.dependencies',
+                'Linux/armv6_hf/ucs4/llist.file',
+                'Linux/armv6_hf/ucs4/llist.header',
+
+                'Linux/armv7_hf/ucs4/apsw.dependencies',
+                'Linux/armv7_hf/ucs4/apsw.file',
+                'Linux/armv7_hf/ucs4/apsw.header',
+                'Linux/armv7_hf/ucs4/llist.dependencies',
+                'Linux/armv7_hf/ucs4/llist.file',
+                'Linux/armv7_hf/ucs4/llist.header',
+
+                'Linux/i386/ucs2/apsw.dependencies',
+                'Linux/i386/ucs2/apsw.file',
+                'Linux/i386/ucs2/llist.dependencies',
+                'Linux/i386/ucs2/llist.file',
+                'Linux/i386/ucs4/apsw.dependencies',
+                'Linux/i386/ucs4/apsw.file',
+                'Linux/i386/ucs4/llist.dependencies',
+                'Linux/i386/ucs4/llist.file',
+
+                'Linux/x86_64/ucs2/apsw.dependencies',
+                'Linux/x86_64/ucs2/apsw.file',
+                'Linux/x86_64/ucs2/llist.dependencies',
+                'Linux/x86_64/ucs2/llist.file',
+                'Linux/x86_64/ucs4/apsw.dependencies',
+                'Linux/x86_64/ucs4/apsw.file',
+                'Linux/x86_64/ucs4/llist.dependencies',
+                'Linux/x86_64/ucs4/llist.file',
+
+                'MacOSX/i386/ucs2/apsw.dependencies',
+                'MacOSX/i386/ucs2/apsw.file',
+                'MacOSX/i386/ucs2/llist.dependencies',
+                'MacOSX/i386/ucs2/llist.file',
+                'MacOSX/i386/ucs4/apsw.dependencies',
+                'MacOSX/i386/ucs4/apsw.file',
+                'MacOSX/i386/ucs4/llist.dependencies',
+                'MacOSX/i386/ucs4/llist.file',
+
+                'MacOSX/x86_64/ucs2/apsw.dependencies',
+                'MacOSX/x86_64/ucs2/apsw.file',
+                'MacOSX/x86_64/ucs2/llist.dependencies',
+                'MacOSX/x86_64/ucs2/llist.file',
+                'MacOSX/x86_64/ucs4/apsw.dependencies',
+                'MacOSX/x86_64/ucs4/apsw.file',
+                'MacOSX/x86_64/ucs4/llist.dependencies',
+                'MacOSX/x86_64/ucs4/llist.file',
+
+                'Windows/i386/ucs2/apsw.pyd',
+                'Windows/i386/ucs2/llist.pyd',
 
                 # asio
                 'Shared/asio.py',
