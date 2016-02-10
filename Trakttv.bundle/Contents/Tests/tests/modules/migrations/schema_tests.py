@@ -1,10 +1,10 @@
-from plugin.core.database import Database
+from plugin.core.helpers.database import db_connect
 from plugin.modules.migrations.schema import SchemaMigration
 from tests.helpers.database import DatabaseContext
 
 
 def test_database_fresh():
-    db = Database._connect(':memory:', 'peewee')
+    db = db_connect(':memory:', 'peewee')
 
     with DatabaseContext.use(db):
         m = SchemaMigration()
@@ -14,7 +14,7 @@ def test_database_fresh():
 
 
 def test_database_upgrade():
-    db = Database._connect(':memory:', 'peewee')
+    db = db_connect(':memory:', 'peewee')
 
     with DatabaseContext.use(db):
         m = SchemaMigration()
@@ -28,7 +28,7 @@ def test_database_upgrade():
 
 
 def test_database_corruption():
-    db = Database._connect(':memory:', 'peewee')
+    db = db_connect(':memory:', 'peewee')
 
     with DatabaseContext.use(db):
         m = SchemaMigration()
