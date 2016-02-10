@@ -2,6 +2,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
+IGNORED_EVENTS = [
+    'buffering'
+]
+
 
 class Engine(object):
     handlers = {}
@@ -20,6 +24,12 @@ class Engine(object):
                 yield item
 
     def process_one(self, obj, key, payload):
+        # Ensure the event hasn't been ignored
+        if key in IGNORED_EVENTS:
+            log.debug('Ignored %r event', key)
+            return
+
+        # Try find handler for event
         handlers = self.handlers.get(key)
 
         if not handlers:
