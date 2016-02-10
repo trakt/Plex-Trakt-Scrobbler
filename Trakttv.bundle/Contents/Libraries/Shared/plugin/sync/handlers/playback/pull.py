@@ -31,6 +31,11 @@ class Base(PullHandler, PlaybackHandler):
 
         # Set arguments for action
         if action in ['added', 'changed']:
+            if t_value is None:
+                # Ignore completed/missing trakt progress
+                # TODO Progress should be cleared on items during fast pulls
+                return None
+
             # Calculate trakt view offset
             t_value = p_duration * (float(t_value) / 100)
             t_value = int(round(t_value, 0))
