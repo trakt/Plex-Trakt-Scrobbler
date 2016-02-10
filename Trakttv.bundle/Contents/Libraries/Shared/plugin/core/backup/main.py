@@ -2,6 +2,7 @@ from plugin.core.backup.maintenance import BackupMaintenanceManager
 from plugin.core.backup.sources import DatabaseBackupSource
 from plugin.core.helpers.thread import spawn
 
+from threading import Lock
 import logging
 
 log = logging.getLogger(__name__)
@@ -9,6 +10,8 @@ log = logging.getLogger(__name__)
 
 class BackupManager(object):
     database = DatabaseBackupSource
+
+    maintenance_lock = Lock()
 
     @classmethod
     def maintenance(cls, block=True):
@@ -22,8 +25,19 @@ class BackupManager(object):
         if not block:
             return spawn(cls.maintenance, block=True)
 
-        log.debug('Starting backup maintenance...')
+        if not cls.maintenance_lock.acquire(False):
+            log.debug('Backup maintenance already running')
+            return
 
-        # Run policy maintenance tasks
-        maintenance = BackupMaintenanceManager()
-        maintenance.run()
+        log.info('Starting backup maintenance...')
+
+        try:
+            # Run policy maintenance tasks
+            maintenance = BackupMaintenanceManager()
+            maintenance.run()
+        except Exception, ex:
+            log.error('Exception raised during backup maintenance: %s', ex, exc_info=True)
+        finally:
+            cls.maintenance_lock.release()
+
+        log.info('Backup maintenance complete')
