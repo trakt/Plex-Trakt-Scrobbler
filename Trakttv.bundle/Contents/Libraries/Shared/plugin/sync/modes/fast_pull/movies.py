@@ -74,8 +74,6 @@ class Movies(Mode):
 
             key = (guid.agent, guid.sid)
 
-            log.debug('Processing movie: %s', key)
-
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
 
