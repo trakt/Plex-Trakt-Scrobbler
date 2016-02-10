@@ -1,3 +1,4 @@
+from plugin.preferences.options.o_backup import *
 from plugin.preferences.options.o_sync import *
 
 from plugin.preferences.options.activity import ActivityOption
@@ -12,6 +13,9 @@ OPTIONS = [
     MatcherOption,
     PinOption,
     ScrobbleOption,
+
+    # Backup
+    BackupMaintenanceIntervalOption,
 
     # Sync
     SyncActionOption,
