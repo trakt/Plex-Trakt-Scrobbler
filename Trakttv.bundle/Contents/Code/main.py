@@ -1,9 +1,8 @@
 from core.header import Header
-from core.helpers import get_class_name, md5
+from core.helpers import get_class_name
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
-from plugin.core.backup import BackupManager
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
@@ -181,9 +180,6 @@ class Main(object):
 
         # Start plex.activity.py
         Activity.start(ACTIVITY_MODE.get(Preferences.get('activity.mode')))
-
-        # Start backup maintenance
-        BackupManager.maintenance(block=False)
 
     @classmethod
     def process_server_state(cls):
