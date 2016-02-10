@@ -40,8 +40,16 @@ class SchedulerOption(Option):
         # Get/Create `SchedulerJob`
         job, _ = SchedulerJob.get_or_create(
             account=account or 0,
-            task=task
+            task=task,
+
+            defaults={
+                'trigger': self.default
+            }
         )
+
+        if job.trigger and job.due_at is None:
+            job.due_at = self.get_next(job)
+            job.save()
 
         return self._clone(task, job)
 
