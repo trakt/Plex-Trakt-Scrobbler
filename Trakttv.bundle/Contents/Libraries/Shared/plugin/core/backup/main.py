@@ -1,6 +1,5 @@
-from plugin.core.backup.base import BackupManagerBase
-from plugin.core.backup.database import DatabaseBackupManager
-from plugin.core.backup.policy import BackupPolicyMaintenance
+from plugin.core.backup.maintenance import BackupMaintenanceManager
+from plugin.core.backup.sources import DatabaseBackupSource
 from plugin.core.helpers.thread import spawn
 
 import logging
@@ -8,8 +7,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class BackupManager(BackupManagerBase):
-    database = DatabaseBackupManager
+class BackupManager(object):
+    database = DatabaseBackupSource
 
     @classmethod
     def maintenance(cls, block=True):
@@ -26,5 +25,5 @@ class BackupManager(BackupManagerBase):
         log.debug('Starting backup maintenance...')
 
         # Run policy maintenance tasks
-        policy_maintenance = BackupPolicyMaintenance()
-        policy_maintenance.run()
+        maintenance = BackupMaintenanceManager()
+        maintenance.run()

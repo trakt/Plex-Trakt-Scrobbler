@@ -1,14 +1,12 @@
 from plugin.core.backup.constants import BACKUP_PATH
-from plugin.core.helpers.variable import json_date_serializer
 
-import json
 import logging
 import os
 
 log = logging.getLogger(__name__)
 
 
-class BackupManagerBase(object):
+class BackupSource(object):
     @staticmethod
     def path(group, timestamp, tag=None):
         # Build directory
@@ -29,10 +27,3 @@ class BackupManagerBase(object):
         )
 
         return directory, name, os.path.join(directory, name)
-
-    @staticmethod
-    def write_metadata(path, **metadata):
-        log.debug('Writing backup metadata to %r', path)
-
-        with open(path, 'wb') as fp:
-            json.dump(metadata, fp, default=json_date_serializer)

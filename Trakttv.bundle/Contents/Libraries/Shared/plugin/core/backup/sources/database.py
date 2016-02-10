@@ -1,4 +1,5 @@
-from plugin.core.backup.base import BackupManagerBase
+from plugin.core.backup.sources.base import BackupSource
+from plugin.core.backup.models import BackupRevision
 from plugin.core.helpers.database import db_connect, db_connection
 
 from datetime import datetime
@@ -8,7 +9,7 @@ import os
 log = logging.getLogger(__name__)
 
 
-class DatabaseBackupManager(BackupManagerBase):
+class DatabaseBackupSource(BackupSource):
     @classmethod
     def backup(cls, group, database, tag=None, metadata=None):
         timestamp = datetime.now()
@@ -41,16 +42,18 @@ class DatabaseBackupManager(BackupManagerBase):
             log.error('Backup failed (file doesn\'t exist)')
             return False
 
-        # Write backup metadata
-        cls.write_metadata(
-            path + '.bme',
-            contents=[
+        # Construct revision
+        revision = BackupRevision(
+            timestamp, [
                 name + '.db'
             ],
-            timestamp=timestamp,
+
             tag=tag,
-            **(metadata or {})
+            attributes=metadata or {}
         )
+
+        # Write backup metadata
+        revision.save(path + '.bre')
 
         return True
 

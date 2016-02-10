@@ -2,14 +2,51 @@ from plugin.core.environment import Environment
 import os
 import re
 
+# Backup directory/file types
+#  - *.bar (Backup Archive)
+#  - *.bgr (Backup Group)
+#  - *.bre (Backup Revision)
 
 BACKUP_PATH = os.path.join(Environment.path.plugin_data, 'Backups')
 
+BACKUP_PERIODS = [
+    'day',
+    'week',
+    'month',
+    # 'year'
+]
+
 BACKUP_RETENTION = {
-    'year':  {'count':   6, 'action': 'archive'},
-    'month': {'count':  28, 'action': 'archive'},
-    'week':  {'count':  14},
-    'day':   {'count':   4}
+    'year': {
+        'files': '*.bar',
+
+        # Compress monthly archives
+        # 'archive': True
+    },
+    'month': {
+        'files': '*.bre',
+
+        'compact': {
+            'maximum': 28
+        },
+
+        # Compress backup revisions
+        'archive': True
+    },
+    'week': {
+        'files': '*.bre',
+
+        'compact': {
+            'maximum': 14
+        }
+    },
+    'day': {
+        'files': '*.bre',
+
+        'compact': {
+            'maximum': 4
+        }
+    }
 }
 
-BACKUP_NAME_REGEX = re.compile('^(?P<day>\d+)_(?P<time>\d+)(_(?P<tag>\w+))?\.bme$')
+BACKUP_NAME_REGEX = re.compile('^(?P<day>\d+)_(?P<time>\d+)(_(?P<tag>\w+))?\.(bar|bre)$')
