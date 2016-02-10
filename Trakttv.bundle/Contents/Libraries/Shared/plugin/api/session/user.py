@@ -1,5 +1,6 @@
 from plugin.api.core.base import Service, expose
-from plugin.managers import UserManager, UserRuleManager
+from plugin.managers.user import UserManager
+from plugin.managers.user_rule import UserRuleManager
 
 import logging
 

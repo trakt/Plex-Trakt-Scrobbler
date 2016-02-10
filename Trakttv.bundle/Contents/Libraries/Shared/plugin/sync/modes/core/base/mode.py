@@ -45,13 +45,24 @@ DATA_PREFERENCE_MAP = {
 
 
 class Mode(object):
+    data = None
     mode = None
+
     children = []
 
     def __init__(self, task):
         self.__task = task
 
         self.children = [c(task) for c in self.children]
+
+        # Retrieve enabled data
+        self.enabled_data = self.get_enabled_data()
+
+        # Determine if mode should be enabled
+        self.enabled = len(self.enabled_data) > 0
+
+        if not self.enabled:
+            log.debug('Mode %r disabled on: %r', self.mode, self)
 
     @property
     def current(self):
@@ -101,8 +112,14 @@ class Mode(object):
 
         self.current.checkpoint()
 
-    def execute_children(self, name):
+    def execute_children(self, name, force=None):
+        # Run method on children
         for c in self.children:
+            if not force and not c.enabled:
+                log.debug('Ignoring %s() call on child: %r', name, c)
+                continue
+
+            # Find method `name` in child
             log.info('Executing %s() on child: %r', name, c)
 
             func = getattr(c, name, None)
@@ -111,6 +128,7 @@ class Mode(object):
                 log.warn('Unknown method: %r', name)
                 continue
 
+            # Run method on child
             func()
 
     @elapsed.clock
@@ -131,6 +149,64 @@ class Mode(object):
             except Exception, ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
 
+    def get_enabled_data(self):
+        config = self.configuration
+
+        # Determine accepted modes
+        modes = [SyncMode.Full]
+
+        if self.mode == SyncMode.Full:
+            modes.extend([
+                SyncMode.FastPull,
+                SyncMode.Pull,
+                SyncMode.Push
+            ])
+        elif self.mode == SyncMode.FastPull:
+            modes.extend([
+                self.mode,
+                SyncMode.Pull
+            ])
+        else:
+            modes.append(self.mode)
+
+        # Retrieve enabled data
+        result = []
+
+        if config['sync.watched.mode'] in modes:
+            result.append(SyncData.Watched)
+
+        if config['sync.ratings.mode'] in modes:
+            result.append(SyncData.Ratings)
+
+        if config['sync.playback.mode'] in modes:
+            result.append(SyncData.Playback)
+
+        if config['sync.collection.mode'] in modes:
+            result.append(SyncData.Collection)
+
+        # Lists
+        if config['sync.lists.watchlist.mode'] in modes:
+            result.append(SyncData.Watchlist)
+
+        if config['sync.lists.liked.mode'] in modes:
+            result.append(SyncData.Liked)
+
+        if config['sync.lists.personal.mode'] in modes:
+            result.append(SyncData.Personal)
+
+        # Filter `result` to data provided by this mode
+        if self.data is None:
+            log.warn('No "data" property defined on %r', self)
+            return result
+
+        if self.data == SyncData.All:
+            return result
+
+        return [
+            data for data in result
+            if data in self.data
+        ]
+
     def get_data(self, media):
         for data in TRAKT_DATA_MAP[media]:
             if not self.is_data_enabled(data):
@@ -140,31 +216,7 @@ class Mode(object):
 
     @elapsed.clock
     def is_data_enabled(self, data):
-        key = DATA_PREFERENCE_MAP.get(data)
-
-        if key is None:
-            log.warn('Unable to check if data %r is enabled', data)
-            return False
-
-        if key is False:
-            # Unsupported data type
-            return False
-
-        # Parse preference
-        mode = self.configuration[key]
-
-        if mode == SyncMode.Full:
-            mode = [SyncMode.FastPull, SyncMode.Pull, SyncMode.Push]
-        elif mode is not None:
-            mode = [mode]
-        else:
-            mode = []
-
-        # Check if data is enabled
-        if self.mode not in mode:
-            return False
-
-        return True
+        return data in self.enabled_data
 
     def sections(self, section_type=None):
         # Retrieve "section" for current task

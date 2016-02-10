@@ -18,12 +18,20 @@ try:
     Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
 except Exception, ex:
     Log.Warn('Unable to update locale: %s', ex)
+
+# ------------------------------------------------
+# Logger
+# ------------------------------------------------
+from plugin.core.logger import LoggerManager
+
+LoggerManager.setup(storage=False)
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
-from libraries import Libraries
+from plugin.core.libraries import LibrariesManager
 
-Libraries.setup(cache=True)
+LibrariesManager.setup(cache=True)
+LibrariesManager.test()
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
@@ -35,22 +43,6 @@ import interface
 from interface.m_main import MainMenu
 from interface.resources import Cover, Thumb
 # ------------------------------------------------
-
-# Check "apsw" availability
-try:
-    import apsw
-
-    Log.Debug('apsw: %r, sqlite: %r', apsw.apswversion(), apsw.SQLITE_VERSION_NUMBER)
-except Exception, ex:
-    Log.Error('Unable to import "apsw": %s', ex)
-
-# Check "llist" availability
-try:
-    import llist
-
-    Log.Debug('llist: available')
-except Exception, ex:
-    Log.Warn('Unable to import "llist": %s', ex)
 
 # Local imports
 from core.logger import Logger
@@ -87,6 +79,10 @@ def Start():
     if not Singleton.acquire():
         log.warn('Unable to acquire plugin instance')
 
+    # Complete logger initialization
+    LoggerManager.setup(storage=True)
+
+    # Startup plugin
     m = Main()
     m.start()
 

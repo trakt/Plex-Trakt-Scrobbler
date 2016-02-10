@@ -1,8 +1,7 @@
 from plugin.api.core.base import Service, expose
 from plugin.api.core.exceptions import ApiError
-from plugin.managers import AccountManager
+from plugin.managers.account import AccountManager
 from plugin.managers.core.exceptions import TraktAccountExistsException, PlexAccountExistsException
-from plugin.models import Account
 
 import apsw
 import logging

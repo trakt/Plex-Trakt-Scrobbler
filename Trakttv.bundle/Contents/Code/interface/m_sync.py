@@ -5,7 +5,7 @@ from core.logger import Logger
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
-from plugin.managers import AccountManager
+from plugin.managers.account import AccountManager
 from plugin.models import Account, SyncResult
 from plugin.sync import SyncData, SyncMode
 from plugin.sync.main import Sync, QueueError

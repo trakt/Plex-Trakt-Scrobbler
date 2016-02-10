@@ -4,11 +4,19 @@ from playhouse.apsw_ext import *
 
 
 class MessageCode(object):
+    # Database (0x09)
+    # - Schema (0x0901)
+    DatabaseSchemaCorruptionReset = 0x90101
+
     # Release / Version (0x10)
     # - Upgrade (0x1001)
     UpgradePerformed = 0x100101
     # - Downgrade (0x1002)
     DowngradeUnclean = 0x100201
+
+    # Network (0x11)
+    # - Trakt (0x1101)
+    TraktTimeout = 0x110101
 
     # TODO check for conflicting codes
 

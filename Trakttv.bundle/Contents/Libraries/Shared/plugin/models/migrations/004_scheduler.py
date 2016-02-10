@@ -4,8 +4,10 @@ from playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):
-    SchedulerTask.create_table()
-    SchedulerJob.create_table()
+    migrator.create_tables(
+        SchedulerTask,
+        SchedulerJob
+    )
 
 
 class Account(Model):
@@ -38,3 +40,22 @@ class SchedulerJob(Model):
 
     ran_at = DateTimeField(null=True)
     due_at = DateTimeField()
+
+#
+# Schema specification (for migration verification)
+#
+
+SPEC = {
+    'scheduler.task': {
+        'key':                      'VARCHAR(60) PRIMARY KEY NOT NULL'
+    },
+    'scheduler.job': {
+        'account_id':               'INTEGER PRIMARY KEY NOT NULL',
+        'task_id':                  'VARCHAR(60) PRIMARY KEY NOT NULL',
+
+        'trigger':                  'TEXT NOT NULL',
+
+        'ran_at':                   'DATETIME',
+        'due_at':                   'DATETIME NOT NULL'
+    }
+}

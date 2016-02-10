@@ -13,6 +13,13 @@ log = logging.getLogger(__name__)
 
 
 class Shows(Base):
+    data = [
+        SyncData.Collection,
+        SyncData.Playback,
+        SyncData.Ratings,
+        SyncData.Watched
+    ]
+
     def __init__(self, task):
         super(Shows, self).__init__(task)
 

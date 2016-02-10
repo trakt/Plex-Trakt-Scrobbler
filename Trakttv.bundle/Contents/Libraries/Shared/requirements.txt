@@ -1,11 +1,15 @@
 arrow==0.7.0
 asio==1.1
 croniter==0.3.11
+enum34==1.1.2
 expiringdict==1.1.3
 futures==3.0.3
 ipaddress==1.0.16
 itsdangerous==0.24
 msgpack-python==0.4.6
+ndg-httpsclient==0.4.0
+pyasn1==0.1.9
+pyOpenSSL==0.15.1
 pytz==2015.7
 requests==2.9.1
 six==1.10.0

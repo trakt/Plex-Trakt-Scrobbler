@@ -4,52 +4,50 @@ from playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):
-    #
-    # plex
-    #
+    migrator.create_tables(
+        #
+        # Plex
+        #
+        PlexAccount,
 
-    PlexAccount.create_table()
+        PlexBasicCredential,
 
-    PlexBasicCredential.create_table()
+        #
+        # Sync
+        #
+        SyncStatus,
 
-    #
-    # sync
-    #
+        SyncResult,
+        SyncResultError,
+        SyncResultException,
 
-    SyncStatus.create_table()
+        #
+        # Trakt
+        #
+        TraktAccount,
 
-    SyncResult.create_table()
-    SyncResultError.create_table()
-    SyncResultException.create_table()
+        TraktBasicCredential,
+        TraktOAuthCredential,
 
-    #
-    # trakt
-    #
+        #
+        # Main
+        #
+        Account,
+        Exception,
+        Message,
+        Session,
 
-    TraktAccount.create_table()
+        ConfigurationOption,
 
-    TraktBasicCredential.create_table()
-    TraktOAuthCredential.create_table()
+        ActionHistory,
+        ActionQueue,
 
-    #
-    # main
-    #
+        Client,
+        ClientRule,
 
-    Account.create_table()
-    Exception.create_table()
-    Message.create_table()
-    Session.create_table()
-
-    ConfigurationOption.create_table()
-
-    ActionHistory.create_table()
-    ActionQueue.create_table()
-
-    Client.create_table()
-    ClientRule.create_table()
-
-    User.create_table()
-    UserRule.create_table()
+        User,
+        UserRule
+    )
 
 
 class Account(Model):
@@ -218,6 +216,7 @@ class Message(Model):
     summary = CharField(null=True, max_length=160)  # Short single-line summary
     description = TextField(null=True)  # Extra related details
 
+
 class Exception(Model):
     class Meta:
         database = db
@@ -328,6 +327,7 @@ class SyncStatus(Model):
     mode = IntegerField()
     section = CharField(null=True, max_length=3)
 
+
 class SyncResult(Model):
     class Meta:
         database = db
@@ -341,6 +341,7 @@ class SyncResult(Model):
 
     # Result
     success = BooleanField(null=True)
+
 
 class SyncResultError(Model):
     class Meta:
@@ -358,3 +359,246 @@ class SyncResultException(Model):
 
     result = ForeignKeyField(SyncResult, 'exceptions')
     exception = ForeignKeyField(Exception, 'results')
+
+#
+# Schema specification (for migration verification)
+#
+
+SPEC = {
+    #
+    # Account
+    #
+
+    'account': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+
+        'name':                     'VARCHAR(255)',
+        'thumb':                    'TEXT'
+    },
+    'plex.account': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'username':                 'VARCHAR(255)',
+        'thumb':                    'TEXT'
+    },
+    'plex.credential.basic': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'password':                 'VARCHAR(255)',
+
+        'token':                    'VARCHAR(255)'
+    },
+
+    'trakt.account': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'username':                 'VARCHAR(255)',
+        'thumb':                    'TEXT',
+
+        'cover':                    'TEXT',
+        'timezone':                 'TEXT',
+
+        'refreshed_at':             'DATETIME'
+    },
+    'trakt.credential.basic': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'password':                 'VARCHAR(255)',
+
+        'token':                    'VARCHAR(255)'
+    },
+    'trakt.credential.oauth': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'code':                     'VARCHAR(255)',
+
+        'access_token':             'VARCHAR(255)',
+        'refresh_token':            'VARCHAR(255)',
+
+        'created_at':               'INTEGER',
+        'expires_in':               'INTEGER',
+
+        'token_type':               'VARCHAR(255)',
+        'scope':                    'VARCHAR(255)'
+    },
+
+    #
+    # Session
+    #
+
+    'session': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER',
+        'client_id':                'VARCHAR(255)',
+        'user_id':                  'INTEGER',
+
+        'rating_key':               'INTEGER',
+        'session_key':              'TEXT',
+
+        'state':                    'VARCHAR(255)',
+
+        'progress':                 'REAL',
+
+        'duration':                 'INTEGER',
+        'view_offset':              'INTEGER'
+    },
+
+    'session.client': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER',
+
+        'key':                      'VARCHAR(255) NOT NULL',
+        'name':                     'VARCHAR(255)',
+
+        'device_class':             'VARCHAR(255)',
+        'platform':                 'VARCHAR(255)',
+        'product':                  'VARCHAR(255)',
+        'version':                  'VARCHAR(255)',
+
+        'host':                     'VARCHAR(255)',
+        'address':                  'VARCHAR(255)',
+        'port':                     'INTEGER',
+
+        'protocol':                 'VARCHAR(255)',
+        'protocol_capabilities':    'VARCHAR(255)',
+        'protocol_version':         'VARCHAR(255)'
+    },
+    'session.client.rule': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'key':                      'VARCHAR(255)',
+        'name':                     'VARCHAR(255)',
+        'address':                  'VARCHAR(255)',
+
+        'priority':                 'INTEGER NOT NULL'
+    },
+
+    'session.user': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER',
+
+        'key':                      'INTEGER NOT NULL',
+        'name':                     'VARCHAR(255)',
+
+        'thumb':                    'VARCHAR(255)',
+    },
+    'session.user.rule': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'name':                     'VARCHAR(255)',
+
+        'priority':                 'INTEGER NOT NULL'
+    },
+
+    #
+    # Configuration
+    #
+
+    'configuration.option': {
+        'key':                      'VARCHAR(60) PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER PRIMARY KEY NOT NULL',
+
+        'value':                    'BLOB NOT NULL'
+    },
+
+    #
+    # Actions
+    #
+
+    'action.history': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+        'session_id':               'INTEGER',
+
+        'event':                    'VARCHAR(255) NOT NULL',
+        'performed':                'VARCHAR(255)',
+
+        'queued_at':                'DATETIME NOT NULL',
+        'sent_at':                  'DATETIME NOT NULL'
+    },
+    'action.queue': {
+        'account_id':               'INTEGER NOT NULL',
+        'session_id':               'INTEGER PRIMARY KEY',
+
+        'event':                    'VARCHAR(255) PRIMARY KEY NOT NULL',
+        'request':                  'BLOB NOT NULL',
+
+        'queued_at':                'DATETIME NOT NULL',
+    },
+
+    #
+    # Messages/Exceptions
+    #
+
+    'message': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+
+        'code':                     'INTEGER',
+        'type':                     'INTEGER NOT NULL',
+
+        'last_logged_at':           'DATETIME NOT NULL',
+        'last_viewed_at':           'DATETIME',
+
+        'exception_hash':           'VARCHAR(32)',
+        'revision':                 'INTEGER',
+
+        'version_base':             'VARCHAR(12) NOT NULL',
+        'version_branch':           'VARCHAR(42) NOT NULL',
+
+        'summary':                  'VARCHAR(160)',
+        'description':              'TEXT'
+    },
+    'exception': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'error_id':                 'INTEGER',
+
+        'type':                     'TEXT NOT NULL',
+        'message':                  'TEXT NOT NULL',
+        'traceback':                'TEXT NOT NULL',
+
+        'hash':                     'VARCHAR(32)',
+
+        'timestamp':                'DATETIME NOT NULL',
+        'version_base':             'VARCHAR(12) NOT NULL',
+        'version_branch':           'VARCHAR(42) NOT NULL',
+    },
+
+    #
+    # Syncing
+    #
+
+    'sync.status': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':               'INTEGER NOT NULL',
+
+        'mode':                     'INTEGER NOT NULL',
+        'section':                  'VARCHAR(3)'
+    },
+
+    'sync.result': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'status_id':                'INTEGER NOT NULL',
+
+        'started_at':               'DATETIME',
+        'ended_at':                 'DATETIME',
+
+        'success':                  'SMALLINT'
+    },
+    'sync.result.error': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'result_id':                'INTEGER NOT NULL',
+        'error_id':                 'INTEGER NOT NULL'
+    },
+    'sync.result.exception': {
+        'id':                       'INTEGER PRIMARY KEY NOT NULL',
+        'result_id':                'INTEGER NOT NULL',
+        'exception_id':             'INTEGER NOT NULL'
+    },
+}

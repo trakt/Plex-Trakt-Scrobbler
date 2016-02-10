@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.helpers.error import ErrorHasher
 from plugin.core.logger.filters import RequestsFilter
-from plugin.managers import ExceptionManager
 
 from raven import Client
 from raven.handlers.logging import SentryHandler, RESERVED
@@ -10,10 +10,67 @@ import datetime
 import logging
 import platform
 
+log = logging.getLogger(__name__)
 
-class ErrorReporter(SentryHandler):
+
+VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
+
+PARAMS = {
+    # Message processors + filters
+    'processors': [
+        'raven.processors.RemoveStackLocalsProcessor',
+        'plugin.raven.processors.RelativePathProcessor'
+    ],
+
+    # Plugin + System details
+    'release': VERSION,
+    'tags': {
+        # Plugin
+        'plugin.version': VERSION,
+        'plugin.branch': PLUGIN_VERSION_BRANCH,
+
+        # System
+        'os.system': platform.system(),
+        'os.release': platform.release(),
+        'os.version': platform.version()
+    }
+}
+
+
+class ErrorReporter(Client):
+    server = 'sentry.skipthe.net'
+    key = 'c1f6cf06677a421db53f8814292b45a5:66e0d7c790b34928b5d5ca44dffad8ee'
+    project = 1
+
+    def __init__(self, dsn=None, raise_send_errors=False, **options):
+        # Build URI
+        if dsn is None:
+            dsn = self.build_dsn()
+
+        # Construct raven client
+        super(ErrorReporter, self).__init__(dsn, raise_send_errors, **options)
+
+    def build_dsn(self, protocol='requests+http'):
+        return '%s://%s@%s/%s' % (
+            protocol,
+            self.key,
+            self.server,
+            self.project
+        )
+
+    def set_protocol(self, protocol):
+        # Build new DSN URI
+        dsn = self.build_dsn(protocol)
+
+        # Update client DSN
+        self.set_dsn(dsn)
+
+
+class ErrorReporterHandler(SentryHandler):
     def _emit(self, record, **kwargs):
-        data = {}
+        data = {
+            'user': {'id': self.client.name}
+        }
 
         extra = getattr(record, 'data', None)
         if not isinstance(extra, dict):
@@ -71,7 +128,7 @@ class ErrorReporter(SentryHandler):
             handler_kwargs = {'exc_info': record.exc_info}
 
             # Calculate exception hash
-            exception_hash = ExceptionManager.hash(exc_info=record.exc_info)
+            exception_hash = ErrorHasher.hash(exc_info=record.exc_info)
 
         # HACK: discover a culprit when we normally couldn't
         elif not (data.get('stacktrace') or data.get('culprit')) and (record.name or record.funcName):
@@ -102,31 +159,8 @@ class ErrorReporter(SentryHandler):
 
 
 # Build client
-VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
-
-PARAMS = {
-    'dsn': 'requests+http://6bd64b4a32ac4ce280e809db6845210d:c7051e89810f4f4f9e543a0f142f533b@sentry.skipthe.net/1',
-
-    'processors': [
-        'raven.processors.RemoveStackLocalsProcessor',
-        'plugin.raven.processors.RelativePathProcessor'
-    ],
-
-    'release': VERSION,
-    'tags': {
-        # Plugin
-        'plugin.version': VERSION,
-        'plugin.branch': PLUGIN_VERSION_BRANCH,
-
-        # System
-        'os.system': platform.system(),
-        'os.release': platform.release(),
-        'os.version': platform.version()
-    }
-}
-
-RAVEN = Client(**PARAMS)
+RAVEN = ErrorReporter(**PARAMS)
 
 # Construct logging handler
-ERROR_REPORTER_HANDLER = ErrorReporter(RAVEN, level=logging.ERROR)
+ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 ERROR_REPORTER_HANDLER.addFilter(RequestsFilter())

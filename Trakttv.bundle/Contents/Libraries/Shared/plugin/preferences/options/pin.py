@@ -1,4 +1,4 @@
-from plugin.managers import TraktAccountManager
+from plugin.managers.account import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.preferences.options.core.base import SimpleOption
 

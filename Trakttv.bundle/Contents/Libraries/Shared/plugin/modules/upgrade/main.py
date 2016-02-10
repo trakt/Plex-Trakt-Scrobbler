@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.environment import Environment
-from plugin.managers import MessageManager
+from plugin.managers.message import MessageManager
 from plugin.models import Message
 from plugin.modules.core.base import Module
 

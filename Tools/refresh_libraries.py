@@ -8,6 +8,9 @@ DELETE_DIRECTORIES = [
     'futures',
 
     os.path.join('croniter', 'tests'),
+    os.path.join('enum', 'doc'),
+    os.path.join('ndg', 'httpsclient', 'test'),
+    os.path.join('OpenSSL', 'test'),
     os.path.join('shove', 'tests'),
     os.path.join('tzlocal', 'test_data'),
     os.path.join('websocket', 'tests'),
@@ -24,8 +27,11 @@ DELETE_DIRECTORIES = [
 ]
 
 DELETE_FILES = [
+    os.path.join('enum', 'README'),
+    os.path.join('enum', 'test_enum.py'),
     os.path.join('tzlocal', 'tests.py'),
 
+    'ndg_httpsclient-0.4.0-py2.7-nspkg.pth',
     'pwiz.py',
     'setup.py'
 ]
@@ -35,7 +41,7 @@ DELETE_EXTENSIONS = [
 ]
 
 
-def install():
+def run_install():
     call([
         "pip", "install",
         "--no-compile",
@@ -46,7 +52,7 @@ def install():
     ])
 
 
-def compact():
+def run_compact():
     # Delete directories
     for path in DELETE_DIRECTORIES:
         try:
@@ -80,9 +86,28 @@ def compact():
                     print "Unable to delete file: %r - %s" % (path, ex)
 
 
+def run_extras():
+    # Create "ndg/__init__.py" file
+    touch(os.path.join('ndg', '__init__.py'))
+
+
+def write(path, content):
+    path = os.path.join(BASE_PATH, path)
+
+    with open(path, 'wb') as fp:
+        fp.write(content)
+
+
+def touch(path):
+    return write(path, '')
+
+
 if __name__ == '__main__':
     print "Installing libraries..."
-    install()
+    run_install()
 
     print "Compacting libraries..."
-    compact()
+    run_compact()
+
+    print "Running extra tasks on libraries..."
+    run_extras()

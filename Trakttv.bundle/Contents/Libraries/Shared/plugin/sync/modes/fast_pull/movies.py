@@ -11,6 +11,12 @@ log = logging.getLogger(__name__)
 
 
 class Movies(Mode):
+    data = [
+        SyncData.Collection,
+        SyncData.Playback,
+        SyncData.Ratings,
+        SyncData.Watched
+    ]
     mode = SyncMode.FastPull
 
     def __init__(self, task):
@@ -67,8 +73,6 @@ class Movies(Mode):
                 continue
 
             key = (guid.agent, guid.sid)
-
-            log.debug('Processing movie: %s', key)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

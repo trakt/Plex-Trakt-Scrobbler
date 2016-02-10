@@ -11,6 +11,12 @@ log = logging.getLogger(__name__)
 
 
 class Shows(Mode):
+    data = [
+        SyncData.Collection,
+        SyncData.Playback,
+        SyncData.Ratings,
+        SyncData.Watched
+    ]
     mode = SyncMode.FastPull
 
     def __init__(self, task):
@@ -82,8 +88,6 @@ class Shows(Mode):
 
                 key = (guid.agent, guid.sid)
 
-                log.debug('Processing show: %s', key)
-
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
 
@@ -149,8 +153,6 @@ class Shows(Mode):
                     continue
 
                 key = (guid.agent, guid.sid)
-
-                log.debug('Processing episode: %s - S%02dE%02d', key, season_num, episode_num)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)

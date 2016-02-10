@@ -8,15 +8,11 @@ log = logging.getLogger(__name__)
 
 
 class Watchlist(Lists):
+    data = [SyncData.Watchlist]
     mode = SyncMode.Pull
 
     @elapsed.clock
     def run(self):
-        # Check if data is enabled
-        if not self.is_data_enabled(SyncData.Watchlist):
-            log.debug('Watchlist syncing has not been enabled')
-            return
-
         # Retrieve plex sections
         p_sections, p_sections_map = self.sections()
 

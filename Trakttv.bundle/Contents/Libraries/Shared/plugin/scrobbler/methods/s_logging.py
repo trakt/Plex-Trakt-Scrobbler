@@ -1,8 +1,8 @@
 from plugin.core.helpers.variable import to_integer
-from plugin.managers import ActionManager
+from plugin.managers.action import ActionManager
+from plugin.managers.session.s_logging import LSessionManager
 from plugin.scrobbler.core import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
-from plugin.managers.session import LSessionManager
 
 from datetime import datetime, timedelta
 from plex_activity import Activity

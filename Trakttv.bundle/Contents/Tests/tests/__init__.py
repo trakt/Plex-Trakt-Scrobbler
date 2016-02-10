@@ -40,9 +40,10 @@ Environment.setup(Core(CODE_DIR), {
 })
 
 # Setup native libraries
-from libraries import Libraries
+from plugin.core.libraries import LibrariesManager
 
-Libraries.setup()
+LibrariesManager.setup(cache=False)
+LibrariesManager.test()
 
 # Build directory structure for "Plug-in Support"
 PLUGIN_SUPPORT = os.path.join(TEMP_DIR, 'Plug-in Support')
@@ -52,6 +53,14 @@ os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Data', PLUGIN_IDENTIFIER))
 os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Databases'))
 
 Environment.path.plugin_support = PLUGIN_SUPPORT
+
+# Setup database proxy
+from plugin.core.database import Database
+from tests.helpers.database import DATABASE_PROXY
+
+db_path = os.path.abspath(Environment.path.plugin_database)
+
+Database._cache['peewee'][db_path] = DATABASE_PROXY
 
 # Configure plex.database.py
 os.environ['LIBRARY_DB'] = os.path.join(

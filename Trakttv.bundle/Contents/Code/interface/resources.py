@@ -1,5 +1,5 @@
 from plugin.core.constants import PLUGIN_PREFIX
-from plugin.managers import AccountManager
+from plugin.managers.account import AccountManager
 from plugin.models import Account
 
 import logging

@@ -280,7 +280,7 @@ class SyncArtifacts(object):
 
         # Validate parameters
         if p_item is not None and (not p_item.get('title') or not p_item.get('year')):
-            log.warn('Invalid "title" or "year" attribute on %s', identifier)
+            log.info('Invalid "title" or "year" attribute on %s', identifier)
             return False
 
         if not guid:

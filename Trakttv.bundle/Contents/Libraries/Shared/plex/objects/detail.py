@@ -16,6 +16,7 @@ class Detail(Container):
 
     allow_camera_upload = Property('allowCameraUpload', [int, bool])
     allow_channel_access = Property('allowChannelAccess', [int, bool])
+    allow_media_deletion = Property('allowMediaDeletion', [int, bool])
     allow_sync = Property('allowSync', [int, bool])
 
     background_processing = Property('backgroundProcessing', [int, bool])

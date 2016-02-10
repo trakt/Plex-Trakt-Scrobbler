@@ -1,8 +1,7 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.environment import Environment
+from plugin.core.helpers.variable import md5
 from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter, RequestsFilter
-from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
-from plugin.core.logger.handlers.error_storage import ERROR_STORAGE_HANDLER
 
 from logging.handlers import RotatingFileHandler
 import logging
@@ -47,79 +46,115 @@ class LogHandler(logging.Handler):
         return self.handler.emit(record)
 
 
-def get_handler():
-    logger = logging.getLogger(PLUGIN_IDENTIFIER)
+class LoggerManager(object):
+    @staticmethod
+    def get_handler():
+        logger = logging.getLogger(PLUGIN_IDENTIFIER)
 
-    for h in logger.handlers:
-        if type(h) is RotatingFileHandler:
-            logger.handlers.remove(h)
-            return LogHandler(h)
+        for h in logger.handlers:
+            if type(h) is RotatingFileHandler:
+                logger.handlers.remove(h)
+                return LogHandler(h)
 
-    return None
+        return None
 
-def setup():
-    # Setup root logger
-    rootLogger = logging.getLogger()
+    @classmethod
+    def setup(cls, report=True, storage=True):
+        cls.setup_logging(report, storage)
 
-    rootLogger.filters = [
-        FrameworkFilter()
-    ]
+        if report:
+            cls.setup_raven()
 
-    rootLogger.handlers = [
-        LOG_HANDLER,
-        ERROR_REPORTER_HANDLER,
-        ERROR_STORAGE_HANDLER
-    ]
+        log.debug('Initialized logging (report: %r, storage: %r)', report, storage)
 
-    rootLogger.setLevel(logging.DEBUG)
+    @staticmethod
+    def setup_logging(report=True, storage=True):
+        # Setup root logger
+        rootLogger = logging.getLogger()
 
-def get_level(option):
-    # Try retrieve preference
-    try:
-        value = Environment.prefs['level_%s' % option]
-    except KeyError:
-        # Default to "plugin" preference
-        value = Environment.prefs['level_plugin']
+        # Set filters
+        rootLogger.filters = [
+            FrameworkFilter()
+        ]
 
-    # Parse labels into level attributes
-    if value == 'ERROR':
-        return logging.ERROR
+        # Set level
+        rootLogger.setLevel(logging.DEBUG)
 
-    if value == 'WARN' or value == 'WARNING':
-        return logging.WARNING
+        # Set handlers
+        rootLogger.handlers = [
+            LOG_HANDLER
+        ]
 
-    if value == 'INFO':
-        return logging.INFO
+        # Setup error reporting (if enabled)
+        if report:
+            from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
 
-    if value == 'DEBUG':
+            rootLogger.handlers.append(ERROR_REPORTER_HANDLER)
+
+        # Setup local error storage (if enabled)
+        if storage:
+            from plugin.core.logger.handlers.error_storage import ERROR_STORAGE_HANDLER
+
+            rootLogger.handlers.append(ERROR_STORAGE_HANDLER)
+
+    @staticmethod
+    def setup_raven():
+        from plugin.core.logger.handlers.error_reporter import RAVEN
+
+        # Set client name to a hash of `machine_identifier`
+        RAVEN.name = md5(Environment.platform.machine_identifier)
+
+        RAVEN.tags.update({
+            'server.version': Environment.platform.server_version
+        })
+
+    @classmethod
+    def refresh(cls):
+        for name, option in LOG_OPTIONS.items():
+            logger = logging.getLogger(name)
+
+            # Retrieve logger level, check if it has changed
+            level = cls.get_level(option)
+
+            if level == logger.level:
+                continue
+
+            # Update logger level
+            log.debug('Changed %r logger level to %s', name, logging.getLevelName(level))
+
+            logger.setLevel(level)
+
+    @staticmethod
+    def get_level(option):
+        # Try retrieve preference
+        try:
+            value = Environment.prefs['level_%s' % option]
+        except KeyError:
+            # Default to "plugin" preference
+            value = Environment.prefs['level_plugin']
+
+        # Parse labels into level attributes
+        if value == 'ERROR':
+            return logging.ERROR
+
+        if value == 'WARN' or value == 'WARNING':
+            return logging.WARNING
+
+        if value == 'INFO':
+            return logging.INFO
+
+        if value == 'DEBUG':
+            return logging.DEBUG
+
+        if value == "TRACE":
+            return TRACE
+
+        log.warn('Unknown logging level "%s"', value)
         return logging.DEBUG
 
-    if value == "TRACE":
-        return TRACE
-
-    log.warn('Unknown logging level "%s"', value)
-    return logging.DEBUG
-
-
-def update_loggers():
-    for name, option in LOG_OPTIONS.items():
-        logger = logging.getLogger(name)
-
-        # Retrieve logger level, check if it has changed
-        level = get_level(option)
-
-        if level == logger.level:
-            continue
-
-        # Update logger level
-        log.debug('Changed %r logger level to %s', name, logging.getLevelName(level))
-
-        logger.setLevel(level)
-
 # Get the logging file handler
-LOG_HANDLER = get_handler()
-LOG_HANDLER.addFilter(AuthorizationFilter())
-LOG_HANDLER.addFilter(RequestsFilter())
+LOG_HANDLER = LoggerManager.get_handler()
 
-# Setup logger
-setup()
+if LOG_HANDLER:
+    LOG_HANDLER.addFilter(AuthorizationFilter())
+    LOG_HANDLER.addFilter(RequestsFilter())

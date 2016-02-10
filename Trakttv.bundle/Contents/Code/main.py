@@ -1,14 +1,13 @@
 from core.header import Header
-from core.helpers import get_class_name, md5
+from core.helpers import get_class_name
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
-from plugin.core.logger import LOG_HANDLER, update_loggers
-from plugin.core.logger.handlers.error_reporter import RAVEN
-from plugin.managers import TraktAccountManager
+from plugin.core.logger import LOG_HANDLER, LoggerManager
+from plugin.managers.account import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -35,16 +34,13 @@ class Main(object):
     def __init__(self):
         Header.show(self)
 
-        update_loggers()
+        LoggerManager.refresh()
 
         self.init_trakt()
         self.init_plex()
         self.init()
 
         ModuleManager.initialize()
-
-        # Initialize sentry error reporting
-        self.init_raven()
 
         # Construct main thread
         self.thread = Thread(target=self.run, name='main')
@@ -60,21 +56,6 @@ class Main(object):
                 module.initialize()
 
         log.info('Initialized %s modules: %s', len(names), ', '.join(names))
-
-    @classmethod
-    def init_raven(cls):
-        # Retrieve server details
-        server = Plex.detail()
-
-        if not server:
-            return
-
-        # Set client name to a hash of `machine_identifier`
-        RAVEN.name = md5(server.machine_identifier)
-
-        RAVEN.tags.update({
-            'server.version': server.version
-        })
 
     @staticmethod
     def init_plex():
@@ -226,4 +207,4 @@ class Main(object):
 
     @staticmethod
     def on_configuration_changed():
-        update_loggers()
+        LoggerManager.refresh()

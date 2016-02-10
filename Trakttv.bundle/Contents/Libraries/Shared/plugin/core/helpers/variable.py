@@ -1,6 +1,6 @@
-from plugin.core.environment import Environment
-
+from datetime import datetime
 import collections
+import hashlib
 import re
 import unicodedata
 
@@ -49,6 +49,13 @@ def flatten(text):
     return text.lower()
 
 
+def json_date_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
+
+    raise TypeError('Type %r is not serializable', type(obj))
+
+
 def merge(a, b, recursive=False):
     if not recursive:
         a.update(b)
@@ -65,6 +72,14 @@ def merge(a, b, recursive=False):
     return a
 
 
+def md5(value):
+    # Generate MD5 hash of `value`
+    m = hashlib.md5()
+    m.update(value)
+
+    return m.hexdigest()
+
+
 def normalize(text):
     if text is None:
         return None
@@ -75,6 +90,15 @@ def normalize(text):
 
     # Ensure text is ASCII, ignore unknown characters
     return text.encode('ascii', 'ignore')
+
+
+def pms_path():
+    file_path = __file__.lower()
+
+    if 'plug-ins' not in file_path:
+        return None
+
+    return __file__[:file_path.index('plug-ins')]
 
 
 def resolve(value, *args, **kwargs):
