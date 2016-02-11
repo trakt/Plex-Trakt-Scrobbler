@@ -76,7 +76,7 @@ class Scheduler(Module):
         handler = self.handlers.get(job.task_key)
 
         if handler is None:
-            log.warn('Unknown job with key: %r', job.task_key)
+            log.info('Unknown job with key: %r', job.task_key)
             return False
 
         # Run handler

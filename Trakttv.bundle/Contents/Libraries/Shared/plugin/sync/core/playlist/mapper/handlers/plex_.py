@@ -80,4 +80,4 @@ class PlexPlaylistHandler(PlaylistHandler):
 
             # Update `table`
             if not self.path_set(self.table, keys, (index, item)):
-                log.warn('Unable to update table (keys: %r)', keys)
+                log.info('Unable to update table (keys: %r)', keys)
