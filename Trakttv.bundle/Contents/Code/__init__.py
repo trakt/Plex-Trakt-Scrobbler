@@ -18,7 +18,12 @@ try:
     Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
 except Exception, ex:
     Log.Warn('Unable to update locale: %s', ex)
+# ------------------------------------------------
+# FS Migrator
+# ------------------------------------------------
+from fs_migrator import FSMigrator
 
+FSMigrator.run()
 # ------------------------------------------------
 # Logger
 # ------------------------------------------------

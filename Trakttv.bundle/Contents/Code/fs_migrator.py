@@ -1,12 +1,12 @@
-from core.helpers import all
 from plugin.core.constants import PLUGIN_VERSION_BASE
+from plugin.core.helpers.variable import all
 
 from lxml import etree
 import shutil
 import os
 
 
-class Migrator(object):
+class FSMigrator(object):
     migrations = []
 
     @classmethod
@@ -114,6 +114,7 @@ class Clean(Migration):
                 'core/logging_handler.py',
                 'core/logging_reporter.py',
                 'core/method_manager.py',
+                'core/migrator.py',
                 'core/model.py',
                 'core/network.py',
                 'core/numeric.py',
@@ -446,7 +447,6 @@ class SelectiveSync(Migration):
         self.set_preferences(changes)
 
 
-Migrator.register(Clean)
-Migrator.register(ForceLegacy)
-Migrator.register(SelectiveSync)
-Migrator.run()
+FSMigrator.register(Clean)
+FSMigrator.register(ForceLegacy)
+FSMigrator.register(SelectiveSync)
