@@ -40,7 +40,7 @@ class SchedulerOption(Option):
         # Get/Create `SchedulerJob`
         job, _ = SchedulerJob.get_or_create(
             account=account or 0,
-            task=task,
+            task=self.key,
 
             defaults={
                 'trigger': self.default
@@ -72,7 +72,7 @@ class SchedulerOption(Option):
         # Get/Create `SchedulerJob`
         job, _ = SchedulerJob.get_or_create(
             account=account or 0,
-            task=task
+            task=self.key
         )
 
         # Update job

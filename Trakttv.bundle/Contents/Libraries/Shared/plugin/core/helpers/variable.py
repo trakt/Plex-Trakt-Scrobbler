@@ -5,6 +5,13 @@ import re
 import unicodedata
 
 
+def all(items):
+    for item in items:
+        if not item:
+            return False
+    return True
+
+
 def dict_path(d, path):
     if not isinstance(path, (list, tuple)):
         raise ValueError()

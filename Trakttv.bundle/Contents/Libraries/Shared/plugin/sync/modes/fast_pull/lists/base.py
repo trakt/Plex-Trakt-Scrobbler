@@ -110,6 +110,9 @@ class Lists(PullListsMode):
         for key, index, (p_index, p_items), (t_index, t_items) in m_trakt:
             # Expand shows/seasons into episodes
             for p_item, t_item in self.expand(p_items, t_items):
+                if not t_item:
+                    continue
+
                 if len(key) < 1:
                     log.warn('Invalid "key" format: %r', key)
                     continue
@@ -169,6 +172,9 @@ class Lists(PullListsMode):
         for key, index, (p_index, p_items), (t_index, t_items) in m_trakt:
             # Expand shows/seasons into episodes
             for p_item, t_item in self.expand(p_items, t_items):
+                if not t_item:
+                    continue
+
                 # Get `SyncMedia` for `t_item`
                 media = self.get_media(t_item)
 

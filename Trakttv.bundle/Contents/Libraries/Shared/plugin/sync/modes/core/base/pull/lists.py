@@ -11,6 +11,9 @@ log = logging.getLogger(__name__)
 class PullListsMode(Mode):
     @staticmethod
     def get_media(t_item):
+        if not t_item:
+            return None
+
         t_type = type(t_item)
 
         if t_type is trakt.objects.Movie:

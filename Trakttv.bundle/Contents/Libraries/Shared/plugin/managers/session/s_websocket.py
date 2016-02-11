@@ -82,7 +82,7 @@ class UpdateWSession(UpdateSession):
         session_key = to_integer(info.get('sessionKey'))
 
         if not session_key:
-            log.warn('Missing session key, unable to fetch session details')
+            log.info('Missing session key, unable to fetch session details')
             return result
 
         # Retrieve session details
@@ -91,14 +91,14 @@ class UpdateWSession(UpdateSession):
         p_item = Plex['status'].sessions().get(session_key)
 
         if not p_item:
-            log.warn('Unable to find session with key %r', session_key)
+            log.info('Unable to find session with key %r', session_key)
             return result
 
         # Retrieve metadata and guid
         p_metadata, guid = self.get_metadata(p_item.rating_key)
 
         if not p_metadata:
-            log.warn('Unable to retrieve metadata for rating_key %r', p_item.rating_key)
+            log.info('Unable to retrieve metadata for rating_key %r', p_item.rating_key)
             return result
 
         if not guid:
