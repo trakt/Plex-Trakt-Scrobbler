@@ -13,15 +13,19 @@ class Playlist(Descriptor):
     rating_key = Property('ratingKey')
 
     title = Property
+    title_sort = Property('titleSort')
     summary = Property
 
     duration = Property(type=int)
     duration_seconds = Property('durationInSeconds', int)
 
+    view_count = Property('viewCount', int)
+
     leaf_count = Property('leafCount', int)
     smart = Property(type=(int, bool))
 
     added_at = Property('addedAt', int)
+    last_viewed_at = Property('lastViewedAt', int)
     updated_at = Property('updatedAt', int)
 
     def add(self, item_uri):

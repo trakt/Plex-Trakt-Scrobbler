@@ -64,6 +64,10 @@ class UpdateSession(Update, Base):
             log.debug('%r, ignoring session', e.message)
             return None, None
 
+        # Ensure metadata was returned
+        if not metadata:
+            return None, None
+
         # Queue flush for metadata cache
         Metadata.cache.flush_queue()
 

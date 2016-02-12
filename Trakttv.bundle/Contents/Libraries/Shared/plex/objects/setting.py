@@ -14,8 +14,8 @@ class Setting(Descriptor):
     default = Property(resolver=lambda: Setting.parse_default)
     options = Property('enumValues', resolver=lambda: Setting.parse_options)
 
-    hidden = Property(type=[int, bool])
-    advanced = Property(type=[int, bool])
+    hidden = Property(type=(int, bool))
+    advanced = Property(type=(int, bool))
 
     @classmethod
     def parse_value(cls, client, node):

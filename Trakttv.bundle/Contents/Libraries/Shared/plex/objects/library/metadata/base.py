@@ -24,7 +24,9 @@ class Metadata(Descriptor):
 
     thumb = Property
 
+    source_icon = Property('sourceIcon')
     source_title = Property('sourceTitle')
+    url = Property('url')
 
     added_at = Property('addedAt', int)
     last_viewed_at = Property('lastViewedAt', int)

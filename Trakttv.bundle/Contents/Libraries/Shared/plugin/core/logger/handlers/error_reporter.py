@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
-from plugin.core.logger.filters import RequestsFilter
+from plugin.core.logger.filters import RequestsReportFilter
 
 from raven import Client
 from raven.handlers.logging import SentryHandler, RESERVED
@@ -39,7 +39,7 @@ PARAMS = {
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = 'c1f6cf06677a421db53f8814292b45a5:66e0d7c790b34928b5d5ca44dffad8ee'
+    key = 'e043ce2ca140486d9104b8c6164f1a82:d01d4eabb8aa4aacbd6bb61a36f92033'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):
@@ -163,4 +163,4 @@ RAVEN = ErrorReporter(**PARAMS)
 
 # Construct logging handler
 ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
-ERROR_REPORTER_HANDLER.addFilter(RequestsFilter())
+ERROR_REPORTER_HANDLER.addFilter(RequestsReportFilter())
