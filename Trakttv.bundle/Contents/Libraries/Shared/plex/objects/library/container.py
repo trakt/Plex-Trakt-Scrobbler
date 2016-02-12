@@ -18,6 +18,9 @@ class MediaContainer(Container):
     view_group = Property('viewGroup')
     view_mode = Property('viewMode', int)
 
+    leaf_count_added = Property('leafCountAdded', int)
+    leaf_count_requested = Property('leafCountRequested', int)
+
     media_tag_prefix = Property('mediaTagPrefix')
     media_tag_version = Property('mediaTagVersion')
 

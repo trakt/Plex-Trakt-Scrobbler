@@ -11,7 +11,7 @@ class Media(Descriptor):
     video_frame_rate = Property('videoFrameRate')
     video_resolution = Property('videoResolution')
 
-    audio_channels = Property('audioChannels', type=int)
+    audio_channels = Property('audioChannels', int)
     audio_codec = Property('audioCodec')
 
     container = Property
@@ -19,7 +19,7 @@ class Media(Descriptor):
     width = Property(type=int)
     height = Property(type=int)
 
-    aspect_ratio = Property('aspectRatio', type=float)
+    aspect_ratio = Property('aspectRatio', float)
     bitrate = Property(type=int)
     duration = Property(type=int)
 

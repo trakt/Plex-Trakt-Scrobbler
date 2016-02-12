@@ -9,7 +9,7 @@ class Client(Server):
     device_class = Property('deviceClass')
 
     protocol = Property
-    protocol_version = Property('protocolVersion', type=int)
+    protocol_version = Property('protocolVersion', int)
     protocol_capabilities = Property('protocolCapabilities')
 
 
