@@ -1,7 +1,7 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import md5
-from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter, RequestsFilter
+from plugin.core.logger.filters import FrameworkFilter, AuthorizationFilter, RequestsLogFilter
 
 from logging.handlers import RotatingFileHandler
 import logging
@@ -157,4 +157,4 @@ LOG_HANDLER = LoggerManager.get_handler()
 
 if LOG_HANDLER:
     LOG_HANDLER.addFilter(AuthorizationFilter())
-    LOG_HANDLER.addFilter(RequestsFilter())
+    LOG_HANDLER.addFilter(RequestsLogFilter())
