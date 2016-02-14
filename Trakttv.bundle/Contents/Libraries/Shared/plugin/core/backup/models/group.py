@@ -16,6 +16,9 @@ class BackupGroup(object):
 
     @classmethod
     def list(cls, search_path=BACKUP_PATH, max_depth=0):
+        if not os.path.exists(search_path):
+            return
+
         names = os.listdir(search_path)
 
         for name in names:
