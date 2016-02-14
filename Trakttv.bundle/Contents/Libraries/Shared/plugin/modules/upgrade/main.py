@@ -81,6 +81,9 @@ class Upgrade(Module):
 
     @classmethod
     def current(cls):
+        if not os.path.exists(VERSION_PATH):
+            return None
+
         try:
             with open(VERSION_PATH, 'rb') as fp:
                 data = json.load(fp)
