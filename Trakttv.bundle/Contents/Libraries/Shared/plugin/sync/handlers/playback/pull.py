@@ -9,8 +9,8 @@ log = logging.getLogger(__name__)
 
 
 class Base(PullHandler, PlaybackHandler):
-    @staticmethod
-    def build_action(action, p_item, p_value, t_value, **kwargs):
+    @classmethod
+    def build_action(cls, action, p_item, p_value, t_value, **kwargs):
         data = {}
 
         # Retrieve plex parameters
@@ -27,28 +27,44 @@ class Base(PullHandler, PlaybackHandler):
             # Ignore items that have been watched in plex
             return None
 
+        data['p_duration'] = p_duration
         data['p_value'] = p_item.get('settings', {}).get('view_offset')
 
         # Set arguments for action
         if action in ['added', 'changed']:
-            if t_value is None:
-                # Ignore completed/missing trakt progress
+            # Expand tuple, convert values to view offsets
+            if type(t_value) is tuple:
+                t_previous, t_current = t_value
+
+                data['t_previous'] = cls.to_view_offset(p_duration, t_previous)
+                data['t_value'] = cls.to_view_offset(p_duration, t_current)
+            else:
+                data['t_value'] = cls.to_view_offset(p_duration, t_value)
+
+            # Ensure current value is available
+            if data['t_value'] is None:
                 # TODO Progress should be cleared on items during fast pulls
                 return None
 
-            # Calculate trakt view offset
-            t_value = p_duration * (float(t_value) / 100)
-            t_value = int(round(t_value, 0))
-
-            data['p_duration'] = p_duration
-            data['t_value'] = t_value
-
-            if t_value <= 60 * 1000:
-                # Ignore progress below one minute
+            # Ensure progress is above one minute
+            if data['t_value'] <= 60 * 1000:
                 return None
 
+        # Set additional action attributes
         data.update(kwargs)
+
         return data
+
+    @staticmethod
+    def to_view_offset(duration, progress):
+        if not progress:
+            return None
+
+        # Convert `progress` to a view offset
+        view_offset = duration * (float(progress) / 100)
+
+        # Round `view_offset` to an integer
+        return int(round(view_offset, 0))
 
     def update_progress(self, key, time, duration):
         action_mode = self.configuration['sync.action.mode']

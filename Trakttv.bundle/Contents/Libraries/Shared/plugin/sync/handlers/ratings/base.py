@@ -23,9 +23,9 @@ class RatingsHandler(MediaHandler):
         # Convert trakt `Rating` objects to plain rating values
         if type(t_rating) is tuple:
             t_rating = tuple([
-                                 (r.value if r else None)
-                                 for r in t_rating
-                                 ])
+                (r.value if r else None)
+                for r in t_rating
+            ])
         else:
             t_rating = t_rating.value if t_rating else None
 

@@ -14,7 +14,10 @@ class Base(PullHandler, WatchedHandler):
         data = {}
 
         if action in ['added', 'changed']:
-            data['t_value'] = t_value
+            if type(t_value) is tuple:
+                data['t_previous'], data['t_value'] = t_value
+            else:
+                data['t_value'] = t_value
 
         data.update(kwargs)
         return data
