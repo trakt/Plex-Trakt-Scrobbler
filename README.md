@@ -1,50 +1,33 @@
 # trakt (for Plex)
+[![](https://img.shields.io/requires/github/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)][requires.io] [![](https://img.shields.io/scrutinizer/build/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)][scrutinizer] [![](https://img.shields.io/scrutinizer/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)][scrutinizer] [![](https://img.shields.io/scrutinizer/coverage/g/fuzeman/Plex-Trakt-Scrobbler.svg?style=flat-square)][scrutinizer]  
+[![](https://img.shields.io/gitter/room/trakt/Plex-Trakt-Scrobbler.svg?style=social)][gitter.im] [![](https://img.shields.io/gratipay/trakt-for-plex.svg?style=social&label=Donate)][gratipay]
 
-[![GitHub issues](https://img.shields.io/github/issues/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) [![](https://img.shields.io/github/release/trakt/Plex-Trakt-Scrobbler.svg?style=flat)](https://github.com/trakt/Plex-Trakt-Scrobbler/releases)
+**trakt (for Plex)** is a plugin for Plex Media Server to synchronize watched history, ratings, playback progress and lists to your [Trakt.tv][trakt.tv] profile.
 
-**WARNING:** If you have multiple users on your server, please ensure you have filters set. The default configuration will scrobble all media playing on your server to your trakt.tv account.
+### Key Features
+ - Automatically track every TV show and movie you watch
+ - Upload watched history, ratings and playback progress to your Trakt.tv profile 
+ - Synchronize data between supported applications *([Kodi](http://trakt.tv/a/kodi), [MediaPortal](http://trakt.tv/a/mediaportal), [Emby](http://trakt.tv/a/emby), [Infuse](http://trakt.tv/a/infuse-ios))*
+ - Link all your Plex users to individual Trakt.tv profiles
 
-### Links
+*See http://trakt.tv/vip for an overview of other features available on the Trakt.tv website.*
 
- - [Configuration](https://github.com/fuzeman/Plex-Trakt-Scrobbler/wiki/Configuration) *(outdated - some options might be renamed or missing)*
- - [Contributors](https://github.com/trakt/Plex-Trakt-Scrobbler/graphs/contributors)
- - [Credits](Trakttv.bundle/CREDITS.md) *(for other resources)*
+### Navigation
 
-## Installation
+| [Install][install] | [FAQ][faq] | [Settings][settings] | [Support][support] | [KB][knowledge-base] | [Issues][issues] | [Credits][credits] |
+|:------------------:|:----------:|:--------------------:|:------------------:|:-------------------:|:----------------:|:------------------:|
+| [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/file_download.png)][install] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/question_answer.png)][faq] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/settings.png)][settings] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/help.png)][support] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/bug_report.png)][knowledge-base] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/message.png)][issues] | [![](https://raw.githubusercontent.com/wiki/fuzeman/Plex-Trakt-Scrobbler/_assets/people.png)][credits] |
 
-### Unsupported App Store  
+[install]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Installation
+[faq]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Frequently-asked-questions
+[settings]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Configuration
+[support]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Support
+[knowledge-base]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/KB
+[issues]: https://github.com/trakt/Plex-Trakt-Scrobbler/issues
+[credits]: https://github.com/trakt/Plex-Trakt-Scrobbler/blob/master/Trakttv.bundle/CREDITS.md
 
-The latest stable version of the plugin is available from the [Unsupported Appstore](https://forums.plex.tv/index.php/topic/151068-)
-
-**Note:** UAS isn't available from github anymore, you can still download it from dropbox [here](http://bit.ly/ihqmEu).
-
-### Manual
-
-**Download** the plugin from one of the following branches
-
- * **[master (stable)](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/master.zip)**
- * [beta](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/beta.zip)
- * *[develop](https://github.com/trakt/Plex-Trakt-Scrobbler/archive/develop.zip)*
-
-**Install** the bundle by extracting the zip and copying the `Trakttv.bundle` folder to your Plex Media server plugin folder
-
- * **OS X** `~/Library/Application Support/Plex Media Server/Plug-ins`
-
- * **Linux** `/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Plug-ins`
-
- * **Windows XP** `C:\Documents and Settings\[username]\Local Settings\Application Data\Plex Media Server\Plug-ins`
-
- * **Windows Vista (and later)** `C:\Users\[username]\AppData\Local\Plex Media Server\Plug-ins`
-
-## Configuration
-
-1. In Plex/Web, navigate to `Channels` -> `trakt` -> `Settings`
-2. Enter your [trakt.tv](http://trakt.tv) username and password, and tick the *Scrobble* option to enable automatic scrobbling.
-
-## Issues
-
-The plugin is still work in progress so there may be bugs.
-
-**Please report all bugs to the issue tracker on this repository [here](https://github.com/trakt/Plex-Trakt-Scrobbler/issues) (please try searching first)** 
-
-Code contributions are also welcome. Submit pull requests via GitHub and they will be reviewed and merged in.
+[gitter.im]: https://gitter.im/trakt/Plex-Trakt-Scrobbler?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+[gratipay]: https://gratipay.com/trakt-for-plex
+[requires.io]: https://requires.io/github/fuzeman/Plex-Trakt-Scrobbler/requirements
+[scrutinizer]: https://scrutinizer-ci.com/g/fuzeman/Plex-Trakt-Scrobbler
+[trakt.tv]: https://trakt.tv

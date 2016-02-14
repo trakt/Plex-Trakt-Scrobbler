@@ -1,0 +1,7 @@
+coverage==4.0.3
+pytest==2.8.5
+pytest-cov==2.2.0
+
+python-dateutil==2.4.2
+
+git+git://github.com/fuzeman/responses.git

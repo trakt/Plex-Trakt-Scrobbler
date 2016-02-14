@@ -1,17 +1,9 @@
 [
     {
-        "id": "username",
+        "id": "pin",
         "type": "text",
-        "label": "Username",
+        "label": "Authentication PIN (visit https://trakt.tv/pin/478)",
         "default": ""
-    },
-    {
-        "id": "password",
-        "type": "text",
-        "label": "Password",
-        "default": "",
-        "option": "hidden",
-        "secure": "true"
     },
     {
         "id": "start_scrobble",
@@ -41,6 +33,13 @@
         "default": "latest"
     },
     {
+        "id": "sync_playback",
+        "type": "enum",
+        "label": "Sync - Playback Progress",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
         "id": "sync_collection",
         "type": "enum",
         "label": "Sync - Collection",
@@ -52,6 +51,27 @@
         "type": "bool",
         "label": "Sync - Clean collection",
         "default": "false"
+    },
+    {
+        "id": "sync_liked_lists",
+        "type": "enum",
+        "label": "Sync - Liked Lists (Beta)",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
+        "id": "sync_personal_lists",
+        "type": "enum",
+        "label": "Sync - Personal Lists (Beta)",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
+    },
+    {
+        "id": "sync_watchlist",
+        "type": "enum",
+        "label": "Sync - Watchlist (Beta)",
+        "values": ["Disabled", "Synchronize (Pull + Push)", "Pull", "Push"],
+        "default": "Disabled"
     },
     {
         "id": "sync_instant_actions",
@@ -82,25 +102,25 @@
     {
         "id": "scrobble_names",
         "type": "text",
-        "label": "Filter - myPlex users (optional, comma separated)",
+        "label": "Global Filter - Users (comma separated)",
         "default": ""
     },
     {
         "id": "scrobble_clients",
         "type": "text",
-        "label": "Filter - Clients (optional, comma separated)",
+        "label": "Global Filter - Client Names (comma separated)",
         "default": ""
-    },
-    {
-        "id": "filter_sections",
-        "type": "text",
-        "label": "Filter - Sections (comma separated)",
-        "default": "*"
     },
     {
         "id": "filter_networks",
         "type": "text",
-        "label": "Filter - IP Networks (comma separated)",
+        "label": "Global Filter - Client IPs (comma separated)",
+        "default": "*"
+    },
+    {
+        "id": "filter_sections",
+        "type": "text",
+        "label": "Global Filter - Libraries (comma separated)",
         "default": "*"
     },
     {
@@ -115,6 +135,13 @@
         "type": "enum",
         "label": "Logging - Events",
         "values": ["INFO", "DEBUG", "TRACE", "WARNING", "ERROR"],
+        "default": "INFO"
+    },
+    {
+        "id": "level_peewee",
+        "type": "enum",
+        "label": "Logging - Database",
+        "values": ["INFO", "DEBUG"],
         "default": "INFO"
     },
     {

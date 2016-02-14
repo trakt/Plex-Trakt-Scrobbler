@@ -1,4 +1,4 @@
-from trakt.interfaces import authenticated
+from trakt.interfaces.base import authenticated
 from trakt.interfaces.sync.core.mixins import Get
 
 

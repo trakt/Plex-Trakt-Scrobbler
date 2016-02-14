@@ -5,16 +5,19 @@ class Stream(Descriptor):
     id = Property(type=int)
     index = Property(type=int)
 
-    stream_type = Property('streamType', type=int)
+    stream_type = Property('streamType', int)
     selected = Property(type=bool)
 
     title = Property
     duration = Property(type=int)
 
+    language = Property
+    language_code = Property('languageCode')
+
     codec = Property
     codec_id = Property('codecID')
 
-    bit_depth = Property('bitDepth', type=int)
+    bit_depth = Property('bitDepth', int)
     chroma_subsampling = Property('chromaSubsampling')
     color_space = Property('colorSpace')
 
@@ -25,7 +28,7 @@ class Stream(Descriptor):
     bitrate_mode = Property('bitrateMode')
 
     channels = Property(type=int)
-    sampling_rate = Property('samplingRate', type=int)
+    sampling_rate = Property('samplingRate', int)
 
     frame_rate = Property('frameRate')
     profile = Property

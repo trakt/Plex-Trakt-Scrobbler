@@ -3,22 +3,43 @@ from plex.objects.library.metadata.season import Season
 from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.video import Video
+from plex.objects.mixins.playlist_item import PlaylistItemMixin
 from plex.objects.mixins.rate import RateMixin
 from plex.objects.mixins.scrobble import ScrobbleMixin
 
 
-class Episode(Video, Metadata, RateMixin, ScrobbleMixin):
+class Episode(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     show = Property(resolver=lambda: Episode.construct_show)
     season = Property(resolver=lambda: Episode.construct_season)
 
     index = Property(type=int)
 
     studio = Property
-    audience_rating = Property('audienceRating', float)
     content_rating = Property('contentRating')
 
     year = Property(type=int)
     originally_available_at = Property('originallyAvailableAt')
+
+    def __repr__(self):
+        if self.show and self.season:
+            return '<Episode %r - S%02dE%02d (%s)>' % (
+                self.show.title,
+
+                self.season.index,
+                self.index,
+                self.year
+            )
+        elif self.season:
+            return '<Episode S%02dE%02d (%s)>' % (
+                self.season.index,
+                self.index,
+                self.year
+            )
+
+        return '<Episode E%02d (%s)>' % (
+            self.index,
+            self.year
+        )
 
     @staticmethod
     def construct_show(client, node):

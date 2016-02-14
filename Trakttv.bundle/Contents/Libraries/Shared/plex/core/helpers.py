@@ -3,6 +3,7 @@ from plex.lib import six
 import re
 import unicodedata
 
+
 def flatten(text):
     if text is None:
         return None
@@ -19,6 +20,7 @@ def flatten(text):
     # Convert to lower-case
     return text.lower()
 
+
 def normalize(text):
     if text is None:
         return None
@@ -32,6 +34,7 @@ def normalize(text):
 
     # Return decoded `text`
     return text.decode('ascii')
+
 
 def to_iterable(value):
     if value is None:

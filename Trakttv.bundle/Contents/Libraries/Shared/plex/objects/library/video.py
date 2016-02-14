@@ -11,9 +11,10 @@ class Video(Directory, SessionMixin):
     media = Property(resolver=lambda: Media.from_node)
     writers = Property(resolver=lambda: Writer.from_node)
 
-    view_count = Property('viewCount', type=int)
-    view_offset = Property('viewOffset', type=int)
+    view_count = Property('viewCount', int)
+    view_offset = Property('viewOffset', int)
 
+    chapter_images_stale = Property('chapterImagesStale', (int, bool))
     chapter_source = Property('chapterSource')
     duration = Property(type=int)
 

@@ -1,8 +1,11 @@
+from plugin.core.enums import ActivityMode
+from plugin.core.helpers.variable import pms_path
+
 PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
-PLUGIN_VERSION_BASE = (0, 9, 1, 29)
+PLUGIN_VERSION_BASE = (1, 0, 0, 3)
 PLUGIN_VERSION_BRANCH = 'master'
 
 PLUGIN_VERSION = ''.join([
@@ -10,8 +13,10 @@ PLUGIN_VERSION = ''.join([
     '-' + PLUGIN_VERSION_BRANCH if PLUGIN_VERSION_BRANCH else ''
 ])
 
+PMS_PATH = pms_path()
+
 ACTIVITY_MODE = {
-    'Automatic':            None,
-    'Logging (Legacy)':     ['logging'],
-    'WebSocket (PlexPass)': ['websocket']
+    ActivityMode.Automatic: None,
+    ActivityMode.Logging:   ['logging'],
+    ActivityMode.WebSocket: ['websocket']
 }

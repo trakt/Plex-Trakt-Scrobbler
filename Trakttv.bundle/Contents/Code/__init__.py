@@ -1,51 +1,70 @@
 # ------------------------------------------------
-# IMPORTANT
-# Configure environment module before we import other modules (that could depend on it)
+# Environment
 # ------------------------------------------------
 from plugin.core.environment import Environment
+import locale
+import os
 
-# Configure environment
-Environment.setup(Core)
-# ------------------------------------------------
+Environment.setup(Core, Dict, Platform, Prefs)
 
+# plex.database.py
+os.environ['LIBRARY_DB'] = os.path.join(
+    Environment.path.plugin_support, 'Databases',
+    'com.plexapp.plugins.library.db'
+)
+
+# locale
+try:
+    Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
+except Exception, ex:
+    Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
-# IMPORTANT
-# These modules need to be loaded here first
+# FS Migrator
+# ------------------------------------------------
+from fs_migrator import FSMigrator
+
+FSMigrator.run()
+# ------------------------------------------------
+# Logger
+# ------------------------------------------------
+from plugin.core.logger import LoggerManager
+
+LoggerManager.setup(storage=False)
+# ------------------------------------------------
+# Libraries
+# ------------------------------------------------
+from plugin.core.libraries import LibrariesManager
+
+LibrariesManager.setup(cache=True)
+LibrariesManager.test()
+# ------------------------------------------------
+# Modules
 # ------------------------------------------------
 import core
-import data
-import pts
-import sync
 import interface
 # ------------------------------------------------
+# Handlers
+# ------------------------------------------------
+from interface.m_main import MainMenu
+from interface.resources import Cover, Thumb
+# ------------------------------------------------
 
-
-from core.cache import CacheManager
-from core.configuration import Configuration
-from core.header import Header
+# Local imports
 from core.logger import Logger
-from core.logging_handler import PlexHandler
-from core.logging_reporter import RAVEN
-from core.helpers import spawn, get_pref, schedule, get_class_name, md5
+from core.helpers import spawn
 from core.plugin import ART, NAME, ICON
-from core.update_checker import UpdateChecker
-from interface.main_menu import MainMenu
-from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION, PLUGIN_IDENTIFIER
+from main import Main
+
+from plugin.api.core.manager import ApiManager
+from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.core.singleton import Singleton
-from plugin.modules.manager import ModuleManager
-from pts.action_manager import ActionManager
-from pts.scrobbler import Scrobbler
-from pts.session_manager import SessionManager
-from sync.sync_manager import SyncManager
+from plugin.models.account import Account
+from plugin.modules.migrations.account import AccountMigration
+from plugin.preferences import Preferences
 
 from datetime import datetime
 from plex import Plex
-from plex_activity import Activity
-from plex_metadata import Metadata, Matcher
-from requests.packages.urllib3.util import Retry
-from trakt import Trakt, ClientError
-import logging
-import os
+import json
 import time
 
 # http://bugs.python.org/issue7980
@@ -54,267 +73,68 @@ datetime.strptime('', '')
 log = Logger()
 
 
-class Main(object):
-    modules = [
-        # core
-        UpdateChecker(),
-
-        # pts
-        ActionManager,
-        Scrobbler,
-        SessionManager(),
-
-        # sync
-        SyncManager,
-    ]
-
-    def __init__(self):
-        Header.show(self)
-        Main.update_config()
-
-        self.init_trakt()
-        self.init_plex()
-        self.init()
-
-        ModuleManager.initialize()
-
-        # Initialize sentry error reporting
-        self.init_raven()
-
-        # Initialize logging
-        self.init_logging()
-
-    def init(self):
-        names = []
-
-        # Initialize modules
-        for module in self.modules:
-            names.append(get_class_name(module))
-
-            if hasattr(module, 'initialize'):
-                module.initialize()
-
-        log.info('Initialized %s modules: %s', len(names), ', '.join(names))
-
-    @classmethod
-    def init_raven(cls):
-        # Retrieve server details
-        server = Plex.detail()
-
-        if not server:
-            return
-
-        # Set client name to a hash of `machine_identifier`
-        RAVEN.name = md5(server.machine_identifier)
-
-        RAVEN.tags.update({
-            'server.version': server.version
-        })
-
-    @staticmethod
-    def init_logging():
-        level = PlexHandler.get_min_level('plugin')
-
-        Log.Info('Changed %r logger level to %s', PLUGIN_IDENTIFIER, logging.getLevelName(level))
-
-        # Update main logger level
-        logger = logging.getLogger(PLUGIN_IDENTIFIER)
-        logger.setLevel(level)
-
-    @staticmethod
-    def init_plex():
-        # plex.py
-        Plex.configuration.defaults.authentication(
-            os.environ.get('PLEXTOKEN')
-        )
-
-        # plex.activity.py
-        path = os.path.join(Core.log.handlers[1].baseFilename, '..', '..', 'Plex Media Server.log')
-        path = os.path.abspath(path)
-
-        Activity['logging'].add_hint(path)
-
-        # plex.metadata.py
-        Metadata.configure(
-            cache=CacheManager.get('metadata'),
-            client=Plex.client
-        )
-
-    @staticmethod
-    def init_trakt():
-        # Client
-        Trakt.configuration.defaults.client(
-            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61'
-        )
-
-        # Application
-        Trakt.configuration.defaults.app(
-            name='trakt (for Plex)',
-            version=PLUGIN_VERSION
-        )
-
-        # Setup request retrying
-        Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
-        Trakt.http.rebuild()
-
-    @classmethod
-    def update_config(cls, valid=None):
-        preferences = Dict['preferences'] or {}
-
-        # If no validation provided, use last stored result or assume true
-        if valid is None:
-            valid = preferences.get('valid', True)
-
-        preferences['valid'] = valid
-
-        Configuration.process(preferences)
-
-        # Ensure preferences dictionary is stored
-        Dict['preferences'] = preferences
-        Dict.Save()
-
-        # Update plex.metadata.py `Matcher` preferences
-        Matcher.configure(
-            caper_enabled=preferences['matcher'] == 'plex_extended',
-            extend_enabled=preferences['matcher'] == 'plex_extended'
-        )
-
-        log.info('Preferences updated %s', preferences)
-        # TODO EventManager.fire('preferences.updated', preferences)
-
-    @classmethod
-    def authenticate(cls, retry_interval=30):
-        if not Prefs['username'] or not Prefs['password']:
-            log.warn('Authentication failed, username or password field empty')
-
-            cls.update_config(False)
-            return False
-
-        # Clear authentication details if username has changed
-        if Dict['trakt.token'] and Dict['trakt.username'] != Prefs['username']:
-            # Reset authentication details
-            Dict['trakt.username'] = None
-            Dict['trakt.token'] = None
-
-            log.info('Authentication cleared, username was changed')
-
-        # Authentication
-        retry = False
-
-        if not Dict['trakt.token']:
-            # Authenticate with trakt.tv (no token has previously been stored)
-            with Trakt.configuration.http(retry=True):
-                try:
-                    Dict['trakt.token'] = Trakt['auth'].login(
-                        Prefs['username'],
-                        Prefs['password'],
-                        exceptions=True
-                    )
-
-                    Dict['trakt.username'] = Prefs['username']
-                except ClientError, ex:
-                    log.warn('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Client error (invalid username or password), don't retry the request
-                    retry = False
-                except Exception, ex:
-                    log.error('Authentication failed: %s', ex, exc_info=True)
-                    Dict['trakt.token'] = None
-
-                    # Server error, retry the request
-                    retry = True
-
-            Dict.Save()
-
-        # Update trakt client configuration
-        Trakt.configuration.defaults.auth(
-            Dict['trakt.username'],
-            Dict['trakt.token']
-        )
-
-        # TODO actually test trakt.tv authentication
-        success = bool(Dict['trakt.token'])
-
-        if not success:
-            # status - False = invalid credentials, None = request failed
-            if retry:
-                # Increase retry interval each time to a maximum of 30 minutes
-                if retry_interval < 60 * 30:
-                    retry_interval = int(retry_interval * 1.3)
-
-                # Ensure we never go over 30 minutes
-                if retry_interval > 60 * 30:
-                    retry_interval = 60 * 30
-
-                log.warn('Unable to authentication with trakt.tv, will try again in %s seconds', retry_interval)
-                schedule(cls.authenticate, retry_interval, retry_interval)
-            else:
-                log.warn('Authentication failed, username or password is incorrect')
-
-            Main.update_config(False)
-            return False
-
-        log.info('Authentication successful')
-
-        Main.update_config(True)
-        return True
-
-    def start(self):
-        # Check for authentication token
-        log.info('X-Plex-Token: %s', 'available' if os.environ.get('PLEXTOKEN') else 'unavailable')
-
-        # Validate username/password
-        spawn(self.authenticate)
-
-        # Start modules
-        names = []
-
-        for module in self.modules:
-            if not hasattr(module, 'start'):
-                continue
-
-            names.append(get_class_name(module))
-
-            module.start()
-
-        log.info('Started %s modules: %s', len(names), ', '.join(names))
-
-        ModuleManager.start()
-
-        # Start plex.activity.py
-        Activity.start(ACTIVITY_MODE.get(Prefs['activity_mode']))
-
-
 def Start():
     ObjectContainer.art = R(ART)
     ObjectContainer.title1 = NAME
     DirectoryObject.thumb = R(ICON)
     DirectoryObject.art = R(ART)
+    PopupDirectoryObject.thumb = R(ICON)
+    PopupDirectoryObject.art = R(ART)
 
     if not Singleton.acquire():
         log.warn('Unable to acquire plugin instance')
 
-    main = Main()
-    main.start()
+    # Complete logger initialization
+    LoggerManager.setup(storage=True)
+
+    # Startup plugin
+    m = Main()
+    m.start()
+
+
+@expose
+def Api(*args, **kwargs):
+    try:
+        data = ApiManager.process(
+            Request.Method,
+            Request.Headers,
+            Request.Body,
+
+            *args, **kwargs
+        )
+
+        return json.dumps(data)
+    except Exception, ex:
+        Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
+        return None
 
 
 def ValidatePrefs():
-    last_activity_mode = get_pref('activity_mode')
+    # Retrieve plex token
+    token_plex = AccountMigration.get_token(Request.Headers)
 
-    if Main.authenticate():
-        message = MessageContainer(
-            "Success",
-            "Authentication successful"
-        )
+    # Retrieve current activity mode
+    last_activity_mode = Preferences.get('activity.mode')
+
+    if Request.Headers.get('X-Disable-Preference-Migration', '0') == '0':
+        # Run account migration
+        am = AccountMigration()
+        am.run(token_plex)
+
+        # Migrate server preferences
+        Preferences.migrate()
+
+        # Try migrate administrator preferences
+        try:
+            Preferences.initialize(account=1)
+            Preferences.migrate(account=1)
+        except Account.DoesNotExist:
+            log.debug('Unable to migrate administrator preferences, no account found')
     else:
-        message = MessageContainer(
-            "Error",
-            "Authentication failed, incorrect username or password"
-        )
+        log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
-    if Prefs['activity_mode'] != last_activity_mode:
+    if Preferences.get('activity.mode') != last_activity_mode:
         log.info('Activity mode has changed, restarting plugin...')
 
         def restart():
@@ -325,9 +145,9 @@ def ValidatePrefs():
             Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
 
         spawn(restart)
-        return message
+        return MessageContainer("Success", "Success")
 
-    # Re-initialize modules
-    Main.init_logging()
+    # Fire configuration changed callback
+    spawn(Main.on_configuration_changed)
 
-    return message
+    return MessageContainer("Success", "Success")

@@ -1,6 +1,7 @@
 from plex.lib.six import add_metaclass
 from plex.interfaces.core.base import Interface
 
+import collections
 import logging
 import traceback
 import types
@@ -35,13 +36,14 @@ class Property(object):
         if not self.type:
             return value
 
-        types = self.type if type(self.type) is list else [self.type]
+        types = self.type if isinstance(self.type, collections.Iterable) else [self.type]
         result = value
 
         for target_type in types:
             try:
                 result = target_type(result)
-            except:
+            except Exception as ex:
+                log.warn('Unable to cast value: %r, to type: %r - %s', result, target_type, ex, exc_info=True)
                 return None
 
         return result
@@ -162,6 +164,9 @@ class Descriptor(Interface):
                 yield key, value
 
         return dict(build())
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class DescriptorMixin(Descriptor):
