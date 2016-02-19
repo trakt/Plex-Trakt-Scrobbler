@@ -22,9 +22,9 @@ class Identifier(object):
         if guid.service in GUID_SERVICES:
             ids[guid.service] = guid.id
         elif not strict:
-            log.info('Unknown identifier service: "%s"', guid.agent)
+            log.info('Unknown identifier service: "%s"', guid.service)
         else:
-            log.info('Unknown identifier service: "%s" [strict]', guid.agent)
+            log.info('Unknown identifier service: "%s" [strict]', guid.service)
             return None
 
         return ids

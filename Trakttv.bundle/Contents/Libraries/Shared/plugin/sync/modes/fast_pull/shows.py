@@ -82,11 +82,11 @@ class Shows(Mode):
                 self.current.progress.group(Shows, 'shows').step()
 
                 # Ensure `guid` is available
-                if not guid or guid.agent not in GUID_SERVICES:
+                if not guid or guid.service not in GUID_SERVICES:
                     mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
                     continue
 
-                key = (guid.agent, guid.sid)
+                key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)
@@ -148,11 +148,11 @@ class Shows(Mode):
                 self.current.progress.group(Shows, 'episodes').step()
 
                 # Ensure `guid` is available
-                if not guid or guid.agent not in GUID_SERVICES:
+                if not guid or guid.service not in GUID_SERVICES:
                     mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
                     continue
 
-                key = (guid.agent, guid.sid)
+                key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table.get(key)

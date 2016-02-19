@@ -160,7 +160,7 @@ class SyncArtifacts(object):
     #
 
     def store_show(self, data, action, guid, p_show=None, **kwargs):
-        key = (guid.agent, guid.sid)
+        key = (guid.service, guid.id)
 
         shows = dict_path(self.artifacts, [
             data,
@@ -185,7 +185,7 @@ class SyncArtifacts(object):
         return True
 
     def store_episode(self, data, action, guid, identifier, p_show=None, **kwargs):
-        key = (guid.agent, guid.sid)
+        key = (guid.service, guid.id)
         season_num, episode_num = identifier
 
         shows = dict_path(self.artifacts, [
@@ -227,7 +227,7 @@ class SyncArtifacts(object):
         return True
 
     def store_movie(self, data, action, guid, p_movie=None, **kwargs):
-        key = (guid.agent, guid.sid)
+        key = (guid.service, guid.id)
 
         movies = dict_path(self.artifacts, [
             data,
@@ -263,7 +263,7 @@ class SyncArtifacts(object):
         }
 
         # Set identifier
-        request['ids'][guid.agent] = guid.sid
+        request['ids'][guid.service] = guid.id
 
         # Set extra attributes
         cls._set_kwargs(request, kwargs)
@@ -287,8 +287,8 @@ class SyncArtifacts(object):
             log.warn('Invalid GUID attribute on %s', identifier)
             return False
 
-        if not guid or guid.agent not in GUID_SERVICES:
-            log.warn('GUID agent %r is not supported on %s', guid.agent if guid else None, identifier)
+        if not guid or guid.service not in GUID_SERVICES:
+            log.warn('GUID service %r is not supported on %s', guid.service if guid else None, identifier)
             return False
 
         return True

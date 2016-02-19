@@ -27,7 +27,7 @@ class SyncMap(object):
 
         # Flatten `guid`
         if type(guid) is not tuple:
-            guid = (guid.agent, guid.sid)
+            guid = (guid.service, guid.id)
 
         if guid[0] not in GUID_SERVICES:
             log.info('Unknown primary agent: %r -> %r (section: %r)', guid[0], p_key, p_section_key)
@@ -49,7 +49,7 @@ class SyncMap(object):
     def by_guid(self, guid):
         # Flatten `guid`
         if type(guid) is not tuple:
-            guid = (guid.agent, guid.sid)
+            guid = (guid.service, guid.id)
 
         return self._by_guid.get(guid, set())
 

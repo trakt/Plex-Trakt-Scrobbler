@@ -68,11 +68,11 @@ class Movies(Mode):
             self.current.progress.group(Movies).step()
 
             # Ensure `guid` is available
-            if not guid or guid.agent not in GUID_SERVICES:
+            if not guid or guid.service not in GUID_SERVICES:
                 mark_unsupported(self.p_unsupported, mo_id, guid, p_item)
                 continue
 
-            key = (guid.agent, guid.sid)
+            key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

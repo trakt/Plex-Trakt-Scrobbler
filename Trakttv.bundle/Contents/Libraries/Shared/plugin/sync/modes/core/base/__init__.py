@@ -26,11 +26,11 @@ def format_unsupported(dictionary):
     for key in keys:
         guid, p_item = dictionary[key]
 
-        agent = guid.agent if guid else None
+        service = guid.service if guid else None
         title = p_item.get('title')
         year = p_item.get('year')
 
         if title and year:
-            yield '    [%6s] GUID agent %r is not supported on: %r (%r)' % (key, agent, title, year)
+            yield '    [%6s] GUID agent %r is not supported on: %r (%r)' % (key, service, title, year)
         else:
-            yield '    [%6s] GUID agent %r is not supported' % (key, agent)
+            yield '    [%6s] GUID agent %r is not supported' % (key, service)
