@@ -35,6 +35,8 @@ class Season(Media):
             result['rating'] = self.rating.value
             result['rated_at'] = to_iso8601(self.rating.timestamp)
 
+        result['in_watchlist'] = self.in_watchlist if self.in_watchlist is not None else 0
+
         return result
 
     @classmethod
