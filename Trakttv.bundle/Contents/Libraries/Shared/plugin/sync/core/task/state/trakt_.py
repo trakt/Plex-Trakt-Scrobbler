@@ -1,3 +1,4 @@
+from plugin.core.helpers.variable import try_convert
 from plugin.core.backup import BackupManager
 from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
@@ -302,13 +303,19 @@ class Table(object):
                 if type(key) is not tuple or len(key) != 2:
                     continue
 
-                agent, _ = key
+                service, id = key
 
                 # Check if agent is supported
-                if agent not in KEY_AGENTS:
+                if service not in GUID_SERVICES:
                     continue
 
+                # Cast service id to integer
+                if service in ['tvdb', 'tmdb', 'tvrage']:
+                    id = try_convert(id, int, id)
+
                 # Store key in table
+                key = (service, id)
+
                 if key in self.table:
                     continue
 

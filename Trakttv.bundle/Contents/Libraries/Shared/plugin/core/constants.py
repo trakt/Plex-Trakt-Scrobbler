@@ -24,8 +24,6 @@ ACTIVITY_MODE = {
 GUID_SERVICES = [
     'imdb',
     'tvdb',
-
     'tmdb',
-    'trakt',
     'tvrage'
 ]
