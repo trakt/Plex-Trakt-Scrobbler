@@ -19,7 +19,6 @@ class Track(Directory, Metadata, PlaylistItemMixin, RateMixin, SessionMixin, Scr
     view_offset = Property('viewOffset', int)
 
     duration = Property(type=int)
-    year = Property(type=int)
 
     chapter_source = Property('chapterSource')
 
