@@ -28,7 +28,8 @@ class Guid(object):
 
     @property
     def sid(self):
-        return self.id
+        # `sid` property always returns strings
+        return str(self.id)
 
     @classmethod
     def parse(cls, guid, match=True, media=None):

@@ -10,11 +10,13 @@ log = logging.getLogger(__name__)
 
 
 class Agent(object):
-    def __init__(self, media, service, regex=None, children=None):
+    def __init__(self, media, service, regex=None, type=None, children=None):
         self.media = media
         self.service = service
 
         self.regex = regex
+        self.type = type
+
         self.children = children
 
     #
@@ -27,6 +29,7 @@ class Agent(object):
         return cls(
             media=cls.get_media(entry, media),
             service=entry.get('service'),
+            type=entry.get('type'),
 
             # Compile regular expression
             regex=cls.compile_pattern(entry.get('pattern')),
@@ -84,6 +87,10 @@ class Agent(object):
             id = ''.join(match.groups())
         else:
             id = uri.netloc
+
+        # Cast `id` to defined type
+        if self.type:
+            id = try_convert(id, self.type, id)
 
         # Update `guid`
         guid.service = self.service
