@@ -39,7 +39,7 @@ class Parser(Emitter):
         while True:
             line = self.core.read_line_retry(timeout=5)
             if not line:
-                log.warn('Unable to read log file')
+                log.info('Unable to read log file')
                 return {}
 
             # Run through each match function to find a result
