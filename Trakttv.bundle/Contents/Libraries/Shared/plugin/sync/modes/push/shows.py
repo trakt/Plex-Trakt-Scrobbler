@@ -199,7 +199,7 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'missing:shows').stop()
 
-        self.log_pending('Unable to process %d show(s)\n%s', self.p_shows_pending)
+        self.log_pending('Unable to find %d show(s) in Plex\n%s', self.p_shows_pending)
 
     #
     # Episodes
@@ -318,7 +318,7 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'missing:episodes').stop()
 
-        self.log_pending('Unable to process %d episode(s)\n%s', self.p_episodes_pending)
+        self.log_pending('Unable to find %d episode(s) in Plex\n%s', self.p_episodes_pending)
 
     @staticmethod
     def t_objects(collection, pk, season_num, episode_num):

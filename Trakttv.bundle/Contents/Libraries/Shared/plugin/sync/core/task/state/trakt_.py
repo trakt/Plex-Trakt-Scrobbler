@@ -11,6 +11,11 @@ import logging
 import os
 import trakt.objects
 
+IGNORED_DATA = [
+    Cache.Data.get(Cache.Data.Liked),
+    Cache.Data.get(Cache.Data.Personal)
+]
+
 log = logging.getLogger(__name__)
 
 
@@ -217,12 +222,7 @@ class Table(object):
                 continue
 
             # Map store items
-            if data in [
-                Cache.Data.get(Cache.Data.Liked),
-                Cache.Data.get(Cache.Data.Personal)
-            ]:
-                self.map_items(key, cache[key])
-            else:
+            if data not in IGNORED_DATA:
                 self.map_items(key, cache[key], media)
 
         log.debug(

@@ -177,4 +177,4 @@ class Movies(Base):
         self.current.progress.group(Movies, 'missing:movies').stop()
 
         # Report pending movies (no actions triggered)
-        self.log_pending('Unable to process %d movie(s)\n%s', self.p_pending)
+        self.log_pending('Unable to find %d movie(s) in Plex\n%s', self.p_pending)
