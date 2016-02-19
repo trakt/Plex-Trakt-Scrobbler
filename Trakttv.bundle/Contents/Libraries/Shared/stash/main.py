@@ -1,6 +1,7 @@
 from stash.core.modules.manager import ModuleManager
 
 from collections import MutableMapping
+from threading import Lock
 
 
 class Stash(MutableMapping):
@@ -13,15 +14,32 @@ class Stash(MutableMapping):
 
         self.key_transform = key_transform or (lambda key: key, lambda key: key)
 
+        self._flushing = Lock()
+
     def compact(self, force=False):
         return self.algorithm.compact(force=force)
 
     def delete(self, keys):
         return self.algorithm.delete(keys)
 
-    def flush(self):
-        # Update `archive` with the items in `cache`
-        self.archive.update(self.cache)
+    def flush(self, force=False):
+        if force:
+            # Wait until flush can be started
+            self._flushing.acquire()
+        elif not self._flushing.acquire(False):
+            # Flush already running
+            return False
+
+        try:
+            # Take exclusive access of cache
+            with self.cache.exclusive:
+                # Update `archive` with the items in `cache`
+                self.archive.update(self.cache.iteritems(__force=True))
+
+            # Flush complete
+            return True
+        finally:
+            self._flushing.release()
 
     def items(self):
         self.flush()
