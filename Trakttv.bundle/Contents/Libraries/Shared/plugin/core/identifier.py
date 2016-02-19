@@ -1,7 +1,8 @@
-from plugin.core.helpers.variable import try_convert
+from plugin.core.constants import GUID_SERVICES
 
 from plex_metadata import Guid
 import logging
+
 
 log = logging.getLogger(__name__)
 
@@ -18,16 +19,12 @@ class Identifier(object):
             # Parse raw guid
             guid = Guid.parse(guid)
 
-        if guid.agent == 'imdb':
-            ids['imdb'] = guid.sid
-        elif guid.agent == 'tmdb':
-            ids['tmdb'] = try_convert(guid.sid, int)
-        elif guid.agent == 'tvdb':
-            ids['tvdb'] = try_convert(guid.sid, int)
+        if guid.service in GUID_SERVICES:
+            ids[guid.service] = guid.id
         elif not strict:
-            log.info('Unknown Guid agent: "%s"', guid.agent)
+            log.info('Unknown identifier service: "%s"', guid.agent)
         else:
-            log.info('Unknown Guid agent: "%s" [strict]', guid.agent)
+            log.info('Unknown identifier service: "%s" [strict]', guid.agent)
             return None
 
         return ids

@@ -1,4 +1,4 @@
-from plugin.sync.core.constants import GUID_AGENTS
+from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncData, SyncMedia
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
@@ -46,7 +46,7 @@ class Movies(Base):
         unsupported_movies = {}
 
         for rating_key, guid, p_item in p_items:
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.agent not in GUID_SERVICES:
                 mark_unsupported(unsupported_movies, rating_key, guid, p_item)
                 continue
 

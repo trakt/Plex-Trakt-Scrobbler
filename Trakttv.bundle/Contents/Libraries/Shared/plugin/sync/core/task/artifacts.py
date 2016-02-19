@@ -1,6 +1,6 @@
+from plugin.core.constants import GUID_SERVICES
 from plugin.core.helpers.variable import dict_path
 from plugin.models import *
-from plugin.sync.core.constants import GUID_AGENTS
 from plugin.sync.core.enums import SyncActionMode
 
 from datetime import datetime
@@ -287,7 +287,7 @@ class SyncArtifacts(object):
             log.warn('Invalid GUID attribute on %s', identifier)
             return False
 
-        if not guid or guid.agent not in GUID_AGENTS:
+        if not guid or guid.agent not in GUID_SERVICES:
             log.warn('GUID agent %r is not supported on %s', guid.agent if guid else None, identifier)
             return False
 

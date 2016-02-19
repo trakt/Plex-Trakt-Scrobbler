@@ -1,4 +1,4 @@
-from plugin.sync.core.constants import GUID_AGENTS
+from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMedia, SyncData
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.push.base import Base
@@ -85,7 +85,7 @@ class Movies(Base):
             self.current.progress.group(Movies, 'matched:movies').step()
 
             # Ensure `guid` is available
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.agent not in GUID_SERVICES:
                 mark_unsupported(self.p_unsupported, rating_key, guid, p_item)
                 continue
 

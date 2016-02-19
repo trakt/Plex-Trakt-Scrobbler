@@ -20,3 +20,12 @@ ACTIVITY_MODE = {
     ActivityMode.Logging:   ['logging'],
     ActivityMode.WebSocket: ['websocket']
 }
+
+GUID_SERVICES = [
+    'imdb',
+    'tvdb',
+
+    'tmdb',
+    'trakt',
+    'tvrage'
+]

@@ -1,4 +1,5 @@
 from plugin.core.backup import BackupManager
+from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
 
 from stash import ApswArchive
@@ -279,8 +280,8 @@ class Table(object):
             if len(pk) > 2:
                 pk = tuple(pk[:2])
 
-            if pk[0] not in ['imdb', 'tvdb']:
-                log.info('Ignoring item with an unknown primary agent: %r', pk)
+            if pk[0] not in GUID_SERVICES:
+                log.info('Ignoring item %r with an unknown primary agent: %r', item, pk)
                 continue
 
             # Detect media type from `item`

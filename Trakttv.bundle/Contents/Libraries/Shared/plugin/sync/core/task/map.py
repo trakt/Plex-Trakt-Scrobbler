@@ -1,3 +1,5 @@
+from plugin.core.constants import GUID_SERVICES
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -27,8 +29,8 @@ class SyncMap(object):
         if type(guid) is not tuple:
             guid = (guid.agent, guid.sid)
 
-        if guid[0] not in ['imdb', 'tvdb']:
-            log.info('Unknown primary agent: %r -> %r', guid, (p_section_key, p_key))
+        if guid[0] not in GUID_SERVICES:
+            log.info('Unknown primary agent: %r -> %r (section: %r)', guid[0], p_key, p_section_key)
 
         # Store in `_by_guid` map
         if guid not in self._by_guid:

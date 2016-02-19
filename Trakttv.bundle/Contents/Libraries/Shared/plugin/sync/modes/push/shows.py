@@ -1,4 +1,4 @@
-from plugin.sync.core.constants import GUID_AGENTS
+from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMedia, SyncData
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.push.base import Base
@@ -112,7 +112,7 @@ class Shows(Base):
             self.current.progress.group(Shows, 'matched:shows').step()
 
             # Ensure `guid` is available
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.agent not in GUID_SERVICES:
                 mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
                 continue
 
@@ -213,7 +213,7 @@ class Shows(Base):
             self.current.progress.group(Shows, 'matched:episodes').step()
 
             # Ensure `guid` is available
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.agent not in GUID_SERVICES:
                 mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
                 continue
 
