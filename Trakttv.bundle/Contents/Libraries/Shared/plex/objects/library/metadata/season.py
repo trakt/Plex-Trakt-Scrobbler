@@ -13,8 +13,6 @@ class Season(Directory, Metadata):
     banner = Property
     theme = Property
 
-    year = Property(type=int)
-
     episode_count = Property('leafCount', int)
     viewed_episode_count = Property('viewedLeafCount', int)
 

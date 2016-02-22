@@ -1,4 +1,6 @@
+from plugin.core.helpers.variable import try_convert
 from plugin.core.backup import BackupManager
+from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
 
 from stash import ApswArchive
@@ -9,6 +11,11 @@ import elapsed
 import logging
 import os
 import trakt.objects
+
+IGNORED_DATA = [
+    Cache.Data.get(Cache.Data.Liked),
+    Cache.Data.get(Cache.Data.Personal)
+]
 
 log = logging.getLogger(__name__)
 
@@ -216,12 +223,7 @@ class Table(object):
                 continue
 
             # Map store items
-            if data in [
-                Cache.Data.get(Cache.Data.Liked),
-                Cache.Data.get(Cache.Data.Personal)
-            ]:
-                self.map_items(key, cache[key])
-            else:
+            if data not in IGNORED_DATA:
                 self.map_items(key, cache[key], media)
 
         log.debug(
@@ -279,8 +281,8 @@ class Table(object):
             if len(pk) > 2:
                 pk = tuple(pk[:2])
 
-            if pk[0] not in ['imdb', 'tvdb']:
-                log.info('Ignoring item with an unknown primary agent: %r', pk)
+            if pk[0] not in GUID_SERVICES:
+                log.info('Ignoring item %r with an unknown primary agent: %r', item, pk)
                 continue
 
             # Detect media type from `item`
@@ -301,13 +303,19 @@ class Table(object):
                 if type(key) is not tuple or len(key) != 2:
                     continue
 
-                agent, _ = key
+                service, id = key
 
                 # Check if agent is supported
-                if agent not in KEY_AGENTS:
+                if service not in GUID_SERVICES:
                     continue
 
+                # Cast service id to integer
+                if service in ['tvdb', 'tmdb', 'tvrage']:
+                    id = try_convert(id, int, id)
+
                 # Store key in table
+                key = (service, id)
+
                 if key in self.table:
                     continue
 

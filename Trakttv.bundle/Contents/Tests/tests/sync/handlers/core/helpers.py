@@ -45,7 +45,7 @@ def assert_added(handler, key, sid, expected, **kwargs):
         expected['ids'] = {'imdb': sid}
 
     # Add item
-    handler.on_added(key, Guid('imdb', sid, None), **kwargs)
+    handler.on_added(key, Guid.parse('com.plexapp.agents.imdb://%s' % sid), **kwargs)
 
     # Ensure item was added
     item = dict_path(handler.current.artifacts.artifacts, [
@@ -64,7 +64,7 @@ def assert_ignored(handler, key, sid, **kwargs):
     artifact_key = get_artifact_key(handler)
 
     # Add item
-    handler.on_added(key, Guid('imdb', sid, None), **kwargs)
+    handler.on_added(key, Guid.parse('com.plexapp.agents.imdb://%s' % sid), **kwargs)
 
     # Ensure item wasn't added
     item = dict_path(handler.current.artifacts.artifacts, [

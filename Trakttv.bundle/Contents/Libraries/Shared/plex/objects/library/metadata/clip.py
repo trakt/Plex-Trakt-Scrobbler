@@ -7,6 +7,3 @@ class Clip(Video, Metadata):
     extra_type = Property('extraType', int)
 
     index = Property(type=int)
-
-    year = Property(type=int)
-    originally_available_at = Property('originallyAvailableAt')

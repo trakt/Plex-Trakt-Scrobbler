@@ -1,3 +1,4 @@
+from stash.core.exclusive import ExclusiveContext
 from stash.core.modules.base import MappingModule
 
 import collections
@@ -5,6 +6,11 @@ import collections
 
 class Cache(MappingModule):
     __group__ = 'cache'
+
+    def __init__(self):
+        super(Cache, self).__init__()
+
+        self.exclusive = ExclusiveContext()
 
     def delete(self, keys):
         if not keys:

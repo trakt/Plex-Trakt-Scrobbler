@@ -13,10 +13,12 @@ REQUEST_HEADER_PATTERN = str_format(LOG_PATTERN, message=r"Request: (\[(?P<addre
 IGNORE_PATTERNS = [
     r'error parsing allowedNetworks.*?',
     r'Comparing request from.*?',
-    r'We found auth token (.*?), enabling token-based authentication\.',
-    r'Came in with a super-token, authorization succeeded\.',
-    r'Refreshing tokens inside the token-based authentication filter.',
+    r'(Auth: )?We found auth token (.*?), enabling token-based authentication\.',
+    r'(Auth: )?Came in with a super-token, authorization succeeded\.',
+    r'(Auth: )?Refreshing tokens inside the token-based authentication filter\.',
+    r'\[Now\] Updated play state for .*?',
     r'Play progress on .*? - got played .*? ms by account .*?!',
+    r'(Statistics: )?\(.*?\) Reporting active playback in state \d+ of type \d+ \(.*?\) for account \d+',
     r'Request: \[.*?\] (GET|PUT) /video/:/transcode/.*?',
     r'Received transcode session ping for session .*?'
 ]
@@ -39,7 +41,7 @@ class Parser(Emitter):
         while True:
             line = self.core.read_line_retry(timeout=5)
             if not line:
-                log.warn('Unable to read log file')
+                log.info('Unable to read log file')
                 return {}
 
             # Run through each match function to find a result

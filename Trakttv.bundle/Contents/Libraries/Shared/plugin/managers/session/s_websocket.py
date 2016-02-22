@@ -85,10 +85,17 @@ class UpdateWSession(UpdateSession):
             log.info('Missing session key, unable to fetch session details')
             return result
 
-        # Retrieve session details
+        # Retrieve active sessions
         log.debug('Fetching details for session #%s', session_key)
 
-        p_item = Plex['status'].sessions().get(session_key)
+        p_sessions = Plex['status'].sessions()
+
+        if not p_sessions:
+            log.info('Unable to retrieve active sessions')
+            return result
+
+        # Find session matching `session_key`
+        p_item = p_sessions.get(session_key)
 
         if not p_item:
             log.info('Unable to find session with key %r', session_key)
