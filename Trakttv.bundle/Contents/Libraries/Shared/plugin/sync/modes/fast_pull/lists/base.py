@@ -37,6 +37,10 @@ class Lists(PullListsMode):
                         # No changes to list items required
                         continue
 
+                    if not t_list:
+                        # List was removed
+                        continue
+
                     # Process list items
                     self.process_list(action, data, p_playlists, p_sections_map, t_list)
 
