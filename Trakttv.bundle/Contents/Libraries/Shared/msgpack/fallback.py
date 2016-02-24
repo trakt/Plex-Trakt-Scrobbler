@@ -138,7 +138,7 @@ class Unpacker(object):
     :param int max_buffer_size:
         Limits size of data waiting unpacked.  0 means system's INT_MAX (default).
         Raises `BufferFull` exception when it is insufficient.
-        You shoud set this parameter when unpacking data from untrasted source.
+        You shoud set this parameter when unpacking data from untrusted source.
 
     :param int max_str_len:
         Limits max length of str. (default: 2**31-1)
@@ -655,6 +655,10 @@ class Packer(object):
                     return self._buffer.write(struct.pack(">BQ", 0xcf, obj))
                 if -0x8000000000000000 <= obj < -0x80000000:
                     return self._buffer.write(struct.pack(">Bq", 0xd3, obj))
+                if not default_used and self._default is not None:
+                    obj = self._default(obj)
+                    default_used = True
+                    continue
                 raise PackValueError("Integer value out of range")
             if self._use_bin_type and isinstance(obj, bytes):
                 n = len(obj)
