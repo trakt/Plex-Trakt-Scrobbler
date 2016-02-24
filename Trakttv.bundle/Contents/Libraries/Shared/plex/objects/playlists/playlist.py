@@ -19,6 +19,7 @@ class Playlist(Descriptor):
     duration = Property(type=int)
     duration_seconds = Property('durationInSeconds', int)
 
+    rating_count = Property('ratingCount', int)
     view_count = Property('viewCount', int)
 
     leaf_count = Property('leafCount', int)
