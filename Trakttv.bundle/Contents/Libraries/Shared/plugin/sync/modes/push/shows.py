@@ -180,7 +180,7 @@ class Shows(Base):
 
                     key=None,
 
-                    guid=Guid(*pk),
+                    guid=Guid.construct(*pk),
                     p_item=None,
 
                     t_item=t_show
@@ -296,7 +296,7 @@ class Shows(Base):
                         SyncMedia.Episodes, data,
                         key=None,
                         identifier=identifier,
-                        guid=Guid(*pk),
+                        guid=Guid.construct(*pk),
 
                         p_show=None,
                         p_item=None,
