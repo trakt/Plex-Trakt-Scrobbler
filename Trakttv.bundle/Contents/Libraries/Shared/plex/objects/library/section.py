@@ -26,8 +26,11 @@ class Section(Directory):
         return self.parse(response, idict({
             'MediaContainer': ('MediaContainer', idict({
                 'Directory': {
-                    'artist':    'Artist',
+                    'artist':   'Artist',
                     'show':     'Show'
+                },
+                'Photo': {
+                    'photo':    'Photo'
                 },
                 'Video': {
                     'movie':    'Movie'
