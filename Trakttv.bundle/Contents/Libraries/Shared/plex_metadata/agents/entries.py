@@ -1,6 +1,10 @@
 AGENTS = {
     'local': {},
 
+    'com.plexapp.agents.none': {
+        'service': 'none'
+    },
+
     #
     # Anime
     #

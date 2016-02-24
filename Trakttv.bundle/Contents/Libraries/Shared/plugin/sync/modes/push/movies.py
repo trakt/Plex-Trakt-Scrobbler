@@ -157,7 +157,7 @@ class Movies(Base):
 
                     key=None,
 
-                    guid=Guid(*pk),
+                    guid=Guid.construct(*pk),
                     p_item=None,
 
                     t_item=t_movie

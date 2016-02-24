@@ -10,12 +10,15 @@ class StatusInterface(Interface):
 
         return self.parse(response, idict({
             'MediaContainer': ('SessionContainer', idict({
-                'Track': 'Track',
-
+                'Photo': {
+                    'photo':    'Photo'
+                },
                 'Video': {
                     'episode':  'Episode',
                     'clip':     'Clip',
                     'movie':    'Movie'
-                }
+                },
+
+                'Track': 'Track'
             }))
         }))
