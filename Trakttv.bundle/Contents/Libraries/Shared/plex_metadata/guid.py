@@ -32,7 +32,15 @@ class Guid(object):
         return str(self.id)
 
     @classmethod
-    def parse(cls, guid, match=True, media=None):
+    def construct(cls, service, id, extra=None):
+        result = cls(id, extra)
+        result.service = service
+        result.id = id
+
+        return result
+
+    @classmethod
+    def parse(cls, guid, match=True, media=None, strict=False):
         if not guid:
             return None
 
@@ -48,6 +56,9 @@ class Guid(object):
         # Match guid with agent, fill with details
         if match and cls.match(agent_name, result, uri, media):
             return result
+
+        if strict:
+            return None
 
         # No agent matching enabled, basic fill
         result.service = agent_name[agent_name.rfind('.') + 1:]
