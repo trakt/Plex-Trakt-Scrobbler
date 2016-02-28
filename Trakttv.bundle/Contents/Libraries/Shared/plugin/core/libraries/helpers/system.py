@@ -152,7 +152,7 @@ class SystemHelper(object):
         if not executable_path or not os.path.exists(executable_path):
             log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FALLBACK_EXECUTABLE)
             executable_path = FALLBACK_EXECUTABLE
-        
+
         try:
             # Open executable stream
             stream = open(executable_path, 'rb')
@@ -164,7 +164,7 @@ class SystemHelper(object):
             section = cls._find_elf_section(elf, AttributesSection)
 
             if section is None:
-                log.warn('Unable to find attributes section in ELF: %r', executable_path)
+                log.info('Unable to find attributes section in ELF: %r', executable_path)
                 return None, None
 
             # Build dictionary of attributes
