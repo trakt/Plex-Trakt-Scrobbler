@@ -133,6 +133,21 @@ class SystemHelper(object):
         return 'sf'
 
     @classmethod
+    def cpu_name(cls, executable_path=sys.executable):
+        # Retrieve CPU name from ELF
+        section, attributes = cls.elf_attributes(executable_path)
+
+        if not section or not attributes:
+            return None
+
+        name = attributes.get('cpu_name')
+
+        if not name:
+            return None
+
+        return name.lower()
+
+    @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
         try:
             # Open executable stream
@@ -159,6 +174,16 @@ class SystemHelper(object):
             log.warn('Unable to retrieve attributes from ELF %r: %s', executable_path, ex, exc_info=True)
 
         return None, None
+
+    @classmethod
+    def page_size(cls):
+        try:
+            import resource
+            page_size = resource.getpagesize()
+
+            return '%dk' % (page_size / 1024)
+        except:
+            return None
 
     @staticmethod
     def _find_elf_section(elf, cls):
