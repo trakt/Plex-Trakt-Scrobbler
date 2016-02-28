@@ -25,7 +25,7 @@ NAME_MAP = {
     'Darwin': 'MacOSX'
 }
 
-FLOAT_FALLBACK_EXECUTABLE = '/bin/ls'
+FALLBACK_EXECUTABLE = '/bin/ls'
 
 
 class SystemHelper(object):
@@ -115,11 +115,6 @@ class SystemHelper(object):
         if os.path.exists('/lib/arm-linux-gnueabi'):
             return 'sf'
 
-        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
-        if not executable_path or not os.path.exists(executable_path):
-            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FLOAT_FALLBACK_EXECUTABLE)
-            executable_path = FLOAT_FALLBACK_EXECUTABLE
-
         # Determine system float-type from python executable
         section, attributes = cls.elf_attributes(executable_path)
 
@@ -153,6 +148,11 @@ class SystemHelper(object):
 
     @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
+        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
+        if not executable_path or not os.path.exists(executable_path):
+            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FALLBACK_EXECUTABLE)
+            executable_path = FALLBACK_EXECUTABLE
+        
         try:
             # Open executable stream
             stream = open(executable_path, 'rb')
