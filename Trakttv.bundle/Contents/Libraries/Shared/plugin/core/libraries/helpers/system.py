@@ -185,8 +185,12 @@ class SystemHelper(object):
             import resource
             page_size = resource.getpagesize()
 
+            if not page_size:
+                return None
+
             return '%dk' % (page_size / 1024)
-        except:
+        except Exception, ex:
+            log.warn('Unable to retrieve memory page size: %s', ex, exc_info=True)
             return None
 
     @staticmethod
