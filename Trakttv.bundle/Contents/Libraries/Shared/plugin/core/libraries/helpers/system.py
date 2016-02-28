@@ -93,6 +93,10 @@ class SystemHelper(object):
         if not machine:
             return None
 
+        # ARMv5
+        if machine.startswith('armv5'):
+            return 'armv5'
+
         # ARMv6
         if machine.startswith('armv6'):
             return 'armv6'
