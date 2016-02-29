@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class ArmHelper(object):
-    _cpuinfo_cache = (None, None)
+    _cpuinfo_cache = None
     _cpuinfo_lines = None
 
     @classmethod
@@ -23,9 +23,9 @@ class ArmHelper(object):
             cls._cpuinfo_cache = cls._parse(lines)
         else:
             # Clear cache
-            cls._cpuinfo_cache = (None, None)
+            cls._cpuinfo_cache = None
 
-        return cls._cpuinfo_cache
+        return cls._cpuinfo_cache or (None, None)
 
     @classmethod
     def identifier(cls, force_refresh=False):
