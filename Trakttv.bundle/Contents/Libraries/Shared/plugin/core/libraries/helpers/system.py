@@ -1,3 +1,5 @@
+from plugin.core.libraries.helpers.arm import ArmHelper
+
 from elftools.elf.attributes import AttributesSection
 from elftools.elf.elffile import ELFFile
 import logging
@@ -145,6 +147,22 @@ class SystemHelper(object):
             return None
 
         return name.lower()
+
+    @classmethod
+    def cpu_type(cls, executable_path=sys.executable):
+        try:
+            # Retrieve cpu type via "/proc/cpuinfo"
+            _, _, cpu_type = ArmHelper.identifier()
+
+            if cpu_type:
+                # Valid cpu type found
+                return cpu_type
+
+        except Exception, ex:
+            log.warn('Unable to retrieve cpu type from "/proc/cpuinfo": %s', ex, exc_info=True)
+
+        # Fallback to using the ELF cpu name
+        return cls.cpu_name(executable_path)
 
     @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
