@@ -173,16 +173,37 @@ class LibrariesManager(object):
 
     @staticmethod
     def _insert_paths_unix(libraries_path, system, architecture):
+        # UCS specific libraries
         ucs = UNICODE_MAP.get(sys.maxunicode)
-
         log.debug('UCS: %r', ucs)
 
-        # UCS libraries
         if ucs:
             PathHelper.insert(libraries_path, system, architecture, ucs)
 
+        # CPU specific libraries
+        cpu_type = SystemHelper.cpu_type()
+        page_size = SystemHelper.page_size()
+
+        log.debug('CPU Type: %r', cpu_type)
+        log.debug('Page Size: %r', page_size)
+
+        if cpu_type:
+            PathHelper.insert(libraries_path, system, architecture, cpu_type)
+
+            if page_size:
+                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size))
+
+        # UCS + CPU specific libraries
+        if cpu_type and ucs:
+            PathHelper.insert(libraries_path, system, architecture, cpu_type, ucs)
+
+            if page_size:
+                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size), ucs)
+
         # Include attributes in error reports
         RAVEN.tags.update({
+            'cpu.type': cpu_type,
+            'memory.page_size': page_size,
             'python.ucs': ucs
         })
 

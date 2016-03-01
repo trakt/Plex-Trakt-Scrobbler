@@ -1,8 +1,16 @@
 AGENTS = {
-    'local': {},
-
     'com.plexapp.agents.none': {
         'service': 'none'
+    },
+
+    #
+    # Local Media
+    #
+
+    'local': {},
+
+    'com.arendshome.plex.agents.personalmedia': {
+        'service': 'plex'
     },
 
     #
@@ -25,6 +33,13 @@ AGENTS = {
             {'pattern': r'tvdb-(.*)',  'service': 'tvdb',  'type': int},
             {'pattern': r'imdb-(.*)',  'service': 'imdb'}
         ]
+    },
+
+    'net.devvsbugs.coding.plex.myanimelist': {
+        'media': ['show', 'season', 'episode'],
+
+        'service': 'myanimelist',
+        'type': int
     },
 
     'net.fribbtastic.coding.plex.myanimelist': {
@@ -81,6 +96,34 @@ AGENTS = {
     # Movies
     #
 
+    'com.plexapp.agents.AlloCine': {
+        'media': ['movie'],
+
+        'service': 'allocine',
+        'type': int
+    },
+
+    'com.plexapp.agents.cinepassion': {
+        'media': ['movie'],
+
+        'service': 'cinepassion',
+        'type': int
+    },
+
+    'com.plexapp.agents.filmaffinity': {
+        'media': ['movie'],
+
+        'service': 'filmaffinity',
+        'type': int
+    },
+
+    'com.plexapp.agents.kinopoisk': {
+        'media': ['movie'],
+
+        'service': 'kinopoisk',
+        'type': int
+    },
+
     'com.plexapp.agents.standalone': {
         'media': ['movie'],
 
@@ -105,5 +148,13 @@ AGENTS = {
     'com.plexapp.agents.themoviedb': {
         'service': 'tmdb',
         'type': int
+    },
+
+    #
+    # Misc
+    #
+
+    'com.plexapp.agents.youtube': {
+        'service': 'youtube'
     }
 }

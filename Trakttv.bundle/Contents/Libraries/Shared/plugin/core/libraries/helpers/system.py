@@ -1,6 +1,11 @@
+from plugin.core.libraries.helpers.arm import ArmHelper
+
+from elftools.elf.attributes import AttributesSection
+from elftools.elf.elffile import ELFFile
 import logging
 import os
 import platform
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +26,8 @@ MSVCR_MAP = {
 NAME_MAP = {
     'Darwin': 'MacOSX'
 }
+
+FALLBACK_EXECUTABLE = '/bin/ls'
 
 
 class SystemHelper(object):
@@ -88,6 +95,10 @@ class SystemHelper(object):
         if not machine:
             return None
 
+        # ARMv5
+        if machine.startswith('armv5'):
+            return 'armv5'
+
         # ARMv6
         if machine.startswith('armv6'):
             return 'armv6'
@@ -99,12 +110,112 @@ class SystemHelper(object):
         return None
 
     @classmethod
-    def arm_float_type(cls):
+    def arm_float_type(cls, executable_path=sys.executable):
         if os.path.exists('/lib/arm-linux-gnueabihf'):
             return 'hf'
 
         if os.path.exists('/lib/arm-linux-gnueabi'):
             return 'sf'
+
+        # Determine system float-type from python executable
+        section, attributes = cls.elf_attributes(executable_path)
+
+        if not section or not attributes:
+            return None
+
+        if section.name != 'aeabi':
+            log.warn('Unknown attributes section name: %r', section.name)
+            return None
+
+        # Assume hard-float if "tag_abi_vfp_args" is present
+        if attributes.get('abi_vfp_args'):
+            return 'hf'
+
+        return 'sf'
+
+    @classmethod
+    def cpu_name(cls, executable_path=sys.executable):
+        # Retrieve CPU name from ELF
+        section, attributes = cls.elf_attributes(executable_path)
+
+        if not section or not attributes:
+            return None
+
+        name = attributes.get('cpu_name')
+
+        if not name:
+            return None
+
+        return name.lower()
+
+    @classmethod
+    def cpu_type(cls, executable_path=sys.executable):
+        try:
+            # Retrieve cpu type via "/proc/cpuinfo"
+            _, _, cpu_type = ArmHelper.identifier()
+
+            if cpu_type:
+                # Valid cpu type found
+                return cpu_type
+
+        except Exception, ex:
+            log.warn('Unable to retrieve cpu type from "/proc/cpuinfo": %s', ex, exc_info=True)
+
+        # Fallback to using the ELF cpu name
+        return cls.cpu_name(executable_path)
+
+    @classmethod
+    def elf_attributes(cls, executable_path=sys.executable):
+        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
+        if not executable_path or not os.path.exists(executable_path):
+            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FALLBACK_EXECUTABLE)
+            executable_path = FALLBACK_EXECUTABLE
+
+        try:
+            # Open executable stream
+            stream = open(executable_path, 'rb')
+
+            # Parse ELF
+            elf = ELFFile(stream)
+
+            # Find attributes section
+            section = cls._find_elf_section(elf, AttributesSection)
+
+            if section is None:
+                log.info('Unable to find attributes section in ELF: %r', executable_path)
+                return None, None
+
+            # Build dictionary of attributes
+            attributes = dict([
+                (attr.tag.lower(), attr.value)
+                for attr in section.iter_attributes()
+            ])
+
+            return section, attributes
+        except Exception, ex:
+            log.warn('Unable to retrieve attributes from ELF %r: %s', executable_path, ex, exc_info=True)
+
+        return None, None
+
+    @classmethod
+    def page_size(cls):
+        try:
+            import resource
+            page_size = resource.getpagesize()
+
+            if not page_size:
+                return None
+
+            return '%dk' % (page_size / 1024)
+        except Exception, ex:
+            log.warn('Unable to retrieve memory page size: %s', ex, exc_info=True)
+            return None
+
+    @staticmethod
+    def _find_elf_section(elf, cls):
+        for section in elf.iter_sections():
+            if isinstance(section, cls):
+                return section
 
         return None
 

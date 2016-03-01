@@ -1,5 +1,5 @@
+from plugin.core.exceptions import AccountAuthenticationError
 from plugin.models.core import db
-from plugin.models.core.exceptions import AccountAuthenticationError
 from plugin.models.account import Account
 
 from datetime import datetime, timedelta
