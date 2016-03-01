@@ -80,7 +80,11 @@ class PlaylistMapper(object):
             for p_season in Plex['library/metadata'].children(p_show_key)
         ])
 
-        p_season = p_seasons[t_season.pk]
+        p_season = p_seasons.get(t_season.pk)
+
+        if p_season is None:
+            log.info('Unable to find season that matches pk: %r', t_season.pk)
+            return t_season
 
         # Create dummy trakt episodes that matches the available plex episodes
         t_episodes = {}
