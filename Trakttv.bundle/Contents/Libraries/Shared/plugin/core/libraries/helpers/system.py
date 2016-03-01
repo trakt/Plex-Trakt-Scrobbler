@@ -25,7 +25,7 @@ NAME_MAP = {
     'Darwin': 'MacOSX'
 }
 
-FLOAT_FALLBACK_EXECUTABLE = '/bin/ls'
+FALLBACK_EXECUTABLE = '/bin/ls'
 
 
 class SystemHelper(object):
@@ -93,6 +93,10 @@ class SystemHelper(object):
         if not machine:
             return None
 
+        # ARMv5
+        if machine.startswith('armv5'):
+            return 'armv5'
+
         # ARMv6
         if machine.startswith('armv6'):
             return 'armv6'
@@ -111,11 +115,6 @@ class SystemHelper(object):
         if os.path.exists('/lib/arm-linux-gnueabi'):
             return 'sf'
 
-        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
-        if not executable_path or not os.path.exists(executable_path):
-            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FLOAT_FALLBACK_EXECUTABLE)
-            executable_path = FLOAT_FALLBACK_EXECUTABLE
-
         # Determine system float-type from python executable
         section, attributes = cls.elf_attributes(executable_path)
 
@@ -133,7 +132,27 @@ class SystemHelper(object):
         return 'sf'
 
     @classmethod
+    def cpu_name(cls, executable_path=sys.executable):
+        # Retrieve CPU name from ELF
+        section, attributes = cls.elf_attributes(executable_path)
+
+        if not section or not attributes:
+            return None
+
+        name = attributes.get('cpu_name')
+
+        if not name:
+            return None
+
+        return name.lower()
+
+    @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
+        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
+        if not executable_path or not os.path.exists(executable_path):
+            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FALLBACK_EXECUTABLE)
+            executable_path = FALLBACK_EXECUTABLE
+
         try:
             # Open executable stream
             stream = open(executable_path, 'rb')
@@ -145,7 +164,7 @@ class SystemHelper(object):
             section = cls._find_elf_section(elf, AttributesSection)
 
             if section is None:
-                log.warn('Unable to find attributes section in ELF: %r', executable_path)
+                log.info('Unable to find attributes section in ELF: %r', executable_path)
                 return None, None
 
             # Build dictionary of attributes
@@ -159,6 +178,20 @@ class SystemHelper(object):
             log.warn('Unable to retrieve attributes from ELF %r: %s', executable_path, ex, exc_info=True)
 
         return None, None
+
+    @classmethod
+    def page_size(cls):
+        try:
+            import resource
+            page_size = resource.getpagesize()
+
+            if not page_size:
+                return None
+
+            return '%dk' % (page_size / 1024)
+        except Exception, ex:
+            log.warn('Unable to retrieve memory page size: %s', ex, exc_info=True)
+            return None
 
     @staticmethod
     def _find_elf_section(elf, cls):
