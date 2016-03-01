@@ -2,7 +2,7 @@ from plugin.core.helpers.variable import try_convert
 from plugin.core.backup import BackupManager
 from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
-from plugin.models.core.exceptions import AccountAuthenticationError
+from plugin.core.exceptions import AccountAuthenticationError
 
 from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend

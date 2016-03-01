@@ -148,6 +148,7 @@ class Clean(Migration):
                 'Shared/plugin/core/event.py',
                 'Shared/plugin/core/io.py',
                 'Shared/plugin/core/jsonw.py',
+                'Shared/plugin/models/core/exceptions.py',
                 'Shared/plugin/modules/base.py',
                 'Shared/plugin/modules/manager.py',
                 'Shared/plugin/preferences/options/core/base.py',
