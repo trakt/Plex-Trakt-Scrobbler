@@ -106,7 +106,7 @@ class Base(object):
 
     @staticmethod
     def session_jumped(session, view_offset):
-        if session.view_offset is None:
+        if session.view_offset is None or view_offset is None:
             return False
 
         view_delta = view_offset - session.view_offset
