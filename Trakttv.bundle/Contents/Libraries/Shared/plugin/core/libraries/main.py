@@ -181,28 +181,28 @@ class LibrariesManager(object):
             PathHelper.insert(libraries_path, system, architecture, ucs)
 
         # CPU specific libraries
-        cpu_name = SystemHelper.cpu_name()
+        cpu_type = SystemHelper.cpu_type()
         page_size = SystemHelper.page_size()
 
-        log.debug('CPU Name: %r', cpu_name)
+        log.debug('CPU Type: %r', cpu_type)
         log.debug('Page Size: %r', page_size)
 
-        if cpu_name:
-            PathHelper.insert(libraries_path, system, architecture, cpu_name)
+        if cpu_type:
+            PathHelper.insert(libraries_path, system, architecture, cpu_type)
 
             if page_size:
-                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_name, page_size))
+                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size))
 
         # UCS + CPU specific libraries
-        if cpu_name and ucs:
-            PathHelper.insert(libraries_path, system, architecture, cpu_name, ucs)
+        if cpu_type and ucs:
+            PathHelper.insert(libraries_path, system, architecture, cpu_type, ucs)
 
             if page_size:
-                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_name, page_size), ucs)
+                PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size), ucs)
 
         # Include attributes in error reports
         RAVEN.tags.update({
-            'cpu.name': cpu_name,
+            'cpu.type': cpu_type,
             'memory.page_size': page_size,
             'python.ucs': ucs
         })
