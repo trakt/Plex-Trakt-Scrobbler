@@ -1,6 +1,9 @@
+from elftools.elf.attributes import AttributesSection
+from elftools.elf.elffile import ELFFile
 import logging
 import os
 import platform
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +24,8 @@ MSVCR_MAP = {
 NAME_MAP = {
     'Darwin': 'MacOSX'
 }
+
+FLOAT_FALLBACK_EXECUTABLE = '/bin/ls'
 
 
 class SystemHelper(object):
@@ -99,12 +104,67 @@ class SystemHelper(object):
         return None
 
     @classmethod
-    def arm_float_type(cls):
+    def arm_float_type(cls, executable_path=sys.executable):
         if os.path.exists('/lib/arm-linux-gnueabihf'):
             return 'hf'
 
         if os.path.exists('/lib/arm-linux-gnueabi'):
             return 'sf'
+
+        # Read attributes from "/bin/ls" if `executable_path` doesn't exist
+        if not executable_path or not os.path.exists(executable_path):
+            log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FLOAT_FALLBACK_EXECUTABLE)
+            executable_path = FLOAT_FALLBACK_EXECUTABLE
+
+        # Determine system float-type from python executable
+        section, attributes = cls.elf_attributes(executable_path)
+
+        if not section or not attributes:
+            return None
+
+        if section.name != 'aeabi':
+            log.warn('Unknown attributes section name: %r', section.name)
+            return None
+
+        # Assume hard-float if "tag_abi_vfp_args" is present
+        if attributes.get('abi_vfp_args'):
+            return 'hf'
+
+        return 'sf'
+
+    @classmethod
+    def elf_attributes(cls, executable_path=sys.executable):
+        try:
+            # Open executable stream
+            stream = open(executable_path, 'rb')
+
+            # Parse ELF
+            elf = ELFFile(stream)
+
+            # Find attributes section
+            section = cls._find_elf_section(elf, AttributesSection)
+
+            if section is None:
+                log.warn('Unable to find attributes section in ELF: %r', executable_path)
+                return None, None
+
+            # Build dictionary of attributes
+            attributes = dict([
+                (attr.tag.lower(), attr.value)
+                for attr in section.iter_attributes()
+            ])
+
+            return section, attributes
+        except Exception, ex:
+            log.warn('Unable to retrieve attributes from ELF %r: %s', executable_path, ex, exc_info=True)
+
+        return None, None
+
+    @staticmethod
+    def _find_elf_section(elf, cls):
+        for section in elf.iter_sections():
+            if isinstance(section, cls):
+                return section
 
         return None
 
