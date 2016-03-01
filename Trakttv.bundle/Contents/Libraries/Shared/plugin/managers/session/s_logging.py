@@ -30,6 +30,7 @@ class GetLSession(GetSession):
         machine_identifier = info.get('machineIdentifier')
 
         if not machine_identifier:
+            log.info('No machine identifier available, unable to create session')
             return None
 
         try:

@@ -18,14 +18,20 @@ PATH_HINTS = {
         lambda: os.path.join(os.getenv('HOME'), 'Library/Logs/Plex Media Server.log')
     ],
     'FreeBSD': [
-        # FreeNAS 9.3
+        # FreeBSD
+        '/usr/local/plexdata/Plex Media Server/Logs/Plex Media Server.log',
+        '/usr/local/plexdata-plexpass/Plex Media Server/Logs/Plex Media Server.log',
+
+        # FreeNAS
         '/usr/pbi/plexmediaserver-amd64/plexdata/Plex Media Server/Logs/Plex Media Server.log',
+        '/var/db/plexdata/Plex Media Server/Logs/Plex Media Server.log',
+        '/var/db/plexdata-plexpass/Plex Media Server/Logs/Plex Media Server.log'
     ],
     'Linux': [
-        # QNAP TS-219P
+        # QNAP
         '/share/HDA_DATA/.qpkg/PlexMediaServer/Library/Plex Media Server/Logs/Plex Media Server.log',
 
-        # Ubuntu 12.04
+        # Debian
         '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs/Plex Media Server.log'
     ],
     'Windows': [
@@ -63,7 +69,7 @@ class Logging(Source):
     def run(self):
         line = self.read_line_retry(ping=True, stale_sleep=0.5)
         if not line:
-            log.warn('Unable to read log file')
+            log.info('Unable to read log file')
             return
 
         log.debug('Ready')
@@ -75,7 +81,7 @@ class Logging(Source):
             if line:
                 self.process(line)
             else:
-                log.warn('Unable to read log file')
+                log.info('Unable to read log file')
 
     def process(self, line):
         for parser in self.parsers:

@@ -297,6 +297,7 @@ class Clean(Migration):
                 # plugin
                 'Shared/plugin/core/collections',
                 'Shared/plugin/data',
+                'Shared/plugin/modules/backup',
 
                 # native
                 'MacOSX/universal',

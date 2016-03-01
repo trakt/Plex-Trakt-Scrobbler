@@ -13,9 +13,6 @@ class Album(Directory, Metadata, RateMixin):
 
     index = Property(type=int)
 
-    year = Property(type=int)
-    originally_available_at = Property('originallyAvailableAt')
-
     track_count = Property('leafCount', int)
     viewed_track_count = Property('viewedLeafCount', int)
 

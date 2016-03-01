@@ -1,5 +1,5 @@
-from plex_metadata.core.defaults import DEFAULT_GUID_MAP, DEFAULT_TV_AGENTS
-from plex_metadata.core.helpers import try_convert, compile_map, urlparse
+from plex_metadata.agents import Agents
+from plex_metadata.core.helpers import urlparse
 
 import logging
 
@@ -7,98 +7,81 @@ log = logging.getLogger(__name__)
 
 
 class Guid(object):
-    map = compile_map(DEFAULT_GUID_MAP)
-
-    def __init__(self, agent, sid, extra=None):
-        self.agent = agent
-        self.sid = sid
+    def __init__(self, value, extra=None):
+        self.value = value
         self.extra = extra
+
+        # Identifier
+        self.service = None
+        self.id = None
 
         # Show
         self.season = None
         self.episode = None
 
+        # Optional
+        self.language = None
+
+    @property
+    def agent(self):
+        return self.service
+
+    @property
+    def sid(self):
+        # `sid` property always returns strings
+        return str(self.id)
+
     @classmethod
-    def parse(cls, guid, map=True):
-        if not guid:
-            return None
-
-        agent, uri = urlparse(guid)
-
-        if not agent or not uri or not uri.netloc:
-            return None
-
-        result = Guid(agent, uri.netloc, uri.query)
-
-        # Nothing more to parse, return now
-        if uri.path:
-            cls.parse_path(result, uri)
-
-        if map:
-            return cls.map_guid(result)
+    def construct(cls, service, id, extra=None):
+        result = cls(id, extra)
+        result.service = service
+        result.id = id
 
         return result
 
     @classmethod
-    def parse_path(cls, guid, uri):
-        # Parse path component for agent-specific data
-        path_fragments = uri.path.strip('/').split('/')
+    def parse(cls, guid, match=True, media=None, strict=False):
+        if not guid:
+            return None
 
-        if guid.agent in DEFAULT_TV_AGENTS:
-            if len(path_fragments) >= 1:
-                guid.season = try_convert(path_fragments[0], int)
+        # Parse Guid URI
+        agent_name, uri = urlparse(guid)
 
-            if len(path_fragments) >= 2:
-                guid.episode = try_convert(path_fragments[1], int)
-        else:
-            log.warn('Unable to completely parse guid (agent: %r)', guid.agent)
+        if not agent_name or not uri or not uri.netloc:
+            return None
 
-    @classmethod
-    def map_guid(cls, guid):
-        agent, sid_pattern, match = cls.find_map(guid)
+        # Construct `Guid` object
+        result = Guid(uri.netloc, uri.query)
 
-        guid.agent = agent
+        # Match guid with agent, fill with details
+        if match and cls.match(agent_name, result, uri, media):
+            return result
 
-        # Match sid with regex
-        if sid_pattern:
-            if not match:
-                log.warn('Failed to match "%s" against sid_pattern for "%s" agent', guid.sid, guid.agent)
-                return None
+        if strict:
+            return None
 
-            # Update with new sid
-            guid.sid = ''.join(match.groups())
+        # No agent matching enabled, basic fill
+        result.service = agent_name[agent_name.rfind('.') + 1:]
+        result.id = uri.netloc
 
-        return guid
+        return result
 
     @classmethod
-    def find_map(cls, guid):
-        # Strip leading key
-        agent = guid.agent[guid.agent.rfind('.') + 1:]
+    def match(cls, agent_name, guid, uri, media=None):
+        # Retrieve `Agent` for provided `guid`
+        agent = Agents.get(agent_name)
 
-        # Return mapped agent and sid_pattern (if present)
-        mappings = cls.map.get(agent, [])
+        if agent is None:
+            log.warn('Unsupported metadata agent: %r', agent_name)
+            return False
 
-        if type(mappings) is not list:
-            mappings = [mappings]
-
-        for mapping in mappings:
-            map_agent, map_pattern = mapping
-
-            if map_pattern is None:
-                return map_agent, None, None
-
-            match = map_pattern.match(guid.sid)
-            if not match:
-                continue
-
-            return map_agent, map_pattern, match
-
-        return agent, None, None
+        # Fill `guid` with details from agent
+        return agent.fill(guid, uri, media)
 
     def __repr__(self):
         parameters = [
-            'agent: %r' % self.agent,
-            'sid: %r' % self.sid
+            'service: %r' % self.service,
+            'id: %r' % self.id
         ]
 
         if self.season is not None:

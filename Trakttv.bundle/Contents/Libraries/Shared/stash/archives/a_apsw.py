@@ -80,15 +80,13 @@ class ApswArchive(Archive):
         if not isinstance(keys, collections.Iterable):
             keys = [keys]
 
-        # Start transaction
-        with self.db:
-            # Create cursor
-            with closing(self.db.cursor()) as c:
-                # Delete `keys`
-                c.executemany(self._query_delete(), [
-                    self.key_encode(key)
-                    for key in keys
-                ])
+        # Create cursor
+        with closing(self.db.cursor()) as c:
+            # Delete `keys`
+            c.executemany(self._query_delete(), [
+                self.key_encode(key)
+                for key in keys
+            ])
 
     def get_items(self, keys=None):
         if keys:
@@ -106,15 +104,13 @@ class ApswArchive(Archive):
             yield self.key_decode(key), self.loads(value)
 
     def set_items(self, items):
-        # Start transaction
-        with self.db:
-            # Create cursor
-            with closing(self.db.cursor()) as c:
-                # Insert `items`
-                c.executemany(self._query_upsert(), [
-                    (self.key_encode(key), buffer(self.dumps(value)))
-                    for key, value in items
-                ])
+        # Create cursor
+        with closing(self.db.cursor()) as c:
+            # Insert `items`
+            c.executemany(self._query_upsert(), [
+                (self.key_encode(key), buffer(self.dumps(value)))
+                for key, value in items
+            ])
 
     def update(self, *args, **kwds):
         if args:

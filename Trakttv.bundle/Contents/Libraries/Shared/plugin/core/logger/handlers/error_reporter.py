@@ -39,7 +39,7 @@ PARAMS = {
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = 'e043ce2ca140486d9104b8c6164f1a82:d01d4eabb8aa4aacbd6bb61a36f92033'
+    key = '3003dcf9f9214d6aa457cd12e821c1c5:60d79859773a471eb963f4cb3ccc6256'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):

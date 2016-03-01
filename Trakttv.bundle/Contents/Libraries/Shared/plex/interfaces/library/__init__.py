@@ -17,6 +17,9 @@ class LibraryInterface(Interface):
                     'season':   'Season',
                     'show':     'Show'
                 },
+                'Photo': {
+                    'photo':    'Photo'
+                },
                 'Video': {
                     'episode':  'Episode',
                     'clip':     'Clip',

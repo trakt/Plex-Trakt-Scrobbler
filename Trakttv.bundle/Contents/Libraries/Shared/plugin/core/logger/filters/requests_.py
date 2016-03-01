@@ -2,6 +2,10 @@ from logging import Filter
 from requests import RequestException
 import logging
 
+IGNORED_MESSAGE_PREFIXES = [
+    'Retrying'
+]
+
 
 class RequestsLogFilter(Filter):
     def filter(self, record):
@@ -34,13 +38,27 @@ class RequestsLogFilter(Filter):
 
 class RequestsReportFilter(Filter):
     def filter(self, record):
-        if self.is_requests_message(record):
+        if self.is_requests_exception(record):
+            return False
+
+        if self.is_ignored_message(record):
             return False
 
         return True
 
     @staticmethod
-    def is_requests_message(record):
+    def is_ignored_message(record):
+        if record.levelno < logging.WARNING:
+            return False
+
+        for prefix in IGNORED_MESSAGE_PREFIXES:
+            if record.msg.startswith(prefix):
+                return True
+
+        return False
+
+    @staticmethod
+    def is_requests_exception(record):
         if record.levelno < logging.WARNING:
             return False
 

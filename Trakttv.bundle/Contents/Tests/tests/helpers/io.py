@@ -24,3 +24,13 @@ def read(*args):
 
     with open(path, 'rb') as fp:
         return fp.read()
+
+
+def touch(path):
+    directory = os.path.dirname(path)
+
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+    with open(path, 'wb') as fp:
+        fp.write('\n')

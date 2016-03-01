@@ -3,7 +3,9 @@ import logging
 log = logging.getLogger(__name__)
 
 IGNORED_EVENTS = [
-    'buffering'
+    'buffering',
+    'error',
+    'play'
 ]
 
 

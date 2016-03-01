@@ -31,6 +31,7 @@ class Movie(Video):
             'collected': 1 if self.is_collected else 0,
 
             'plays': self.plays if self.plays is not None else 0,
+            'in_watchlist': self.in_watchlist if self.in_watchlist is not None else 0,
             'progress': self.progress,
 
             'last_watched_at': to_iso8601(self.last_watched_at),

@@ -1,4 +1,4 @@
-from plugin.sync.core.constants import GUID_AGENTS
+from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncData, SyncMedia
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
@@ -56,11 +56,11 @@ class Shows(Base):
 
         # Process shows
         for sh_id, guid, p_show in p_shows:
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.service not in GUID_SERVICES:
                 mark_unsupported(unsupported_shows, sh_id, guid, p_show)
                 continue
 
-            key = (guid.agent, guid.sid)
+            key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)
@@ -87,11 +87,11 @@ class Shows(Base):
 
         # Process episodes
         for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if not guid or guid.agent not in GUID_AGENTS:
+            if not guid or guid.service not in GUID_SERVICES:
                 mark_unsupported(unsupported_shows, ids['show'], guid, p_show)
                 continue
 
-            key = (guid.agent, guid.sid)
+            key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table.get(key)

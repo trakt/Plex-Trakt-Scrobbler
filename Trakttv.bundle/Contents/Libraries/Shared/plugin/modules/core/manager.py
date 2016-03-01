@@ -19,12 +19,10 @@ class ModuleManager(object):
 
     @classmethod
     def discover(cls):
-        from plugin.modules.backup.main import Backup
         from plugin.modules.scheduler.main import Scheduler
         from plugin.modules.upgrade.main import Upgrade
 
         return [
-            Backup,
             Scheduler,
             Upgrade
         ]

@@ -16,7 +16,7 @@ class BackupGroup(object):
 
     @classmethod
     def list(cls, search_path=BACKUP_PATH, max_depth=0):
-        if not os.path.exists(search_path):
+        if not os.path.isdir(search_path):
             return
 
         names = os.listdir(search_path)
@@ -27,7 +27,7 @@ class BackupGroup(object):
             if path.endswith('.bgr'):
                 # Load backup group
                 yield cls.load(path)
-            elif max_depth > 0:
+            elif max_depth > 0 and os.path.isdir(path):
                 # Search sub-directory for backup groups
                 for p in cls.list(path, max_depth - 1):
                     yield p
