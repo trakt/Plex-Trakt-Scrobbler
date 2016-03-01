@@ -72,7 +72,7 @@ class Guid(object):
         agent = Agents.get(agent_name)
 
         if agent is None:
-            log.warn('Unsupported metadata agent: %r', agent_name)
+            log.warn('Unsupported metadata agent: %r' % agent_name)
             return False
 
         # Fill `guid` with details from agent
