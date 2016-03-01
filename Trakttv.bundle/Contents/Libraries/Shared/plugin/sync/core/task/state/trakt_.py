@@ -2,11 +2,11 @@ from plugin.core.helpers.variable import try_convert
 from plugin.core.backup import BackupManager
 from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
+from plugin.models.core.exceptions import AccountAuthenticationError
 
 from stash import ApswArchive
 from trakt_sync.cache.backends import StashBackend
 from trakt_sync.cache.main import Cache
-from trakt_sync.differ.core.base import KEY_AGENTS
 import elapsed
 import logging
 import os
@@ -83,6 +83,11 @@ class SyncStateTrakt(object):
 
     @elapsed.clock
     def refresh(self):
+        account = self.task.account
+
+        if not account.trakt or not account.trakt.username:
+            raise AccountAuthenticationError("Trakt account hasn't been authenticated")
+
         # Task checkpoint
         self.task.checkpoint()
 
@@ -98,7 +103,7 @@ class SyncStateTrakt(object):
         setup_progress_group('sync')
 
         # Refresh cache for account, store changes
-        self.changes = self.cache.refresh(self.task.account.trakt.username)
+        self.changes = self.cache.refresh(account.trakt.username)
 
         # Resolve changes
         self.changes = list(self.changes)
