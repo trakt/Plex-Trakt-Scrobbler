@@ -3,7 +3,7 @@ from plex.interfaces.core.base import Interface
 
 import collections
 import logging
-import traceback
+import sys
 import types
 
 log = logging.getLogger(__name__)
@@ -17,20 +17,24 @@ class Property(object):
         self.type = type
         self.resolver = resolver
 
-    def value(self, client, key, node, keys_used):
+    def value(self, descriptor, client, key, node, keys_used):
         if self.resolver is not None:
-            return self.value_func(client, node, keys_used)
+            return self.value_func(descriptor, client, key, node, keys_used)
 
-        return self.value_node(key, node, keys_used)
+        return self.value_node(descriptor, key, node, keys_used)
 
-    def value_node(self, key, node, keys_used):
+    def value_node(self, descriptor, key, node, keys_used):
         value = self.helpers.get(node, key)
         keys_used.append(key.lower())
 
         if value is None:
             return None
 
-        return self.value_convert(value)
+        try:
+            return self.value_convert(value)
+        except Exception as ex:
+            log.warn('[%s] Unable to parse property %r - %%s' % (descriptor.__name__, key), ex, exc_info=True)
+            return None
 
     def value_convert(self, value):
         if not self.type:
@@ -43,12 +47,11 @@ class Property(object):
             try:
                 result = target_type(result)
             except Exception as ex:
-                log.warn('Unable to cast value: %r, to type: %r - %s', result, target_type, ex, exc_info=True)
-                return None
+                raise ex, None, sys.exc_info()[2]
 
         return result
 
-    def value_func(self, client, node, keys_used):
+    def value_func(self, descriptor, client, key, node, keys_used):
         func = self.resolver()
 
         try:
@@ -57,7 +60,7 @@ class Property(object):
             keys_used.extend([k.lower() for k in keys])
             return value
         except Exception as ex:
-            log.warn('Exception in value function (%s): %s - %s', func, ex, traceback.format_exc())
+            log.warn('[%s] Exception raised in value function for %r - %%s' % (descriptor.__name__, key), ex, exc_info=True)
             return None
 
 
@@ -130,7 +133,7 @@ class Descriptor(Interface):
                     continue
 
             #log.debug('%s - Found property "%s"', cls.__name__, key)
-            setattr(obj, key, prop.value(client, node_key, node, keys_used))
+            setattr(obj, key, prop.value(cls, client, node_key, node, keys_used))
 
         # Post-fill transformation
         obj.__transform__()
@@ -140,7 +143,7 @@ class Descriptor(Interface):
         omitted.sort()
 
         if omitted and not child:
-            log.warn('%s - Omitted attributes: %s', cls.__name__, ', '.join(omitted))
+            log.warn('[%s] Omitted attributes: %s' % (cls.__name__, ', '.join(omitted)))
 
         return keys_used, obj
 
