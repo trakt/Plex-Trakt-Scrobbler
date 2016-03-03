@@ -338,18 +338,21 @@ class Table(object):
 
     @staticmethod
     def media(item):
-        i_type = type(item)
+        if type(item) is not type:
+            i_type = type(item)
+        else:
+            i_type = item
 
-        if i_type is trakt_objects.Movie or i_type is plex_objects.Movie:
+        if issubclass(i_type, (trakt_objects.Movie, plex_objects.Movie)):
             return 'movies'
 
-        if i_type is trakt_objects.Show or i_type is plex_objects.Show:
+        if issubclass(i_type, (trakt_objects.Show, plex_objects.Show)):
             return 'shows'
 
-        if i_type is trakt_objects.Season or i_type is plex_objects.Season:
+        if issubclass(i_type, (trakt_objects.Season, plex_objects.Season)):
             return 'seasons'
 
-        if i_type is trakt_objects.Episode or i_type is plex_objects.Episode:
+        if issubclass(i_type, (trakt_objects.Episode, plex_objects.Episode)):
             return 'episodes'
 
         log.warn('Unknown item type: %r', i_type)

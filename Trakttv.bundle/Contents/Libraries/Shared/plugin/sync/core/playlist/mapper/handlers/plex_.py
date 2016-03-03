@@ -51,7 +51,7 @@ class PlexPlaylistHandler(PlaylistHandler):
         guid = guids[0]
 
         # Try map `guid` to a primary agent
-        guid = self.task.state.trakt.table(i_type).get(guid, guid)
+        guid = self.task.state.trakt.table(item).get(guid, guid)
 
         # Build key for `item`
         if i_type in [Movie, Show]:
