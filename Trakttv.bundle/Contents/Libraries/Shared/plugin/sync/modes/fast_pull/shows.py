@@ -89,7 +89,7 @@ class Shows(Mode):
                 key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
-                pk = self.trakt.table.get(key)
+                pk = self.trakt.table('shows').get(key)
 
                 # Store in item map
                 self.current.map.add(p_show.get('library_section'), sh_id, [key, pk])
@@ -155,7 +155,7 @@ class Shows(Mode):
                 key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
-                pk = self.trakt.table.get(key)
+                pk = self.trakt.table('shows').get(key)
 
                 if pk is None:
                     # No `pk` found

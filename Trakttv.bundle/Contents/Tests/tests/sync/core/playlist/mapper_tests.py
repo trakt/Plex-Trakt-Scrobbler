@@ -73,10 +73,11 @@ def test_basic():
     )
 
     # Update trakt table
-    task.state.trakt.table.table = {
+    task.state.trakt.table.movies = {
         ('tmdb', '158852'): ('imdb', 'tt1964418'),
         ('tmdb', '284674'): ('imdb', 'tt2091478')
     }
+    task.state.trakt.table.shows = {}
 
     # Update map
     # - Movies

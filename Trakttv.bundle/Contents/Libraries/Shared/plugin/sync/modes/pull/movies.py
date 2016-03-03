@@ -53,7 +53,7 @@ class Movies(Base):
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('movies').get(key)
 
             # Store in item map
             self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])
