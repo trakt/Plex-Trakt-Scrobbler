@@ -57,7 +57,7 @@ class PlaylistMapper(object):
             t_episodes[p_season.index][p_episode.index] = t_episode
 
         # Update trakt table
-        self.trakt.table[t_show.pk] = t_episodes
+        self.trakt.table('shows')[t_show.pk] = t_episodes
 
         return t_episodes
 
@@ -97,7 +97,7 @@ class PlaylistMapper(object):
             t_episodes[p_episode.index] = t_episode
 
         # Update trakt table
-        self.trakt.table[t_show.pk][p_season.index] = t_episodes
+        self.trakt.table('shows')[t_show.pk][p_season.index] = t_episodes
 
         return t_episodes
 
