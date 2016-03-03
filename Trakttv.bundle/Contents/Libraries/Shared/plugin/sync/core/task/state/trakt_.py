@@ -4,13 +4,14 @@ from plugin.core.constants import GUID_SERVICES
 from plugin.core.database import Database
 from plugin.core.exceptions import AccountAuthenticationError
 
+from plex.objects.library import metadata as plex_objects
 from stash import ApswArchive
+from trakt import objects as trakt_objects
 from trakt_sync.cache.backends import StashBackend
 from trakt_sync.cache.main import Cache
 import elapsed
 import logging
 import os
-import trakt.objects
 
 IGNORED_DATA = [
     Cache.Data.get(Cache.Data.Liked),
@@ -148,11 +149,12 @@ class Table(object):
     def __init__(self, task):
         self.task = task
 
-        self.table = None
-
         self.movies = None
         self.shows = None
-        self.episodes = None
+
+        self.movie_keys = None
+        self.show_keys = None
+        self.episode_keys = None
 
         self._data = None
         self._media = None
@@ -170,21 +172,23 @@ class Table(object):
         ]
 
     def reset(self):
-        self.table = None
-
         self.movies = None
         self.shows = None
-        self.episodes = None
+
+        self.movie_keys = None
+        self.show_keys = None
+        self.episode_keys = None
 
     def build(self, cache):
-        # Map item `keys` into a table
-        self.table = {}
+        # Map item `keys` into tables
+        self.movies = {}
+        self.shows = {}
 
-        self.movies = set()
-        self.shows = set()
-        self.episodes = {}
+        self.movie_keys = set()
+        self.show_keys = set()
+        self.episode_keys = {}
 
-        log.debug('Building table...')
+        log.debug('Building tables...')
 
         log.debug(' - Data: %s', ', '.join([
             '/'.join(x) if type(x) is tuple else x
@@ -232,51 +236,25 @@ class Table(object):
                 self.map_items(key, cache[key], media)
 
         log.debug(
-            'Built table with %d keys (movies: %d, shows: %d, episodes: %d)',
-            len(self.table),
-            len(self.movies),
-            len(self.shows),
-            len(self.episodes)
+            'Built tables with %d keys (movies: %d, shows: %d, episodes: %d)',
+            len(self.movies) + len(self.shows),
+            len(self.movie_keys),
+            len(self.show_keys),
+            len(self.episode_keys)
         )
-
-    def get_keys(self, key, media):
-        if media == 'movies':
-            return self.movies
-
-        if media in ['shows', 'seasons', 'episodes']:
-            return self.shows
-
-        return None
-
-    @staticmethod
-    def get_media(item):
-        i_type = type(item)
-
-        if i_type is trakt.objects.Movie:
-            return 'movies'
-
-        if i_type is trakt.objects.Show:
-            return 'shows'
-
-        if i_type is trakt.objects.Season:
-            return 'seasons'
-
-        if i_type is trakt.objects.Episode:
-            return 'episodes'
-
-        log.warn('Unknown item type: %r', i_type)
-        return None
 
     def map_items(self, key, store, media=None):
         # Retrieve key map
         if media is not None:
-            keys = self.get_keys(key, media)
+            keys = self.keys(media)
+            table = self.table(media)
 
-            if keys is None:
+            if keys is None or table is None:
                 log.debug('[%-38s] Collection has been ignored (unknown/unsupported media)', '/'.join(key))
                 return
         else:
             keys = None
+            table = None
 
         # Map each item in store
         log.debug('[%-38s] Building table from collection...', '/'.join(key))
@@ -294,9 +272,11 @@ class Table(object):
             if media is not None:
                 i_media = media
                 i_keys = keys
+                i_table = table
             else:
-                i_media = self.get_media(item)
-                i_keys = self.get_keys(key, i_media)
+                i_media = self.media(item)
+                i_keys = self.keys(i_media)
+                i_table = self.table(i_media)
 
             # Store `pk` in `keys
             if i_keys is not None:
@@ -321,20 +301,20 @@ class Table(object):
                 # Store key in table
                 key = (service, id)
 
-                if key in self.table:
+                if key in i_table:
                     continue
 
-                self.table[key] = pk
+                i_table[key] = pk
 
             # Map episodes in show
             if i_media == 'episodes':
-                if type(item) is trakt.objects.Show:
-                    if pk not in self.episodes:
-                        self.episodes[pk] = set()
+                if type(item) is trakt_objects.Show:
+                    if pk not in self.episode_keys:
+                        self.episode_keys[pk] = set()
 
                     for identifier, _ in item.episodes():
-                        self.episodes[pk].add(identifier)
-                elif type(item) is trakt.objects.Episode:
+                        self.episode_keys[pk].add(identifier)
+                elif type(item) is trakt_objects.Episode:
                     # TODO
                     pass
                 else:
@@ -343,8 +323,50 @@ class Table(object):
         # Task checkpoint
         self.task.checkpoint()
 
-    def get(self, key, default=None):
-        return self.table.get(key, default)
+    def keys(self, media):
+        if type(media) is not str:
+            media = self.media(media)
 
-    def __getitem__(self, key):
-        return self.table[key]
+        if media == 'movies':
+            return self.movie_keys
+
+        if media in ['shows', 'seasons', 'episodes']:
+            return self.show_keys
+
+        log.warn('Unknown media: %r', media)
+        return None
+
+    @staticmethod
+    def media(item):
+        i_type = type(item)
+
+        if i_type is trakt_objects.Movie or i_type is plex_objects.Movie:
+            return 'movies'
+
+        if i_type is trakt_objects.Show or i_type is plex_objects.Show:
+            return 'shows'
+
+        if i_type is trakt_objects.Season or i_type is plex_objects.Season:
+            return 'seasons'
+
+        if i_type is trakt_objects.Episode or i_type is plex_objects.Episode:
+            return 'episodes'
+
+        log.warn('Unknown item type: %r', i_type)
+        return None
+
+    def table(self, media):
+        if type(media) is not str:
+            media = self.media(media)
+
+        if media == 'movies':
+            return self.movies
+
+        if media in ['shows', 'seasons', 'episodes']:
+            return self.shows
+
+        log.warn('Unknown media: %r', media)
+        return None
+
+    def __call__(self, media):
+        return self.table(media)
