@@ -254,34 +254,71 @@ class MovieLibrary(LibraryBase):
             *where
         )
 
-    def mapped(self, sections, fields=None, account=None, parse_guid=False):
+    def mapped(self, sections, fields=None, account=None, where=None, parse_guid=False):
         # Retrieve `id` from `Account`
         if account and type(account) is Account:
             account = account.id
 
-        # Build `fields` list
+        # Map `Section` list to ids
+        section_ids = [id for (id, ) in sections]
+
+        # Build `select()` query
         if fields is None:
             fields = []
 
-        if account:
-            fields += [
-                MetadataItemSettings.rating,
-                MetadataItemSettings.view_count,
-                MetadataItemSettings.view_offset,
-                MetadataItemSettings.last_viewed_at
-            ]
+        fields = [
+            MetadataItem.id,
+            MetadataItem.guid,
 
-        # Retrieve movies
-        movies = Library.movies(
-            sections, fields,
-            account=account
+            MediaPart.duration,
+            MediaPart.file,
+
+            MetadataItemSettings.rating,
+            MetadataItemSettings.view_count,
+            MetadataItemSettings.view_offset,
+            MetadataItemSettings.last_viewed_at
+        ] + fields
+
+        # Build `where()` query
+        if where is None:
+            where = []
+
+        where += [
+            MetadataItem.library_section << section_ids,
+            MetadataItem.metadata_type == MetadataItemType.Movie
+        ]
+
+        # Build query
+        query = (MetadataItem.select(*fields)
+                             .join(MediaItem, on=(MediaItem.metadata_item == MetadataItem.id).alias('media'))
+                             .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
+                             .switch(MetadataItem)
+        )
+
+        # Join settings
+        query = self._join_settings(query, account, MetadataItem)
+
+        # Join extra models
+        models = self._models(fields, account)
+
+        query = self._join(query, models, account, [
+            MetadataItemSettings,
+            MediaItem,
+            MediaPart
+        ])
+
+        # Apply `WHERE` filter
+        query = query.where(
+            *where
         )
 
         # Iterate over items, parse guid (if enabled)
         guids = {}
 
         def movies_iterator():
-            for id, guid, movie in movies:
+            for row in self._tuple_iterator(query):
+                id, guid, movie = self._parse(fields, row, offset=2)
+
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
