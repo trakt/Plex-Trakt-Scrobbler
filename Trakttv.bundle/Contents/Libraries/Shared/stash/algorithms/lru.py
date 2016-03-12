@@ -97,10 +97,13 @@ class LruAlgorithm(Algorithm):
             keys = [keys]
 
         for key in keys:
-            node = self.nodes.pop(key)
+            try:
+                node = self.nodes.pop(key)
 
-            # Remove `node` from `queue`
-            self.queue.remove(node)
+                # Remove `node` from `queue`
+                self.queue.remove(node)
+            except KeyError:
+                pass
 
         # Remove keys from `cache` and `archive`
         return super(LruAlgorithm, self).delete(keys)
