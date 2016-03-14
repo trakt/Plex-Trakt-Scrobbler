@@ -54,7 +54,7 @@ class ArmHelper(object):
         identifier = CPU_TABLE.get((cpu_implementer, cpu_part))
 
         if identifier is None:
-            log.warn('Unknown CPU - implementer: 0x%X, part: 0x%X, hardware: %r', cpu_implementer, cpu_part, extra.get('hardware'))
+            log.warn('Unknown CPU - implementer: 0x%X, part: 0x%X, hardware: %r' % (cpu_implementer, cpu_part, extra.get('hardware')))
             return None, None, None
 
         if len(identifier) < 3:
