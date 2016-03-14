@@ -2,6 +2,16 @@ from trakt.core.helpers import deprecated
 from trakt.helpers import build_url
 from trakt.interfaces.base import Interface
 
+# Import child interfaces
+from trakt.interfaces.oauth.device import DeviceOAuthInterface
+from trakt.interfaces.oauth.pin import PinOAuthInterface
+
+__all__ = [
+    'OAuthInterface',
+    'DeviceOAuthInterface',
+    'PinOAuthInterface'
+]
+
 
 class OAuthInterface(Interface):
     path = 'oauth'
@@ -24,16 +34,9 @@ class OAuthInterface(Interface):
             username=username
         )
 
+    @deprecated("Trakt['oauth'].pin_url() method has been moved to Trakt['oauth/pin'].url()")
     def pin_url(self):
-        app_id = self.client.configuration['app.id']
-
-        if not app_id:
-            raise ValueError('"app.id" configuration parameter is required to generate the PIN authentication url')
-
-        return build_url(
-            self.client.site_url,
-            'pin', app_id
-        )
+        return self.client['oauth/pin'].url()
 
     @deprecated("Trakt['oauth'].token() method has been moved to Trakt['oauth'].token_exchange()")
     def token(self, code=None, redirect_uri=None, grant_type='authorization_code'):

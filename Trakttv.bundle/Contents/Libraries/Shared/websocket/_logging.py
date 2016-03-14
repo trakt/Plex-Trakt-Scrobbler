@@ -25,7 +25,7 @@ import logging
 _logger = logging.getLogger()
 _traceEnabled = False
 
-__all__ = ["enableTrace", "dump", "error", "debug", "trace",
+__all__ = ["enableTrace", "dump", "error", "info", "debug", "trace",
            "isEnabledForError", "isEnabledForDebug"]
 
 
@@ -52,6 +52,10 @@ def dump(title, message):
 
 def error(msg):
     _logger.error(msg)
+
+
+def info(msg, *args):
+    _logger.info(msg, *args)
 
 
 def debug(msg):

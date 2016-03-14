@@ -1,6 +1,7 @@
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.action import ActionManager
 from plugin.managers.session.s_websocket import WSessionManager
+from plugin.scrobbler.core.constants import IGNORED_EVENTS
 from plugin.scrobbler.core.engine import SessionEngine
 from plugin.scrobbler.methods.core.base import Base
 
@@ -44,6 +45,9 @@ class WebSocket(Base):
         if not events:
             return
 
+        # Check for changed media
+        media_changed = session.rating_key != to_integer(info.get('ratingKey'))
+
         # Parse `events`
         actions = self.engine.process(session, events)
 
@@ -62,9 +66,7 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        WSessionManager.update(session, info, fetch=lambda s, i: (
-            s.rating_key != to_integer(i.get('ratingKey'))
-        ))
+        WSessionManager.update(session, info, fetch=media_changed)
 
     @classmethod
     def to_events(cls, session, info):
@@ -73,6 +75,10 @@ class WebSocket(Base):
 
         if not state:
             log.warn('Event has an invalid state %r', state)
+            return []
+
+        if state in IGNORED_EVENTS:
+            log.debug('Ignored "%s" event: %r', state, info)
             return []
 
         # Check for session `view_offset` jump

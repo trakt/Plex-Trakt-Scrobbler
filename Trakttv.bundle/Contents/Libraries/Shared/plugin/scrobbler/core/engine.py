@@ -1,12 +1,8 @@
+from plugin.scrobbler.core.constants import IGNORED_EVENTS
+
 import logging
 
 log = logging.getLogger(__name__)
-
-IGNORED_EVENTS = [
-    'buffering',
-    'error',
-    'play'
-]
 
 
 class Engine(object):

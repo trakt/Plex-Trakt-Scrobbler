@@ -54,7 +54,7 @@ class ArmHelper(object):
         identifier = CPU_TABLE.get((cpu_implementer, cpu_part))
 
         if identifier is None:
-            log.warn('Unknown CPU - implementer: 0x%X, part: 0x%X, hardware: %r', cpu_implementer, cpu_part, extra.get('hardware'))
+            log.warn('Unknown CPU - implementer: 0x%X, part: 0x%X, hardware: %r' % (cpu_implementer, cpu_part, extra.get('hardware')))
             return None, None, None
 
         if len(identifier) < 3:
@@ -179,8 +179,11 @@ CPU_TABLE = {
     (0x41, 0xB36): ('arm', '1136'),
     (0x41, 0xB56): ('arm', '1156'),
     (0x41, 0xB76): ('arm', '1176'),                                 # (Raspberry Pi 1)
+    (0x41, 0xC07): ('arm', 'cortex-a7'),                            # (Raspberry Pi 2)
+    (0x41, 0xD03): ('arm', 'cortex-a53'),                           # (Raspberry Pi 3)
 
     # Marvell
+    (0x56, 0x131): ('marvell', 'kirkwood-88f6281'),                 # (DS112j, DS212j, DS211j, DS411j, DS110j, DS210j, DS410j, DS109, DS209, DS409, DS409slim, RS409)
     (0x56, 0x581): ('marvell', 'armada-370/XP', 'marvell-pj4'),     # (DS213j)
     (0x56, 0x584): ('marvell', 'armada-370/XP', 'marvell-pj4'),     # (DS114, DS115j, DS214se, DS216se, DS414slim, RS214)
     (0x41, 0xC09): ('marvell', 'armada-375',    'marvell-pj4')      # (DS215j)
