@@ -2,6 +2,7 @@ from plugin.core.helpers.variable import to_integer
 from plugin.managers.action import ActionManager
 from plugin.managers.session.s_logging import LSessionManager
 from plugin.scrobbler.core import SessionEngine
+from plugin.scrobbler.core.constants import IGNORED_EVENTS
 from plugin.scrobbler.methods.core.base import Base
 
 from datetime import datetime, timedelta
@@ -71,6 +72,10 @@ class Logging(Base):
 
         if not state:
             log.warn('Event has an invalid state %r', state)
+            return []
+
+        if state in IGNORED_EVENTS:
+            log.debug('Ignored "%s" event: %r', state, info)
             return []
 
         # Validate `view_offset`
