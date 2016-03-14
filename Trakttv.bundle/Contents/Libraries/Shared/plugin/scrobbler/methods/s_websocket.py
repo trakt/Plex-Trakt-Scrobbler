@@ -44,6 +44,9 @@ class WebSocket(Base):
         if not events:
             return
 
+        # Check for changed media
+        media_changed = session.rating_key != to_integer(info.get('ratingKey'))
+
         # Parse `events`
         actions = self.engine.process(session, events)
 
@@ -62,9 +65,7 @@ class WebSocket(Base):
             ActionManager.queue('/'.join(['scrobble', action]), request, session)
 
         # Update session
-        WSessionManager.update(session, info, fetch=lambda s, i: (
-            s.rating_key != to_integer(i.get('ratingKey'))
-        ))
+        WSessionManager.update(session, info, fetch=media_changed)
 
     @classmethod
     def to_events(cls, session, info):
