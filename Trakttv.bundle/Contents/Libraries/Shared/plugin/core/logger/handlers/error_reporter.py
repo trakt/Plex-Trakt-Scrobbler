@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
-from plugin.core.logger.filters import ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
+from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
 
 from raven import Client
 from raven.handlers.logging import SentryHandler, RESERVED
@@ -165,6 +165,7 @@ RAVEN = ErrorReporter(**PARAMS)
 ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 
 ERROR_REPORTER_HANDLER.filters = [
+    DuplicateReportFilter(),
     ExceptionReportFilter(),
     RequestsReportFilter(),
     TraktReportFilter()
