@@ -12,6 +12,8 @@ INTERFACES = [
     # /
     auth.AuthInterface,
     oauth.OAuthInterface,
+    oauth.DeviceOAuthInterface,
+    oauth.PinOAuthInterface,
 
     scrobble.ScrobbleInterface,
     search.SearchInterface,
