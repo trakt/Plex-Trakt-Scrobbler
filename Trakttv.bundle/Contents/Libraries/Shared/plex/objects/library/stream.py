@@ -36,7 +36,7 @@ class Stream(Descriptor):
 
     bvop = Property(type=int)
     gmc = Property(type=int)
-    level = Property(type=int)
+    level = Property
     qpel = Property(type=int)
 
     @classmethod
