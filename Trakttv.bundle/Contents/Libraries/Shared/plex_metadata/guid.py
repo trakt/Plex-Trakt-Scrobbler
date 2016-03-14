@@ -75,14 +75,14 @@ class Guid(object):
         if agent is None:
             if agent_name not in unsupported_agents:
                 # First occurrence of unsupported agent
-                log.warn('Unsupported metadata agent: %r' % agent_name)
+                log.warn('Unsupported metadata agent: %s' % agent_name)
 
                 # Mark unsupported agent as "seen"
                 unsupported_agents[agent_name] = True
                 return False
 
             # Duplicate occurrence of unsupported agent
-            log.warn('Unsupported metadata agent: %r' % agent_name, extra={
+            log.warn('Unsupported metadata agent: %s' % agent_name, extra={
                 'duplicate': True
             })
             return False
