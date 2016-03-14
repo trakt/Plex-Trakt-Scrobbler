@@ -73,6 +73,13 @@ class Logging(Base):
             log.warn('Event has an invalid state %r', state)
             return []
 
+        # Validate `view_offset`
+        view_offset = to_integer(info.get('viewOffset'))
+
+        if view_offset is None:
+            log.info('Event has an invalid view offset %r', view_offset)
+            return []
+
         # Check for session `view_offset` jump
         if cls.session_jumped(session, info.get('viewOffset')):
             return []
@@ -81,7 +88,7 @@ class Logging(Base):
         return [
             (state, {
                 'rating_key': to_integer(info.get('ratingKey')),
-                'view_offset': to_integer(info.get('viewOffset'))
+                'view_offset': view_offset
             })
         ]
 
