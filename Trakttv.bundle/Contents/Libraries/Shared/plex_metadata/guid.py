@@ -4,6 +4,7 @@ from plex_metadata.core.helpers import urlparse
 import logging
 
 log = logging.getLogger(__name__)
+unsupported_agents = {}
 
 
 class Guid(object):
@@ -72,7 +73,18 @@ class Guid(object):
         agent = Agents.get(agent_name)
 
         if agent is None:
-            log.warn('Unsupported metadata agent: %r' % agent_name)
+            if agent_name not in unsupported_agents:
+                # First occurrence of unsupported agent
+                log.warn('Unsupported metadata agent: %r' % agent_name)
+
+                # Mark unsupported agent as "seen"
+                unsupported_agents[agent_name] = True
+                return False
+
+            # Duplicate occurrence of unsupported agent
+            log.warn('Unsupported metadata agent: %r' % agent_name, extra={
+                'duplicate': True
+            })
             return False
 
         # Fill `guid` with details from agent
