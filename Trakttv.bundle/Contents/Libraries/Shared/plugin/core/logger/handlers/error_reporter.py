@@ -50,7 +50,7 @@ class ErrorReporter(Client):
         # Construct raven client
         super(ErrorReporter, self).__init__(dsn, raise_send_errors, **options)
 
-    def build_dsn(self, protocol='requests+http'):
+    def build_dsn(self, protocol='threaded+requests+http'):
         return '%s://%s@%s/%s' % (
             protocol,
             self.key,
