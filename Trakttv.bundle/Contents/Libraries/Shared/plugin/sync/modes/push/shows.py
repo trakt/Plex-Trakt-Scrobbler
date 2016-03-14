@@ -113,7 +113,7 @@ class Shows(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
+                mark_unsupported(self.p_shows_unsupported, sh_id, guid)
                 continue
 
             key = (guid.service, guid.id)
@@ -214,7 +214,7 @@ class Shows(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
+                mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
                 continue
 
             key = (guid.service, guid.id)

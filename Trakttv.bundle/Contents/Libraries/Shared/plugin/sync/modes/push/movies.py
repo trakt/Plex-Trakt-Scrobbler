@@ -86,7 +86,7 @@ class Movies(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_unsupported, rating_key, guid, p_item)
+                mark_unsupported(self.p_unsupported, rating_key, guid)
                 continue
 
             key = (guid.service, guid.id)
