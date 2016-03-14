@@ -166,6 +166,10 @@ class SystemHelper(object):
 
     @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
+        if cls.name() == 'MacOSX':
+            log.info('Unable to retrieve ELF attributes on Mac OSX (not supported)')
+            return None, None
+
         # Read attributes from "/bin/ls" if `executable_path` doesn't exist
         if not executable_path or not os.path.exists(executable_path):
             log.info('Executable at %r doesn\'t exist, using %r instead', executable_path, FALLBACK_EXECUTABLE)
