@@ -1,5 +1,4 @@
 import logging
-import traceback
 
 # concurrent.futures is optional
 try:
@@ -170,18 +169,32 @@ class Emitter(object):
 
         return self.__call_sync(callback, args, kwargs, event)
 
-    @staticmethod
-    def __call_sync(callback, args=None, kwargs=None, event=None):
+    @classmethod
+    def __call_sync(cls, callback, args=None, kwargs=None, event=None):
         try:
             callback(*args, **kwargs)
-
             return True
         except Exception as ex:
-            log.warn('Exception raised in callback %s for event "%s" - %s', callback, event, traceback.format_exc())
+            log.warn('[%s] Exception raised in: %s - %s' % (event, cls.__function_name(callback), ex), exc_info=True)
             return False
 
     def __call_async(self, callback, args=None, kwargs=None, event=None):
         self.__threading_pool.submit(self.__call_sync, callback, args, kwargs, event)
+
+    @staticmethod
+    def __function_name(func):
+        fragments = []
+
+        # Try append class name
+        cls = getattr(func, 'im_class', None)
+
+        if cls and hasattr(cls, '__name__'):
+            fragments.append(cls.__name__)
+
+        # Append function name
+        fragments.append(func.__name__)
+
+        return '.'.join(fragments)
 
 
 class PipeHandler(object):
