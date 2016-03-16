@@ -61,11 +61,16 @@ class ClientState(object):
         self.status = self.ONLINE
         self.last_check = None
         self.retry_number = 0
+
         self.retry_after = 0
+        self.disabled = False
 
     def should_try(self):
         if self.status == self.ONLINE:
             return True
+
+        if self.disabled:
+            return False
 
         interval = self.retry_after or min(self.retry_number, 6) ** 2
 
@@ -74,11 +79,13 @@ class ClientState(object):
 
         return False
 
-    def set_fail(self, retry_after=0):
+    def set_fail(self, retry_after=0, disabled=False):
         self.status = self.ERROR
         self.retry_number += 1
         self.last_check = time.time()
+
         self.retry_after = retry_after
+        self.disabled = disabled
 
     def set_success(self):
         self.status = self.ONLINE
@@ -546,10 +553,16 @@ class Client(object):
 
     def _failed_send(self, e, url, data):
         retry_after = 0
+        disabled = False
+
         if isinstance(e, APIError):
+            self.error_logger.error('Unable to capture event: %s(%s)', e.__class__.__name__, e.message)
+
             if isinstance(e, RateLimited):
                 retry_after = e.retry_after
-            self.error_logger.error('Unable to capture event: %s(%s)', e.__class__.__name__, e.message)
+            elif e.code == 401:
+                self.error_logger.error('Raven has been disabled (Unauthorized API Key)')
+                disabled = True
         elif isinstance(e, HTTPError):
             body = e.read()
             self.error_logger.error(
@@ -563,7 +576,10 @@ class Client(object):
 
         message = self._get_log_message(data)
         self.error_logger.error('Failed to submit message: %r', message)
-        self.state.set_fail(retry_after=retry_after)
+        self.state.set_fail(
+            retry_after=retry_after,
+            disabled=disabled
+        )
 
     def send_remote(self, url, data, headers=None):
         # If the client is configured to raise errors on sending,
@@ -573,7 +589,10 @@ class Client(object):
             headers = {}
         if not self.raise_send_errors and not self.state.should_try():
             message = self._get_log_message(data)
-            self.error_logger.error(message)
+
+            if not self.state.disabled:
+                self.error_logger.error(message)
+
             return
 
         self.logger.debug('Sending message of length %d to %s', len(data), url)

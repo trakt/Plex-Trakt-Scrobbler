@@ -8,6 +8,7 @@ raven.transport.requests
 from __future__ import absolute_import
 
 from raven.conf import defaults
+from raven.exceptions import APIError, RateLimited
 from raven.transport.http import HTTPTransport
 
 try:
@@ -39,5 +40,23 @@ class RequestsHTTPTransport(HTTPTransport):
             # If SSL verification is enabled use the provided CA bundle to
             # perform the verification.
             self.verify_ssl = self.ca_certs
-        requests.post(self._url, data=data, headers=headers,
-                      verify=self.verify_ssl, timeout=self.timeout)
+
+        response = requests.post(
+            self._url,
+            data=data,
+            headers=headers,
+            verify=self.verify_ssl,
+            timeout=self.timeout
+        )
+
+        if response.status_code >= 400:
+            msg = response.headers.get('x-sentry-error')
+
+            if response.status_code == 429:
+                try:
+                    retry_after = int(response.headers.get('retry-after'))
+                except (ValueError, TypeError):
+                    retry_after = 0
+                raise RateLimited(msg, retry_after)
+            elif msg:
+                raise APIError(msg, response.status_code)

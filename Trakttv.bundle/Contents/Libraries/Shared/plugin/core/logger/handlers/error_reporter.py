@@ -1,6 +1,6 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
-from plugin.core.logger.filters import ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
+from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
 
 from raven import Client
 from raven.handlers.logging import SentryHandler, RESERVED
@@ -39,7 +39,7 @@ PARAMS = {
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = 'd9114178666f4ca08d7d7babd8ba14a5:efc3c1947f25425eac24c8fe1a66ddde'
+    key = 'cd67f74a7d114f1eb54369a0b1974dfa:a35053b58fc24bc98d7edbf8a440923e'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):
@@ -50,7 +50,7 @@ class ErrorReporter(Client):
         # Construct raven client
         super(ErrorReporter, self).__init__(dsn, raise_send_errors, **options)
 
-    def build_dsn(self, protocol='requests+http'):
+    def build_dsn(self, protocol='threaded+requests+http'):
         return '%s://%s@%s/%s' % (
             protocol,
             self.key,
@@ -165,6 +165,7 @@ RAVEN = ErrorReporter(**PARAMS)
 ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 
 ERROR_REPORTER_HANDLER.filters = [
+    DuplicateReportFilter(),
     ExceptionReportFilter(),
     RequestsReportFilter(),
     TraktReportFilter()

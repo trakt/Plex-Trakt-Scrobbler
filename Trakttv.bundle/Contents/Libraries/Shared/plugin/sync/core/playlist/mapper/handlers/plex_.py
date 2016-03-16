@@ -1,9 +1,6 @@
 from plugin.sync.core.playlist.mapper.handlers.base import PlaylistHandler
 
-from plex.objects.library.metadata.movie import Movie
-from plex.objects.library.metadata.show import Show
-from plex.objects.library.metadata.season import Season
-from plex.objects.library.metadata.episode import Episode
+from plex.objects.library.metadata import Movie, Show, Season, Episode
 import logging
 
 log = logging.getLogger(__name__)
@@ -54,7 +51,7 @@ class PlexPlaylistHandler(PlaylistHandler):
         guid = guids[0]
 
         # Try map `guid` to a primary agent
-        guid = self.task.state.trakt.table.get(guid, guid)
+        guid = self.task.state.trakt.table(item).get(guid, guid)
 
         # Build key for `item`
         if i_type in [Movie, Show]:

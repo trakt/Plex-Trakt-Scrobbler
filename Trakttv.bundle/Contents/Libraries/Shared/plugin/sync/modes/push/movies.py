@@ -67,7 +67,7 @@ class Movies(Base):
         )
 
         # Reset state
-        self.p_pending = self.trakt.table.movies.copy()
+        self.p_pending = self.trakt.table.movie_keys.copy()
         self.p_unsupported = {}
 
     @elapsed.clock
@@ -86,13 +86,13 @@ class Movies(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_unsupported, rating_key, guid, p_item)
+                mark_unsupported(self.p_unsupported, rating_key, guid)
                 continue
 
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('movies').get(key)
 
             for data in self.get_data(SyncMedia.Movies):
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)

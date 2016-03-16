@@ -22,7 +22,7 @@ class UsersInterface(Interface):
 
     def likes(self, type=None):
         if type and type not in ['comments', 'lists']:
-            raise ValueError('Unknown type specified: %r', type)
+            raise ValueError('Unknown type specified: %r' % type)
 
         # Send request
         response = self.http.get('likes', params=[

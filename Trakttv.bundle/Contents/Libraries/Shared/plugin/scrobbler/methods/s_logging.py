@@ -2,6 +2,7 @@ from plugin.core.helpers.variable import to_integer
 from plugin.managers.action import ActionManager
 from plugin.managers.session.s_logging import LSessionManager
 from plugin.scrobbler.core import SessionEngine
+from plugin.scrobbler.core.constants import IGNORED_EVENTS
 from plugin.scrobbler.methods.core.base import Base
 
 from datetime import datetime, timedelta
@@ -73,6 +74,17 @@ class Logging(Base):
             log.warn('Event has an invalid state %r', state)
             return []
 
+        if state in IGNORED_EVENTS:
+            log.debug('Ignored "%s" event: %r', state, info)
+            return []
+
+        # Validate `view_offset`
+        view_offset = to_integer(info.get('viewOffset'))
+
+        if view_offset is None:
+            log.info('Event has an invalid view offset %r', view_offset)
+            return []
+
         # Check for session `view_offset` jump
         if cls.session_jumped(session, info.get('viewOffset')):
             return []
@@ -81,7 +93,7 @@ class Logging(Base):
         return [
             (state, {
                 'rating_key': to_integer(info.get('ratingKey')),
-                'view_offset': to_integer(info.get('viewOffset'))
+                'view_offset': view_offset
             })
         ]
 

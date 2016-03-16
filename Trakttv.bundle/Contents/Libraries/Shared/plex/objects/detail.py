@@ -21,6 +21,7 @@ class Detail(Container):
 
     background_processing = Property('backgroundProcessing', (int, bool))
     companion_proxy = Property('companionProxy', (int, bool))
+    hub_search = Property('hubSearch', (int, bool))
 
     certificate = Property(type=(int, bool))
     multiuser = Property(type=(int, bool))

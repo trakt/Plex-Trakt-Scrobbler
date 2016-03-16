@@ -15,7 +15,7 @@ class PyOpenSSL(TestBase):
         inject_into_urllib3()
 
         # Enable secure error reporting
-        RAVEN.set_protocol('requests+https')
+        RAVEN.set_protocol('threaded+requests+https')
 
         return {
             'versions': {

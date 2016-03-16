@@ -57,13 +57,13 @@ class Shows(Base):
         # Process shows
         for sh_id, guid, p_show in p_shows:
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_shows, sh_id, guid, p_show)
+                mark_unsupported(unsupported_shows, sh_id, guid)
                 continue
 
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('shows').get(key)
 
             # Store in item map
             self.current.map.add(p_show.get('library_section'), sh_id, [key, pk])
@@ -88,13 +88,13 @@ class Shows(Base):
         # Process episodes
         for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_shows, ids['show'], guid, p_show)
+                mark_unsupported(unsupported_shows, ids['show'], guid)
                 continue
 
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('shows').get(key)
 
             if pk is None:
                 # No `pk` found

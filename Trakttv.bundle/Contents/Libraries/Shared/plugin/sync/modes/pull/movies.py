@@ -47,13 +47,13 @@ class Movies(Base):
 
         for rating_key, guid, p_item in p_items:
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_movies, rating_key, guid, p_item)
+                mark_unsupported(unsupported_movies, rating_key, guid)
                 continue
 
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('movies').get(key)
 
             # Store in item map
             self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])

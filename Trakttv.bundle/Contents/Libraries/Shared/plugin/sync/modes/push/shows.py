@@ -82,10 +82,10 @@ class Shows(Base):
         )
 
         # Reset state
-        self.p_shows_pending = self.trakt.table.shows.copy()
+        self.p_shows_pending = self.trakt.table.show_keys.copy()
         self.p_shows_unsupported = {}
 
-        self.p_episodes_pending = copy.deepcopy(self.trakt.table.episodes)
+        self.p_episodes_pending = copy.deepcopy(self.trakt.table.episode_keys)
 
     @elapsed.clock
     def run(self):
@@ -113,13 +113,13 @@ class Shows(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
+                mark_unsupported(self.p_shows_unsupported, sh_id, guid)
                 continue
 
             key = (guid.service, guid.id)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('shows').get(key)
 
             for data in self.get_data(SyncMedia.Shows):
                 t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
@@ -214,14 +214,14 @@ class Shows(Base):
 
             # Ensure `guid` is available
             if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
+                mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
                 continue
 
             key = (guid.service, guid.id)
             identifier = (season_num, episode_num)
 
             # Try retrieve `pk` for `key`
-            pk = self.trakt.table.get(key)
+            pk = self.trakt.table('shows').get(key)
 
             with elapsed.clock(Shows, 'run:plex_episodes:execute_handlers'):
                 for data in self.get_data(SyncMedia.Episodes):

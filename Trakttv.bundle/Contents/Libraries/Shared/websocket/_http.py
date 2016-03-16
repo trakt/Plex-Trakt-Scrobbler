@@ -99,10 +99,12 @@ def _open_socket(addrinfo_list, sockopt, timeout):
         family = addrinfo[0]
         sock = socket.socket(family)
         sock.settimeout(timeout)
-        for opts in DEFAULT_SOCKET_OPTION:
-            sock.setsockopt(*opts)
-        for opts in sockopt:
-            sock.setsockopt(*opts)
+
+        for opts in DEFAULT_SOCKET_OPTION + sockopt:
+            try:
+                sock.setsockopt(*opts)
+            except socket.error:
+                info('Unable to set option: %r', opts)
 
         address = addrinfo[4]
         try:

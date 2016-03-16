@@ -83,13 +83,13 @@ class Shows(Mode):
 
                 # Ensure `guid` is available
                 if not guid or guid.service not in GUID_SERVICES:
-                    mark_unsupported(self.p_shows_unsupported, sh_id, guid, p_show)
+                    mark_unsupported(self.p_shows_unsupported, sh_id, guid)
                     continue
 
                 key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
-                pk = self.trakt.table.get(key)
+                pk = self.trakt.table('shows').get(key)
 
                 # Store in item map
                 self.current.map.add(p_show.get('library_section'), sh_id, [key, pk])
@@ -149,13 +149,13 @@ class Shows(Mode):
 
                 # Ensure `guid` is available
                 if not guid or guid.service not in GUID_SERVICES:
-                    mark_unsupported(self.p_shows_unsupported, ids['show'], guid, p_show)
+                    mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
                     continue
 
                 key = (guid.service, guid.id)
 
                 # Try retrieve `pk` for `key`
-                pk = self.trakt.table.get(key)
+                pk = self.trakt.table('shows').get(key)
 
                 if pk is None:
                     # No `pk` found

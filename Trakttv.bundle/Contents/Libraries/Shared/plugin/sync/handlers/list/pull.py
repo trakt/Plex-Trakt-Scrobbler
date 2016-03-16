@@ -60,7 +60,7 @@ class Base(MediaHandler):
     @bind('added')
     def on_added(self, p_sections_map, p_playlist, key, p_item, t_item):
         # Find item in plex matching `t_item`
-        p_key = self.match(*key)
+        p_key = self.match(type(t_item), *key)
 
         if p_key is None:
             return
@@ -88,9 +88,9 @@ class Base(MediaHandler):
             urllib.quote_plus('/library/metadata/%s' % p_item_key)
         )
 
-    def match(self, key, *extra):
+    def match(self, t_type, key, *extra):
         # Try retrieve `pk` for `key`
-        pk = self.current.state.trakt.table.get(key)
+        pk = self.current.state.trakt.table(t_type).get(key)
 
         if pk is None:
             pk = key

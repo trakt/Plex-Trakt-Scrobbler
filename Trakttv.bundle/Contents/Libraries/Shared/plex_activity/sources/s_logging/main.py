@@ -158,7 +158,7 @@ class Logging(Source):
         except OSError as ex:
             if ex.errno == 9:
                 # Bad file descriptor, already closed?
-                log.warn('file.close() - ignoring raised exception: %s (already closed)', ex)
+                log.info('file.close() - ignoring raised exception: %s (already closed)', ex)
             else:
                 log.error('file.close() - raised exception: %s', ex, exc_info=True)
         except Exception as ex:

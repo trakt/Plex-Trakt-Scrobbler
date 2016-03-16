@@ -7,6 +7,10 @@ IGNORED_EXCEPTIONS = [
     AccountAuthenticationError
 ]
 
+IGNORED_NAMES = [
+    'NotADBError'
+]
+
 
 class ExceptionReportFilter(Filter):
     def filter(self, record):
@@ -25,4 +29,11 @@ class ExceptionReportFilter(Filter):
 
         exc_type, _, _ = record.exc_info
 
-        return exc_type in IGNORED_EXCEPTIONS
+        if not exc_type:
+            return False
+
+        return (
+            exc_type in IGNORED_EXCEPTIONS
+        ) or (
+            exc_type.__name__ in IGNORED_NAMES
+        )
