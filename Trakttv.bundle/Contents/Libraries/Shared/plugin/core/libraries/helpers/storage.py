@@ -17,14 +17,14 @@ class StorageHelper(object):
     framework_patterns = re.compile_list([
         # Windows
         r'plex media server$',
-        r'plex media server\\dlls',
-        r'plex media server\\exts',
-        r'plex media server\\python27.zip$',
-        r'plex media server\\resources\\plug-ins-\w+',
+        r'plex media server\/dlls',
+        r'plex media server\/exts',
+        r'plex media server\/python27.zip$',
+        r'plex media server\/resources\/plug-ins-\w+',
 
         # Linux
-        r'resources\\plug-ins-\w+',
-        r'resources\\python'
+        r'resources\/plug-ins-\w+',
+        r'resources\/python'
     ], re.IGNORECASE)
 
     @classmethod
@@ -174,6 +174,8 @@ class StorageHelper(object):
 
     @classmethod
     def is_framework_path(cls, path):
+        path = path.replace('\\', '/')
+
         # Check for framework fragments
         for pattern in cls.framework_patterns:
             if pattern.search(path):
