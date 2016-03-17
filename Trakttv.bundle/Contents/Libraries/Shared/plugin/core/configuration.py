@@ -1,6 +1,6 @@
 from plugin.core.environment import Environment
 
-from ConfigParser import NoOptionError, NoSectionError, SafeConfigParser
+from ConfigParser import NoOptionError, NoSectionError, ParsingError, SafeConfigParser
 import logging
 import os
 
@@ -17,6 +17,7 @@ class ConfigurationFile(object):
         self._relpath = os.path.relpath(self._path, Environment.path.plugin_support)
 
         self._parser = None
+        self._error = False
 
     def __getitem__(self, section):
         # Ensure file is loaded
@@ -26,7 +27,7 @@ class ConfigurationFile(object):
         return ConfigurationSection(self._parser, section)
 
     def load(self):
-        if self._parser:
+        if self._parser or self._error:
             return
 
         log.debug('Parsing configuration file: %r', self._relpath)
@@ -34,9 +35,16 @@ class ConfigurationFile(object):
         try:
             self._parser = SafeConfigParser()
             self._parser.read(self._path)
+        except ParsingError, ex:
+            log.info(ex.message)
+
+            self._parser = None
+            self._error = True
         except Exception, ex:
             log.warn('Unable to parse configuration file: %r - %s', self._relpath, ex, exc_info=True)
+
             self._parser = None
+            self._error = True
 
 
 class ConfigurationSection(object):
