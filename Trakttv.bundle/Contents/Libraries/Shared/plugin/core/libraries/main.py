@@ -113,6 +113,9 @@ class LibrariesManager(object):
             # Take the first two fragments
             path_rel = os.path.sep.join(path_rel.split(os.path.sep)[:2])
 
+            # Convert to unix-style separators (/)
+            path_rel = path_rel.replace('\\', '/')
+
             # Ignore non-native library directories
             if path_rel not in NATIVE_DIRECTORIES:
                 continue
