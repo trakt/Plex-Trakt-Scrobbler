@@ -15,11 +15,16 @@ class StorageHelper(object):
     ]
 
     framework_patterns = re.compile_list([
+        # Windows
         r'plex media server$',
         r'plex media server\\dlls',
         r'plex media server\\exts',
         r'plex media server\\python27.zip$',
-        r'plex media server\\resources\\plug-ins-\w+'
+        r'plex media server\\resources\\plug-ins-\w+',
+
+        # Linux
+        r'resources\\plug-ins-\w+',
+        r'resources\\python'
     ], re.IGNORECASE)
 
     @classmethod
