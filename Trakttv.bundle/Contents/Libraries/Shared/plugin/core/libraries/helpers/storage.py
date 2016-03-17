@@ -1,3 +1,5 @@
+from plugin.core.helpers import regex as re
+
 import logging
 import os
 import shutil
@@ -11,6 +13,14 @@ class StorageHelper(object):
         'plug-in support',
         'trakttv.bundle'
     ]
+
+    framework_patterns = re.compile_list([
+        r'plex media server$',
+        r'plex media server\\dlls',
+        r'plex media server\\exts',
+        r'plex media server\\python27.zip$',
+        r'plex media server\\resources\\plug-ins-\w+'
+    ], re.IGNORECASE)
 
     @classmethod
     def create_directories(cls, path, *args, **kwargs):
@@ -130,7 +140,6 @@ class StorageHelper(object):
 
         # Check if `base_path` was found
         if not base_path:
-            log.warn('Unable to find base path in %r', path)
             return path
 
         # Return relative path
@@ -143,17 +152,26 @@ class StorageHelper(object):
         :type path: str
         """
 
-        path_lower = path.lower()
+        path = path.lower()
 
         # Ignore framework paths
-        if 'framework.bundle' in path_lower:
+        if 'framework.bundle' in path:
             return False
 
         # Find base path
         for base in cls.base_names:
-            if base not in path_lower:
+            if base not in path:
                 continue
 
             return True
+
+        return False
+
+    @classmethod
+    def is_framework_path(cls, path):
+        # Check for framework fragments
+        for pattern in cls.framework_patterns:
+            if pattern.search(path):
+                return True
 
         return False

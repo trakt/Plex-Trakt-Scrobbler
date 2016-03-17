@@ -1,3 +1,4 @@
+from plugin.core.configuration import Configuration
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.cache import CacheManager
@@ -22,10 +23,19 @@ class LibrariesManager(object):
         :type cache: bool
         """
 
+        # Use `cache` value from advanced configuration
+        cache = Configuration.advanced['libraries'].get_boolean('cache', cache)
+
         # Retrieve libraries path (and cache libraries, if enabled)
         libraries_path = cls._libraries_path(cache)
 
+        if not libraries_path:
+            return
+
         log.info('Using native libraries at %r', StorageHelper.to_relative_path(libraries_path))
+
+        # Remove current native library directories from `sys.path`
+        cls.reset()
 
         # Insert platform specific library paths
         cls._insert_paths(libraries_path)
@@ -34,7 +44,7 @@ class LibrariesManager(object):
         for path in sys.path:
             path = os.path.abspath(path)
 
-            if not StorageHelper.is_relative_path(path):
+            if StorageHelper.is_framework_path(path):
                 continue
 
             log.info('[PATH] %s', StorageHelper.to_relative_path(path))
@@ -118,19 +128,41 @@ class LibrariesManager(object):
         :type cache: bool
         """
 
-        if not cache:
-            return Environment.path.libraries
+        # Use specified libraries path (from "advanced.ini')
+        libraries_path = Configuration.advanced['libraries'].get('libraries_path')
 
-        # Cache native libraries
-        libraries_path = CacheManager.sync()
-
-        if libraries_path:
-            # Reset native library directories in `sys.path`
-            cls.reset()
-
+        if libraries_path and os.path.exists(libraries_path):
+            log.info('Using libraries at %r', StorageHelper.to_relative_path(libraries_path))
+            RAVEN.tags.update({'libraries.source': 'custom'})
             return libraries_path
 
+        # Use system libraries (if bundled libraries have been disabled in "advanced.ini")
+        if not Configuration.advanced['libraries'].get_boolean('bundled', True):
+            log.info('Bundled libraries have been disabled, using system libraries')
+            RAVEN.tags.update({'libraries.source': 'system'})
+            return None
+
+        # Cache libraries (if enabled)
+        if cache:
+            RAVEN.tags.update({'libraries.source': 'cache'})
+            return cls._cache_libraries()
+
+        RAVEN.tags.update({'libraries.source': 'bundle'})
         return Environment.path.libraries
+
+    @classmethod
+    def _cache_libraries(cls):
+        cache_path = Configuration.advanced['libraries'].get('cache_path')
+
+        # Try cache libraries to `cache_path`
+        libraries_path = CacheManager.sync(cache_path)
+
+        if not libraries_path:
+            log.info('Unable to cache libraries, using bundled libraries directly')
+            return Environment.path.libraries
+
+        log.info('Cached libraries to %r', StorageHelper.to_relative_path(libraries_path))
+        return libraries_path
 
     @classmethod
     def _insert_paths(cls, libraries_path):
