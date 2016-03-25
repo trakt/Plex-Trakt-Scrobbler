@@ -28,6 +28,13 @@ PARAMS = {
         'plugin.raven.processors.RelativePathProcessor'
     ],
 
+    'exclude_paths': [
+        'Framework.api',
+        'Framework.code',
+        'Framework.components',
+        'urllib2'
+    ],
+
     # Plugin + System details
     'release': VERSION,
     'tags': {
