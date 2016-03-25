@@ -245,8 +245,6 @@ class ErrorReporterHandler(SentryHandler):
             if match:
                 file_name = match.group('path')
 
-            log.debug('%r', (file_name, function_name))
-
             # Check if function has been ignored
             if (file_name, function_name) in IGNORED_FUNCTIONS:
                 # Function has been ignored
