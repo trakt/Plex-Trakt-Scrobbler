@@ -235,13 +235,12 @@ def get_class_name(cls):
 def spawn(func, *args, **kwargs):
     thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 
-    def wrapper(thread_name, args, kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception, ex:
-            log.error('Thread "%s" raised an exception: %s', thread_name, ex, exc_info=True)
-
-    th = threading.Thread(target=wrapper, name=thread_name, args=(thread_name, args, kwargs))
+    th = threading.Thread(target=thread_wrapper, name=thread_name, kwargs={
+        'func': func,
+        'args': args,
+        'kwargs': kwargs,
+        'thread_name': thread_name
+    })
 
     try:
         th.start()
@@ -255,6 +254,19 @@ def spawn(func, *args, **kwargs):
         return None
 
     return th
+
+
+def thread_wrapper(func, args=None, kwargs=None, thread_name=None):
+    if args is None:
+        args = ()
+
+    if kwargs is None:
+        kwargs = {}
+
+    try:
+        func(*args, **kwargs)
+    except Exception, ex:
+        log.error('Exception raised in thread "%s": %s', thread_name, ex, exc_info=True)
 
 
 def schedule(func, seconds, *args, **kwargs):
