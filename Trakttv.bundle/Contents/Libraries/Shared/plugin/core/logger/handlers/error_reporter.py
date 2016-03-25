@@ -21,10 +21,6 @@ VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 RE_BUNDLE_PATH = re.compile(r"^.*?(?P<path>\w+\.bundle(?:\\|\/).*?)$", re.IGNORECASE)
 RE_TRACEBACK_HEADER = re.compile(r"^Exception (.*?)\(most recent call last\)(.*?)$", re.IGNORECASE | re.DOTALL)
 
-IGNORED_FUNCTIONS = [
-    ('framework.bundle/contents/resources/versions/2/python/framework/code/sandbox.py', '__import__')
-]
-
 PARAMS = {
     # Message processors + filters
     'processors': [
@@ -226,9 +222,11 @@ class ErrorReporterHandler(SentryHandler):
 
         return exc_info
 
-    @staticmethod
-    def _traceback_culprit(tb):
+    @classmethod
+    def _traceback_culprit(cls, tb):
         result = None
+
+        found_bundle = False
 
         while tb is not None:
             frame = tb.tb_frame
@@ -239,23 +237,16 @@ class ErrorReporterHandler(SentryHandler):
             function_name = code.co_name
 
             # Retrieve bundle path
-            file_name = path.lower().replace('\\', '/')
-            match = RE_BUNDLE_PATH.match(file_name)
+            bundle_path = cls.match_bundle(path)
 
-            if match:
-                file_name = match.group('path')
+            if bundle_path and bundle_path.startswith('trakttv.bundle'):
+                # Found trace matching the current bundle
+                found_bundle = True
+            elif found_bundle:
+                # Use previous trace matching current bundle
+                break
 
-            # Check if function has been ignored
-            if (file_name, function_name) in IGNORED_FUNCTIONS:
-                # Function has been ignored
-                if tb.tb_next is None:
-                    # No trace left, use previous trace
-                    break
-
-                # Move to next trace
-                tb = tb.tb_next
-                continue
-
+            # Check if there is another trace available
             if tb.tb_next is None:
                 # No traces left, use current trace
                 result = (path, line_num, function_name)
@@ -269,6 +260,16 @@ class ErrorReporterHandler(SentryHandler):
 
         # Return "best" culprit match
         return result
+
+    @staticmethod
+    def match_bundle(path):
+        path = path.lower().replace('\\', '/')
+        match = RE_BUNDLE_PATH.match(path)
+
+        if match:
+            return match.group('path')
+
+        return None
 
     @classmethod
     def _generate_title(cls, record, exc_info):
