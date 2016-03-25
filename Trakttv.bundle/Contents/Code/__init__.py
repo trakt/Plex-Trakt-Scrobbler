@@ -87,7 +87,7 @@ def Start():
     # Complete logger initialization
     LoggerManager.setup(storage=True)
 
-    # Startup plugin
+    # Start plugin
     m = Main()
     m.start()
 

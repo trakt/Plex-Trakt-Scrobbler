@@ -1,5 +1,5 @@
 from core.header import Header
-from core.helpers import get_class_name
+from core.helpers import get_class_name, spawn
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
@@ -17,7 +17,6 @@ from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
 from requests.packages.urllib3.util import Retry
-from threading import Thread
 from trakt import Trakt
 import os
 import uuid
@@ -41,9 +40,6 @@ class Main(object):
         self.init()
 
         ModuleManager.initialize()
-
-        # Construct main thread
-        self.thread = Thread(target=self.run, name='main')
 
     def init(self):
         names = []
@@ -151,7 +147,8 @@ class Main(object):
         log.info('Authentication - Updated OAuth credential for %r', trakt_account)
 
     def start(self):
-        self.thread.start()
+        # Construct main thread
+        spawn(self.run, thread_name='main')
 
     def run(self):
         # Check for authentication token
