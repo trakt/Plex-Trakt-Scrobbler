@@ -6,10 +6,10 @@ import os
 CONTENTS_PATH = os.path.abspath(os.path.join(Environment.path.code, '..'))
 
 NATIVE_DIRECTORIES = [
-    'Libraries\\FreeBSD',
-    'Libraries\\Linux',
-    'Libraries\\MacOSX',
-    'Libraries\\Windows'
+    'Libraries/FreeBSD',
+    'Libraries/Linux',
+    'Libraries/MacOSX',
+    'Libraries/Windows'
 ]
 
 UNICODE_MAP = {
