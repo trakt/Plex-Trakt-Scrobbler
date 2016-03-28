@@ -37,17 +37,11 @@ class ArmHelper(object):
 
     @classmethod
     def lookup(cls, processors, extra):
-        if not processors or 0 not in processors:
-            log.info('No valid processors returned from "/proc/cpuinfo"')
-            return None, None, None
-
-        # Retrieve processor attributes
-        cpu = processors[0]
-
-        cpu_implementer = cls._cast_hex(cpu.get('cpu_implementer'))
-        cpu_part = cls._cast_hex(cpu.get('cpu_part'))
+        # Find processor identifier
+        cpu_implementer, cpu_part = cls.processor_identifier(processors)
 
         if not cpu_implementer or not cpu_part:
+            log.info('Unable to retrieve processor identifier from "/proc/cpuinfo"')
             return None, None, None
 
         # Try map CPU to a known name
@@ -66,6 +60,23 @@ class ArmHelper(object):
             return None, None, None
 
         return identifier
+
+    @classmethod
+    def processor_identifier(cls, processors):
+        if not processors:
+            return None, None
+
+        for key, cpu in processors.items():
+            if not cpu:
+                continue
+
+            cpu_implementer = cls._cast_hex(cpu.get('cpu_implementer'))
+            cpu_part = cls._cast_hex(cpu.get('cpu_part'))
+
+            if cpu_implementer and cpu_part:
+                return cpu_implementer, cpu_part
+
+        return None, None
 
     @classmethod
     def _cast_hex(cls, value):
