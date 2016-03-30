@@ -38,7 +38,7 @@ class ArmHelper(object):
     @classmethod
     def lookup(cls, processors, extra):
         # Find processor identifier
-        cpu_implementer, cpu_part = cls.processor_identifier(processors)
+        cpu_implementer, cpu_part = cls.cpu_identifier(processors, extra)
 
         if not cpu_implementer or not cpu_part:
             log.info('Unable to retrieve processor identifier from "/proc/cpuinfo"')
@@ -62,20 +62,32 @@ class ArmHelper(object):
         return identifier
 
     @classmethod
-    def processor_identifier(cls, processors):
+    def cpu_identifier(cls, processors, extra = None):
         if not processors:
             return None, None
 
-        for key, cpu in processors.items():
-            if not cpu:
+        for key, processor in processors.items():
+            if not processor:
                 continue
 
-            cpu_implementer = cls._cast_hex(cpu.get('cpu_implementer'))
-            cpu_part = cls._cast_hex(cpu.get('cpu_part'))
+            # Check `processor` has identifiers
+            cpu_implementer = cls._cast_hex(processor.get('cpu_implementer'))
+            cpu_part = cls._cast_hex(processor.get('cpu_part'))
 
             if cpu_implementer and cpu_part:
+                # Valid identifiers found
                 return cpu_implementer, cpu_part
 
+        if extra:
+            # Check `extra` has identifiers
+            cpu_implementer = cls._cast_hex(extra.get('cpu_implementer'))
+            cpu_part = cls._cast_hex(extra.get('cpu_part'))
+
+            if cpu_implementer and cpu_part:
+                # Valid identifiers found
+                return cpu_implementer, cpu_part
+
+        # Couldn't find CPU identifiers
         return None, None
 
     @classmethod
