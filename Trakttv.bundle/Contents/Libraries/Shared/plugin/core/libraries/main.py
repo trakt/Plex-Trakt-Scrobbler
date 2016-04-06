@@ -9,6 +9,7 @@ from plugin.core.logger.handlers.error_reporter import RAVEN
 
 import logging
 import os
+import platform
 import sys
 
 log = logging.getLogger(__name__)
@@ -169,6 +170,12 @@ class LibrariesManager(object):
 
     @classmethod
     def _insert_paths(cls, libraries_path):
+        # Display platform details
+        p_bits, _ = platform.architecture()
+        p_machine = platform.machine()
+
+        log.debug('Bits: %r, Machine: %r', p_bits, p_machine)
+
         # Retrieve system details
         system = SystemHelper.name()
         architecture = SystemHelper.architecture()
