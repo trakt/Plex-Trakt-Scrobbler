@@ -15,7 +15,8 @@ BITS_MAP = {
 }
 
 MACHINE_MAP = {
-    ('32bit', 'i686'): 'i686'
+    ('32bit', 'i686'):  'i686',
+    ('32bit', 'ppc' ):  'PowerPC'
 }
 
 MSVCR_MAP = {
