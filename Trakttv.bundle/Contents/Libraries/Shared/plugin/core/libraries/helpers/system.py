@@ -1,3 +1,4 @@
+from plugin.core.configuration import Configuration
 from plugin.core.libraries.helpers.arm import ArmHelper
 
 from elftools.elf.attributes import AttributesSection
@@ -150,14 +151,19 @@ class SystemHelper(object):
 
     @classmethod
     def cpu_type(cls, executable_path=sys.executable):
+        # Use `cpu_type` value from advanced configuration (if defined)
+        cpu_type = Configuration.advanced['libraries'].get('cpu_type')
+
+        if cpu_type:
+            log.info('Using CPU Type from advanced configuration: %r', cpu_type)
+            return cpu_type
+
+        # Try retrieve cpu type via "/proc/cpuinfo"
         try:
-            # Retrieve cpu type via "/proc/cpuinfo"
             _, _, cpu_type = ArmHelper.identifier()
 
             if cpu_type:
-                # Valid cpu type found
                 return cpu_type
-
         except Exception, ex:
             log.warn('Unable to retrieve cpu type from "/proc/cpuinfo": %s', ex, exc_info=True)
 
