@@ -25,10 +25,12 @@ class ShowsInterface(Interface):
             self.get_data(response, **kwargs)
         )
 
-    def seasons(self, id, **kwargs):
+    def seasons(self, id, extended=None, **kwargs):
         response = self.http.get(str(id), [
             'seasons'
-        ])
+        ], query={
+            'extended': extended
+        })
 
         return SummaryMapper.seasons(
             self.client,
