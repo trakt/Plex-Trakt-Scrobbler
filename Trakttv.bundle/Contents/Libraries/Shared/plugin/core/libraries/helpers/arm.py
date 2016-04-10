@@ -202,6 +202,7 @@ CPU_TABLE = {
     (0x41, 0xB36): ('arm', '1136'),
     (0x41, 0xB56): ('arm', '1156'),
     (0x41, 0xB76): ('arm', '1176'),                                 # (Raspberry Pi 1)
+    (0x41, 0xC05): ('arm', 'cortex-a5'),
     (0x41, 0xC07): ('arm', 'cortex-a7'),                            # (Raspberry Pi 2)
     (0x41, 0xD03): ('arm', 'cortex-a53'),                           # (Raspberry Pi 3)
 
