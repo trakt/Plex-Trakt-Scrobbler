@@ -194,6 +194,15 @@ class SystemHelper(object):
             # Open executable stream
             stream = open(executable_path, 'rb')
 
+            # Retrieve magic number (header)
+            magic = stream.read(4)
+
+            if magic != b'\x7fELF':
+                log.warn('Unknown ELF format for %r (magic: %r)', executable_path, magic)
+                return None, None
+
+            stream.seek(0)
+
             # Parse ELF
             elf = ELFFile(stream)
 
