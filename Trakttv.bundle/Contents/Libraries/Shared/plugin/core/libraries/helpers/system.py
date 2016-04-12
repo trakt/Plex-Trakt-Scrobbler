@@ -121,6 +121,14 @@ class SystemHelper(object):
 
     @classmethod
     def arm_float_type(cls, executable_path=sys.executable):
+        # Use `arm_float_type` value from advanced configuration (if defined)
+        arm_float_type = Configuration.advanced['libraries'].get('arm_float_type')
+
+        if arm_float_type:
+            log.info('Using ARM Float Type from advanced configuration: %r', arm_float_type)
+            return arm_float_type
+
+        # Try determine float-type from "/lib" directories
         if os.path.exists('/lib/arm-linux-gnueabihf'):
             return 'hf'
 
