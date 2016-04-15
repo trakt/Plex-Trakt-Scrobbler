@@ -96,7 +96,26 @@ class SummaryMapper(Mapper):
         if 'season' in item:
             season._update(item)
 
+        # Process any episodes in the item
+        for i_episode in item.get('episodes', []):
+            episode_num = i_episode.get('number')
+
+            cls.season_episode(client, season, episode_num, i_episode, **kwargs)
+
         return season
+
+    @classmethod
+    def season_episode(cls, client, season, episode_num, item=None, **kwargs):
+        if not item:
+            return
+
+        # Construct episode
+        episode = cls.episode(client, item, **kwargs)
+        episode.show = season.show
+        episode.season = season
+
+        # Store episode in `season`
+        season.episodes[episode_num] = episode
 
     @classmethod
     def episodes(cls, client, items, **kwargs):

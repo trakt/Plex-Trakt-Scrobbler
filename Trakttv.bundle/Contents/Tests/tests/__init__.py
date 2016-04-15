@@ -39,12 +39,6 @@ Environment.setup(Core(CODE_DIR), {
     'password': 'password'
 })
 
-# Setup native libraries
-from plugin.core.libraries import LibrariesManager
-
-LibrariesManager.setup(cache=False)
-LibrariesManager.test()
-
 # Build directory structure for "Plug-in Support"
 PLUGIN_SUPPORT = os.path.join(TEMP_DIR, 'Plug-in Support')
 
@@ -53,6 +47,12 @@ os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Data', PLUGIN_IDENTIFIER))
 os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Databases'))
 
 Environment.path.plugin_support = PLUGIN_SUPPORT
+
+# Setup native libraries
+from plugin.core.libraries import LibrariesManager
+
+LibrariesManager.setup(cache=False)
+LibrariesManager.test()
 
 # Setup database proxy
 from plugin.core.database import Database

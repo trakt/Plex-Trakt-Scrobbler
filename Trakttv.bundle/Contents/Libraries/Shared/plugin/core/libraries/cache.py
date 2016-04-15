@@ -11,13 +11,21 @@ log = logging.getLogger(__name__)
 
 class CacheManager(object):
     @classmethod
-    def sync(cls):
+    def sync(cls, cache_path=None):
         """Synchronize native libraries cache, adding/updating/removing items to match bundled libraries.
+
+        :param cache_path: Directory to store cached libraries
+        :type cache_path: str
 
         :rtype: str
         """
 
-        source, destination = cls.get_paths()
+        # Set `cache_path` default
+        if cache_path is None:
+            cache_path = os.path.join(Environment.path.plugin_data, 'Libraries')
+
+        # Retrieve paths for system libraries
+        source, destination = cls.get_paths(cache_path)
 
         if not source or not destination:
             return None
@@ -30,7 +38,7 @@ class CacheManager(object):
         if tasks and not cls.execute(source, destination, tasks):
             return None
 
-        return os.path.join(Environment.path.plugin_data, 'Libraries')
+        return cache_path
 
     @classmethod
     def discover(cls, changes, base_path='', tasks=None):
@@ -103,8 +111,11 @@ class CacheManager(object):
         return success
 
     @staticmethod
-    def get_paths():
+    def get_paths(cache_path):
         """Retrieve system-specific native libraries source + destination path
+
+        :param cache_path: Directory to store cached libraries
+        :type cache_path: str
 
         :rtype: (str, str)
         """
@@ -132,7 +143,7 @@ class CacheManager(object):
                 continue
 
             # Build path for native dependencies
-            destination = os.path.join(Environment.path.plugin_data, 'Libraries', system, arch)
+            destination = os.path.join(cache_path, system, arch)
 
             # Ensure `destination` directory has been created
             if not StorageHelper.create_directories(destination):

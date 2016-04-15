@@ -111,8 +111,6 @@ def get_culprit(frames, *args, **kwargs):
             return culprit
         elif not best_guess:
             best_guess = culprit
-        elif best_guess:
-            break
 
     # Return either the best guess or the last frames call
     return best_guess or culprit

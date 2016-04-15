@@ -8,9 +8,9 @@ See the datetime section of the Python Library Reference for information
 on how to use these modules.
 '''
 
-# The Olson database is updated several times a year.
-OLSON_VERSION = '2016a'
-VERSION = '2016.1'  # Switching to pip compatible version numbering.
+# The IANA (nee Olson) database is updated several times a year.
+OLSON_VERSION = '2016c'
+VERSION = '2016.3'  # Switching to pip compatible version numbering.
 __version__ = VERSION
 
 OLSEN_VERSION = OLSON_VERSION # Old releases had this misspelling
@@ -732,6 +732,7 @@ all_timezones = \
  'Asia/Bahrain',
  'Asia/Baku',
  'Asia/Bangkok',
+ 'Asia/Barnaul',
  'Asia/Beirut',
  'Asia/Bishkek',
  'Asia/Brunei',
@@ -908,6 +909,7 @@ all_timezones = \
  'Etc/Zulu',
  'Europe/Amsterdam',
  'Europe/Andorra',
+ 'Europe/Astrakhan',
  'Europe/Athens',
  'Europe/Belfast',
  'Europe/Belgrade',
@@ -955,6 +957,7 @@ all_timezones = \
  'Europe/Tallinn',
  'Europe/Tirane',
  'Europe/Tiraspol',
+ 'Europe/Ulyanovsk',
  'Europe/Uzhgorod',
  'Europe/Vaduz',
  'Europe/Vatican',
@@ -1297,6 +1300,7 @@ common_timezones = \
  'Asia/Bahrain',
  'Asia/Baku',
  'Asia/Bangkok',
+ 'Asia/Barnaul',
  'Asia/Beirut',
  'Asia/Bishkek',
  'Asia/Brunei',
@@ -1394,6 +1398,7 @@ common_timezones = \
  'Canada/Pacific',
  'Europe/Amsterdam',
  'Europe/Andorra',
+ 'Europe/Astrakhan',
  'Europe/Athens',
  'Europe/Belgrade',
  'Europe/Berlin',
@@ -1438,6 +1443,7 @@ common_timezones = \
  'Europe/Stockholm',
  'Europe/Tallinn',
  'Europe/Tirane',
+ 'Europe/Ulyanovsk',
  'Europe/Uzhgorod',
  'Europe/Vaduz',
  'Europe/Vatican',

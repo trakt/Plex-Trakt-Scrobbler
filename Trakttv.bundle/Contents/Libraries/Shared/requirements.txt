@@ -1,7 +1,7 @@
 arrow==0.7.0
 asio==1.1
 croniter==0.3.12
-enum34==1.1.2
+enum34==1.1.3
 expiringdict==1.1.3
 futures==3.0.5
 ipaddress==1.0.16
@@ -9,15 +9,15 @@ itsdangerous==0.24
 msgpack-python==0.4.7
 ndg-httpsclient==0.4.0
 pyasn1==0.1.9
-pyOpenSSL==0.15.1
-pytz==2016.1
+pyOpenSSL==16.0.0
+pytz==2016.3
 requests==2.9.1
 six==1.10.0
 sortedcontainers==1.4.4
 tzlocal==1.2.2
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
-https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed
+https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
 https://github.com/fuzeman/jsonpickle/archive/master.zip#egg=jsonpickle
 https://github.com/fuzeman/Logr/archive/0.2.2.zip#egg=logr
 https://github.com/fuzeman/peewee/archive/master.zip#egg=peewee
@@ -25,13 +25,13 @@ https://github.com/fuzeman/peewee_migrate/archive/develop.zip#egg=peewee_migrate
 https://github.com/fuzeman/pyemitter/archive/develop.zip#egg=pyemitter
 https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
 https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
-https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash
-https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket
+https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
+https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-client
 
-https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex
-https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex_activity
-https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex_database
-https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex_metadata
+https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex-py
+https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activity-py
+https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex-database-py
+https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex-metadata-py
 
-https://github.com/fuzeman/trakt.py/archive/develop.zip#egg=trakt
-https://github.com/fuzeman/trakt.sync.py/archive/develop.zip#egg=trakt_sync
+https://github.com/fuzeman/trakt.py/archive/develop.zip#egg=trakt-py
+https://github.com/fuzeman/trakt.sync.py/archive/develop.zip#egg=trakt-sync-py

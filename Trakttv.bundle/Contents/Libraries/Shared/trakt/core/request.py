@@ -102,6 +102,9 @@ class TraktRequest(object):
 
         # Append `query` to URL
         if self.query:
-            url += '?' + urlencode(self.query)
+            url += '?' + urlencode([
+                (key, value) for key, value in self.query.items()
+                if value is not None
+            ])
 
         return url

@@ -1,3 +1,4 @@
+from plugin.core.configuration import Configuration
 from plugin.core.libraries.helpers.arm import ArmHelper
 
 from elftools.elf.attributes import AttributesSection
@@ -15,7 +16,8 @@ BITS_MAP = {
 }
 
 MACHINE_MAP = {
-    ('32bit', 'i686'): 'i686'
+    ('32bit', 'i686'):  'i686',
+    ('32bit', 'ppc' ):  'PowerPC'
 }
 
 MSVCR_MAP = {
@@ -35,6 +37,14 @@ class SystemHelper(object):
     def architecture(cls):
         """Retrieve system architecture (i386, i686, x86_64)"""
 
+        # Use `cpu_architecture` value from advanced configuration (if defined)
+        cpu_architecture = Configuration.advanced['libraries'].get('cpu_architecture')
+
+        if cpu_architecture:
+            log.info('Using CPU Architecture from advanced configuration: %r', cpu_architecture)
+            return cpu_architecture
+
+        # Determine architecture from platform attributes
         bits, _ = platform.architecture()
         machine = platform.machine()
 
@@ -111,6 +121,14 @@ class SystemHelper(object):
 
     @classmethod
     def arm_float_type(cls, executable_path=sys.executable):
+        # Use `arm_float_type` value from advanced configuration (if defined)
+        arm_float_type = Configuration.advanced['libraries'].get('arm_float_type')
+
+        if arm_float_type:
+            log.info('Using ARM Float Type from advanced configuration: %r', arm_float_type)
+            return arm_float_type
+
+        # Try determine float-type from "/lib" directories
         if os.path.exists('/lib/arm-linux-gnueabihf'):
             return 'hf'
 
@@ -150,14 +168,19 @@ class SystemHelper(object):
 
     @classmethod
     def cpu_type(cls, executable_path=sys.executable):
+        # Use `cpu_type` value from advanced configuration (if defined)
+        cpu_type = Configuration.advanced['libraries'].get('cpu_type')
+
+        if cpu_type:
+            log.info('Using CPU Type from advanced configuration: %r', cpu_type)
+            return cpu_type
+
+        # Try retrieve cpu type via "/proc/cpuinfo"
         try:
-            # Retrieve cpu type via "/proc/cpuinfo"
             _, _, cpu_type = ArmHelper.identifier()
 
             if cpu_type:
-                # Valid cpu type found
                 return cpu_type
-
         except Exception, ex:
             log.warn('Unable to retrieve cpu type from "/proc/cpuinfo": %s', ex, exc_info=True)
 
@@ -178,6 +201,15 @@ class SystemHelper(object):
         try:
             # Open executable stream
             stream = open(executable_path, 'rb')
+
+            # Retrieve magic number (header)
+            magic = stream.read(4)
+
+            if magic != b'\x7fELF':
+                log.warn('Unknown ELF format for %r (magic: %r)', executable_path, magic)
+                return None, None
+
+            stream.seek(0)
 
             # Parse ELF
             elf = ELFFile(stream)

@@ -32,7 +32,7 @@ class ListSource(Source):
             current_step += 1
 
             # Refresh liked lists, yield changes
-            for change in self.refresh_lists(username, enums.Data.Liked, Trakt['users'].likes('lists')):
+            for change in self.refresh_lists(username, enums.Data.Liked, Trakt['users'].likes('lists', pagination=True)):
                 yield change
 
         if enums.Data.Personal in self.data:

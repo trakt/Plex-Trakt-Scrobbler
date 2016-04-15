@@ -4,7 +4,7 @@ import sys as _sys
 
 __all__ = ['Enum', 'IntEnum', 'unique']
 
-version = 1, 1, 2
+version = 1, 1, 3
 
 pyver = float('%s.%s' % _sys.version_info[:2])
 
@@ -318,6 +318,12 @@ class EnumMeta(type):
             setattr(enum_class, '__new__', Enum.__dict__['__new__'])
         return enum_class
 
+    def __bool__(cls):
+        """
+        classes/types should always be True.
+        """
+        return True
+
     def __call__(cls, value, names=None, module=None, type=None, start=1):
         """Either returns an existing member, or creates a new enum class.
 
@@ -391,6 +397,8 @@ class EnumMeta(type):
 
     def __len__(cls):
         return len(cls._member_names_)
+
+    __nonzero__ = __bool__
 
     def __repr__(cls):
         return "<enum %r>" % cls.__name__
@@ -749,15 +757,6 @@ def __hash__(self):
     return hash(self._name_)
 temp_enum_dict['__hash__'] = __hash__
 del __hash__
-
-# TODO: enable once Python 3.6 is released
-# def __bool__(self):
-#     return bool(self._value_)
-# if pyver < 3.0:
-#     temp_enum_dict['__nonzero__'] = __bool__
-# else:
-#     temp_enum_dict['__bool__'] = __bool__
-#     del __bool__
 
 def __reduce_ex__(self, proto):
     return self.__class__, (self._value_, )
