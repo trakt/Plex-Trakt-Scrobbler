@@ -28,7 +28,9 @@ DELETE_DIRECTORIES = [
 
 DELETE_FILES = [
     os.path.join('enum', 'README'),
-    os.path.join('enum', 'test_enum.py'),
+    os.path.join('enum', 'enum.py'),
+    os.path.join('enum', 'py35_test_enum.py'),
+    os.path.join('enum', 'test.py'),
     os.path.join('tzlocal', 'tests.py'),
 
     'ndg_httpsclient-0.4.0-py2.7-nspkg.pth',
