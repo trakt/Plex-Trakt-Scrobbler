@@ -10,28 +10,11 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-def from_iso8601(value):
-    if value is None:
-        return None
+def clean_username(username):
+    if not username:
+        return username
 
-    if arrow is None:
-        raise Exception('"arrow" module is not available')
-
-    # Parse ISO8601 datetime
-    dt = arrow.get(value)
-
-    # Convert to UTC
-    dt = dt.to('UTC')
-
-    # Return datetime object
-    return dt.datetime
-
-
-def to_iso8601(value):
-    if value is None:
-        return None
-
-    return value.strftime('%Y-%m-%dT%H:%M:%S') + '.000-00:00'
+    return username.replace('.', '-')
 
 
 def deprecated(message):
@@ -86,3 +69,38 @@ def synchronized(f_lock, mode='full'):
         return wrapped
 
     return wrap
+
+
+def try_convert(value, value_type, default=None):
+    try:
+        return value_type(value)
+    except (ValueError, TypeError):
+        return default
+
+
+#
+# Date/Time Conversion
+#
+
+def from_iso8601(value):
+    if value is None:
+        return None
+
+    if arrow is None:
+        raise Exception('"arrow" module is not available')
+
+    # Parse ISO8601 datetime
+    dt = arrow.get(value)
+
+    # Convert to UTC
+    dt = dt.to('UTC')
+
+    # Return datetime object
+    return dt.datetime
+
+
+def to_iso8601(value):
+    if value is None:
+        return None
+
+    return value.strftime('%Y-%m-%dT%H:%M:%S') + '.000-00:00'

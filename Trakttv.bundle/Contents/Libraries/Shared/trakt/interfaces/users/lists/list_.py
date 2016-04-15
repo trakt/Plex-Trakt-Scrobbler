@@ -1,3 +1,4 @@
+from trakt.core.helpers import clean_username
 from trakt.interfaces.base import Interface
 from trakt.mapper import ListMapper, ListItemMapper
 
@@ -6,8 +7,9 @@ class UsersListInterface(Interface):
     path = 'users/*/lists/*'
 
     def get(self, username, id):
+        # Send request
         response = self.http.get(
-            '/users/%s/lists/%s' % (username, id),
+            '/users/%s/lists/%s' % (clean_username(username), id),
         )
 
         if response.status_code < 200 or response.status_code >= 300:
@@ -25,7 +27,7 @@ class UsersListInterface(Interface):
     def items(self, username, id, **kwargs):
         # Send request
         response = self.http.get(
-            '/users/%s/lists/%s/items' % (username, id),
+            '/users/%s/lists/%s/items' % (clean_username(username), id),
         )
 
         if response.status_code < 200 or response.status_code >= 300:
@@ -49,7 +51,7 @@ class UsersListInterface(Interface):
     def add(self, username, id, items, **kwargs):
         # Send request
         response = self.http.post(
-            '/users/%s/lists/%s/items' % (username, id),
+            '/users/%s/lists/%s/items' % (clean_username(username), id),
             data=items
         )
 
@@ -60,8 +62,9 @@ class UsersListInterface(Interface):
         return self.get_data(response, **kwargs)
 
     def delete(self, username, id):
+        # Send request
         response = self.http.delete(
-            '/users/%s/lists/%s' % (username, id)
+            '/users/%s/lists/%s' % (clean_username(username), id)
         )
 
         return 200 <= response.status_code < 300
@@ -86,7 +89,7 @@ class UsersListInterface(Interface):
 
         # Send request
         response = self.http.put(
-            '/users/%s/lists/%s' % (username, id),
+            '/users/%s/lists/%s' % (clean_username(username), id),
             data=data
         )
 
@@ -111,7 +114,7 @@ class UsersListInterface(Interface):
     def remove(self, username, id, items, **kwargs):
         # Send request
         response = self.http.post(
-            '/users/%s/lists/%s/items/remove' % (username, id),
+            '/users/%s/lists/%s/items/remove' % (clean_username(username), id),
             data=items
         )
 
@@ -126,15 +129,17 @@ class UsersListInterface(Interface):
     #
 
     def like(self, username, id, **kwargs):
+        # Send request
         response = self.http.post(
-            '/users/%s/lists/%s/like' % (username, id)
+            '/users/%s/lists/%s/like' % (clean_username(username), id)
         )
 
         return 200 <= response.status_code < 300
 
     def unlike(self, username, id, **kwargs):
+        # Send request
         response = self.http.delete(
-            '/users/%s/lists/%s/like' % (username, id)
+            '/users/%s/lists/%s/like' % (clean_username(username), id)
         )
 
         return 200 <= response.status_code < 300

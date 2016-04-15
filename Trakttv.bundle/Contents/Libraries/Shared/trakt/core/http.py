@@ -58,11 +58,6 @@ class HttpClient(object):
         # Retrieve configuration
         ctx = self.configuration.pop()
 
-        retry = self.client.configuration.get('http.retry', DEFAULT_HTTP_RETRY)
-        max_retries = self.client.configuration.get('http.max_retries', DEFAULT_HTTP_MAX_RETRIES)
-        retry_sleep = self.client.configuration.get('http.retry_sleep', DEFAULT_HTTP_RETRY_SLEEP)
-        timeout = self.client.configuration.get('http.timeout', DEFAULT_HTTP_TIMEOUT)
-
         # Build request
         request = TraktRequest(
             self.client,
@@ -85,6 +80,17 @@ class HttpClient(object):
         # Prepare request
         prepared = request.prepare()
 
+        # Send request
+        return self.send(prepared)
+
+    def send(self, request):
+        # Retrieve http configuration
+        retry = self.client.configuration.get('http.retry', DEFAULT_HTTP_RETRY)
+        max_retries = self.client.configuration.get('http.max_retries', DEFAULT_HTTP_MAX_RETRIES)
+        retry_sleep = self.client.configuration.get('http.retry_sleep', DEFAULT_HTTP_RETRY_SLEEP)
+        timeout = self.client.configuration.get('http.timeout', DEFAULT_HTTP_TIMEOUT)
+
+        # Send request
         response = None
 
         for i in range(max_retries + 1):
@@ -93,7 +99,7 @@ class HttpClient(object):
 
             # Send request
             try:
-                response = self.session.send(prepared, timeout=timeout)
+                response = self.session.send(request, timeout=timeout)
             except socket.gaierror as e:
                 code, _ = e
 
@@ -102,7 +108,7 @@ class HttpClient(object):
 
                 log.warn('Encountered socket.gaierror (code: 8)')
 
-                response = self.rebuild().send(prepared, timeout=timeout)
+                response = self.rebuild().send(request, timeout=timeout)
 
             # Retry requests on errors >= 500 (when enabled)
             if not retry or response.status_code < 500:
