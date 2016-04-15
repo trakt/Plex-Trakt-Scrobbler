@@ -7,6 +7,7 @@ from logging.handlers import RotatingFileHandler
 from raven.utils import gethostname
 import logging
 import uuid
+import warnings
 
 LOG_FORMAT = '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(name)s:%(lineno)d) - %(message)s'
 LOG_OPTIONS = {
@@ -63,6 +64,7 @@ class LoggerManager(object):
     @classmethod
     def setup(cls, report=True, storage=True):
         cls.setup_logging(report, storage)
+        cls.setup_warnings()
 
         if report:
             cls.setup_raven()
@@ -111,6 +113,19 @@ class LoggerManager(object):
             RAVEN.tags.update({'server.version': Environment.platform.server_version})
         except Exception, ex:
             log.warn('Unable to retrieve server version - %s', ex, exc_info=True)
+
+    @classmethod
+    def setup_warnings(cls):
+        logger = logging.getLogger('warnings')
+
+        def callback(message, category, filename, lineno, file=None, line=None):
+            if not category:
+                logger.warn(message)
+                return
+
+            logger.warn('[%s] %s' % (category.__name__, message))
+
+        warnings.showwarning = callback
 
     @staticmethod
     def generate_id():
