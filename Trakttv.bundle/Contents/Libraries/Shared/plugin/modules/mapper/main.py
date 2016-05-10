@@ -29,7 +29,6 @@ class Mapper(Module):
         # Construct oem client
         self._client = OemClient(
             provider=IncrementalReleaseProvider(
-                database_url='http://127.0.0.1:5000/',
                 fmt='minimize+msgpack',
                 storage=CodernityDbStorage(os.path.join(
                     Environment.path.plugin_caches,
