@@ -1,2 +1,4 @@
 class Identifier(object):
-    pass
+    @property
+    def valid(self):
+        return False

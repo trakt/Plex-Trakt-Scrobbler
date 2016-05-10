@@ -1,5 +1,7 @@
-from oem.media.show.mapper import ShowMapper
+from oem.media.movie import MovieMapper
+from oem.media.show import ShowMapper
 from oem.services.core.base import Service
+from oem_framework.models import Movie, Show
 
 import logging
 
@@ -16,7 +18,9 @@ class AniDbService(Service):
     def __init__(self, client, source, target, formats=None):
         super(AniDbService, self).__init__(client, source, target, formats)
 
-        self.mapper = ShowMapper(self)
+        # Construct media mappers
+        self._movie_mapper = MovieMapper(self)
+        self._show_mapper = ShowMapper(self)
 
     def get(self, key, default=None):
         # Retrieve item metadata
@@ -43,15 +47,20 @@ class AniDbService(Service):
         except KeyError:
             return default
 
-    def map(self, key, identifier):
+    def map(self, key, identifier=None):
         # Retrieve item
         item = self.get(key)
 
         if item is None:
             return None
 
-        # Map episode
-        return self.mapper.match(item, identifier)
+        if isinstance(item, Movie):
+            return self._movie_mapper.match(item, identifier)
+
+        if isinstance(item, Show):
+            return self._show_mapper.match(item, identifier)
+
+        raise ValueError('Unknown identifier: %r' % identifier)
 
     def titles(self, key):
         pass

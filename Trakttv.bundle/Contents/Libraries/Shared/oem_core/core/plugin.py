@@ -312,6 +312,9 @@ class PluginManager(object):
 
     @classmethod
     def _find_plugin(cls, name, path):
+        if not name:
+            return None, None
+
         if cls._is_plugin_module(name):
             return name.replace('_', '-'), {
                 'root_path': os.path.abspath(os.path.join(path, '..')),
