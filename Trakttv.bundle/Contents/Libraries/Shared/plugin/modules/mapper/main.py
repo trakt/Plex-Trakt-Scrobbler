@@ -44,8 +44,14 @@ class Mapper(Module):
         if type(guid) is str:
             guid = Guid.parse(guid)
 
-        # TODO support for movie matching
+        # TODO support movie matching
+        log.info('Movies not supported yet')
         pass
+
+    def movie_request(self, guid, movie):
+        # TODO support movie mapper requests
+        log.info('Movies not supported yet')
+        return None
 
     #
     # Shows
@@ -70,7 +76,6 @@ class Mapper(Module):
         match = self.episode_match(guid, episode)
 
         if not match:
-            log.warn('Unable to find mapping for %s: %r (S%02dE%02d)', guid.service, guid.id, episode.season.index, episode.index)
             return None
 
         if match.absolute_num is not None:
@@ -105,7 +110,7 @@ class Mapper(Module):
 
     def match(self, source, key, identifier=None):
         if source not in self.services:
-            log.debug('Ignoring unsupported source: %r', source)
+            log.info('Ignoring unsupported source: %r', source)
             return None
 
         for target in self.services[source]:
@@ -127,4 +132,5 @@ class Mapper(Module):
             if result:
                 return result
 
+        log.warn('Unable to find mapping for %s: %r (S%02dE%02d)', source, key, identifier.season_num, identifier.episode_num)
         return None
