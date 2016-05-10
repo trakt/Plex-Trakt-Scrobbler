@@ -110,7 +110,7 @@ class CodernityDbStorage(ProviderStorage, Plugin):
     def update_index(self, source, target, response):
         data = self.format.decode(
             ModelRegistry['Index'],
-            self.format.load_file(response.raw),
+            self.format.load_string(response.content),
             children=False
         )
 
@@ -151,7 +151,7 @@ class CodernityDbStorage(ProviderStorage, Plugin):
     def update_item(self, source, target, key, response, metadata):
         item = self.format.decode(
             ModelRegistry['Item'],
-            self.format.load_file(response.raw),
+            self.format.load_string(response.content),
             media=metadata.media
         )
 

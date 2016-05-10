@@ -3,12 +3,24 @@ from oem.providers.release.core.base import ReleaseProvider
 from semantic_version import Version
 import logging
 import requests
+import time
 import urlparse
 
 log = logging.getLogger(__name__)
 
+UPDATE_CHECK_INTERVAL   = 12 * 60 * 60  # Check for updates every 12 hours
+UPDATE_RETRY_INTERVAL   =  1 * 60 * 60  # Retry unavailable (404) versions every hour
+
 
 class IncrementalReleaseProvider(ReleaseProvider):
+    def __init__(self, *args, **kwargs):
+        super(IncrementalReleaseProvider, self).__init__(*args, **kwargs)
+
+        self._database_latest_version = {}
+        self._database_unavailable = {}
+
+        self._version_unavailable = {}
+
     def fetch(self, source, target, key, metadata):
         version = self.storage.get_collection_version(source, target)
 
@@ -19,8 +31,59 @@ class IncrementalReleaseProvider(ReleaseProvider):
         return True
 
     def get_available_version(self, source, target):
+        if not self.database_author:
+            return None
+
+        repo = '%s/%s' % (
+            self.database_author,
+            self._client.package_name(source, target)
+        )
+
+        # Retrieve version from cache
+        item = self._database_latest_version.get(repo)
+
+        if item:
+            last_check = time.time() - item['updated_at']
+
+            if last_check < UPDATE_CHECK_INTERVAL:
+                return item['version']
+
+        # Check if database is unavailable
+        unavailable_at = self._database_unavailable.get(repo)
+
+        if unavailable_at:
+            last_error = time.time() - unavailable_at
+
+            if last_error < UPDATE_RETRY_INTERVAL:
+                log.debug('Database %r is unavailable, will retry in %d seconds', repo, UPDATE_RETRY_INTERVAL - last_error)
+                return None
+
+        # Retrieve latest release information
+        try:
+            response = requests.get('https://api.github.com/repos/%s/releases/latest' % repo)
+        except requests.ConnectionError, ex:
+            log.warn('Unable to fetch release information for %r - %s', repo, ex)
+            return None
+
+        if response.status_code < 200 or response.status_code >= 300:
+            log.info('Unable to find database %r, will retry in %d seconds', repo, UPDATE_RETRY_INTERVAL)
+            self._database_unavailable[repo] = time.time()
+            return None
+
+        data = response.json()
+
+        if not data.get('tag_name'):
+            log.warn('Invalid release returned for %r: %r', repo, data)
+            return None
+
+        # Cache version for future calls
+        self._database_latest_version[repo] = {
+            'version': Version(data['tag_name']),
+            'updated_at': time.time()
+        }
+
         # TODO Retrieve latest version available
-        return Version('1.0.0')
+        return self._database_latest_version[repo]['version']
 
     #
     # Update methods
@@ -29,6 +92,9 @@ class IncrementalReleaseProvider(ReleaseProvider):
     def update_database(self, source, target):
         # Retrieve available version for collection
         available = self.get_available_version(source, target)
+
+        if available is None:
+            return None
 
         # Update index
         if not self.update_index(source, target, available):
@@ -66,11 +132,14 @@ class IncrementalReleaseProvider(ReleaseProvider):
         if self.storage.has_item(source, target, key):
             return True
     
-        # Fetch index
+        # Fetch item
         response = self._fetch(source, target, version, '/'.join([
             'items',
             '%s.%s' % (key, self.format.__extension__)
         ]))
+
+        if response is None:
+            return False
     
         # Update cache
         return self.storage.update_item(source, target, key, response, metadata)
@@ -80,6 +149,18 @@ class IncrementalReleaseProvider(ReleaseProvider):
     #
 
     def _fetch(self, source, target, version, filename):
+        name = self._client.package_name(source, target)
+
+        # Check if version is unavailable
+        unavailable_at = self._version_unavailable.get((name, version))
+
+        if unavailable_at:
+            last_error = time.time() - unavailable_at
+
+            if last_error < UPDATE_RETRY_INTERVAL:
+                log.debug('Version %s is unavailable, will retry in %d seconds', version, UPDATE_RETRY_INTERVAL - last_error)
+                return None
+
         # Build URL
         url = self._build_url(source, target, version, filename)
 
@@ -88,12 +169,14 @@ class IncrementalReleaseProvider(ReleaseProvider):
 
         # Fetch file
         try:
-            response = requests.get(url, stream=True)
+            response = requests.get(url)
         except requests.ConnectionError, ex:
             log.warn('Unable to fetch file %r - %s', filename, ex)
             return None
 
-        if response.status_code != 200:
+        if response.status_code < 200 or response.status_code >= 300:
+            log.info('Unable to fetch version %s, will retry in %d seconds', version, UPDATE_RETRY_INTERVAL)
+            self._version_unavailable[(name, version)] = time.time()
             return None
 
         return response
