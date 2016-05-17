@@ -158,9 +158,6 @@ class ActionManager(Manager):
         if action.event != 'scrobble/stop':
             return False
 
-        if action.progress < 80:
-            return False
-
         results = ActionHistory.select().where(
             ActionHistory.account == action.account,
             ActionHistory.rating_key == action.rating_key,
