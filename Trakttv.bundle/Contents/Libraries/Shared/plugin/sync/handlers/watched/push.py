@@ -1,4 +1,4 @@
-from plugin.core.session_status import SessionStatus
+from plugin.modules.core.manager import ModuleManager
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.handlers.core import DataHandler, PushHandler, bind
 from plugin.sync.handlers.watched.base import WatchedHandler
@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 class Base(PushHandler, WatchedHandler):
     def push(self, p_item, t_item, key, **kwargs):
         # Ensure item isn't currently being watched in plex
-        if SessionStatus.is_watching(self.current.account.id, key):
+        if ModuleManager['sessions'].is_account_streaming(self.current.account.id, key):
             log.debug('Item %r is currently being watched, ignoring push watched handler', key)
             return
 
