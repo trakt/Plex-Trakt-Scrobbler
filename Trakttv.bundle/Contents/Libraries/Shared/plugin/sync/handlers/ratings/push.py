@@ -22,7 +22,7 @@ class Movies(Base):
             return
 
         self.store_movie('add', guid,
-             p_item,
+             key, p_item,
              rating=p_value
          )
 
@@ -38,7 +38,7 @@ class Shows(Base):
             return
 
         self.store_show('add', guid,
-            p_item,
+            key, p_item,
             rating=p_value
         )
 
@@ -47,14 +47,15 @@ class Episodes(Base):
     media = SyncMedia.Episodes
 
     @bind('added', [SyncMode.Full, SyncMode.Push])
-    def on_added(self, key, guid, identifier, p_show, p_value, t_value, **kwargs):
+    def on_added(self, key, guid, identifier, p_show, p_item, p_value, t_value, **kwargs):
         log.debug('Episodes.on_added(%r, ...)', key)
 
         if t_value:
             return
 
         self.store_episode('add', guid,
-            identifier, p_show,
+            identifier, key,
+            p_show, p_item,
             rating=p_value
         )
 

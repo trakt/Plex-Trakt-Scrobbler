@@ -37,7 +37,7 @@ class Movies(Base):
             return
 
         self.store_movie('add', guid,
-            p_item,
+            key, p_item,
             watched_at=p_value
         )
 
@@ -61,7 +61,8 @@ class Episodes(Base):
             return
 
         self.store_episode('add', guid,
-            identifier, p_show,
+            identifier, key,
+            p_show, p_item,
             watched_at=p_value
         )
 
