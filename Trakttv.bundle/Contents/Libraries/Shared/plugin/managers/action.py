@@ -158,19 +158,12 @@ class ActionManager(Manager):
         if action.event != 'scrobble/stop':
             return False
 
-        if action.progress < 80:
-            return False
-
-        results = ActionHistory.select().where(
-            ActionHistory.account == action.account,
-            ActionHistory.rating_key == action.rating_key,
-
-            ActionHistory.performed == 'scrobble',
-
-            ActionHistory.sent_at > action.queued_at - timedelta(hours=1)
+        scrobbled = ActionHistory.has_scrobbled(
+            action.account, action.rating_key,
+            after=action.queued_at - timedelta(hours=1)
         )
 
-        if results.count() > 0:
+        if scrobbled:
             log.info('Ignoring duplicate %r action, scrobble already performed in the last hour', action.event)
             return True
 

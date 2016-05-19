@@ -1,9 +1,9 @@
 from plugin.core.constants import GUID_SERVICES
 from plugin.core.helpers.variable import dict_path
 from plugin.models import *
-from plugin.sync.core.enums import SyncActionMode
+from plugin.sync.core.enums import SyncActionMode, SyncData
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from trakt import Trakt
 from trakt_sync.cache.main import Cache
 import elapsed
@@ -184,7 +184,7 @@ class SyncArtifacts(object):
         self._set_kwargs(show, kwargs)
         return True
 
-    def store_episode(self, data, action, guid, identifier, p_show=None, **kwargs):
+    def store_episode(self, data, action, guid, identifier, p_key=None, p_show=None, p_episode=None, **kwargs):
         key = (guid.service, guid.id)
         season_num, episode_num = identifier
 
@@ -193,6 +193,10 @@ class SyncArtifacts(object):
             action,
             'shows'
         ])
+
+        # Check for duplicate history addition
+        if self._is_duplicate(data, action, p_key):
+            return False
 
         # Build show
         if key in shows:
@@ -226,7 +230,7 @@ class SyncArtifacts(object):
         self._set_kwargs(episode, kwargs)
         return True
 
-    def store_movie(self, data, action, guid, p_movie=None, **kwargs):
+    def store_movie(self, data, action, guid, p_key=None, p_movie=None, **kwargs):
         key = (guid.service, guid.id)
 
         movies = dict_path(self.artifacts, [
@@ -234,6 +238,10 @@ class SyncArtifacts(object):
             action,
             'movies'
         ])
+
+        # Check for duplicate history addition
+        if self._is_duplicate(data, action, p_key):
+            return False
 
         # Build movie
         if key in movies:
@@ -269,6 +277,21 @@ class SyncArtifacts(object):
         cls._set_kwargs(request, kwargs)
 
         return request
+
+    def _is_duplicate(self, data, action, p_key):
+        if data != SyncData.Watched or action != 'add':
+            return False
+
+        scrobbled = ActionHistory.has_scrobbled(
+            self.task.account, p_key,
+            after=datetime.utcnow() - timedelta(hours=1)
+        )
+
+        if scrobbled:
+            log.info('Ignoring duplicate history addition, scrobble already performed in the last hour')
+            return True
+
+        return False
 
     @classmethod
     def _validate_request(cls, guid, p_item):
