@@ -1,11 +1,11 @@
 from plugin.core.helpers.variable import to_integer, merge, resolve
-from plugin.core.session_status import SessionStatus
 from plugin.managers.core.base import Manager
 from plugin.managers.client import ClientManager
 from plugin.managers.core.exceptions import FilteredException
 from plugin.managers.session.base import GetSession, UpdateSession
 from plugin.managers.user import UserManager
 from plugin.models import Session
+from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
 from plex import Plex
@@ -41,7 +41,7 @@ class GetWSession(GetSession):
             self.manager.update(obj, info, fetch)
 
             # Update active sessions
-            SessionStatus.on_created(obj)
+            ModuleManager['sessions'].on_created(obj)
 
             return obj
         except (apsw.ConstraintError, peewee.IntegrityError):
@@ -57,7 +57,7 @@ class UpdateWSession(UpdateSession):
             obj, data
         )
 
-        SessionStatus.on_updated(obj)
+        ModuleManager['sessions'].on_updated(obj)
         return success
 
     def to_dict(self, obj, info, fetch=False):
