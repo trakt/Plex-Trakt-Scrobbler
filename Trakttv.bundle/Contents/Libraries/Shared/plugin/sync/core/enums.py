@@ -86,6 +86,12 @@ class SyncInterval(Enum):
     D7      = '0 0 */7 * *'
 
 
+class SyncIdleDelay(Enum):
+    M15     = 15 * 60
+    M30     = 30 * 60
+    H1      = 60 * 60
+
+
 class SyncMedia(Enum):
     All         = 0
     Movies      = 1

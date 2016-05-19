@@ -1,5 +1,6 @@
 from plugin.core.helpers.thread import synchronized
 from plugin.modules.core.base import Module
+from plugin.preferences import Preferences
 
 from datetime import datetime, timedelta
 from threading import RLock
@@ -26,7 +27,7 @@ class Sessions(Module):
         return self._by_account.get(account, {}).get(rating_key, False)
 
     def is_idle(self):
-        return self._idle_since and datetime.utcnow() - self._idle_since > timedelta(minutes=30)
+        return self._idle_since and datetime.utcnow() - self._idle_since > timedelta(seconds=Preferences.get('sync.idle_delay'))
 
     def is_streaming(self):
         if self._by_session_key:

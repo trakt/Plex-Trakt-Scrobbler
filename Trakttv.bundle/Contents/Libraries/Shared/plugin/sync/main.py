@@ -1,5 +1,6 @@
 from plugin.models import SyncResult
 from plugin.modules.core.manager import ModuleManager
+from plugin.preferences import Preferences
 from plugin.sync.core.enums import SyncMedia
 from plugin.sync.core.exceptions import QueueError
 from plugin.sync.core.task import SyncTask
@@ -183,13 +184,18 @@ class Main(object):
                 log.debug('Task has been queued for over 12 hours, ignoring sync conditions')
                 return False
 
-        if ModuleManager['sessions'].is_streaming():
-            log.debug('Deferring sync task, server is currently streaming media')
-            return True
+        if Preferences.get('sync.idle_defer'):
+            # Defer sync tasks until server finishes streaming (and is idle for 30 minutes)
+            if ModuleManager['sessions'].is_streaming():
+                log.debug('Deferring sync task, server is currently streaming media')
+                return True
 
-        if not ModuleManager['sessions'].is_idle():
-            log.debug('Deferring sync task, server has been streaming media recently (in the last 30 minutes)')
-            return True
+            if not ModuleManager['sessions'].is_idle():
+                log.debug(
+                    'Deferring sync task, server has been streaming media recently (in the last %d minutes)',
+                    float(Preferences.get('sync.idle_delay')) / 60
+                )
+                return True
 
         return False
 

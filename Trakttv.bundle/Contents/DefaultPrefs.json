@@ -93,6 +93,19 @@
         "default": "Disabled"
     },
     {
+        "id": "sync_idle_defer",
+        "type": "bool",
+        "label": "Sync - Defer until server is idle",
+        "default": "true"
+    },
+    {
+        "id": "sync_idle_delay",
+        "type": "enum",
+        "label": "Sync - Idle delay",
+        "values": ["15 Minutes", "30 Minutes", "Hour"],
+        "default": "30 Minutes"
+    },
+    {
         "id": "matcher",
         "type": "enum",
         "label": "Matcher",

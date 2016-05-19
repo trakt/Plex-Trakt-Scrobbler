@@ -1,4 +1,5 @@
-from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode, SyncInterval, SyncProfilerMode
+from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode, SyncInterval, SyncProfilerMode, \
+    SyncIdleDelay
 
 #
 # Artifact modes
@@ -88,6 +89,28 @@ INTERVAL_LABELS_BY_KEY = {
 
     SyncInterval.D1:    'Day',
     SyncInterval.D7:    'Week'
+}
+
+#
+# Idle delay
+#
+
+IDLE_DELAY_IDS_BY_KEY = {
+    SyncIdleDelay.M15:   1,
+    SyncIdleDelay.M30:   2,
+    SyncIdleDelay.H1:    3,
+}
+
+IDLE_DELAY_KEYS_BY_LABEL = {
+    '15 Minutes':       SyncIdleDelay.M15,
+    '30 Minutes':       SyncIdleDelay.M30,
+    'Hour':             SyncIdleDelay.H1
+}
+
+IDLE_DELAY_LABELS_BY_KEY = {
+    SyncIdleDelay.M15:   '15 Minutes',
+    SyncIdleDelay.M30:   '30 Minutes',
+    SyncIdleDelay.H1:    'Hour'
 }
 
 #

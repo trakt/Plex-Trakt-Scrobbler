@@ -24,6 +24,9 @@ OPTIONS = [
     SyncCollectionOption,
     SyncCleanCollectionOption,
 
+    SyncIdleDeferOption,
+    SyncIdleDelayOption,
+
     SyncIntervalOption,
     SyncLibraryUpdateOption,
 
