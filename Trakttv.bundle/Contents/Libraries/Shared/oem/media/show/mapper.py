@@ -37,20 +37,34 @@ class ShowMapper(object):
         return best
 
     def _match_show(self, show, identifier):
-        if 'default_season' not in show.parameters:
-            return None
+        # Retrieve "default_season" parameter
+        default_season = None
 
-        # Default Season
-        try:
-            default_season = int(show.parameters['default_season'])
-        except Exception:
-            return None
+        if 'default_season' in show.parameters:
+            try:
+                default_season = int(show.parameters['default_season'])
+            except Exception:
+                return None
+
+        # Retrieve season number
+        season_num = identifier.season_num
+
+        if season_num is None or default_season is None:
+            season_num = default_season
+        elif season_num > 0:
+            season_num = default_season + (season_num - 1)
+
+        # Retrieve episode number
+        episode_num = identifier.episode_num
+
+        if 'episode_offset' in show.parameters:
+            episode_num += int(show.parameters['episode_offset'])
 
         # Build episode match
         return EpisodeMatch(
             self._get_identifiers(show),
-            season_num=default_season,
-            episode_num=identifier.episode_num + int(show.parameters.get('episode_offset', 0))
+            season_num=season_num,
+            episode_num=episode_num
         )
 
     def _match_season(self, show, identifier):
@@ -77,18 +91,15 @@ class ShowMapper(object):
                 identifier.episode_num + season_mapping.offset
             )
 
-        # Default Season
-        default_season = 1
+        # Retrieve season number
+        season_num = int(season.number)
 
-        if 'default_season' in season.parameters:
-            try:
-                default_season = int(season.parameters['default_season'])
-            except Exception:
-                pass
+        if season.identifiers:
+            season_num = 1
 
         return season, EpisodeMatch(
             self._get_identifiers(show, season),
-            season_num=default_season,
+            season_num=season_num,
             episode_num=identifier.episode_num
         )
 
