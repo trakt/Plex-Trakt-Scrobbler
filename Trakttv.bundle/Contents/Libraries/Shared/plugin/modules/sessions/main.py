@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 from threading import RLock
 import logging
 
+CLEANUP_INTERVAL = timedelta(minutes=1)
+SESSION_TIMEOUT = timedelta(minutes=2)
+
 log = logging.getLogger(__name__)
 
 
@@ -18,18 +21,31 @@ class Sessions(Module):
         self._by_account = {}
         self._by_session_key = {}
 
+        self._cleaned_at = None
         self._idle_since = datetime.min
 
     def is_account_streaming(self, account, rating_key=None):
         if type(account) is not int:
             account = account.id
 
+        # Cleanup stale sessions
+        self.cleanup()
+
+        # Try find matching `account` and `rating_key`
         return self._by_account.get(account, {}).get(rating_key, False)
 
     def is_idle(self):
+        # Cleanup stale sessions
+        self.cleanup()
+
+        # Check if server has been idle for `sync.idle_delay` seconds
         return self._idle_since and datetime.utcnow() - self._idle_since > timedelta(seconds=Preferences.get('sync.idle_delay'))
 
     def is_streaming(self):
+        # Cleanup stale sessions
+        self.cleanup()
+
+        # Check if there is any active sessions
         if self._by_session_key:
             return True
 
@@ -38,6 +54,26 @@ class Sessions(Module):
     #
     # Session methods
     #
+
+    @synchronized(lambda self: self._lock)
+    def cleanup(self, force=False):
+        if not force and self._cleaned_at and datetime.utcnow() - self._cleaned_at < CLEANUP_INTERVAL:
+            return 0
+
+        states = self._by_session_key.values()
+        removed = 0
+
+        for state in states:
+            if state.is_stale() and self.delete(state):
+                removed += 1
+
+        if removed:
+            log.info('Removed %d stale session(s)', removed)
+        else:
+            log.debug('Removed %d stale session(s)', removed)
+
+        self._cleaned_at = datetime.utcnow()
+        return removed
 
     @synchronized(lambda self: self._lock)
     def create(self, session):
@@ -194,6 +230,9 @@ class SessionState(object):
         self.rating_key = rating_key
 
         self.seen_at = datetime.utcnow()
+
+    def is_stale(self):
+        return datetime.utcnow() - self.seen_at > SESSION_TIMEOUT
 
     def update(self, session):
         self.seen_at = datetime.utcnow()
