@@ -2,6 +2,7 @@ from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
 from plugin.managers.session.base import UpdateSession
+from plugin.modules.core.manager import ModuleManager
 
 from plex.objects.library.metadata.episode import Episode
 from plex.objects.library.metadata.movie import Movie
@@ -71,7 +72,8 @@ class Base(object):
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
-            return None
+            # Try map episode to a supported service (with OEM)
+            return ModuleManager['mapper'].episode_request(guid, episode)
 
         return {
             'show': {
@@ -93,7 +95,8 @@ class Base(object):
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
-            return None
+            # Try map episode to a supported service (with OEM)
+            return ModuleManager['mapper'].movie_request(guid, movie)
 
         return {
             'movie': {
