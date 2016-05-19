@@ -41,8 +41,6 @@ class Sessions(Module):
 
     @synchronized(lambda self: self._lock)
     def create(self, session):
-        log.debug('create(%r)', session)
-
         if session.state not in ['create', 'start', 'pause']:
             return
 
@@ -74,8 +72,6 @@ class Sessions(Module):
 
     @synchronized(lambda self: self._lock)
     def delete(self, state):
-        log.debug('delete(%r)', state)
-
         # Remove item from `active` dictionary
         if state.account_id in self._by_account and state.rating_key in self._by_account[state.account_id]:
             try:
@@ -102,8 +98,6 @@ class Sessions(Module):
 
     @synchronized(lambda self: self._lock)
     def replace(self, state, session):
-        log.debug('replace(%r, %r)', state, session)
-
         # Remove current state
         self.delete(state)
 
@@ -112,8 +106,6 @@ class Sessions(Module):
 
     @synchronized(lambda self: self._lock)
     def update(self, session):
-        log.debug('update(%r)', session)
-
         # Retrieve session parameters
         s_account_id = self._get_session_account_id(session)
 
@@ -150,25 +142,29 @@ class Sessions(Module):
 
     @synchronized(lambda self: self._lock)
     def on_created(self, session):
-        log.debug('on_created(%r)', session)
-
         # Store session
         self.create(session)
 
-        log.debug('by_account_rating_key: %r, by_session_key: %r', self._by_account, self._by_session_key)
+        # Display active session message
+        self._log()
 
     @synchronized(lambda self: self._lock)
     def on_updated(self, session):
-        log.debug('on_updated(%r)', session)
-
         # Update session
         self.update(session)
 
-        log.debug('by_account_rating_key: %r, by_session_key: %r', self._by_account, self._by_session_key)
+        # Display active session message
+        self._log()
 
     #
     # Helpers
     #
+
+    def _log(self):
+        if not self._by_session_key:
+            return
+
+        log.debug('%d active session(s): %r', len(self._by_session_key), self._by_session_key)
 
     @classmethod
     def _get_session_account_id(cls, session):
