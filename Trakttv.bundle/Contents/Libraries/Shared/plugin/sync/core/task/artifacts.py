@@ -1,6 +1,7 @@
 from plugin.core.constants import GUID_SERVICES
 from plugin.core.helpers.variable import dict_path
 from plugin.models import *
+from plugin.preferences import Preferences
 from plugin.sync.core.enums import SyncActionMode, SyncData
 
 from datetime import datetime, timedelta
@@ -284,11 +285,14 @@ class SyncArtifacts(object):
 
         scrobbled = ActionHistory.has_scrobbled(
             self.task.account, p_key,
-            after=datetime.utcnow() - timedelta(hours=1)
+            after=datetime.utcnow() - timedelta(minutes=Preferences.get('scrobble.duplication_period'))
         )
 
         if scrobbled:
-            log.info('Ignoring duplicate history addition, scrobble already performed in the last hour')
+            log.info(
+                'Ignoring duplicate history addition, scrobble already performed in the last %d minutes',
+                Preferences.get('scrobble.duplication_period')
+            )
             return True
 
         return False

@@ -73,6 +73,16 @@ class SyncData(Enum):
         return cls.__titles__.get(value)
 
 
+class ScrobbleDuplicationPeriod(Enum):
+    H1      = 1 * 60
+    H3      = 3 * 60
+    H6      = 6 * 60
+    H12     = 12 * 60
+
+    D1      = 1 * 24 * 60
+    D7      = 7 * 24 * 60
+
+
 class SyncIdleDelay(Enum):
     M15     = 15
     M30     = 30

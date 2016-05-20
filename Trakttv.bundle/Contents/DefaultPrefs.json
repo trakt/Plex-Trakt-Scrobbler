@@ -12,6 +12,13 @@
         "default": "false"
     },
     {
+        "id": "scrobble_duplication_period",
+        "type": "enum",
+        "label": "Scrobble - Ignore duplicates for",
+        "values": ["Disabled", "1 Hour", "3 Hours", "6 Hours", "12 Hours", "1 Day", "7 Days"],
+        "default": "6 Hours"
+    },
+    {
         "id": "sync_watched",
         "type": "enum",
         "label": "Sync - Watched",

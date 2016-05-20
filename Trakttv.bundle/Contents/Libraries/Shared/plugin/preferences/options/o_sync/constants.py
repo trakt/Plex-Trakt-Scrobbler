@@ -1,5 +1,5 @@
 from plugin.sync.core.enums import SyncConflictResolution, SyncMode, SyncActionMode, SyncInterval, SyncProfilerMode, \
-    SyncIdleDelay
+    SyncIdleDelay, ScrobbleDuplicationPeriod
 
 #
 # Artifact modes
@@ -40,6 +40,46 @@ RESOLUTION_LABELS_BY_KEY = {
     SyncConflictResolution.Latest:  'Latest',
     SyncConflictResolution.Trakt:   'Trakt',
     SyncConflictResolution.Plex:    'Plex'
+}
+
+#
+# Duplication period
+#
+
+DUPLICATION_PERIOD_IDS_BY_KEY = {
+    None:                            0,
+
+    ScrobbleDuplicationPeriod.H1:    1,
+    ScrobbleDuplicationPeriod.H3:    2,
+    ScrobbleDuplicationPeriod.H6:    3,
+    ScrobbleDuplicationPeriod.H12:   4,
+
+    ScrobbleDuplicationPeriod.D1:    5,
+    ScrobbleDuplicationPeriod.D7:    6
+}
+
+DUPLICATION_PERIOD_KEYS_BY_LABEL = {
+    'Disabled':         None,
+
+    '1 Hour':           ScrobbleDuplicationPeriod.H1,
+    '3 Hours':          ScrobbleDuplicationPeriod.H3,
+    '6 Hours':          ScrobbleDuplicationPeriod.H6,
+    '12 Hours':         ScrobbleDuplicationPeriod.H12,
+
+    '1 Day':            ScrobbleDuplicationPeriod.D1,
+    '7 Days':           ScrobbleDuplicationPeriod.D7
+}
+
+DUPLICATION_PERIOD_LABELS_BY_KEY = {
+    None:                            'Disabled',
+
+    ScrobbleDuplicationPeriod.H1:    '1 Hour',
+    ScrobbleDuplicationPeriod.H3:    '3 Hours',
+    ScrobbleDuplicationPeriod.H6:    '6 Hours',
+    ScrobbleDuplicationPeriod.H12:   '12 Hours',
+
+    ScrobbleDuplicationPeriod.D1:    '1 Day',
+    ScrobbleDuplicationPeriod.D7:    '7 Days'
 }
 
 #
