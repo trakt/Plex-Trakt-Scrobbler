@@ -158,15 +158,22 @@ class ActionManager(Manager):
         if action.event != 'scrobble/stop':
             return False
 
+        # Retrieve scrobble duplication period
+        duplication_period = Preferences.get('scrobble.duplication_period')
+
+        if duplication_period is None:
+            return False
+
+        # Check for duplicate scrobbles in `duplication_period`
         scrobbled = ActionHistory.has_scrobbled(
             action.account, action.rating_key,
-            after=action.queued_at - timedelta(minutes=Preferences.get('scrobble.duplication_period'))
+            after=action.queued_at - timedelta(minutes=duplication_period)
         )
 
         if scrobbled:
             log.info(
                 'Ignoring duplicate %r action, scrobble already performed in the last %d minutes',
-                action.event, Preferences.get('scrobble.duplication_period')
+                action.event, duplication_period
             )
             return True
 
