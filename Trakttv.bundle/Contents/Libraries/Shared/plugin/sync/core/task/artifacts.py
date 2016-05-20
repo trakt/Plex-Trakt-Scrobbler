@@ -283,15 +283,22 @@ class SyncArtifacts(object):
         if data != SyncData.Watched or action != 'add':
             return False
 
+        # Retrieve scrobble duplication period
+        duplication_period = Preferences.get('scrobble.duplication_period')
+
+        if duplication_period is None:
+            return False
+
+        # Check for duplicate scrobbles in `duplication_period`
         scrobbled = ActionHistory.has_scrobbled(
             self.task.account, p_key,
-            after=datetime.utcnow() - timedelta(minutes=Preferences.get('scrobble.duplication_period'))
+            after=datetime.utcnow() - timedelta(minutes=duplication_period)
         )
 
         if scrobbled:
             log.info(
                 'Ignoring duplicate history addition, scrobble already performed in the last %d minutes',
-                Preferences.get('scrobble.duplication_period')
+                duplication_period
             )
             return True
 
