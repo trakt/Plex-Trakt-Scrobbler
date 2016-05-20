@@ -160,11 +160,14 @@ class ActionManager(Manager):
 
         scrobbled = ActionHistory.has_scrobbled(
             action.account, action.rating_key,
-            after=action.queued_at - timedelta(hours=1)
+            after=action.queued_at - timedelta(minutes=Preferences.get('scrobble.duplication_period'))
         )
 
         if scrobbled:
-            log.info('Ignoring duplicate %r action, scrobble already performed in the last hour', action.event)
+            log.info(
+                'Ignoring duplicate %r action, scrobble already performed in the last %d minutes',
+                action.event, Preferences.get('scrobble.duplication_period')
+            )
             return True
 
         return False
