@@ -39,7 +39,7 @@ class Sessions(Module):
         self.cleanup()
 
         # Check if server has been idle for `sync.idle_delay` seconds
-        return self._idle_since and datetime.utcnow() - self._idle_since > timedelta(seconds=Preferences.get('sync.idle_delay'))
+        return self._idle_since and datetime.utcnow() - self._idle_since > timedelta(minutes=Preferences.get('sync.idle_delay'))
 
     def is_streaming(self):
         # Cleanup stale sessions

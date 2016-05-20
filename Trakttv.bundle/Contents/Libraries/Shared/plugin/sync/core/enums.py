@@ -73,6 +73,13 @@ class SyncData(Enum):
         return cls.__titles__.get(value)
 
 
+class SyncIdleDelay(Enum):
+    M15     = 15
+    M30     = 30
+
+    H1      = 1 * 60
+
+
 class SyncInterval(Enum):
     M15     = '*/15 * * * *'
     M30     = '*/30 * * * *'
@@ -84,12 +91,6 @@ class SyncInterval(Enum):
 
     D1      = '0 0 * * *'
     D7      = '0 0 */7 * *'
-
-
-class SyncIdleDelay(Enum):
-    M15     = 15 * 60
-    M30     = 30 * 60
-    H1      = 60 * 60
 
 
 class SyncMedia(Enum):

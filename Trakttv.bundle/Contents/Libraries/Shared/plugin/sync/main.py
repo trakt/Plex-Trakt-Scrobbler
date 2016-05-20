@@ -193,7 +193,7 @@ class Main(object):
             if not ModuleManager['sessions'].is_idle():
                 log.debug(
                     'Deferring sync task, server has been streaming media recently (in the last %d minutes)',
-                    float(Preferences.get('sync.idle_delay')) / 60
+                    Preferences.get('sync.idle_delay')
                 )
                 return True
 
