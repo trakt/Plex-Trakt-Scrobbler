@@ -1,5 +1,6 @@
-from threading import Thread
 from plugin.models import SyncResult
+from plugin.modules.core.manager import ModuleManager
+from plugin.preferences import Preferences
 from plugin.sync.core.enums import SyncMedia
 from plugin.sync.core.exceptions import QueueError
 from plugin.sync.core.task import SyncTask
@@ -7,7 +8,8 @@ from plugin.sync.handlers import *
 from plugin.sync.modes import *
 from plugin.sync.triggers import LibraryUpdateTrigger
 
-from threading import Lock
+from datetime import datetime, timedelta
+from threading import Lock, Thread
 import logging
 import Queue
 import sys
@@ -73,7 +75,14 @@ class Main(object):
 
         with self._queue_lock:
             # Ensure we only have one task queued per account
-            account_tasks = [t for (p, a, t) in self._queue.queue if a == task.account.id]
+            account_tasks = [
+                t for (p, a, t) in self._queue.queue
+                if (
+                    a == task.account.id and
+                    t.result and
+                    (trigger != SyncResult.Trigger.Manual or t.result.trigger == trigger)
+                )
+            ]
 
             if len(account_tasks):
                 raise QueueError("Unable to queue sync", "Sync has already been queued for this account")
@@ -85,12 +94,12 @@ class Main(object):
             self.spawn()
 
         # Wait for task start
-        for x in xrange(3):
+        for x in xrange(10):
             if task.started:
                 log.debug('Task %r has started', task)
                 return
 
-            time.sleep(1)
+            time.sleep(2)
 
         raise QueueError("Sync queued", "Sync will start once the currently queued tasks have finished")
 
@@ -107,17 +116,38 @@ class Main(object):
 
     def run_wrapper(self):
         while True:
-            # Retrieve task from queue
             try:
-                _, _, self.current = self._queue.get(timeout=30)
-            except Queue.Empty:
+                # Retrieve task from queue
+                try:
+                    priority, account_id, task = self._queue.get(timeout=30)
+                except Queue.Empty:
+                    continue
+
+                # Check if we should defer this task
+                if self.should_defer(task):
+                    # Re-queue sync task
+                    if priority < 10000:
+                        priority += 1
+
+                    self._queue.put((priority, account_id, task), block=False)
+
+                    # Wait 10 seconds
+                    time.sleep(10)
+                    continue
+
+                # Select task
+                self.current = task
+            except Exception, ex:
+                log.warn('Exception raised in run(): %s', ex, exc_info=True)
+
+                time.sleep(30)
                 continue
 
             # Start task
-            log.info('(%r) Started', self.current.mode)
-            self.current.started = True
-
             try:
+                log.info('(%r) Started', self.current.mode)
+                self.current.started = True
+
                 # Construct modes/handlers for task
                 self.current.construct(HANDLERS, MODES)
 
@@ -140,6 +170,34 @@ class Main(object):
                 self.finish()
             except Exception, ex:
                 log.error('Unable to run final sync tasks: %s', ex, exc_info=True)
+
+    def should_defer(self, task):
+        if task and task.result:
+            # Ignore sync conditions on manual triggers
+            if task.result.trigger == SyncResult.Trigger.Manual:
+                return False
+
+            # Ignore sync conditions if the task has been queued for over 12 hours
+            started_ago = datetime.utcnow() - task.result.started_at
+
+            if started_ago > timedelta(hours=12):
+                log.debug('Task has been queued for over 12 hours, ignoring sync conditions')
+                return False
+
+        if Preferences.get('sync.idle_defer'):
+            # Defer sync tasks until server finishes streaming (and is idle for 30 minutes)
+            if ModuleManager['sessions'].is_streaming():
+                log.debug('Deferring sync task, server is currently streaming media')
+                return True
+
+            if not ModuleManager['sessions'].is_idle():
+                log.debug(
+                    'Deferring sync task, server has been streaming media recently (in the last %d minutes)',
+                    Preferences.get('sync.idle_delay')
+                )
+                return True
+
+        return False
 
     def finish(self):
         # Cleanup `current` task

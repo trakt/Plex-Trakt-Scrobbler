@@ -12,6 +12,13 @@
         "default": "false"
     },
     {
+        "id": "scrobble_duplication_period",
+        "type": "enum",
+        "label": "Scrobble - Ignore duplicates for",
+        "values": ["Disabled", "1 Hour", "3 Hours", "6 Hours", "12 Hours", "1 Day", "7 Days"],
+        "default": "6 Hours"
+    },
+    {
         "id": "sync_watched",
         "type": "enum",
         "label": "Sync - Watched",
@@ -91,6 +98,19 @@
         "label": "Sync - Run every",
         "values": ["Disabled", "15 Minutes", "30 Minutes", "Hour", "3 Hours", "6 Hours", "12 Hours", "Day", "Week"],
         "default": "Disabled"
+    },
+    {
+        "id": "sync_idle_defer",
+        "type": "bool",
+        "label": "Sync - Defer until server is idle",
+        "default": "true"
+    },
+    {
+        "id": "sync_idle_delay",
+        "type": "enum",
+        "label": "Sync - Idle delay",
+        "values": ["15 Minutes", "30 Minutes", "Hour"],
+        "default": "30 Minutes"
     },
     {
         "id": "matcher",

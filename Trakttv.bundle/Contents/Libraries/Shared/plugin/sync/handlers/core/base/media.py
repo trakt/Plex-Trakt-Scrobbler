@@ -159,11 +159,27 @@ class MediaHandler(object):
     # Artifacts
     #
 
-    def store_show(self, action, guid, p_show=None, **kwargs):
-        return self.current.artifacts.store_show(self.parent.data, action, guid, p_show, **kwargs)
+    def store_show(self, action, guid, p_key=None, p_show=None, **kwargs):
+        return self.current.artifacts.store_show(
+            self.parent.data, action, guid,
+            p_key=p_key,
+            p_show=p_show,
+            **kwargs
+        )
 
-    def store_episode(self, action, guid, identifier, p_show=None, **kwargs):
-        return self.current.artifacts.store_episode(self.parent.data, action, guid, identifier, p_show, **kwargs)
+    def store_episode(self, action, guid, identifier, p_key=None, p_show=None, p_episode=None, **kwargs):
+        return self.current.artifacts.store_episode(
+            self.parent.data, action, guid, identifier,
+            p_key=p_key,
+            p_show=p_show,
+            p_episode=p_episode,
+            **kwargs
+        )
 
-    def store_movie(self, action, guid, p_movie=None, **kwargs):
-        return self.current.artifacts.store_movie(self.parent.data, action, guid, p_movie, **kwargs)
+    def store_movie(self, action, guid, p_key=None, p_movie=None, **kwargs):
+        return self.current.artifacts.store_movie(
+            self.parent.data, action, guid,
+            p_key=p_key,
+            p_movie=p_movie,
+            **kwargs
+        )

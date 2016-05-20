@@ -3,6 +3,7 @@ from trakt.interfaces.base import Interface
 
 from datetime import datetime, timedelta
 from threading import Thread
+import calendar
 import logging
 import time
 
@@ -153,8 +154,14 @@ class DeviceOAuthPoller(Interface, Emitter):
             response = self.client['oauth/device'].token(self.device_code, parse=False)
 
             if response:
+                # Parse authorization
+                data = self.get_data(response)
+
+                if 'created_at' not in data:
+                    data['created_at'] = calendar.timegm(datetime.utcnow().utctimetuple())
+
                 # Authentication complete
-                self.emit('authenticated', self.get_data(response))
+                self.emit('authenticated', data)
                 break
 
             # Sleep for defined interval

@@ -6,13 +6,16 @@ from plugin.preferences.options.api import ApiOption
 from plugin.preferences.options.matcher import MatcherOption
 from plugin.preferences.options.pin import PinOption
 from plugin.preferences.options.scrobble import ScrobbleOption
+from plugin.preferences.options.scrobble_duplication_period import ScrobbleDuplicationPeriodOption
 
 OPTIONS = [
     ActivityOption,
     ApiOption,
     MatcherOption,
     PinOption,
+
     ScrobbleOption,
+    ScrobbleDuplicationPeriodOption,
 
     # Backup
     BackupMaintenanceIntervalOption,
@@ -23,6 +26,9 @@ OPTIONS = [
 
     SyncCollectionOption,
     SyncCleanCollectionOption,
+
+    SyncIdleDeferOption,
+    SyncIdleDelayOption,
 
     SyncIntervalOption,
     SyncLibraryUpdateOption,

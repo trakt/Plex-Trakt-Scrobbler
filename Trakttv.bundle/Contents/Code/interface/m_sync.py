@@ -82,7 +82,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     #
 
     oc.add(DirectoryObject(
-        key=Callback(Synchronize, account_id=account.id, refresh=timestamp()),
+        key=Trigger.callback(Synchronize, account),
         title=pad_title(SyncMode.title(SyncMode.Full)),
         summary=Status.build(account, SyncMode.Full),
 
@@ -95,7 +95,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     #
 
     oc.add(DirectoryObject(
-        key=Callback(Pull, account_id=account.id, refresh=timestamp()),
+        key=Trigger.callback(Pull, account),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
         summary=Status.build(account, SyncMode.Pull),
 
@@ -104,7 +104,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     ))
 
     oc.add(DirectoryObject(
-        key=Callback(FastPull, account_id=account.id, refresh=timestamp()),
+        key=Trigger.callback(FastPull, account),
         title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
         summary=Status.build(account, SyncMode.FastPull),
 
@@ -145,7 +145,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id, section=section.key, refresh=timestamp()),
+            key=Trigger.callback(Push, account, section),
             title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
             summary=Status.build(account, SyncMode.Push, section.key),
 
@@ -156,7 +156,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
     if len(section_keys) > 1:
         oc.add(DirectoryObject(
-            key=Callback(Push, account_id=account.id, refresh=timestamp()),
+            key=Trigger.callback(Push, account),
             title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
             summary=Status.build(account, SyncMode.Push),
 
@@ -168,32 +168,23 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
-def Synchronize(account_id=1, refresh=None):
-    return Trigger(int(account_id), SyncMode.Full)
+def Synchronize(account_id=1, **kwargs):
+    return Trigger.run(int(account_id), SyncMode.Full, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
-def FastPull(account_id=1, refresh=None):
-    return Trigger(int(account_id), SyncMode.FastPull)
+def FastPull(account_id=1, **kwargs):
+    return Trigger.run(int(account_id), SyncMode.FastPull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
-def Push(account_id=1, section=None, refresh=None):
-    return Trigger(int(account_id), SyncMode.Push, section=section)
+def Push(account_id=1, section=None, **kwargs):
+    return Trigger.run(int(account_id), SyncMode.Push, section=section, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
-def Pull(account_id=1, refresh=None):
-    return Trigger(int(account_id), SyncMode.Pull)
-
-
-def Trigger(account_id, mode, **kwargs):
-    try:
-        Sync.queue(account_id, mode, **kwargs)
-    except QueueError, ex:
-        return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
-
-    return redirect('/sync', account_id=account_id)
+def Pull(account_id=1, **kwargs):
+    return Trigger.run(int(account_id), SyncMode.Pull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
@@ -362,3 +353,34 @@ class Status(object):
             return 'Last run just a moment ago'
 
         return 'Last run %s' % human(since, precision=1)
+
+
+class Trigger(object):
+    triggered = {}
+
+    @classmethod
+    def callback(cls, func, account, section=None):
+        if section:
+            return Callback(func, account_id=account.id, section=section.key, t=timestamp())
+
+        return Callback(func, account_id=account.id, t=timestamp())
+
+    @classmethod
+    def run(cls, account_id, mode, t, **kwargs):
+        # Check for duplicate trigger
+        key = (account_id, mode, t)
+
+        if key in cls.triggered:
+            log.info('Ignored duplicate sync trigger action')
+            return redirect('/sync', account_id=account_id)
+
+        # Mark triggered
+        cls.triggered[key] = True
+
+        # Trigger sync
+        try:
+            Sync.queue(account_id, mode, **kwargs)
+        except QueueError, ex:
+            return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
+
+        return redirect('/sync', account_id=account_id)

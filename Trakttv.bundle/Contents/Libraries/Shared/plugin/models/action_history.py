@@ -20,3 +20,18 @@ class ActionHistory(Model):
 
     queued_at = DateTimeField()
     sent_at = DateTimeField()
+
+    @classmethod
+    def has_scrobbled(cls, account, rating_key, after):
+        # Find matching "scrobble" events
+        results = ActionHistory.select().where(
+            ActionHistory.account == account,
+            ActionHistory.rating_key == rating_key,
+
+            ActionHistory.performed == 'scrobble',
+
+            ActionHistory.sent_at > after
+        )
+
+        # Check for at least one result
+        return results.count() > 0
