@@ -229,7 +229,7 @@ class Mode(object):
 
         if guid.service not in GUID_SERVICES:
             # Try map show to a supported service (via OEM)
-            supported, item = ModuleManager['mapper'].match(guid)
+            supported, item = ModuleManager['mapper'].match(guid.service, guid.id)
 
             if not supported:
                 return False, guid

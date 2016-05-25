@@ -41,14 +41,6 @@ class Mapper(Module):
     # Movie
     #
 
-    def match_movie(self, guid):
-        # Ensure guid has been parsed
-        if type(guid) is str:
-            guid = Guid.parse(guid)
-
-        # Try match show against database
-        return self.match(guid.service, guid.id)
-
     def map_movie(self, guid, movie):
         # Ensure guid has been parsed
         if type(guid) is str:
@@ -70,14 +62,6 @@ class Mapper(Module):
     #
     # Shows
     #
-
-    def match_show(self, guid):
-        # Ensure guid has been parsed
-        if type(guid) is str:
-            guid = Guid.parse(guid)
-
-        # Try match show against database
-        return self.match(guid.service, guid.id)
 
     def map_episode(self, guid, season_num, episode_num):
         # Ensure guid has been parsed
