@@ -73,7 +73,9 @@ class Base(object):
 
         if not ids:
             # Try map episode to a supported service (with OEM)
-            return ModuleManager['mapper'].episode_request(guid, episode)
+            _, request = ModuleManager['mapper'].request_episode(guid, episode)
+
+            return request
 
         return {
             'show': {
@@ -96,7 +98,9 @@ class Base(object):
 
         if not ids:
             # Try map episode to a supported service (with OEM)
-            return ModuleManager['mapper'].movie_request(guid, movie)
+            _, request = ModuleManager['mapper'].request_movie(guid, movie)
+
+            return request
 
         return {
             'movie': {

@@ -1,4 +1,3 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMode, SyncData, SyncMedia
 from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
@@ -63,16 +62,18 @@ class Movies(Mode):
     @elapsed.clock
     def run(self):
         # Process movies
-        for mo_id, guid, p_item in self.p_movies:
+        for mo_id, p_guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies).step()
 
-            # Ensure `guid` is available
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_unsupported, mo_id, guid)
+            # Process `p_guid` (map + validate)
+            supported, p_guid = self.process_guid(p_guid)
+
+            if not supported:
+                mark_unsupported(self.p_unsupported, mo_id, p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('movies').get(key)
