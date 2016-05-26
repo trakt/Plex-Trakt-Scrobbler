@@ -97,18 +97,13 @@ class Mapper(Module):
 
         for target, service in self._iter_services(source):
             try:
-                result = service.map(key, identifier)
+                match = service.map(key, identifier)
             except Exception, ex:
                 log.warn('Unable to retrieve mapping for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
                 continue
 
-            if result:
-                return True, result
-
-        if identifier and isinstance(identifier, EpisodeIdentifier):
-            log.warn('Unable to find mapping for %s: %r (S%02dE%02d)', source, key, identifier.season_num, identifier.episode_num)
-        else:
-            log.warn('Unable to find mapping for %s: %r', source, key)
+            if match:
+                return True, match
 
         return True, None
 
