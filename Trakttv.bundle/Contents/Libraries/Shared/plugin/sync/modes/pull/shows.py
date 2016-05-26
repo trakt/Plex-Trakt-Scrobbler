@@ -55,12 +55,15 @@ class Shows(Base):
         unsupported_shows = {}
 
         # Process shows
-        for sh_id, guid, p_show in p_shows:
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_shows, sh_id, guid)
+        for sh_id, p_guid, p_show in p_shows:
+            # Process `p_guid` (map + validate)
+            supported, p_guid = self.process_guid(p_guid)
+
+            if not supported:
+                mark_unsupported(unsupported_shows, sh_id, p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('shows').get(key)
@@ -86,12 +89,15 @@ class Shows(Base):
                 )
 
         # Process episodes
-        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_shows, ids['show'], guid)
+        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+            # Process `p_guid` (map + validate)
+            supported, p_guid, season_num, episode_num = self.process_guid_episode(p_guid, season_num, episode_num)
+
+            if not supported:
+                mark_unsupported(unsupported_shows, ids['show'], p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('shows').get(key)

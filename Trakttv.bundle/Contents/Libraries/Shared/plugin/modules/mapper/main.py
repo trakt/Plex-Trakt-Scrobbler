@@ -41,82 +41,88 @@ class Mapper(Module):
     # Movie
     #
 
-    def movie_match(self, guid, movie):
+    def map_movie(self, guid, movie):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
 
         # Try match movie against database
-        return self.match(guid.service, guid.id)
+        return self.map(guid.service, guid.id)
 
-    def movie_request(self, guid, movie):
+    def request_movie(self, guid, movie):
         # Try match movie against database
-        match = self.movie_match(guid, movie)
+        supported, match = self.map_movie(guid, movie)
 
         if not match:
-            return None
+            return supported, None
 
         # Build request for Trakt.tv
-        return self._build_movie_request(match, movie)
+        return supported, self._build_movie_request(match, movie)
 
     #
     # Shows
     #
 
-    def episode_match(self, guid, episode):
+    def map_episode(self, guid, season_num, episode_num):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
 
         # Build episode identifier
         identifier = EpisodeIdentifier(
-            season_num=episode.season.index,
-            episode_num=episode.index
+            season_num=season_num,
+            episode_num=episode_num
         )
 
         # Try match episode against database
-        return self.match(guid.service, guid.id, identifier)
+        return self.map(guid.service, guid.id, identifier)
 
-    def episode_request(self, guid, episode):
+    def request_episode(self, guid, episode):
         # Try match episode against database
-        match = self.episode_match(guid, episode)
+        supported, match = self.map_episode(guid, episode.season.index, episode.index)
 
         if not match:
-            return None
+            return supported, None
 
         # Build request for Trakt.tv
-        return self._build_episode_request(match, episode)
+        return supported, self._build_episode_request(match, episode)
 
     #
     # Helper methods
     #
 
-    def match(self, source, key, identifier=None):
+    def map(self, source, key, identifier=None):
         if source not in self.services:
-            log.info('Ignoring unsupported source: %r', source)
-            return None
+            return False, None
 
-        for target in self.services[source]:
+        for target, service in self._iter_services(source):
             try:
-                service = self._client[source].to(target)
-            except KeyError:
-                log.warn('Unable to find service: %s -> %s', source, target)
-                continue
-            except Exception, ex:
-                log.warn('Unable to retrieve service: %s -> %s - %s', source, target, ex, exc_info=True)
-                continue
-
-            try:
-                result = service.map(key, identifier)
+                match = service.map(key, identifier)
             except Exception, ex:
                 log.warn('Unable to retrieve mapping for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
                 continue
 
-            if result:
-                return result
+            if match:
+                return True, match
 
-        log.warn('Unable to find mapping for %s: %r (S%02dE%02d)', source, key, identifier.season_num, identifier.episode_num)
-        return None
+        return True, None
+
+    def match(self, source, key):
+        if source not in self.services:
+            return False, None
+
+        for target, service in self._iter_services(source):
+            try:
+                result = service.get(key)
+            except Exception, ex:
+                log.warn('Unable to retrieve item for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
+                continue
+
+            if result:
+                return True, result
+
+        log.warn('Unable to find item for %s: %r', source, key)
+        return True, None
 
     def _build_episode_request(self, match, episode):
         if isinstance(match, MovieMatch):
@@ -170,3 +176,19 @@ class Mapper(Module):
                 'ids': match.identifiers
             }
         }
+
+    def _iter_services(self, source):
+        if source not in self.services:
+            return
+
+        for target in self.services[source]:
+            try:
+                service = self._client[source].to(target)
+            except KeyError:
+                log.warn('Unable to find service: %s -> %s', source, target)
+                continue
+            except Exception, ex:
+                log.warn('Unable to retrieve service: %s -> %s - %s', source, target, ex, exc_info=True)
+                continue
+
+            yield target, service

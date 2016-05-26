@@ -1,4 +1,3 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
 
@@ -77,16 +76,18 @@ class Shows(Mode):
 
         with elapsed.clock(Shows, 'run:shows'):
             # Process shows
-            for sh_id, guid, p_show in self.p_shows:
+            for sh_id, p_guid, p_show in self.p_shows:
                 # Increment one step
                 self.current.progress.group(Shows, 'shows').step()
 
-                # Ensure `guid` is available
-                if not guid or guid.service not in GUID_SERVICES:
-                    mark_unsupported(self.p_shows_unsupported, sh_id, guid)
+                # Process `p_guid` (map + validate)
+                supported, p_guid = self.process_guid(p_guid)
+
+                if not supported:
+                    mark_unsupported(self.p_shows_unsupported, sh_id, p_guid)
                     continue
 
-                key = (guid.service, guid.id)
+                key = (p_guid.service, p_guid.id)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table('shows').get(key)
@@ -143,16 +144,18 @@ class Shows(Mode):
 
         with elapsed.clock(Shows, 'run:episodes'):
             # Process episodes
-            for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+            for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
                 # Increment one step
                 self.current.progress.group(Shows, 'episodes').step()
 
-                # Ensure `guid` is available
-                if not guid or guid.service not in GUID_SERVICES:
-                    mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
+                # Process `p_guid` (map + validate)
+                supported, p_guid, season_num, episode_num = self.process_guid_episode(p_guid, season_num, episode_num)
+
+                if not supported:
+                    mark_unsupported(self.p_shows_unsupported, ids['show'], p_guid)
                     continue
 
-                key = (guid.service, guid.id)
+                key = (p_guid.service, p_guid.id)
 
                 # Try retrieve `pk` for `key`
                 pk = self.trakt.table('shows').get(key)

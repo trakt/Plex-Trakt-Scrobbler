@@ -45,18 +45,21 @@ class Movies(Base):
         # Task started
         unsupported_movies = {}
 
-        for rating_key, guid, p_item in p_items:
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(unsupported_movies, rating_key, guid)
+        for mo_id, p_guid, p_item in p_items:
+            # Process `p_guid` (map + validate)
+            supported, p_guid = self.process_guid(p_guid)
+
+            if not supported:
+                mark_unsupported(unsupported_movies, mo_id, p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('movies').get(key)
 
             # Store in item map
-            self.current.map.add(p_item.get('library_section'), rating_key, [key, pk])
+            self.current.map.add(p_item.get('library_section'), mo_id, [key, pk])
 
             if pk is None:
                 # No `pk` found
@@ -68,7 +71,7 @@ class Movies(Base):
 
                 self.execute_handlers(
                     SyncMedia.Movies, data,
-                    key=rating_key,
+                    key=mo_id,
 
                     p_item=p_item,
                     t_item=t_movie

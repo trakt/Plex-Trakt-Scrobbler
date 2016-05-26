@@ -107,16 +107,18 @@ class Shows(Base):
     @elapsed.clock
     def process_matched_shows(self):
         # Iterate over plex shows
-        for sh_id, guid, p_show in self.p_shows:
+        for sh_id, p_guid, p_show in self.p_shows:
             # Increment one step
             self.current.progress.group(Shows, 'matched:shows').step()
 
-            # Ensure `guid` is available
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, sh_id, guid)
+            # Process `p_guid` (map + validate)
+            supported, p_guid = self.process_guid(p_guid)
+
+            if not supported:
+                mark_unsupported(self.p_shows_unsupported, sh_id, p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('shows').get(key)
@@ -128,7 +130,7 @@ class Shows(Base):
                 self.execute_handlers(
                     SyncMedia.Shows, data,
                     key=sh_id,
-                    guid=guid,
+                    guid=p_guid,
 
                     p_item=p_show,
 
@@ -208,16 +210,18 @@ class Shows(Base):
     @elapsed.clock
     def process_matched_episodes(self):
         # Iterate over plex episodes
-        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
             # Increment one step
             self.current.progress.group(Shows, 'matched:episodes').step()
 
-            # Ensure `guid` is available
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
+            # Process `p_guid` (map + validate)
+            supported, p_guid, season_num, episode_num = self.process_guid_episode(p_guid, season_num, episode_num)
+
+            if not supported:
+                mark_unsupported(self.p_shows_unsupported, ids['show'], p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
             identifier = (season_num, episode_num)
 
             # Try retrieve `pk` for `key`
@@ -238,7 +242,7 @@ class Shows(Base):
                         key=ids['episode'],
                         identifier=identifier,
 
-                        guid=guid,
+                        guid=p_guid,
                         p_show=p_show,
                         p_item=p_episode,
 

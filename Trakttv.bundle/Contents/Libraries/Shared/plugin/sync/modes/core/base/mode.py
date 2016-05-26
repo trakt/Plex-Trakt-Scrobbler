@@ -1,7 +1,11 @@
+from plugin.core.constants import GUID_SERVICES
 from plugin.core.filters import Filters
+from plugin.core.helpers.variable import try_convert
+from plugin.modules.core.manager import ModuleManager
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
 from plex import Plex
+from plex_metadata import Guid
 import elapsed
 import itertools
 import logging
@@ -217,6 +221,64 @@ class Mode(object):
     @elapsed.clock
     def is_data_enabled(self, data):
         return data in self.enabled_data
+
+    @elapsed.clock
+    def process_guid(self, guid):
+        if not guid:
+            return False, guid
+
+        if guid.service not in GUID_SERVICES:
+            # Try map show to a supported service (via OEM)
+            supported, item = ModuleManager['mapper'].match(guid.service, guid.id)
+
+            if not supported:
+                return False, guid
+
+            if item and item.identifiers:
+                log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, item)
+
+                # Retrieve mapped show identifier
+                service = item.identifiers.keys()[0]
+                key = try_convert(item.identifiers[service], int, item.identifiers[service])
+
+                # Return mapped show result
+                return True, Guid.construct(service, key)
+
+            log.debug('Unable to find mapping for %r', guid)
+            return False, guid
+
+        return True, guid
+
+    @elapsed.clock
+    def process_guid_episode(self, guid, season_num, episode_num):
+        if not guid:
+            return False, guid, season_num, episode_num
+
+        if guid.service not in GUID_SERVICES:
+            # Try map episode to a supported service (via OEM)
+            supported, match = ModuleManager['mapper'].map_episode(guid, season_num, episode_num)
+
+            if not supported:
+                return False, guid, season_num, episode_num
+
+            if match and match.identifiers:
+                if match.absolute_num is not None:
+                    log.info('Episode mappings with absolute numbers are not supported yet')
+                    return False, guid, season_num, episode_num
+
+                log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
+
+                # Retrieve mapped show identifier
+                service = match.identifiers.keys()[0]
+                key = try_convert(match.identifiers[service], int, match.identifiers[service])
+
+                # Return mapped episode result
+                return True, Guid.construct(service, key), match.season_num, match.episode_num
+
+            log.debug('Unable to find mapping for %r S%02dE%02d', guid, season_num, episode_num)
+            return False, guid, season_num, episode_num
+
+        return True, guid, season_num, episode_num
 
     def sections(self, section_type=None):
         # Retrieve "section" for current task

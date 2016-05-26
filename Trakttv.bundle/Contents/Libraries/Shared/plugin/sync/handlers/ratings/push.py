@@ -26,6 +26,15 @@ class Movies(Base):
              rating=p_value
          )
 
+    @bind('changed', [SyncMode.Full, SyncMode.Push])
+    def on_changed(self, key, guid, p_item, p_value, **kwargs):
+        log.debug('Movies.on_changed(%r, ...)', key)
+
+        self.store_movie('add', guid,
+             key, p_item,
+             rating=p_value
+         )
+
 
 class Shows(Base):
     media = SyncMedia.Shows
@@ -42,6 +51,15 @@ class Shows(Base):
             rating=p_value
         )
 
+    @bind('changed', [SyncMode.Full, SyncMode.Push])
+    def on_changed(self, key, guid, p_item, p_value, **kwargs):
+        log.debug('Shows.on_changed(%r, ...)', key)
+
+        self.store_show('add', guid,
+            key, p_item,
+            rating=p_value
+        )
+
 
 class Episodes(Base):
     media = SyncMedia.Episodes
@@ -52,6 +70,16 @@ class Episodes(Base):
 
         if t_value:
             return
+
+        self.store_episode('add', guid,
+            identifier, key,
+            p_show, p_item,
+            rating=p_value
+        )
+
+    @bind('changed', [SyncMode.Full, SyncMode.Push])
+    def on_changed(self, key, guid, identifier, p_show, p_item, p_value, **kwargs):
+        log.debug('Episodes.on_changed(%r, ...)', key)
 
         self.store_episode('add', guid,
             identifier, key,

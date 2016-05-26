@@ -80,16 +80,18 @@ class Movies(Base):
         """Trigger actions for movies that have been matched in plex"""
 
         # Iterate over movies
-        for rating_key, guid, p_item in self.p_movies:
+        for mo_id, p_guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies, 'matched:movies').step()
 
-            # Ensure `guid` is available
-            if not guid or guid.service not in GUID_SERVICES:
-                mark_unsupported(self.p_unsupported, rating_key, guid)
+            # Process `p_guid` (map + validate)
+            supported, p_guid = self.process_guid(p_guid)
+
+            if not supported:
+                mark_unsupported(self.p_unsupported, mo_id, p_guid)
                 continue
 
-            key = (guid.service, guid.id)
+            key = (p_guid.service, p_guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('movies').get(key)
@@ -100,9 +102,9 @@ class Movies(Base):
                 self.execute_handlers(
                     SyncMedia.Movies, data,
 
-                    key=rating_key,
+                    key=mo_id,
 
-                    guid=guid,
+                    guid=p_guid,
                     p_item=p_item,
 
                     t_item=t_movie

@@ -1,5 +1,6 @@
 from oem.media.show.identifier import EpisodeIdentifier
 from oem.media.show.match import EpisodeMatch
+from oem_framework.core.helpers import try_convert
 
 from copy import deepcopy
 import logging
@@ -23,15 +24,13 @@ class ShowMapper(object):
 
         if result:
             best = result
-        elif not season:
-            log.warn('Unable to find season %r in show %r', identifier.season_num, show)
-            return best
 
-        # Episode
-        result = self._match_episode(show, season, identifier)
+        if season:
+            # Episode
+            result = self._match_episode(show, season, identifier)
 
-        if result:
-            best = result
+            if result:
+                best = result
 
         # Return best result
         return best
@@ -41,15 +40,20 @@ class ShowMapper(object):
         default_season = None
 
         if 'default_season' in show.parameters:
-            try:
-                default_season = int(show.parameters['default_season'])
-            except Exception:
-                return None
+            default_season = show.parameters['default_season']
+
+            if default_season != 'a':
+                # Cast season number to an integer
+                default_season = try_convert(default_season, int)
+
+                if default_season is None:
+                    log.warn('Invalid value provided for the "default_season" parameter: %r', show.parameters['default_season'])
+                    return None
 
         # Retrieve season number
         season_num = identifier.season_num
 
-        if season_num is None or default_season is None:
+        if season_num is None or default_season is None or default_season == 'a':
             season_num = default_season
         elif season_num > 0:
             season_num = default_season + (season_num - 1)
@@ -61,11 +65,22 @@ class ShowMapper(object):
             episode_num += int(show.parameters['episode_offset'])
 
         # Build episode match
-        return EpisodeMatch(
-            self._get_identifiers(show),
-            season_num=season_num,
-            episode_num=episode_num
-        )
+        if season_num != 'a':
+            match = EpisodeMatch(
+                self._get_identifiers(show),
+                season_num=season_num,
+                episode_num=episode_num
+            )
+        else:
+            match = EpisodeMatch(
+                self._get_identifiers(show),
+                absolute_num=identifier.absolute_num
+            )
+
+        if not match.valid:
+            return None
+
+        return match
 
     def _match_season(self, show, identifier):
         # Try retrieve matching season
@@ -97,11 +112,17 @@ class ShowMapper(object):
         if season.identifiers:
             season_num = 1
 
-        return season, EpisodeMatch(
+        # Build season match
+        match = EpisodeMatch(
             self._get_identifiers(show, season),
             season_num=season_num,
             episode_num=identifier.episode_num
         )
+
+        if not match.valid:
+            return season, None
+
+        return season, match
 
     def _match_episode(self, show, season, identifier):
         episode = season.episodes.get(str(identifier.episode_num))
@@ -133,11 +154,16 @@ class ShowMapper(object):
                 continue
 
             # Return episode match
-            return EpisodeMatch(
+            match = EpisodeMatch(
                 self._get_identifiers(show, season, episode),
                 season_num=season_num,
                 episode_num=episode_num
             )
+
+            if not match.valid:
+                return None
+
+            return match
 
         return None
 
