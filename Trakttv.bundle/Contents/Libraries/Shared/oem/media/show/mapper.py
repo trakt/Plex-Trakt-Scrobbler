@@ -23,15 +23,13 @@ class ShowMapper(object):
 
         if result:
             best = result
-        elif not season:
-            log.warn('Unable to find season %r in show %r', identifier.season_num, show)
-            return best
 
-        # Episode
-        result = self._match_episode(show, season, identifier)
+        if season:
+            # Episode
+            result = self._match_episode(show, season, identifier)
 
-        if result:
-            best = result
+            if result:
+                best = result
 
         # Return best result
         return best
@@ -61,11 +59,16 @@ class ShowMapper(object):
             episode_num += int(show.parameters['episode_offset'])
 
         # Build episode match
-        return EpisodeMatch(
+        match = EpisodeMatch(
             self._get_identifiers(show),
             season_num=season_num,
             episode_num=episode_num
         )
+
+        if not match.valid:
+            return None
+
+        return match
 
     def _match_season(self, show, identifier):
         # Try retrieve matching season
@@ -97,11 +100,17 @@ class ShowMapper(object):
         if season.identifiers:
             season_num = 1
 
-        return season, EpisodeMatch(
+        # Build season match
+        match = EpisodeMatch(
             self._get_identifiers(show, season),
             season_num=season_num,
             episode_num=identifier.episode_num
         )
+
+        if not match.valid:
+            return season, None
+
+        return season, match
 
     def _match_episode(self, show, season, identifier):
         episode = season.episodes.get(str(identifier.episode_num))
@@ -133,11 +142,16 @@ class ShowMapper(object):
                 continue
 
             # Return episode match
-            return EpisodeMatch(
+            match = EpisodeMatch(
                 self._get_identifiers(show, season, episode),
                 season_num=season_num,
                 episode_num=episode_num
             )
+
+            if not match.valid:
+                return None
+
+            return match
 
         return None
 
