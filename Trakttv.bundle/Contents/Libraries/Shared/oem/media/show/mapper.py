@@ -1,5 +1,6 @@
 from oem.media.show.identifier import EpisodeIdentifier
 from oem.media.show.match import EpisodeMatch
+from oem_framework.core.helpers import try_convert
 
 from copy import deepcopy
 import logging
@@ -39,15 +40,20 @@ class ShowMapper(object):
         default_season = None
 
         if 'default_season' in show.parameters:
-            try:
-                default_season = int(show.parameters['default_season'])
-            except Exception:
-                return None
+            default_season = show.parameters['default_season']
+
+            if default_season != 'a':
+                # Cast season number to an integer
+                default_season = try_convert(default_season, int)
+
+                if default_season is None:
+                    log.warn('Invalid value provided for the "default_season" parameter: %r', show.parameters['default_season'])
+                    return None
 
         # Retrieve season number
         season_num = identifier.season_num
 
-        if season_num is None or default_season is None:
+        if season_num is None or default_season is None or default_season == 'a':
             season_num = default_season
         elif season_num > 0:
             season_num = default_season + (season_num - 1)
@@ -59,11 +65,17 @@ class ShowMapper(object):
             episode_num += int(show.parameters['episode_offset'])
 
         # Build episode match
-        match = EpisodeMatch(
-            self._get_identifiers(show),
-            season_num=season_num,
-            episode_num=episode_num
-        )
+        if season_num != 'a':
+            match = EpisodeMatch(
+                self._get_identifiers(show),
+                season_num=season_num,
+                episode_num=episode_num
+            )
+        else:
+            match = EpisodeMatch(
+                self._get_identifiers(show),
+                absolute_num=identifier.absolute_num
+            )
 
         if not match.valid:
             return None
