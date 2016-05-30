@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 
 import logging
@@ -12,8 +13,8 @@ class ApiOption(SimpleOption):
     default = None
     scope = 'server'
 
-    group = ('API',)
-    label = 'Enabled'
+    group = (_('API'),)
+    label = _('Enabled')
     order = 200
 
     @property

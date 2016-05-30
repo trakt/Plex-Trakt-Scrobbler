@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
     RESOLUTION_LABELS_BY_KEY, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
@@ -15,8 +16,8 @@ class SyncRatingsOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = SyncMode.Full
 
-    group = ('Sync', 'Ratings')
-    label = 'Mode'
+    group = (_('Sync'), _('Ratings'))
+    label = _('Mode')
     order = 210
 
     preference = 'sync_ratings'
@@ -52,8 +53,8 @@ class SyncRatingsConflictOption(SimpleOption):
     choices = RESOLUTION_LABELS_BY_KEY
     default = SyncConflictResolution.Latest
 
-    group = ('Sync', 'Ratings')
-    label = 'Conflict resolution'
+    group = (_('Sync'), _('Ratings'))
+    label = _('Conflict resolution')
     order = 211
 
     preference = 'sync_ratings_conflict'

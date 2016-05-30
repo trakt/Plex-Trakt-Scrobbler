@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SchedulerOption
 from plugin.preferences.options.o_sync.constants import INTERVAL_LABELS_BY_KEY
 from plugin.sync.core.enums import SyncInterval
@@ -15,6 +16,6 @@ class BackupMaintenanceIntervalOption(SchedulerOption):
     default = SyncInterval.D1
     scope = 'server'
 
-    group = ('Backups',)
-    label = 'Maintenance Interval'
+    group = (_('Backups'),)
+    label = _('Maintenance Interval')
     order = 10

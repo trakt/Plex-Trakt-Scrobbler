@@ -1,3 +1,5 @@
+from plugin.core.environment import translate as _
+
 class Enum(object):
     @classmethod
     def parse(cls, value):
@@ -62,12 +64,12 @@ class SyncData(Enum):
         if cls.__titles__ is None:
             # Build titles map
             cls.__titles__ = {
-                cls.All:           'All',
-                cls.Collection:    'Collection',
-                cls.Playback:      'Playback',
-                cls.Ratings:       'Ratings',
-                cls.Watched:       'Watched',
-                cls.Watchlist:     'Watchlist'
+                cls.All:           _('All'),
+                cls.Collection:    _('Collection'),
+                cls.Playback:      _('Playback'),
+                cls.Ratings:       _('Ratings'),
+                cls.Watched:       _('Watched'),
+                cls.Watchlist:     _('Watchlist')
             }
 
         return cls.__titles__.get(value)
@@ -118,11 +120,11 @@ class SyncMedia(Enum):
         if cls.__titles__ is None:
             # Build titles map
             cls.__titles__ = {
-                cls.All:        'All',
-                cls.Movies:     'Movies',
-                cls.Shows:      'Shows',
-                cls.Seasons:    'Seasons',
-                cls.Episodes:   'Episodes',
+                cls.All:        _('All'),
+                cls.Movies:     _('Movies'),
+                cls.Shows:      _('Shows'),
+                cls.Seasons:    _('Seasons'),
+                cls.Episodes:   _('Episodes'),
             }
 
         return cls.__titles__.get(value)
@@ -141,10 +143,10 @@ class SyncMode(Enum):
         if cls.__titles__ is None:
             # Build titles map
             cls.__titles__ = {
-                cls.Full:       'Full',
-                cls.Pull:       'Pull',
-                cls.Push:       'Push',
-                cls.FastPull:   'Quick Pull'
+                cls.Full:       _('Full'),
+                cls.Pull:       _('Pull'),
+                cls.Push:       _('Push'),
+                cls.FastPull:   _('Quick Pull')
             }
 
         return cls.__titles__.get(value)

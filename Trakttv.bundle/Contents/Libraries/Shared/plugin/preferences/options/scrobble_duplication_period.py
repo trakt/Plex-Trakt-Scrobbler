@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import DUPLICATION_PERIOD_LABELS_BY_KEY, DUPLICATION_PERIOD_IDS_BY_KEY, \
     DUPLICATION_PERIOD_KEYS_BY_LABEL
@@ -17,8 +18,8 @@ class ScrobbleDuplicationPeriodOption(SimpleOption):
     default = ScrobbleDuplicationPeriod.H6
     scope = 'server'
 
-    group = ('Advanced', 'Scrobble')
-    label = 'Ignore duplicates for'
+    group = (_('Advanced'), _('Scrobble'))
+    label = _('Ignore duplicates for')
     order = 115
 
     preference = 'scrobble_duplication_period'

@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 
 import logging
@@ -11,8 +12,8 @@ class ScrobbleOption(SimpleOption):
 
     default = True
 
-    group = ('Scrobble',)
-    label = 'Enabled'
+    group = (_('Scrobble'),)
+    label = _('Enabled')
     order = 100
 
     preference = 'start_scrobble'

@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
@@ -13,8 +14,8 @@ class SyncListsLikedOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists (Beta)', 'Liked')
-    label = 'Mode'
+    group = (_('Sync - Lists (Beta)'), _('Liked'))
+    label = _('Mode')
     order = 300
 
     preference = 'sync_liked_lists'
@@ -49,8 +50,8 @@ class SyncListsLikedPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists (Beta)', 'Liked')
-    label = 'Create playlists in plex'
+    group = (_('Sync - Lists (Beta)'), _('Liked'))
+    label = _('Create playlists in plex')
     order = 301
 
     # preference = 'sync_watched'

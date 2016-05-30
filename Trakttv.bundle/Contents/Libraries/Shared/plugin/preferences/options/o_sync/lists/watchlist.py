@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
@@ -13,8 +14,8 @@ class SyncListsWatchlistOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists (Beta)', 'Watchlist')
-    label = 'Mode'
+    group = (_('Sync - Lists (Beta)'), _('Watchlist'))
+    label = _('Mode')
     order = 320
 
     preference = 'sync_watchlist'
@@ -49,8 +50,8 @@ class SyncListsWatchlistPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists (Beta)', 'Watchlist')
-    label = 'Create playlist in plex'
+    group = (_('Sync - Lists (Beta)'), _('Watchlist'))
+    label = _('Create playlist in plex')
     order = 321
 
     # preference = 'sync_watched'

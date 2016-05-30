@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 from plugin.sync.core.enums import SyncMode
@@ -14,8 +15,8 @@ class SyncWatchedOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = SyncMode.Full
 
-    group = ('Sync', 'Watched')
-    label = 'Mode'
+    group = (_('Sync'), _('Watched'))
+    label = _('Mode')
     order = 200
 
     preference = 'sync_watched'

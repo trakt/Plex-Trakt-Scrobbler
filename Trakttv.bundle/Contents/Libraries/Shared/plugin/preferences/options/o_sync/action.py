@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import ACTION_MODE_LABELS_BY_KEY
 from plugin.sync.core.enums import SyncActionMode
@@ -11,8 +12,8 @@ class SyncActionOption(SimpleOption):
     default = None
     scope = 'server'
 
-    group = ('Advanced', 'Sync')
-    label = 'Action'
+    group = (_('Advanced'), _('Sync'))
+    label = _('Action')
     order = 120
 
     @property

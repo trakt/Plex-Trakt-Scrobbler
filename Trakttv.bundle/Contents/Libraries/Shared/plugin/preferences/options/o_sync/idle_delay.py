@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import IDLE_DELAY_LABELS_BY_KEY, IDLE_DELAY_IDS_BY_KEY, \
     IDLE_DELAY_KEYS_BY_LABEL
@@ -17,8 +18,8 @@ class SyncIdleDelayOption(SimpleOption):
     default = SyncIdleDelay.M30
     scope = 'server'
 
-    group = ('Advanced', 'Sync - Triggers')
-    label = 'Idle delay'
+    group = (_('Advanced'), _('Sync - Triggers'))
+    label = _('Idle delay')
     order = 131
 
     preference = 'sync_idle_delay'

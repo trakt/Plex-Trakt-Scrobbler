@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.constants import ACTIVITY_LABELS_BY_KEY, ActivityMode, ACTIVITY_KEYS_BY_LABEL, \
     ACTIVITY_IDS_BY_KEY
 from plugin.preferences.options.core.base import SimpleOption
@@ -15,8 +16,8 @@ class ActivityOption(SimpleOption):
     default = ActivityMode.Automatic
     scope = 'server'
 
-    group = ('Advanced', 'Activity')
-    label = 'Method'
+    group = (_('Advanced'), _('Activity'))
+    label = _('Method')
     order = 100
 
     preference = 'activity_mode'

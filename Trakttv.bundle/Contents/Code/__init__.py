@@ -151,9 +151,9 @@ def ValidatePrefs():
             Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
 
         spawn(restart)
-        return MessageContainer("Success", "Success")
+        return MessageContainer(_("Success"), _("Success"))
 
     # Fire configuration changed callback
     spawn(Main.on_configuration_changed)
 
-    return MessageContainer("Success", "Success")
+    return MessageContainer(_("Success"), _("Success"))

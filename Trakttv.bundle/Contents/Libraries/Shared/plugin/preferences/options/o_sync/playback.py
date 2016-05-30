@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
@@ -13,8 +14,8 @@ class SyncPlaybackOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync', 'Playback Progress')
-    label = 'Mode'
+    group = (_('Sync'), _('Playback Progress'))
+    label = _('Mode')
     order = 220
 
     preference = 'sync_playback'

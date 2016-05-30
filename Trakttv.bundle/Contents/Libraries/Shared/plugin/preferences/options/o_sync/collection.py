@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
@@ -13,8 +14,8 @@ class SyncCollectionOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync', 'Collection')
-    label = 'Mode'
+    group = (_('Sync'), _('Collection'))
+    label = _('Mode')
     order = 230
 
     preference = 'sync_collection'
@@ -49,8 +50,8 @@ class SyncCleanCollectionOption(SimpleOption):
 
     default = False
 
-    group = ('Sync', 'Collection')
-    label = 'Clean collection'
+    group = (_('Sync'), _('Collection'))
+    label = _('Clean collection')
     order = 231
 
     preference = 'sync_clean_collection'

@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.constants import MATCHER_LABELS_BY_KEY, MatcherMode, MATCHER_KEYS_BY_LABEL, \
     MATCHER_IDS_BY_KEY
 from plugin.preferences.options.core.base import SimpleOption
@@ -16,8 +17,8 @@ class MatcherOption(SimpleOption):
     default = MatcherMode.PlexExtended
     scope = 'server'
 
-    group = ('Advanced', 'Matcher')
-    label = 'Mode'
+    group = (_('Advanced'), _('Matcher'))
+    label = _('Mode')
     order = 110
 
     preference = 'matcher'

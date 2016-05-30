@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 
 
@@ -8,8 +9,8 @@ class SyncIdleDeferOption(SimpleOption):
     default = True
     scope = 'server'
 
-    group = ('Advanced', 'Sync - Triggers')
-    label = 'Defer until server is idle'
+    group = (_('Advanced'), _('Sync - Triggers'))
+    label = _('Defer until server is idle')
     order = 130
 
     preference = 'sync_idle_defer'
