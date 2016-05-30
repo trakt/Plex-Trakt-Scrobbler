@@ -1,14 +1,13 @@
 from core.helpers import pad_title
-from core.plugin import ART, NAME, ICON
 from interface.m_messages import Status as MessageStatus, ListMessages
 from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
-from plugin.core.constants import PLUGIN_PREFIX, PLUGIN_VERSION
+from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_PREFIX, PLUGIN_VERSION
 
 import locale
 
 
-@handler(PLUGIN_PREFIX, NAME, thumb=ICON, art=ART)
+@handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
 def MainMenu():
     oc = ObjectContainer(no_cache=True)
 

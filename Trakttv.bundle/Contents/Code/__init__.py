@@ -59,11 +59,10 @@ from interface.resources import Cover, Thumb
 # Local imports
 from core.logger import Logger
 from core.helpers import spawn
-from core.plugin import ART, NAME, ICON
 from main import Main
 
 from plugin.api.core.manager import ApiManager
-from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_IDENTIFIER
 from plugin.core.singleton import Singleton
 from plugin.models.account import Account
 from plugin.modules.migrations.account import AccountMigration
@@ -81,12 +80,12 @@ log = Logger()
 
 
 def Start():
-    ObjectContainer.art = R(ART)
-    ObjectContainer.title1 = NAME
-    DirectoryObject.thumb = R(ICON)
-    DirectoryObject.art = R(ART)
-    PopupDirectoryObject.thumb = R(ICON)
-    PopupDirectoryObject.art = R(ART)
+    ObjectContainer.art = R(PLUGIN_ART)
+    ObjectContainer.title1 = PLUGIN_NAME
+    DirectoryObject.thumb = R(PLUGIN_ICON)
+    DirectoryObject.art = R(PLUGIN_ART)
+    PopupDirectoryObject.thumb = R(PLUGIN_ICON)
+    PopupDirectoryObject.art = R(PLUGIN_ART)
 
     if not Singleton.acquire():
         log.warn('Unable to acquire plugin instance')

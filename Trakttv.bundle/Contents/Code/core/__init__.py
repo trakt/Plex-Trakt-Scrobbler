@@ -2,9 +2,6 @@ import sys
 
 # submodules for Plex plugins "hack"
 
-import plugin
-sys.modules['core.plugin'] = plugin
-
 import logger
 sys.modules['core.logger'] = logger
 
