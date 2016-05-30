@@ -8,9 +8,6 @@ sys.modules['core.plugin'] = plugin
 import logger
 sys.modules['core.logger'] = logger
 
-import localization
-sys.modules['core.localization'] = localization
-
 import header
 sys.modules['core.header'] = header
 

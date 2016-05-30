@@ -2,7 +2,6 @@
 # Environment
 # ------------------------------------------------
 from plugin.core.environment import Environment
-import locale
 import os
 
 Environment.setup(Core, Dict, Platform, Prefs)
@@ -13,11 +12,6 @@ os.environ['LIBRARY_DB'] = os.path.join(
     'com.plexapp.plugins.library.db'
 )
 
-# locale
-try:
-    Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
-except Exception, ex:
-    Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
 # FS Migrator
 # ------------------------------------------------
@@ -30,6 +24,11 @@ FSMigrator.run()
 from plugin.core.logger import LoggerManager
 
 LoggerManager.setup(storage=False)
+# ------------------------------------------------
+# Language
+# ------------------------------------------------
+Environment.setup_locale()
+Environment.setup_translation()
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
