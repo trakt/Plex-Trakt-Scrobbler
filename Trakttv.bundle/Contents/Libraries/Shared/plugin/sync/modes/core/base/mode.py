@@ -4,6 +4,7 @@ from plugin.core.helpers.variable import try_convert
 from plugin.modules.core.manager import ModuleManager
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
+from oem.media.show import EpisodeMatch
 from plex import Plex
 from plex_metadata import Guid
 import elapsed
@@ -235,13 +236,17 @@ class Mode(object):
                 return False, guid
 
             if item and item.identifiers:
-                log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, item)
-
                 # Retrieve mapped show identifier
                 service = item.identifiers.keys()[0]
                 key = try_convert(item.identifiers[service], int, item.identifiers[service])
 
-                # Return mapped show result
+                if type(key) not in [int, str]:
+                    log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, key)
+                    return False, guid
+
+                log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, item)
+
+                # Return mapped guid
                 return True, Guid.construct(service, key)
 
             log.debug('Unable to find mapping for %r', guid)
@@ -262,15 +267,19 @@ class Mode(object):
                 return False, guid, season_num, episode_num
 
             if match and match.identifiers:
-                if match.absolute_num is not None:
-                    log.info('Episode mappings with absolute numbers are not supported yet')
+                if isinstance(match, EpisodeMatch) and match.absolute_num is not None:
+                    log.info('[%s/%s] - Episode mappings with absolute numbers are not supported yet', guid.service, guid.id)
                     return False, guid, season_num, episode_num
-
-                log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
 
                 # Retrieve mapped show identifier
                 service = match.identifiers.keys()[0]
                 key = try_convert(match.identifiers[service], int, match.identifiers[service])
+
+                if type(key) not in [int, str]:
+                    log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, key)
+                    return False, guid, season_num, episode_num
+
+                log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
 
                 # Return mapped episode result
                 return True, Guid.construct(service, key), match.season_num, match.episode_num

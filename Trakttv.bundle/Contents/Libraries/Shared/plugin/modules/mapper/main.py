@@ -2,6 +2,7 @@ from oem.media.movie import MovieMatch
 from oem.media.show import EpisodeMatch
 
 from plugin.core.environment import Environment
+from plugin.core.helpers.variable import try_convert
 from plugin.modules.core.base import Module
 
 from oem import OemClient
@@ -126,12 +127,22 @@ class Mapper(Module):
 
     def _build_episode_request(self, match, episode):
         if isinstance(match, MovieMatch):
+            # Retrieve mapped identifier
+            service = match.identifiers.keys()[0]
+            key = try_convert(match.identifiers[service], int, match.identifiers[service])
+
+            if type(key) not in [int, str]:
+                log.info('Unsupported key: %r', key)
+                return None
+
             return {
                 'movie': {
                     'title': episode.show.title,
                     'year': episode.show.year,
 
-                    'ids': match.identifiers
+                    'ids': {
+                        service: key
+                    }
                 }
             }
 
@@ -145,12 +156,23 @@ class Mapper(Module):
                 log.warn('Missing season or episode number in %r', match)
                 return None
 
+            # Retrieve mapped identifier
+            service = match.identifiers.keys()[0]
+            key = try_convert(match.identifiers[service], int, match.identifiers[service])
+
+            if type(key) not in [int, str]:
+                log.info('Unsupported key: %r', key)
+                return None
+
+            # Build request
             return {
                 'show': {
                     'title': episode.show.title,
                     'year': episode.year,
 
-                    'ids': match.identifiers
+                    'ids': {
+                        service: key
+                    }
                 },
                 'episode': {
                     'title': episode.title,
@@ -168,12 +190,23 @@ class Mapper(Module):
             log.warn('Invalid match returned for movie: %r')
             return None
 
+        # Retrieve mapped identifier
+        service = movie.identifiers.keys()[0]
+        key = try_convert(movie.identifiers[service], int, movie.identifiers[service])
+
+        if type(key) not in [int, str]:
+            log.info('Unsupported key: %r', key)
+            return None
+
+        # Build request
         return {
             'movie': {
                 'title': movie.title,
                 'year': movie.year,
 
-                'ids': match.identifiers
+                'ids': {
+                    service: key
+                }
             }
         }
 
