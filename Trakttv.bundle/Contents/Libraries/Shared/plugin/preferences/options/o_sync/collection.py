@@ -52,6 +52,14 @@ class SyncCleanCollectionOption(SimpleOption):
 
     group = (_('Sync'), _('Collection'))
     label = _('Clean collection')
+    description = _(
+        "Defines the syncing mode to use for collected media\n"
+        "\n"
+        " - **Full** - Synchronize collected media with your Trakt.tv profile (imports changes since your last sync, "
+        "then pushes any changes found in Plex)\n"
+        " - **Pull** - Import collected media from your Trakt.tv profile\n"
+        " - **Push** - Export collected media to your Trakt.tv profile"
+    )
     order = 231
 
     preference = 'sync_clean_collection'

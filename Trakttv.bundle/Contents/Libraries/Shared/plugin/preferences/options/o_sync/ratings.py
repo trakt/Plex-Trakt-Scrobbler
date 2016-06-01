@@ -18,6 +18,14 @@ class SyncRatingsOption(SimpleOption):
 
     group = (_('Sync'), _('Ratings'))
     label = _('Mode')
+    description = _(
+        "Defines the syncing mode to use for ratings\n"
+        "\n"
+        " - **Full** - Synchronize ratings with your Trakt.tv profile (imports changes since your last sync, "
+        "then pushes any changes found in Plex)\n"
+        " - **Pull** - Import ratings from your Trakt.tv profile\n"
+        " - **Push** - Export ratings to your Trakt.tv profile"
+    )
     order = 210
 
     preference = 'sync_ratings'

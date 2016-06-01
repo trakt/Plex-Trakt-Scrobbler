@@ -18,6 +18,7 @@ class Option(object):
     # Display
     group = None
     label = None
+    description = None
     order = 0
 
     # Plex
@@ -66,6 +67,9 @@ class Option(object):
         pass
 
     def to_dict(self):
+        if not self.description:
+            log.debug('[%s] No description defined', self.key)
+
         data = {
             'key':      self.key,
             'type':     self.type,
@@ -75,6 +79,7 @@ class Option(object):
             'group':    self.group,
             'label':    self.label,
             'order':    self.order,
+            'description': self.description,
 
             'value':    self.value
         }

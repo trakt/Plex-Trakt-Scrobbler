@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2016-05-31 00:38+New Zealand Standard Time\n"
+"POT-Creation-Date: 2016-06-01 22:16+New Zealand Standard Time\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,365 +15,414 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: Code\__init__.py:146 Code\__init__.py:151
+#: ..\Code\__init__.py:149 ..\Code\__init__.py:154
 msgid "Success"
 msgstr ""
 
-#: Code\interface\m_main.py:23
+#: ..\Code\interface\m_main.py:23
 msgid "Messages (%s)"
 msgstr ""
 
-#: Code\interface\m_main.py:33
-#: Libraries\Shared\plugin\preferences\options\o_sync\action.py:15
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:53
-#: Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
-#: Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
-#: Libraries\Shared\plugin\preferences\options\o_sync\playback.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:15
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:19
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:56
-#: Libraries\Shared\plugin\preferences\options\o_sync\watched.py:18
+#: ..\Code\interface\m_main.py:33
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:64
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:18
 msgid "Sync"
 msgstr ""
 
-#: Code\interface\m_main.py:34
+#: ..\Code\interface\m_main.py:34
 msgid "Synchronize your libraries with Trakt.tv"
 msgstr ""
 
-#: Code\interface\m_main.py:43 Code\interface\m_main.py:58
+#: ..\Code\interface\m_main.py:43 ..\Code\interface\m_main.py:58
 msgid "About"
 msgstr ""
 
-#: Code\interface\m_main.py:48
+#: ..\Code\interface\m_main.py:48
 msgid "Preferences"
 msgstr ""
 
-#: Code\interface\m_main.py:63 Code\interface\m_messages.py:40
+#: ..\Code\interface\m_main.py:63 ..\Code\interface\m_messages.py:40
 msgid "Messages"
 msgstr ""
 
-#: Code\interface\m_main.py:68
+#: ..\Code\interface\m_main.py:68
 msgid "Version: %s"
 msgstr ""
 
-#: Code\interface\m_messages.py:67
+#: ..\Code\interface\m_messages.py:67
 msgid "View All"
 msgstr ""
 
-#: Code\interface\m_messages.py:109
+#: ..\Code\interface\m_messages.py:109
 msgid "Code: %s"
 msgstr ""
 
-#: Code\interface\m_messages.py:116
+#: ..\Code\interface\m_messages.py:116
 msgid "Description: %s"
 msgstr ""
 
-#: Code\interface\m_sync.py:25
+#: ..\Code\interface\m_sync.py:25
 msgid "Accounts"
 msgstr ""
 
-#: Code\interface\m_sync.py:54
+#: ..\Code\interface\m_sync.py:54
 msgid "Sync (%s)"
 msgstr ""
 
-#: Code\interface\m_sync.py:97 Code\interface\m_sync.py:106
+#: ..\Code\interface\m_sync.py:97 ..\Code\interface\m_sync.py:106
 msgid "%s from Trakt.tv"
 msgstr ""
 
-#: Code\interface\m_sync.py:126
+#: ..\Code\interface\m_sync.py:126
 msgid "Plex account hasn't been authenticated"
 msgstr ""
 
-#: Code\interface\m_sync.py:135 Libraries\Shared\plugin\models\message.py:49
+#: ..\Code\interface\m_sync.py:135
+#: ..\Libraries\Shared\plugin\models\message.py:49
 msgid "Error"
 msgstr ""
 
-#: Code\interface\m_sync.py:147
+#: ..\Code\interface\m_sync.py:147
 msgid "%s \"%s\" to Trakt.tv"
 msgstr ""
 
-#: Code\interface\m_sync.py:158
+#: ..\Code\interface\m_sync.py:158
 msgid "%s all to Trakt.tv"
 msgstr ""
 
-#: Code\interface\m_sync.py:258
+#: ..\Code\interface\m_sync.py:258
 msgid "%s - Status"
 msgstr ""
 
-#: Code\interface\m_sync.py:264
+#: ..\Code\interface\m_sync.py:264
 msgid "Working"
 msgstr ""
 
-#: Code\interface\m_sync.py:270
+#: ..\Code\interface\m_sync.py:270
 msgid ", %.02f seconds remaining"
 msgstr ""
 
-#: Code\interface\m_sync.py:282
+#: ..\Code\interface\m_sync.py:282
 msgid "%s - Cancel"
 msgstr ""
 
-#: Code\interface\m_sync.py:292 Code\interface\m_sync.py:312
+#: ..\Code\interface\m_sync.py:292 ..\Code\interface\m_sync.py:312
 msgid "Not run yet."
 msgstr ""
 
-#: Code\interface\m_sync.py:319
+#: ..\Code\interface\m_sync.py:319
 msgid "taking less than a second"
 msgstr ""
 
-#: Code\interface\m_sync.py:321
+#: ..\Code\interface\m_sync.py:321
 msgid "taking %s"
 msgstr ""
 
-#: Code\interface\m_sync.py:330
+#: ..\Code\interface\m_sync.py:330
 msgid "was successful"
 msgstr ""
 
-#: Code\interface\m_sync.py:332
+#: ..\Code\interface\m_sync.py:332
 msgid "failed"
 msgstr ""
 
-#: Code\interface\m_sync.py:339
+#: ..\Code\interface\m_sync.py:339
 msgid " (%d errors, %s)"
 msgstr ""
 
-#: Code\interface\m_sync.py:342
+#: ..\Code\interface\m_sync.py:342
 msgid " (%s)"
 msgstr ""
 
-#: Code\interface\m_sync.py:351
+#: ..\Code\interface\m_sync.py:351
 msgid "Last run just a moment ago"
 msgstr ""
 
-#: Code\interface\m_sync.py:353
+#: ..\Code\interface\m_sync.py:353
 msgid "Last run %s"
 msgstr ""
 
-#: Libraries\Shared\plugin\models\message.py:45
+#: ..\Libraries\Shared\plugin\models\message.py:45
 msgid "Exception"
 msgstr ""
 
-#: Libraries\Shared\plugin\models\message.py:47
+#: ..\Libraries\Shared\plugin\models\message.py:47
 msgid "Info"
 msgstr ""
 
-#: Libraries\Shared\plugin\models\message.py:48
+#: ..\Libraries\Shared\plugin\models\message.py:48
 msgid "Warning"
 msgstr ""
 
-#: Libraries\Shared\plugin\models\message.py:50
+#: ..\Libraries\Shared\plugin\models\message.py:50
 msgid "Critical"
 msgstr ""
 
-#: Libraries\Shared\plugin\models\message.py:52
+#: ..\Libraries\Shared\plugin\models\message.py:52
 msgid "Trakt.tv"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\activity.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:19
 msgid "Activity"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\activity.py:19
-#: Libraries\Shared\plugin\preferences\options\matcher.py:20
-#: Libraries\Shared\plugin\preferences\options\o_sync\action.py:15
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
-#: Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:15
-#: Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
 msgid "Advanced"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\activity.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:20
 msgid "Method"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\api.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\api.py:16
 msgid "API"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\api.py:17
-#: Libraries\Shared\plugin\preferences\options\scrobble.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\api.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:16
 msgid "Enabled"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\matcher.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:20
 msgid "Matcher"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\matcher.py:21
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:18
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:18
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:18
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:18
-#: Libraries\Shared\plugin\preferences\options\o_sync\playback.py:18
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:20
-#: Libraries\Shared\plugin\preferences\options\o_sync\watched.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:19
 msgid "Mode"
 msgstr ""
 
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:22
+msgid ""
+"Defines the matcher to use for episode identifiers\n"
+"\n"
+" - **Plex** - use the episode identifier provided by Plex\n"
+" - **Plex Extended** *(default)* - use [caper](https://github.com/fuzeman/caper) to parse the filename for an episode identifier *(provides better support for multi-episode files)*"
+msgstr ""
+
 #:
-#: Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:19
 msgid "Backups"
 msgstr ""
 
 #:
-#: Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:20
 msgid "Maintenance Interval"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\action.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:16
 msgid "Action"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:53
-#: Libraries\Shared\plugin\sync\core\enums.py:68
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:53
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:68
 msgid "Collection"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\collection.py:54
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:54
 msgid "Clean collection"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:55
+msgid ""
+"Defines the syncing mode to use for collected media\n"
+"\n"
+" - **Full** - Synchronize collected media with your Trakt.tv profile (imports changes since your last sync, then pushes any changes found in Plex)\n"
+" - **Pull** - Import collected media from your Trakt.tv profile\n"
+" - **Push** - Export collected media to your Trakt.tv profile"
+msgstr ""
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
 msgid "Sync - Triggers"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:13
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:13
 msgid "Defer until server is idle"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:22
 msgid "Idle delay"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
-#: Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
 msgid "Triggers"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\interval.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:21
 msgid "Interval"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:16
 msgid "After library updates"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:53
 msgid "Liked"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:53
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:53
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:53
 msgid "Sync - Lists (Beta)"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:54
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:54
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:54
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:54
 msgid "Create playlists in plex"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:53
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:53
 msgid "Personal"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:17
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:53
-#: Libraries\Shared\plugin\sync\core\enums.py:72
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:53
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:72
 msgid "Watchlist"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:54
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:54
 msgid "Create playlist in plex"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\playback.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:17
 msgid "Playback Progress"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:19
+msgid ""
+"Defines the syncing mode to use for playback progress\n"
+"\n"
+" - **Full** - Synchronize playback progress with your Trakt.tv profile (imports changes since your last sync, then pushes any changes found in Plex)\n"
+" - **Pull** - Import playback progress from your Trakt.tv profile\n"
+" - **Push** - Export playback progress to your Trakt.tv profile"
+msgstr ""
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:16
 msgid "Profiler"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:19
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:56
-#: Libraries\Shared\plugin\sync\core\enums.py:70
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:64
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:70
 msgid "Ratings"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:57
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:21
+msgid ""
+"Defines the syncing mode to use for ratings\n"
+"\n"
+" - **Full** - Synchronize ratings with your Trakt.tv profile (imports changes since your last sync, then pushes any changes found in Plex)\n"
+" - **Pull** - Import ratings from your Trakt.tv profile\n"
+" - **Push** - Export ratings to your Trakt.tv profile"
+msgstr ""
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:65
 msgid "Conflict resolution"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\o_sync\watched.py:18
-#: Libraries\Shared\plugin\sync\core\enums.py:71
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:18
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:71
 msgid "Watched"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\pin.py:14
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:20
+msgid ""
+"Defines the syncing mode to use for watched states\n"
+"\n"
+" - **Full** - Synchronize watched states with your Trakt.tv profile (imports changes since your last sync, then pushes any changes found in Plex)\n"
+" - **Pull** - Import watched states from your Trakt.tv profile\n"
+" - **Push** - Export watched states to your Trakt.tv profile"
+msgstr ""
+
+#: ..\Libraries\Shared\plugin\preferences\options\pin.py:14
 msgid "Authentication"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\pin.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\pin.py:15
 msgid "Authentication PIN"
 msgstr ""
 
-#: Libraries\Shared\plugin\preferences\options\scrobble.py:15
-#: Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
 msgid "Scrobble"
 msgstr ""
 
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:17
+msgid "Send your watching activity to Trakt.tv in real-time - this will update the \"currently watching\" status on your profile and mark items as watched when they reach 80% progress."
+msgstr ""
+
 #:
-#: Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:22
 msgid "Ignore duplicates for"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:67
-#: Libraries\Shared\plugin\sync\core\enums.py:123
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:67
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:123
 msgid "All"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:69
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:69
 msgid "Playback"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:124
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:124
 msgid "Movies"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:125
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:125
 msgid "Shows"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:126
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:126
 msgid "Seasons"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:127
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:127
 msgid "Episodes"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:146
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:146
 msgid "Full"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:147
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:147
 msgid "Pull"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:148
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:148
 msgid "Push"
 msgstr ""
 
-#: Libraries\Shared\plugin\sync\core\enums.py:149
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:149
 msgid "Quick Pull"
 msgstr ""
 
