@@ -1,7 +1,7 @@
 # ------------------------------------------------
 # Environment
 # ------------------------------------------------
-from plugin.core.environment import Environment
+from plugin.core.environment import Environment, translate as _
 import os
 
 Environment.setup(Core, Dict, Platform, Prefs)
@@ -93,6 +93,9 @@ def Start():
     # Complete logger initialization
     LoggerManager.setup(storage=True)
 
+    # Store current language
+    Dict['language'] = Prefs['language']
+
     # Start plugin
     m = Main()
     m.start()
@@ -140,8 +143,8 @@ def ValidatePrefs():
         log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
-    if Preferences.get('activity.mode') != last_activity_mode:
-        log.info('Activity mode has changed, restarting plugin...')
+    if Preferences.get('activity.mode') != last_activity_mode or Prefs['language'] != Dict['language']:
+        log.info('Restart required to apply changes, restarting plugin...')
 
         def restart():
             # Delay until after `ValidatePrefs` returns

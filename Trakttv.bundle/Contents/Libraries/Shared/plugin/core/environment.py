@@ -102,17 +102,17 @@ class Environment(object):
 
     @classmethod
     def setup_translation(cls):
-        # Determine preferred language
-        if platform.system() == 'Windows':
-            cls.language = cls._get_windows_locale()
-        else:
-            cls.language = locale.getdefaultlocale()[0]
+        # Retrieve preferred language
+        try:
+            cls.language = cls._get_language()
+        except Exception, ex:
+            log.warn('Unable to retrieve preferred language: %s', ex, exc_info=True)
+            cls.language = None
+            return
 
         if not cls.language:
             log.warn('Unable to determine preferred language (system: %r)', platform.system())
             return
-
-        cls.language = 'sv'
 
         # Build list of languages
         languages = [cls.language]
@@ -120,15 +120,27 @@ class Environment(object):
         if '_' in cls.language:
             languages.append(cls.language.split('_', 1)[0])
 
+        # Check if language exists
+        found = False
+
+        for lang in languages:
+            if os.path.exists(os.path.join(cls.path.locale, lang)):
+                found = True
+                break
+
+        if not found:
+            log.info('No translation available for %r', languages)
+            return
+
         # Setup gettext
         try:
             cls.translation = gettext.translation(
-                domain='trakt-for-plex',
+                domain='channel',
                 localedir=os.path.join(cls.path.locale),
                 languages=languages
             )
         except Exception, ex:
-            log.warn('Unable to initialize translation: %s', ex, exc_info=True)
+            log.warn('Unable to initialize languages: %r - %s', languages, ex, exc_info=True)
             return
 
         log.info('Using languages: %r (translation: %r)', languages, cls.translation)
@@ -141,7 +153,37 @@ class Environment(object):
             return None
 
     @classmethod
-    def _get_windows_locale(cls):
+    def _get_language(cls):
+        # Use language defined in preferences (if available)
+        language = cls.get_pref('language')
+
+        if language:
+            return language.lower()
+
+        # Use system language
+        if platform.system() == 'Windows':
+            # Retrieve windows user language
+            return cls._get_windows_default_language()
+
+        # Retrieve current locale
+        code, _ = locale.getdefaultlocale()
+
+        # Ensure language code is valid
+        if not code or type(code) is not str:
+            log.warn('Invalid language code returned: %r', code)
+            return None
+
+        # Parse language code
+        if len(code) == 2:
+            return code.lower()
+        elif len(code) > 2 and code[2] == '_':
+            return code[:5].lower()
+
+        log.warn('Unknown language code: %r', code)
+        return None
+
+    @classmethod
+    def _get_windows_default_language(cls):
         try:
             import ctypes
             lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
@@ -153,12 +195,11 @@ class Environment(object):
             log.warn('Unknown language: %r', lang_id)
             return None
 
-        return locale.windows_locale[lang_id]
+        return locale.windows_locale[lang_id].lower()
 
 
 def translate(message):
     if Environment.translation:
         return Environment.translation.ugettext(message)
 
-    log.debug('Translations not initialized yet, falling back to original message: %r', message)
     return message
