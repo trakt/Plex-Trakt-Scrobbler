@@ -1,10 +1,10 @@
 from plugin.sync.modes.core.base.mode import Mode
 from plugin.sync.modes.core.base.pull import PullListsMode
 
-unsupported_services = {
-    'none': True,
-    'plex': True
-}
+IGNORED_SERVICES = [
+    'none',
+    'plex'
+]
 
 
 def mark_unsupported(dictionary, rating_key, guid):
@@ -29,17 +29,17 @@ def log_unsupported(logger, message, dictionary):
 
     # Display individual warnings for each service
     for service in dictionary.keys():
-        if service not in unsupported_services:
-            # First occurrence of unsupported service
-            logger.warn('Unsupported service: %s' % service)
-
-            # Mark unsupported service as "seen"
-            unsupported_services[service] = True
+        if service is None or service in IGNORED_SERVICES:
+            logger.info('Ignoring service: %s' % service)
             continue
 
-        # Duplicate occurrence of unsupported service
+        # Log unsupported service warning
         logger.warn('Unsupported service: %s' % service, extra={
-            'duplicate': True
+            'event': {
+                'module': __name__,
+                'name': 'unsupported_service',
+                'key': service
+            }
         })
 
 

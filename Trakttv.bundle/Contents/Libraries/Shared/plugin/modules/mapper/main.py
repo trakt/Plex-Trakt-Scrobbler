@@ -122,7 +122,13 @@ class Mapper(Module):
             if result:
                 return True, result
 
-        log.warn('Unable to find item for %s: %r', source, key)
+        log.warn('Unable to find item for %s: %r' % (source, key), extra={
+            'event': {
+                'module': __name__,
+                'name': 'match.missing_item',
+                'key': (source, key)
+            }
+        })
         return True, None
 
     def _build_episode_request(self, match, episode):
