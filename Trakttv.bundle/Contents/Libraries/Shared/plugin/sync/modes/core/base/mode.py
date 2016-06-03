@@ -267,7 +267,11 @@ class Mode(object):
                 return False, guid, season_num, episode_num
 
             if match and match.identifiers:
-                if isinstance(match, EpisodeMatch) and match.absolute_num is not None:
+                if not isinstance(match, EpisodeMatch):
+                    log.info('[%s/%s] - Episode -> Movie mappings are not supported', guid.service, guid.id)
+                    return False, guid, season_num, episode_num
+
+                if match.absolute_num is not None:
                     log.info('[%s/%s] - Episode mappings with absolute numbers are not supported yet', guid.service, guid.id)
                     return False, guid, season_num, episode_num
 
