@@ -64,9 +64,21 @@ class AniDbService(Service):
         # Validate match
         if not match or not match.valid:
             if identifier:
-                log.warn('[%s/%s] Unable to find mapping for %%r' % (self.source_key, key), identifier)
+                log.warn('[%s/%s] Unable to find mapping for %%r' % (self.source_key, key), identifier, extra={
+                    'event': {
+                        'module': __name__,
+                        'name': 'map.missing_mapping',
+                        'key': (self.source_key, key, identifier)
+                    }
+                })
             else:
-                log.warn('[%s/%s] Unable to find mapping' % (self.source_key, key))
+                log.warn('[%s/%s] Unable to find mapping' % (self.source_key, key), extra={
+                    'event': {
+                        'module': __name__,
+                        'name': 'map.missing_mapping',
+                        'key': (self.source_key, key)
+                    }
+                })
 
             return None
 

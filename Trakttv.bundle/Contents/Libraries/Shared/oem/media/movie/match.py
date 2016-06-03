@@ -7,14 +7,12 @@ class MovieMatch(MovieIdentifier):
 
         self.identifiers = identifiers or {}
 
-    def __eq__(self, other):
-        if not other:
-            return False
+    def __hash__(self):
+        return hash((
+            hash(frozenset(self.identifiers.items())),
 
-        return (
-            self.identifiers  == other.identifiers and
-            self.progress     == other.progress
-        )
+            self.progress
+        ))
 
     def __repr__(self):
         fragments = []

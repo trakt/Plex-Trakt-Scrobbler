@@ -1,3 +1,4 @@
+from oem.core.exceptions import AbsoluteNumberRequiredError
 from oem.media.show.identifier import EpisodeIdentifier
 from oem.media.show.match import EpisodeMatch
 from oem_framework.core.helpers import try_convert
@@ -72,6 +73,9 @@ class ShowMapper(object):
                 episode_num=episode_num
             )
         else:
+            if identifier.absolute_num is None:
+                raise AbsoluteNumberRequiredError('Unable to match %r, an absolute number is required' % identifier)
+
             match = EpisodeMatch(
                 self._get_identifiers(show),
                 absolute_num=identifier.absolute_num
@@ -90,6 +94,9 @@ class ShowMapper(object):
             return None, None
 
         if season.number == 'a':
+            if identifier.absolute_num is None:
+                raise AbsoluteNumberRequiredError('Unable to match %r, an absolute number is required' % identifier)
+
             return season, EpisodeMatch(
                 self._get_identifiers(show, season),
                 absolute_num=identifier.absolute_num

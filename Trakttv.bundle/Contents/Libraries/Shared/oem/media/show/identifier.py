@@ -19,6 +19,23 @@ class EpisodeIdentifier(Identifier):
     def valid(self):
         return (self.season_num is not None and self.episode_num is not None) or self.absolute_num is not None
 
+    def __hash__(self):
+        return hash((
+            self.season_num,
+            self.episode_num,
+            self.absolute_num,
+            self.progress
+        ))
+
+    def __eq__(self, other):
+        if not other:
+            return False
+
+        return self.__hash__() == other.__hash__()
+
+    def __ne__(self, other):
+        return not(self == other)
+
     def __repr__(self):
         attributes = [
             ('%s: %r' % (key, getattr(self, key))) for key in ['progress'] if getattr(self, key)

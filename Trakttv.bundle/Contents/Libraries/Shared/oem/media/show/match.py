@@ -13,19 +13,15 @@ class EpisodeMatch(EpisodeIdentifier):
 
         self.identifiers = identifiers or {}
 
-    def __eq__(self, other):
-        if not other:
-            return False
+    def __hash__(self):
+        return hash((
+            hash(frozenset(self.identifiers.items())),
 
-        return (
-            self.identifiers  == other.identifiers and
-
-            self.season_num   == other.season_num and
-            self.episode_num  == other.episode_num and
-            self.absolute_num == other.absolute_num and
-
-            self.progress     == other.progress
-        )
+            self.season_num,
+            self.episode_num,
+            self.absolute_num,
+            self.progress
+        ))
 
     def __repr__(self):
         fragments = []
