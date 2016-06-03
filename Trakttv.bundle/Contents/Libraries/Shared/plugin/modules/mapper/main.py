@@ -2,7 +2,7 @@ from plugin.core.environment import Environment
 from plugin.core.helpers.variable import try_convert
 from plugin.modules.core.base import Module
 
-from oem import OemClient
+from oem import OemClient, AbsoluteNumberRequiredError
 from oem.media.movie import MovieMatch
 from oem.media.show import EpisodeIdentifier, EpisodeMatch
 from oem.providers import IncrementalReleaseProvider
@@ -97,6 +97,9 @@ class Mapper(Module):
         for target, service in self._iter_services(source):
             try:
                 match = service.map(key, identifier)
+            except AbsoluteNumberRequiredError:
+                log.info('Unable to retrieve mapping for %r (%s -> %s) - Absolute mappings are not supported yet', key, source, target)
+                continue
             except Exception, ex:
                 log.warn('Unable to retrieve mapping for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
                 continue
@@ -181,7 +184,7 @@ class Mapper(Module):
 
             if match.absolute_num is not None:
                 # TODO support for absolute episode scrobbling
-                log.info('Absolute season mappings are not supported yet')
+                log.info('Absolute mappings are not supported yet')
                 return None
 
             if match.season_num is None or match.episode_num is None:
