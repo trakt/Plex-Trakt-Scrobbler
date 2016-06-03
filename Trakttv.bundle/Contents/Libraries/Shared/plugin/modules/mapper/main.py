@@ -1,12 +1,10 @@
-from oem.media.movie import MovieMatch
-from oem.media.show import EpisodeMatch
-
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import try_convert
 from plugin.modules.core.base import Module
 
 from oem import OemClient
-from oem.media.show.identifier import EpisodeIdentifier
+from oem.media.movie import MovieMatch
+from oem.media.show import EpisodeIdentifier, EpisodeMatch
 from oem.providers import IncrementalReleaseProvider
 from oem_storage_codernitydb.main import CodernityDbStorage
 from plex_metadata import Guid
@@ -58,7 +56,7 @@ class Mapper(Module):
             return supported, None
 
         # Build request for Trakt.tv
-        return supported, self._build_movie_request(match, movie)
+        return supported, self._build_request(match, movie)
 
     #
     # Shows
@@ -86,7 +84,7 @@ class Mapper(Module):
             return supported, None
 
         # Build request for Trakt.tv
-        return supported, self._build_episode_request(match, episode)
+        return supported, self._build_request(match, episode.show, episode)
 
     #
     # Helper methods
@@ -131,28 +129,56 @@ class Mapper(Module):
         })
         return True, None
 
-    def _build_episode_request(self, match, episode):
+    def _build_request(self, match, item, episode=None):
+        if not match:
+            log.warn('Invalid value provided for "match" parameter')
+            return None
+
+        if not item:
+            log.warn('Invalid value provided for "item" parameter')
+            return None
+
+        # Retrieve identifier
+        service = match.identifiers.keys()[0]
+        key = try_convert(match.identifiers[service], int, match.identifiers[service])
+
+        if type(key) not in [int, str]:
+            log.info('Unsupported key: %r', key)
+            return None
+
+        # Determine media type
         if isinstance(match, MovieMatch):
-            # Retrieve mapped identifier
-            service = match.identifiers.keys()[0]
-            key = try_convert(match.identifiers[service], int, match.identifiers[service])
+            media = 'movie'
+        elif isinstance(match, EpisodeMatch):
+            media = 'show'
+        else:
+            log.warn('Unknown match: %r', match)
+            return None
 
-            if type(key) not in [int, str]:
-                log.info('Unsupported key: %r', key)
-                return None
+        # Build request
+        request = {
+            media: {
+                'title': item.title,
 
-            return {
-                'movie': {
-                    'title': episode.show.title,
-                    'year': episode.show.year,
-
-                    'ids': {
-                        service: key
-                    }
+                'ids': {
+                    service: key
                 }
             }
+        }
 
+        if item.year:
+            request[media]['year'] = item.year
+        elif episode and episode.year:
+            request[media]['year'] = episode.year
+        else:
+            log.warn('Missing "year" parameter on %r', item)
+
+        # Add episode parameters
         if isinstance(match, EpisodeMatch):
+            if not episode:
+                log.warn('Missing "episode" parameter')
+                return None
+
             if match.absolute_num is not None:
                 # TODO support for absolute episode scrobbling
                 log.info('Absolute season mappings are not supported yet')
@@ -162,59 +188,14 @@ class Mapper(Module):
                 log.warn('Missing season or episode number in %r', match)
                 return None
 
-            # Retrieve mapped identifier
-            service = match.identifiers.keys()[0]
-            key = try_convert(match.identifiers[service], int, match.identifiers[service])
+            request['episode'] = {
+                'title': episode.title,
 
-            if type(key) not in [int, str]:
-                log.info('Unsupported key: %r', key)
-                return None
-
-            # Build request
-            return {
-                'show': {
-                    'title': episode.show.title,
-                    'year': episode.year,
-
-                    'ids': {
-                        service: key
-                    }
-                },
-                'episode': {
-                    'title': episode.title,
-
-                    'season': match.season_num,
-                    'number': match.episode_num
-                }
+                'season': match.season_num,
+                'number': match.episode_num
             }
 
-        log.warn('Unknown match returned: %r', match)
-        return None
-    
-    def _build_movie_request(self, match, movie):
-        if not isinstance(match, MovieMatch):
-            log.warn('Invalid match returned for movie: %r')
-            return None
-
-        # Retrieve mapped identifier
-        service = movie.identifiers.keys()[0]
-        key = try_convert(movie.identifiers[service], int, movie.identifiers[service])
-
-        if type(key) not in [int, str]:
-            log.info('Unsupported key: %r', key)
-            return None
-
-        # Build request
-        return {
-            'movie': {
-                'title': movie.title,
-                'year': movie.year,
-
-                'ids': {
-                    service: key
-                }
-            }
-        }
+        return request
 
     def _iter_services(self, source):
         if source not in self.services:
