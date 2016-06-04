@@ -187,9 +187,9 @@ class PluginManager(object):
 
         plugins = key.split('+')
 
-        result = set()
+        result = []
 
-        # Parse extra plugins
+        # Parse plugin dependencies
         for plugin_key in plugins:
             # Parse plugin key
             plugin_name, plugin_module = cls._parse_plugin_key(plugin_key)
@@ -197,10 +197,10 @@ class PluginManager(object):
             if not plugin_name or not plugin_module:
                 continue
 
-            result.add((plugin_name, plugin_module))
+            result.append((plugin_name, plugin_module))
 
-        # Parse main plugin
-        result.add(cls._parse_plugin_key(key.replace('+', '-')))
+        # Add main plugin
+        result.append(cls._parse_plugin_key(key.replace('+', '-')))
 
         return result
 

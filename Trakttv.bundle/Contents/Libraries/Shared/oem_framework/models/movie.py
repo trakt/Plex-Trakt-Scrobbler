@@ -13,9 +13,20 @@ class Movie(BaseMedia):
     def __init__(self, collection, identifiers, names, mappings=None, **kwargs):
         super(Movie, self).__init__(collection, 'movie', identifiers, **kwargs)
 
-        self.names = names or set()
+        self.names = self._parse_names(collection, identifiers, names) or {}
 
         self.mappings = mappings or []
+
+    def to_dict(self, key=None, flatten=True):
+        result = super(Movie, self).to_dict(key=key, flatten=flatten)
+
+        if not flatten:
+            return result
+
+        # Flatten "names" attribute
+        self._flatten_names(self.collection, result)
+
+        return result
 
     @classmethod
     def from_dict(cls, collection, data, **kwargs):

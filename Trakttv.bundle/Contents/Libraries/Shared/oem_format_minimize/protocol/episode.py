@@ -1,4 +1,5 @@
 from oem_format_minimize.core.minimize import MinimizeProtocol
+from oem_format_minimize.protocol.name import NameMinimizeProtocol
 
 
 class EpisodeMinimizeProtocol(MinimizeProtocol):
@@ -22,6 +23,13 @@ class EpisodeMinimizeProtocol(MinimizeProtocol):
     parameters      = 0x22
 
     mappings        = 0x31
+
+    NameMinimizeProtocol = NameMinimizeProtocol.to_child(
+        key='names',
+        process={
+            'children': True
+        }
+    )
 
     class IdentifiersMinimizeProtocol(MinimizeProtocol):
         __key__ = 'identifiers'

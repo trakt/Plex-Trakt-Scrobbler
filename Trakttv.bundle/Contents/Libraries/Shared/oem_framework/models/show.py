@@ -13,10 +13,21 @@ class Show(BaseMedia):
     def __init__(self, collection, identifiers, names, mappings=None, seasons=None, **kwargs):
         super(Show, self).__init__(collection, 'show', identifiers, **kwargs)
 
-        self.names = names or set()
+        self.names = self._parse_names(collection, identifiers, names) or {}
 
         self.mappings = mappings or []
         self.seasons = seasons or {}
+
+    def to_dict(self, key=None, flatten=True):
+        result = super(Show, self).to_dict(key=key, flatten=flatten)
+
+        if not flatten:
+            return result
+
+        # Flatten "names" attribute
+        self._flatten_names(self.collection, result)
+
+        return result
 
     @classmethod
     def from_dict(cls, collection, data, **kwargs):

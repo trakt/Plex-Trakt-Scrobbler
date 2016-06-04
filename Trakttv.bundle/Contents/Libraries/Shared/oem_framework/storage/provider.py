@@ -52,7 +52,7 @@ class ProviderStorage(BaseStorage):
     # Item methods
     #
 
-    def has_item(self, source, target, key):
+    def has_item(self, source, target, key, metadata=None):
         """
         :rtype: bool
         """

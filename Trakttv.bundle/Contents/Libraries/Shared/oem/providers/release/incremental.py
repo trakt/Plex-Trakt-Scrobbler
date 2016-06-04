@@ -22,7 +22,7 @@ class IncrementalReleaseProvider(ReleaseProvider):
         self._version_unavailable = {}
 
     def fetch(self, source, target, key, metadata):
-        version = self.storage.get_collection_version(source, target)
+        version = self.get_available_version(source, target)
 
         # Update item
         if not self.update_item(source, target, version, key, metadata):
@@ -129,9 +129,9 @@ class IncrementalReleaseProvider(ReleaseProvider):
         return True
 
     def update_item(self, source, target, version, key, metadata):
-        if self.storage.has_item(source, target, key):
+        if self.storage.has_item(source, target, key, metadata):
             return True
-    
+
         # Fetch item
         response = self._fetch(source, target, version, '/'.join([
             'items',

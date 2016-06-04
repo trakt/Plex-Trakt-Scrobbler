@@ -18,8 +18,11 @@ class Index(Model):
         index = cls(collection, storage)
 
         # Update index with items
-        if 'items' in data:
-            index.items = data['items']
+        if data and 'items' in data:
+            index.items = dict([
+                (key, storage.parse(collection, key, value))
+                for key, value in data['items'].iteritems()
+            ])
 
         return index
 

@@ -18,12 +18,18 @@ class Episode(BaseMedia):
         self.season = parent.number
         self.number = number
 
-        self.names = names or set()
+        self.names = self._parse_names(collection, identifiers, names) or {}
 
         self.mappings = mappings or []
 
-    def to_dict(self, key=None):
-        result = super(Episode, self).to_dict(key=key)
+    def to_dict(self, key=None, flatten=True):
+        result = super(Episode, self).to_dict(key=key, flatten=flatten)
+
+        if not flatten:
+            return result
+
+        # Flatten "names" attribute
+        self._flatten_names(self.collection, result)
 
         # Remove "season" attribute if it matches the parent season
         if result.get('season') == self.parent.number:
@@ -48,6 +54,12 @@ class Episode(BaseMedia):
         # Identifier
         number = get_attribute(touched, data, 'number')
 
+        # Parse "names" attribute
+        names = get_attribute(touched, data, 'names', [])
+
+        if type(names) is list:
+            names = set(names)
+
         # Construct movie
         episode = cls(
             collection,
@@ -55,7 +67,7 @@ class Episode(BaseMedia):
             key or number,
 
             identifiers=get_attribute(touched, data, 'identifiers'),
-            names=set(get_attribute(touched, data, 'names', [])),
+            names=names,
 
             supplemental=get_attribute(touched, data, 'supplemental', {}),
             **get_attribute(touched, data, 'parameters', {})
@@ -152,7 +164,7 @@ class EpisodeMapping(BaseMapping):
 
         return episode_mapping
 
-    def to_dict(self, key=None):
+    def to_dict(self, key=None, flatten=True):
         result = {}
 
         # Identifier

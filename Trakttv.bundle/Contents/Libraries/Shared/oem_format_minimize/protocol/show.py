@@ -1,5 +1,6 @@
 from oem_format_minimize.core.minimize import MinimizeProtocol
 from oem_format_minimize.protocol.season import SeasonMinimizeProtocol
+from oem_format_minimize.protocol.name import NameMinimizeProtocol
 
 
 class ShowMinimizeProtocol(MinimizeProtocol):
@@ -13,6 +14,13 @@ class ShowMinimizeProtocol(MinimizeProtocol):
     parameters      = 0x12
 
     seasons         = 0x21
+
+    NameMinimizeProtocol = NameMinimizeProtocol.to_child(
+        key='names',
+        process={
+            'children': True
+        }
+    )
 
     SeasonMinimizeProtocol = SeasonMinimizeProtocol.to_child(
         key='seasons',

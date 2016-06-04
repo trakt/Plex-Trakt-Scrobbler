@@ -1,5 +1,6 @@
 from oem_format_minimize.core.minimize import MinimizeProtocol
 from oem_format_minimize.protocol.episode import EpisodeMinimizeProtocol
+from oem_format_minimize.protocol.name import NameMinimizeProtocol
 
 
 class SeasonMinimizeProtocol(MinimizeProtocol):
@@ -17,6 +18,13 @@ class SeasonMinimizeProtocol(MinimizeProtocol):
 
     EpisodeMinimizeProtocol = EpisodeMinimizeProtocol.to_child(
         key='episodes',
+        process={
+            'children': True
+        }
+    )
+
+    NameMinimizeProtocol = NameMinimizeProtocol.to_child(
+        key='names',
         process={
             'children': True
         }
@@ -58,3 +66,10 @@ class SeasonMinimizeProtocol(MinimizeProtocol):
             anidb           = 0x01
             imdb            = 0x02
             tvdb            = 0x03
+
+        NameMinimizeProtocol = NameMinimizeProtocol.to_child(
+            key='names',
+            process={
+                'children': True
+            }
+        )
