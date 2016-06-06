@@ -13,7 +13,7 @@ pyOpenSSL==16.0.0
 pytz==2016.4
 requests==2.10.0
 six==1.10.0
-sortedcontainers==1.4.4
+sortedcontainers==1.5.3
 tzlocal==1.2.2
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago

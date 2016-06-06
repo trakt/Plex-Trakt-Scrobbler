@@ -1,32 +1,22 @@
-# -*- coding: utf-8 -*-
-#
-# Sorted dict implementation.
+"""Sorted dictionary implementation.
 
-from .sortedset import SortedSet
-from .sortedlist import SortedList, recursive_repr, SortedListWithKey
+"""
+
 from collections import Set, Sequence
 from collections import KeysView as AbstractKeysView
 from collections import ValuesView as AbstractValuesView
 from collections import ItemsView as AbstractItemsView
-
-from functools import wraps
 from sys import hexversion
 
-_NotGiven = object()
+from .sortedlist import SortedList, recursive_repr, SortedListWithKey
+from .sortedset import SortedSet
 
-def not26(func):
-    """Function decorator for methods not implemented in Python 2.6."""
+NONE = object()
 
-    @wraps(func)
-    def errfunc(*args, **kwargs):
-        raise NotImplementedError
 
-    if hexversion < 0x02070000:
-        return errfunc
-    else:
-        return func
-
-class _IlocWrapper:
+class _IlocWrapper(object):
+    "Positional indexing support for sorted dictionary objects."
+    # pylint: disable=protected-access, too-few-public-methods
     def __init__(self, _dict):
         self._dict = _dict
     def __len__(self):
@@ -43,9 +33,9 @@ class _IlocWrapper:
         Remove the ``sdict[sdict.iloc[index]]`` from *sdict*. Supports negative
         indices and slice notation. Raises IndexError on invalid *index*.
         """
-        _temp = self._dict
-        _list = _temp._list
-        _delitem = _temp._delitem
+        _dict = self._dict
+        _list = _dict._list
+        _delitem = _dict._delitem
 
         if isinstance(index, slice):
             keys = _list[index]
@@ -57,19 +47,19 @@ class _IlocWrapper:
             del _list[index]
             _delitem(key)
 
+
 class SortedDict(dict):
-    """
-    A SortedDict provides the same methods as a dict.  Additionally, a
-    SortedDict efficiently maintains its keys in sorted order. Consequently, the
-    keys method will return the keys in sorted order, the popitem method will
-    remove the item with the highest key, etc.
+    """SortedDict provides the same methods as a dict.  Additionally, SortedDict
+    efficiently maintains its keys in sorted order. Consequently, the keys
+    method will return the keys in sorted order, the popitem method will remove
+    the item with the highest key, etc.
+
     """
     def __init__(self, *args, **kwargs):
-        """
-        A SortedDict provides the same methods as a dict.  Additionally, a
-        SortedDict efficiently maintains its keys in sorted order. Consequently,
-        the keys method will return the keys in sorted order, the popitem method
-        will remove the item with the highest key, etc.
+        """SortedDict provides the same methods as a dict.  Additionally, SortedDict
+        efficiently maintains its keys in sorted order. Consequently, the keys
+        method will return the keys in sorted order, the popitem method will
+        remove the item with the highest key, etc.
 
         An optional *key* argument defines a callable that, like the `key`
         argument to Python's `sorted` function, extracts a comparison key from
@@ -105,14 +95,16 @@ class SortedDict(dict):
 
         The first example only works for keys that are valid Python
         identifiers; the others work with any valid keys.
+
         """
+        # pylint: disable=super-init-not-called, redefined-variable-type
         if len(args) > 0 and (args[0] is None or callable(args[0])):
             self._key = args[0]
             args = args[1:]
         else:
             self._key = None
 
-        if len(args) > 0 and type(args[0]) == int:
+        if len(args) > 0 and isinstance(args[0], int):
             self._load = args[0]
             args = args[1:]
         else:
@@ -282,7 +274,7 @@ class SortedDict(dict):
 
     _itervalues = itervalues
 
-    def pop(self, key, default=_NotGiven):
+    def pop(self, key, default=NONE):
         """
         If *key* is in the dictionary, remove it and return its value,
         else return *default*. If *default* is not given and *key* is not in
@@ -292,7 +284,7 @@ class SortedDict(dict):
             self._list_remove(key)
             return self._pop(key)
         else:
-            if default is _NotGiven:
+            if default is NONE:
                 raise KeyError(key)
             else:
                 return default
@@ -313,6 +305,19 @@ class SortedDict(dict):
         value = self._pop(key)
 
         return (key, value)
+
+    def peekitem(self, index=-1):
+        """Return (key, value) item pair at index.
+
+        Unlike ``popitem``, the sorted dictionary is not modified. Index
+        defaults to -1, the last/greatest key in the dictionary. Specify
+        ``index=0`` to lookup the first/least key in the dictiony.
+
+        If index is out of range, raise IndexError.
+
+        """
+        key = self._list[index]
+        return key, self[key]
 
     def setdefault(self, key, default=None):
         """
@@ -342,7 +347,7 @@ class SortedDict(dict):
             self._list_update(self._iter())
             return
 
-        if (len(kwargs) == 0 and len(args) == 1 and isinstance(args[0], dict)):
+        if len(kwargs) == 0 and len(args) == 1 and isinstance(args[0], dict):
             pairs = args[0]
         else:
             pairs = dict(*args, **kwargs)
@@ -357,35 +362,18 @@ class SortedDict(dict):
 
     _update = update
 
-    @not26
-    def viewkeys(self):
-        """
-        In Python 2.7 and later, return a new `KeysView` of the dictionary's
-        keys.
+    if hexversion >= 0x02070000:
+        def viewkeys(self):
+            "Return ``KeysView`` of dictionary keys."
+            return KeysView(self)
 
-        In Python 2.6, raise a NotImplementedError.
-        """
-        return KeysView(self)
+        def viewvalues(self):
+            "Return ``ValuesView`` of dictionary values."
+            return ValuesView(self)
 
-    @not26
-    def viewvalues(self):
-        """
-        In Python 2.7 and later, return a new `ValuesView` of the dictionary's
-        values.
-
-        In Python 2.6, raise a NotImplementedError.
-        """
-        return ValuesView(self)
-
-    @not26
-    def viewitems(self):
-        """
-        In Python 2.7 and later, return a new `ItemsView` of the dictionary's
-        items.
-
-        In Python 2.6, raise a NotImplementedError.
-        """
-        return ItemsView(self)
+        def viewitems(self):
+            "Return ``ItemsView`` of dictionary (key, value) item pairs."
+            return ItemsView(self)
 
     def __reduce__(self):
         return (self.__class__, (self._key, self._load, list(self._iteritems())))
@@ -403,9 +391,11 @@ class SortedDict(dict):
         )
 
     def _check(self):
+        # pylint: disable=protected-access
         self._list._check()
         assert len(self) == len(self._list)
-        assert all(val in self for val in self._list)
+        assert all(key in self for key in self._list)
+
 
 class KeysView(AbstractKeysView, Set, Sequence):
     """
@@ -420,6 +410,7 @@ class KeysView(AbstractKeysView, Set, Sequence):
             """
             Initialize a KeysView from a SortedDict container as *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.viewkeys()
     else:
@@ -427,6 +418,7 @@ class KeysView(AbstractKeysView, Set, Sequence):
             """
             Initialize a KeysView from a SortedDict container as *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.keys()
     def __len__(self):
@@ -466,6 +458,7 @@ class KeysView(AbstractKeysView, Set, Sequence):
         to the end of the set.  *start* defaults to the beginning.  Negative
         indexes are supported, as for slice indices.
         """
+        # pylint: disable=arguments-differ
         return self._list.index(value, start, stop)
     def count(self, value):
         """Return the number of occurrences of *value* in the set."""
@@ -512,6 +505,7 @@ class KeysView(AbstractKeysView, Set, Sequence):
     def __repr__(self):
         return 'SortedDict_keys({0})'.format(repr(list(self)))
 
+
 class ValuesView(AbstractValuesView, Sequence):
     """
     A ValuesView object is a dynamic view of the dictionary's values, which
@@ -526,6 +520,7 @@ class ValuesView(AbstractValuesView, Sequence):
             Initialize a ValuesView from a SortedDict container as
             *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._dict = sorted_dict
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.viewvalues()
@@ -535,6 +530,7 @@ class ValuesView(AbstractValuesView, Sequence):
             Initialize a ValuesView from a SortedDict container as
             *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._dict = sorted_dict
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.values()
@@ -587,8 +583,7 @@ class ValuesView(AbstractValuesView, Sequence):
         for idx, val in enumerate(self):
             if value == val:
                 return idx
-        else:
-            raise ValueError('{0} is not in dict'.format(repr(value)))
+        raise ValueError('{0} is not in dict'.format(repr(value)))
     if hexversion < 0x03000000:
         def count(self, value):
             """Return the number of occurrences of *value* in self."""
@@ -617,6 +612,7 @@ class ValuesView(AbstractValuesView, Sequence):
     def __repr__(self):
         return 'SortedDict_values({0})'.format(repr(list(self)))
 
+
 class ItemsView(AbstractItemsView, Set, Sequence):
     """
     An ItemsView object is a dynamic view of the dictionary's ``(key,
@@ -633,6 +629,7 @@ class ItemsView(AbstractItemsView, Set, Sequence):
             Initialize an ItemsView from a SortedDict container as
             *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._dict = sorted_dict
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.viewitems()
@@ -642,6 +639,7 @@ class ItemsView(AbstractItemsView, Set, Sequence):
             Initialize an ItemsView from a SortedDict container as
             *sorted_dict*.
             """
+            # pylint: disable=super-init-not-called, protected-access
             self._dict = sorted_dict
             self._list = sorted_dict._list
             self._view = sorted_dict._dict.items()
@@ -689,6 +687,7 @@ class ItemsView(AbstractItemsView, Set, Sequence):
         to the end of the set.  *start* defaults to the beginning.  Negative
         indexes are supported, as for slice indices.
         """
+        # pylint: disable=arguments-differ
         temp, value = key
         pos = self._list.index(temp, start, stop)
         if value == self._dict[temp]:
