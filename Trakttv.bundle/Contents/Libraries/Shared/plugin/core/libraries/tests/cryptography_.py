@@ -1,7 +1,7 @@
-from plugin.core.libraries.tests.core.base import TestBase
+from plugin.core.libraries.tests.core.base import BaseTest
 
 
-class Cryptography(TestBase):
+class Cryptography(BaseTest):
     name = 'cryptography'
     optional = True
 

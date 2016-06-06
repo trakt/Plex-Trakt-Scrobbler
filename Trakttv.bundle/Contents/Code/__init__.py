@@ -33,7 +33,7 @@ LoggerManager.setup(storage=False)
 # ------------------------------------------------
 # Libraries
 # ------------------------------------------------
-from plugin.core.libraries import LibrariesManager
+from plugin.core.libraries.manager import LibrariesManager
 
 LibrariesManager.setup(cache=True)
 LibrariesManager.test()

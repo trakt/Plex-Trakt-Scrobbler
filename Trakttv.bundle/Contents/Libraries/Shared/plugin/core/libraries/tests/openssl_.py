@@ -1,9 +1,9 @@
-from plugin.core.libraries.tests.core.base import TestBase
-from plugin.core.logger.handlers.error_reporter import RAVEN
+from plugin.core.libraries.tests.core.base import BaseTest
+# from plugin.core.logger.handlers.error_reporter import RAVEN
 
 
-class PyOpenSSL(TestBase):
-    name = 'pyopenssl'
+class OpenSSL(BaseTest):
+    name = 'openssl'
     optional = True
 
     @staticmethod
@@ -15,7 +15,7 @@ class PyOpenSSL(TestBase):
         inject_into_urllib3()
 
         # Enable secure error reporting
-        RAVEN.set_protocol('threaded+requests+https')
+        # RAVEN.set_protocol('threaded+requests+https')
 
         return {
             'versions': {
