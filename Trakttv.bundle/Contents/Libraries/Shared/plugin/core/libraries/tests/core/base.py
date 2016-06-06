@@ -31,35 +31,43 @@ class BaseTest(object):
         ]
 
         if not names:
-            return cls.on_failure('No tests defined')
+            return cls.build_failure('No tests defined')
 
         # Run tests
         for name in names:
             # Ensure function exists
             if not hasattr(cls, name):
-                return cls.on_failure('Unable to find function: %r' % name)
+                return cls.build_failure('Unable to find function: %r' % name)
 
             # Run test
             try:
                 result = cls.spawn(name, search_paths)
 
-                if not result:
+                # Merge test result into `metadata`
+                merge(metadata, result, recursive=True)
+
+                # Test successful
+                message = None
+                success = True
+            except Exception, ex:
+                if success:
                     continue
 
-                # Update `success` status
-                if not success:
-                    message = result.get('message')
-                    success = result.get('success', False)
-
-                # Merge function result into `metadata`
-                merge(metadata, result.get('metadata', {}), recursive=True)
-            except Exception, ex:
-                return cls.on_exception('Exception raised in %r: %s' % (name, ex))
+                message = ex.message
+                success = False
 
         if not success:
-            return cls.on_failure(message)
+            # Trigger event
+            cls.on_failure(message)
 
-        return cls.on_success(metadata)
+            # Build result
+            return cls.build_failure(message)
+
+        # Trigger event
+        cls.on_success(metadata)
+
+        # Build result
+        return cls.build_success(metadata)
 
     @classmethod
     def spawn(cls, name, search_paths):
@@ -67,11 +75,11 @@ class BaseTest(object):
         python_exe = cls.find_python_executable()
 
         if not python_exe:
-            return cls.on_failure('Unable to find python executable')
+            raise Exception('Unable to find python executable')
 
         # Ensure test host exists
         if not os.path.exists(HOST_PATH):
-            return cls.on_failure('Unable to find "host.py" script')
+            raise Exception('Unable to find "host.py" script')
 
         # Build test process arguments
         args = [
@@ -99,7 +107,7 @@ class BaseTest(object):
         if stderr:
             log.debug('Test returned messages:\n%s', stderr.replace("\r\n", "\n"))
 
-        # Parse result
+        # Parse output
         result = None
 
         if stdout:
@@ -108,13 +116,16 @@ class BaseTest(object):
             except Exception, ex:
                 log.warn('Invalid output returned %r - %s', stdout, ex, exc_info=True)
 
-        if process.returncode == 0:
-            return cls.on_success(result)
-        elif result and 'message' in result:
-            return cls.on_exception(result['message'])
+        # Build result
+        if process.returncode != 0:
+            # Test failed
+            if result and 'message' in result:
+                raise Exception(result['message'])
 
-        # Display test error details
-        return cls.on_failure('Unknown error (code: %s)' % process.returncode)
+            raise Exception('Unknown error (code: %s)' % process.returncode)
+
+        # Test successful
+        return result
 
     @classmethod
     def find_python_executable(cls):
@@ -134,23 +145,34 @@ class BaseTest(object):
 
         return None
 
-
     #
     # Events
     #
 
     @classmethod
-    def on_exception(cls, message, exc_info=None):
+    def on_failure(cls, message):
+        pass
+
+    @classmethod
+    def on_success(cls, metadata):
+        pass
+
+    #
+    # Helpers
+    #
+
+    @classmethod
+    def build_exception(cls, message, exc_info=None):
         if exc_info is None:
             exc_info = sys.exc_info()
 
-        return cls.on_failure(
+        return cls.build_failure(
             message,
             exc_info=exc_info
         )
 
     @classmethod
-    def on_failure(cls, message, **kwargs):
+    def build_failure(cls, message, **kwargs):
         result = {
             'success': False,
             'message': message
@@ -162,7 +184,7 @@ class BaseTest(object):
         return result
 
     @staticmethod
-    def on_success(metadata):
+    def build_success(metadata):
         return {
             'success': True,
             'metadata': metadata
