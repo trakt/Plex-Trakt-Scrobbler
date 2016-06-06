@@ -49,7 +49,7 @@ os.makedirs(os.path.join(PLUGIN_SUPPORT, 'Databases'))
 Environment.path.plugin_support = PLUGIN_SUPPORT
 
 # Setup native libraries
-from plugin.core.libraries import LibrariesManager
+from plugin.core.libraries.manager import LibrariesManager
 
 LibrariesManager.setup(cache=False)
 LibrariesManager.test()

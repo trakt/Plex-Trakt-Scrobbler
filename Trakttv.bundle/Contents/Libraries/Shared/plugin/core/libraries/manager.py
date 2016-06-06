@@ -55,15 +55,32 @@ class LibrariesManager(object):
         """Test native libraries to ensure they can be correctly loaded"""
         log.info('Testing native library support...')
 
+        # Retrieve library directories
+        search_paths = []
+
+        for path in sys.path:
+            path_lower = path.lower()
+
+            if 'trakttv.bundle' not in path_lower and 'com.plexapp.plugins.trakttv' not in path_lower:
+                continue
+
+            search_paths.append(path)
+
+        # Run library tests
         metadata = {}
 
         for test in LIBRARY_TESTS:
             # Run tests
-            result = test.run()
+            result = test.run(search_paths)
 
             if not result.get('success'):
+                log_func = logging.warn if test.optional else logging.error
+
                 # Write message to logfile
-                log.error('%s: unavailable - %s', test.name, result.get('message'), exc_info=result.get('exc_info'))
+                if 'traceback' in result:
+                    log_func('%s: unavailable - %s\n%%s' % (test.name, result.get('message')), result['traceback'])
+                else:
+                    log_func('%s: unavailable - %s' % (test.name, result.get('message')), exc_info=result.get('exc_info'))
 
                 if not test.optional:
                     return
@@ -75,7 +92,11 @@ class LibrariesManager(object):
             t_versions = t_metadata.get('versions')
 
             if t_versions:
-                if len(t_versions) > 1:
+                expanded = len(t_versions) > 1 or (
+                    t_versions and t_versions.keys()[0] != test.name
+                )
+
+                if expanded:
                     log.info('%s: available (%s)', test.name, ', '.join([
                         '%s: %s' % (key, value)
                         for key, value in t_versions.items()
