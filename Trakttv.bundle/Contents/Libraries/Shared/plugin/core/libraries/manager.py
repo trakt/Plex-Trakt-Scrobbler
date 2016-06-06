@@ -78,9 +78,9 @@ class LibrariesManager(object):
 
                 # Write message to logfile
                 if 'traceback' in result:
-                    log_func('%s: unavailable - %s\n%s', test.name, result.get('message'), result['traceback'])
+                    log_func('%s: unavailable - %s\n%%s' % (test.name, result.get('message')), result['traceback'])
                 else:
-                    log_func('%s: unavailable - %s', test.name, result.get('message'), exc_info=result.get('exc_info'))
+                    log_func('%s: unavailable - %s' % (test.name, result.get('message')), exc_info=result.get('exc_info'))
 
                 if not test.optional:
                     return
