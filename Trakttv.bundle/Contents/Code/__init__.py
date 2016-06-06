@@ -38,6 +38,14 @@ from plugin.core.libraries.manager import LibrariesManager
 LibrariesManager.setup(cache=True)
 LibrariesManager.test()
 # ------------------------------------------------
+# Warnings
+# ------------------------------------------------
+from requests.packages.urllib3.exceptions import InsecurePlatformWarning, SNIMissingWarning
+import warnings
+
+warnings.filterwarnings('once', category=InsecurePlatformWarning)
+warnings.filterwarnings('once', category=SNIMissingWarning)
+# ------------------------------------------------
 # Modules
 # ------------------------------------------------
 import core
