@@ -63,12 +63,13 @@ class BaseTest(object):
 
     @classmethod
     def spawn(cls, name, search_paths):
-        # Retrieve path to python executable
-        python_exe = sys.executable
+        # Find path to python executable
+        python_exe = cls.find_python_executable()
 
-        if not os.path.exists(python_exe):
+        if not python_exe:
             return cls.on_failure('Unable to find python executable')
 
+        # Ensure test host exists
         if not os.path.exists(HOST_PATH):
             return cls.on_failure('Unable to find "host.py" script')
 
@@ -114,6 +115,25 @@ class BaseTest(object):
 
         # Display test error details
         return cls.on_failure('Unknown error (code: %s)' % process.returncode)
+
+    @classmethod
+    def find_python_executable(cls):
+        candidates = [sys.executable]
+
+        # Add candidates relative to the PMS home directory
+        pms_home = os.environ.get('PLEX_MEDIA_SERVER_HOME')
+
+        if pms_home and os.path.exists(pms_home):
+            candidates.append(os.path.join(pms_home, 'Resources', 'Plex Script Host'))
+            candidates.append(os.path.join(pms_home, 'Resources', 'Python', 'bin', 'python'))
+
+        # Use first candidate that exists
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+
+        return None
+
 
     #
     # Events
