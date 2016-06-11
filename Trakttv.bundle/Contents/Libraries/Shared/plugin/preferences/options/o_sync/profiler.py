@@ -17,7 +17,7 @@ class SyncProfilerOption(SimpleOption):
     description = _(
         "Profiler to use for performance analysis during syncs\n"
         "\n"
-        " - **Basic** - Basic per-method elapsed time reports (elapsed.py)\n"
+        " - **Basic** - Basic per-method elapsed time reports *([elapsed.py](https://github.com/fuzeman/elapsed.py))*\n"
         " - **Disabled** - Disable sync profiling"
     )
     order = 121

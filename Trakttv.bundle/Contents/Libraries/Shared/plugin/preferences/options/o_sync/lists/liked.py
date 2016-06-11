@@ -16,6 +16,15 @@ class SyncListsLikedOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Liked'))
     label = _('Mode')
+    description = _(
+        "Syncing mode for liked lists *(applies to both automatic and manual syncs)*.\n"
+        "\n"
+        " - **Full** - Synchronize liked lists with your Trakt.tv profile\n"
+        " - **Pull** - Only pull liked lists from your Trakt.tv profile\n"
+        " - **Push** - *Not implemented yet*\n"
+        " - **Fast Pull** - Only pull changes to liked lists from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of liked lists"
+    )
     order = 300
 
     preference = 'sync_liked_lists'
@@ -52,6 +61,9 @@ class SyncListsLikedPlaylistsOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Liked'))
     label = _('Create playlists in plex')
+    description = _(
+        "Create playlists in Plex if they don't already exist."
+    )
     order = 301
 
     # preference = 'sync_watched'

@@ -15,6 +15,9 @@ class ApiOption(SimpleOption):
 
     group = (_('API'),)
     label = _('Enabled')
+    description = _(
+        "Enables the plugin administration API, disabling this option will block access to the configuration site."
+    )
     order = 200
 
     @property

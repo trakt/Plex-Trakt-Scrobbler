@@ -16,6 +16,15 @@ class SyncListsWatchlistOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Watchlist'))
     label = _('Mode')
+    description = _(
+        "Syncing mode for watchlist items *(applies to both automatic and manual syncs)*.\n"
+        "\n"
+        " - **Full** - Synchronize watchlist items with your Trakt.tv profile\n"
+        " - **Pull** - Only pull watchlist items from your Trakt.tv profile\n"
+        " - **Push** - *Not implemented yet*\n"
+        " - **Fast Pull** - Only pull changes to watchlist items from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of watchlist items"
+    )
     order = 320
 
     preference = 'sync_watchlist'
@@ -52,6 +61,9 @@ class SyncListsWatchlistPlaylistsOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Watchlist'))
     label = _('Create playlist in plex')
+    description = _(
+        "Create playlist in Plex if it doesn't already exist."
+    )
     order = 321
 
     # preference = 'sync_watched'

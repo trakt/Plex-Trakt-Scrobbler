@@ -15,7 +15,10 @@ class SyncActionOption(SimpleOption):
     group = (_('Advanced'), _('Sync'))
     label = _('Action')
     description = _(
-        "Remove movies and episodes from your Trakt.tv collection that are unable to be found in your Plex libraries."
+        "Action to perform during syncs.\n"
+        "\n"
+        " - **Update** - Update Trakt.tv and Plex with any changes\n"
+        " - **Log** - Don't perform any updates, just display changes in the plugin log file"
     )
     order = 120
 

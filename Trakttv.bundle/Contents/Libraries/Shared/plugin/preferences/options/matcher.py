@@ -20,10 +20,12 @@ class MatcherOption(SimpleOption):
     group = (_('Advanced'), _('Matcher'))
     label = _('Mode')
     description = _(
-        "Defines the matcher to use for episode identifiers\n"
+        "Matcher to use for episode identification.\n"
         "\n"
-        " - **Plex** - use the episode identifier provided by Plex\n"
-        " - **Plex Extended** *(default)* - use [caper](https://github.com/fuzeman/caper) to parse the filename for an episode identifier *(provides better support for multi-episode files)*"
+        " - **Plex** - Use episode identifier provided by Plex\n"
+        " - **Plex Extended** - Use [Caper](https://github.com/fuzeman/caper) to parse episode filenames for an "
+        "identifier, the matched identifier is then verified against Plex to ensure they aren't wildly different "
+        "*(provides better support for multi-episode files)*"
     )
     order = 110
 

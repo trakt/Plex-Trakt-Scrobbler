@@ -16,6 +16,15 @@ class SyncListsPersonalOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Personal'))
     label = _('Mode')
+    description = _(
+        "Syncing mode for personal lists *(applies to both automatic and manual syncs)*.\n"
+        "\n"
+        " - **Full** - Synchronize personal lists with your Trakt.tv profile\n"
+        " - **Pull** - Only pull personal lists from your Trakt.tv profile\n"
+        " - **Push** - *Not implemented yet*\n"
+        " - **Fast Pull** - Only pull changes to personal lists from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of personal lists"
+    )
     order = 310
 
     preference = 'sync_personal_lists'
@@ -52,6 +61,9 @@ class SyncListsPersonalPlaylistsOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Personal'))
     label = _('Create playlists in plex')
+    description = _(
+        "Create playlists in Plex if they don't already exist."
+    )
     order = 311
 
     # preference = 'sync_watched'

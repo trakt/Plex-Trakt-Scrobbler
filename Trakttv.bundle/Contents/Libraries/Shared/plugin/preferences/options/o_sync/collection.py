@@ -17,12 +17,12 @@ class SyncCollectionOption(SimpleOption):
     group = (_('Sync'), _('Collection'))
     label = _('Mode')
     description = _(
-        "Syncing mode for movie and episode collection metadata (applies to both automatic and manual syncs).\n"
+        "Syncing mode for movie and episode collection metadata *(applies to both automatic and manual syncs)*.\n"
         "\n"
         " - **Full** - Synchronize collection metadata with your Trakt.tv profile\n"
-        " - **Pull** - Unused\n"
+        " - **Pull** - *Unused*\n"
         " - **Push** - Only push collection metadata to your Trakt.tv profile\n"
-        " - **Fast Pull** - Unused\n"
+        " - **Fast Pull** - *Unused*\n"
         " - **Disabled** - Completely disable syncing of collection metadata"
     )
     order = 230
@@ -61,6 +61,9 @@ class SyncCleanCollectionOption(SimpleOption):
 
     group = (_('Sync'), _('Collection'))
     label = _('Clean collection')
+    description = _(
+        "Remove movies and episodes from your Trakt.tv collection that are unable to be found in your Plex libraries."
+    )
     order = 231
 
     preference = 'sync_clean_collection'

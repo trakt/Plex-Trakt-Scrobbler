@@ -17,7 +17,7 @@ class SyncPlaybackOption(SimpleOption):
     group = (_('Sync'), _('Playback Progress'))
     label = _('Mode')
     description = _(
-        "Syncing mode for movie and episode playback progress (applies to both automatic and manual syncs).\n"
+        "Syncing mode for movie and episode playback progress *(applies to both automatic and manual syncs)*.\n"
         "\n"
         " - **Full** - Synchronize playback progress with your Trakt.tv profile\n"
         " - **Pull** - Only pull playback progress from your Trakt.tv profile\n"

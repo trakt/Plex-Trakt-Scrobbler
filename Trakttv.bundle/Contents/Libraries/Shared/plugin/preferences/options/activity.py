@@ -18,6 +18,13 @@ class ActivityOption(SimpleOption):
 
     group = (_('Advanced'), _('Activity'))
     label = _('Method')
+    description = _(
+        "Method used to retrieve watching activity\n"
+        "\n"
+        " - **Automatic** - Automatically determine available activity method\n"
+        " - **WebSocket** - Retrieve watching activity from the Plex notification channel\n"
+        " - **Logging** - Parse \"Plex Media Server.log\" for watching activity *(higher CPU + Disk IO usage, may block system sleep)*"
+    )
     order = 100
 
     preference = 'activity_mode'

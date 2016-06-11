@@ -18,7 +18,7 @@ class SyncWatchedOption(SimpleOption):
     group = (_('Sync'), _('Watched'))
     label = _('Mode')
     description = _(
-        "Syncing mode for movie and episode watched states (applies to both automatic and manual syncs).\n"
+        "Syncing mode for movie and episode watched states *(applies to both automatic and manual syncs)*.\n"
         "\n"
         " - **Full** - Synchronize watched states with your Trakt.tv profile\n"
         " - **Pull** - Only pull watched states from your Trakt.tv profile\n"

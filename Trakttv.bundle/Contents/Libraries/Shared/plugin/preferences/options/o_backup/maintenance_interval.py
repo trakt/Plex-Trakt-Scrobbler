@@ -18,4 +18,12 @@ class BackupMaintenanceIntervalOption(SchedulerOption):
 
     group = (_('Backups'),)
     label = _('Maintenance Interval')
+    description = _(
+        "Interval to perform backup maintenance tasks, this involves:\n"
+        " - Compressing backups for the previous month and year\n"
+        " - Deleting backups for the previous period by these rules:\n"
+        "     - 4 backups per day\n"
+        "     - 14 backups per week\n"
+        "     - 28 backups per month"
+    )
     order = 10
