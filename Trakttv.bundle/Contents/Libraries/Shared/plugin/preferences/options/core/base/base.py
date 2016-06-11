@@ -68,7 +68,13 @@ class Option(object):
 
     def to_dict(self):
         if not self.description:
-            log.debug('[%s] No description defined', self.key)
+            log.warn('No description defined for the %r option' % self.key, extra={
+                'event': {
+                    'module': __name__,
+                    'name': 'to_dict.no_description',
+                    'key': self.key
+                }
+            })
 
         data = {
             'key':      self.key,
