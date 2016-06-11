@@ -1,5 +1,6 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.models import Account
+from plugin.preferences.options.core.description import Description
 
 from plex import Plex
 import logging
@@ -76,6 +77,11 @@ class Option(object):
                 }
             })
 
+        # Ensure descriptions have been built
+        if self.description and isinstance(self.description, Description):
+            self.description = self.description.build()
+
+        # Build dictionary
         data = {
             'key':      self.key,
             'type':     self.type,

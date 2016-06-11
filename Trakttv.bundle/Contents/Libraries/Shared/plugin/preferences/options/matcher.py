@@ -2,6 +2,7 @@ from plugin.core.environment import translate as _
 from plugin.preferences.options.constants import MATCHER_LABELS_BY_KEY, MatcherMode, MATCHER_KEYS_BY_LABEL, \
     MATCHER_IDS_BY_KEY
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 
 import logging
 import plex_metadata
@@ -19,13 +20,16 @@ class MatcherOption(SimpleOption):
 
     group = (_('Advanced'), _('Matcher'))
     label = _('Mode')
-    description = _(
-        "Matcher to use for episode identification.\n"
-        "\n"
-        " - **Plex** - Use episode identifier provided by Plex\n"
-        " - **Plex Extended** - Use [Caper](https://github.com/fuzeman/caper) to parse episode filenames for an "
-        "identifier, the matched identifier is then verified against Plex to ensure they aren't wildly different "
-        "*(provides better support for multi-episode files)*"
+    description = Description(
+        _("Matcher to use for episode identification."), [
+            (_("Plex"), _(
+                "Use the episode identifier provided by Plex"
+            )),
+            (_("Plex Extended"), _(
+                "Use [Caper](https://github.com/fuzeman/caper) to parse episode filenames for an "
+                "identifier *(provides better support for multi-episode files)*"
+            ))
+        ]
     )
     order = 110
 

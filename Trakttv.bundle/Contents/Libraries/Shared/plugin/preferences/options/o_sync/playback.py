@@ -1,5 +1,6 @@
 from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
 import logging
@@ -16,14 +17,24 @@ class SyncPlaybackOption(SimpleOption):
 
     group = (_('Sync'), _('Playback Progress'))
     label = _('Mode')
-    description = _(
-        "Syncing mode for movie and episode playback progress *(applies to both automatic and manual syncs)*.\n"
-        "\n"
-        " - **Full** - Synchronize playback progress with your Trakt.tv profile\n"
-        " - **Pull** - Only pull playback progress from your Trakt.tv profile\n"
-        " - **Push** - Only push playback progress to your Trakt.tv profile\n"
-        " - **Fast Pull** - Only pull changes to playback progress from your Trakt.tv profile\n"
-        " - **Disabled** - Completely disable syncing of playback progress"
+    description = Description(
+        _("Syncing mode for movie and episode playback progress *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize playback progress with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull playback progress from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "Only push playback progress to your Trakt.tv profile"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to playback progress from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of playback progress"
+            )),
+        ]
     )
     order = 220
 

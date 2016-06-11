@@ -1,5 +1,6 @@
 from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
 import logging
@@ -16,14 +17,24 @@ class SyncListsLikedOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Liked'))
     label = _('Mode')
-    description = _(
-        "Syncing mode for liked lists *(applies to both automatic and manual syncs)*.\n"
-        "\n"
-        " - **Full** - Synchronize liked lists with your Trakt.tv profile\n"
-        " - **Pull** - Only pull liked lists from your Trakt.tv profile\n"
-        " - **Push** - *Not implemented yet*\n"
-        " - **Fast Pull** - Only pull changes to liked lists from your Trakt.tv profile\n"
-        " - **Disabled** - Completely disable syncing of liked lists"
+    description = Description(
+        _("Syncing mode for liked lists *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize liked lists with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull liked lists from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "*Not implemented yet*"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to liked lists from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of liked lists"
+            )),
+        ]
     )
     order = 300
 

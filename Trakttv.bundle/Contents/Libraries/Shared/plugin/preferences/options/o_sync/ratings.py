@@ -1,5 +1,6 @@
 from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
     RESOLUTION_LABELS_BY_KEY, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
 from plugin.sync.core.enums import SyncConflictResolution, SyncMode
@@ -18,14 +19,24 @@ class SyncRatingsOption(SimpleOption):
 
     group = (_('Sync'), _('Ratings'))
     label = _('Mode')
-    description = _(
-        "Syncing mode for movie and episode ratings *(applies to both automatic and manual syncs)*.\n"
-        "\n"
-        " - **Full** - Synchronize ratings with your Trakt.tv profile\n"
-        " - **Pull** - Only pull ratings from your Trakt.tv profile\n"
-        " - **Push** - Only push ratings to your Trakt.tv profile\n"
-        " - **Fast Pull** - Only pull changes to ratings from your Trakt.tv profile\n"
-        " - **Disabled** - Completely disable syncing of ratings"
+    description = Description(
+        _("Syncing mode for movie and episode ratings *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize ratings with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull ratings from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "Only push ratings to your Trakt.tv profile"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to ratings from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of ratings"
+            )),
+        ]
     )
     order = 210
 
@@ -64,12 +75,18 @@ class SyncRatingsConflictOption(SimpleOption):
 
     group = (_('Sync'), _('Ratings'))
     label = _('Conflict resolution')
-    description = _(
-        "Rating to use when a conflict exists between Plex and your Trakt.tv profile.\n"
-        "\n"
-        " - **Latest** - Use the most recent rating\n"
-        " - **Trakt** - Use the rating from your Trakt.tv profile\n"
-        " - **Plex** - Use the rating from Plex"
+    description = Description(
+        _("Rating to use when a conflict exists between Plex and your Trakt.tv profile."), [
+            (_("Latest"), _(
+                "Use the most recent rating"
+            )),
+            (_("Trakt"), _(
+                "Use the rating from your Trakt.tv profile"
+            )),
+            (_("Plex"), _(
+                "Use the rating from Plex"
+            ))
+        ]
     )
     order = 211
 

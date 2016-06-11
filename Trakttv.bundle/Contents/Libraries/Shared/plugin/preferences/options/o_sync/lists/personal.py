@@ -1,5 +1,6 @@
 from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
 import logging
@@ -16,14 +17,24 @@ class SyncListsPersonalOption(SimpleOption):
 
     group = (_('Sync - Lists (Beta)'), _('Personal'))
     label = _('Mode')
-    description = _(
-        "Syncing mode for personal lists *(applies to both automatic and manual syncs)*.\n"
-        "\n"
-        " - **Full** - Synchronize personal lists with your Trakt.tv profile\n"
-        " - **Pull** - Only pull personal lists from your Trakt.tv profile\n"
-        " - **Push** - *Not implemented yet*\n"
-        " - **Fast Pull** - Only pull changes to personal lists from your Trakt.tv profile\n"
-        " - **Disabled** - Completely disable syncing of personal lists"
+    description = Description(
+        _("Syncing mode for personal lists *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize personal lists with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull personal lists from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "*Not implemented yet*"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to personal lists from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of personal lists"
+            ))
+        ]
     )
     order = 310
 

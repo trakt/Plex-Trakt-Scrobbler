@@ -21,10 +21,10 @@ class ScrobbleDuplicationPeriodOption(SimpleOption):
     group = (_('Advanced'), _('Scrobble'))
     label = _('Ignore duplicates for')
     description = _(
-        "Duplicate scrobbles for a movie or episode is ignored for the defined period.\n"
+        "Duplicate scrobbles for a movie or episode are ignored for the defined period.\n"
         "\n"
         "This can help reduce the chances of unintended history duplication if you resume watching something that "
-        "has already reached 80% progress (so has already scrobbled)."
+        "has already reached 80% progress (so has already been scrobbled)."
     )
     order = 115
 
