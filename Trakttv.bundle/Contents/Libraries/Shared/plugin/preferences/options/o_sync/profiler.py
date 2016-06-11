@@ -14,4 +14,10 @@ class SyncProfilerOption(SimpleOption):
 
     group = (_('Advanced'), _('Sync'))
     label = _('Profiler')
+    description = _(
+        "Profiler to use for performance analysis during syncs\n"
+        "\n"
+        " - **Basic** - Basic per-method elapsed time reports (elapsed.py)\n"
+        " - **Disabled** - Disable sync profiling"
+    )
     order = 121

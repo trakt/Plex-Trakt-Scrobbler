@@ -17,12 +17,13 @@ class SyncPlaybackOption(SimpleOption):
     group = (_('Sync'), _('Playback Progress'))
     label = _('Mode')
     description = _(
-        "Defines the syncing mode to use for playback progress\n"
+        "Syncing mode for movie and episode playback progress (applies to both automatic and manual syncs).\n"
         "\n"
-        " - **Full** - Synchronize playback progress with your Trakt.tv profile (imports changes since your last sync, "
-        "then pushes any changes found in Plex)\n"
-        " - **Pull** - Import playback progress from your Trakt.tv profile\n"
-        " - **Push** - Export playback progress to your Trakt.tv profile"
+        " - **Full** - Synchronize playback progress with your Trakt.tv profile\n"
+        " - **Pull** - Only pull playback progress from your Trakt.tv profile\n"
+        " - **Push** - Only push playback progress to your Trakt.tv profile\n"
+        " - **Fast Pull** - Only pull changes to playback progress from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of playback progress"
     )
     order = 220
 

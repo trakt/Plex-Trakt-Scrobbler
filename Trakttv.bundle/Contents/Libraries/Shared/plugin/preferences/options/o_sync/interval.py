@@ -19,6 +19,9 @@ class SyncIntervalOption(SchedulerOption):
 
     group = (_('Sync'), _('Triggers'))
     label = _('Interval')
+    description = _(
+        "Automatically trigger a \"Full\" sync at the specified interval."
+    )
     order = 250
 
     preference = 'sync_run_interval'

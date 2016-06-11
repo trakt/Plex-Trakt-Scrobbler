@@ -11,6 +11,9 @@ class SyncIdleDeferOption(SimpleOption):
 
     group = (_('Advanced'), _('Sync - Triggers'))
     label = _('Defer until server is idle')
+    description = _(
+        "Defer automatic syncs until the server isn't streaming any media."
+    )
     order = 130
 
     preference = 'sync_idle_defer'

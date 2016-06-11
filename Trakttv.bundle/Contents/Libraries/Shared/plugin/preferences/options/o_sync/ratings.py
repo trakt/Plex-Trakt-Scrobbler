@@ -19,12 +19,13 @@ class SyncRatingsOption(SimpleOption):
     group = (_('Sync'), _('Ratings'))
     label = _('Mode')
     description = _(
-        "Defines the syncing mode to use for ratings\n"
+        "Syncing mode for movie and episode ratings (applies to both automatic and manual syncs).\n"
         "\n"
-        " - **Full** - Synchronize ratings with your Trakt.tv profile (imports changes since your last sync, "
-        "then pushes any changes found in Plex)\n"
-        " - **Pull** - Import ratings from your Trakt.tv profile\n"
-        " - **Push** - Export ratings to your Trakt.tv profile"
+        " - **Full** - Synchronize ratings with your Trakt.tv profile\n"
+        " - **Pull** - Only pull ratings from your Trakt.tv profile\n"
+        " - **Push** - Only push ratings to your Trakt.tv profile\n"
+        " - **Fast Pull** - Only pull changes to ratings from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of ratings"
     )
     order = 210
 
@@ -63,6 +64,13 @@ class SyncRatingsConflictOption(SimpleOption):
 
     group = (_('Sync'), _('Ratings'))
     label = _('Conflict resolution')
+    description = _(
+        "Rating to use when a conflict exists between Plex and your Trakt.tv profile.\n"
+        "\n"
+        " - Latest - Use the most recent rating\n"
+        " - Trakt - Use the rating from your Trakt.tv profile\n"
+        " - Plex - Use the rating from Plex"
+    )
     order = 211
 
     preference = 'sync_ratings_conflict'

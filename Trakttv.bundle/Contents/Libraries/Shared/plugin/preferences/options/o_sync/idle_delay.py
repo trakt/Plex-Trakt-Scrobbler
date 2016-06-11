@@ -20,6 +20,9 @@ class SyncIdleDelayOption(SimpleOption):
 
     group = (_('Advanced'), _('Sync - Triggers'))
     label = _('Idle delay')
+    description = _(
+        "Wait time before the server is considered idle after media stops being streamed."
+    )
     order = 131
 
     preference = 'sync_idle_delay'

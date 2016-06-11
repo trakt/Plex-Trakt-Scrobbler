@@ -14,6 +14,9 @@ class SyncActionOption(SimpleOption):
 
     group = (_('Advanced'), _('Sync'))
     label = _('Action')
+    description = _(
+        "Remove movies and episodes from your Trakt.tv collection that are unable to be found in your Plex libraries."
+    )
     order = 120
 
     @property

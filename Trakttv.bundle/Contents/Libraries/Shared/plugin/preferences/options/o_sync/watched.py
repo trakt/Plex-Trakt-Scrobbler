@@ -18,12 +18,13 @@ class SyncWatchedOption(SimpleOption):
     group = (_('Sync'), _('Watched'))
     label = _('Mode')
     description = _(
-        "Defines the syncing mode to use for watched states\n"
+        "Syncing mode for movie and episode watched states (applies to both automatic and manual syncs).\n"
         "\n"
-        " - **Full** - Synchronize watched states with your Trakt.tv profile (imports changes since your last sync, "
-        "then pushes any changes found in Plex)\n"
-        " - **Pull** - Import watched states from your Trakt.tv profile\n"
-        " - **Push** - Export watched states to your Trakt.tv profile"
+        " - **Full** - Synchronize watched states with your Trakt.tv profile\n"
+        " - **Pull** - Only pull watched states from your Trakt.tv profile\n"
+        " - **Push** - Only push watched states to your Trakt.tv profile\n"
+        " - **Fast Pull** - Only pull changes to watched states from your Trakt.tv profile\n"
+        " - **Disabled** - Completely disable syncing of watched states"
     )
     order = 200
 

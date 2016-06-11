@@ -17,12 +17,13 @@ class SyncCollectionOption(SimpleOption):
     group = (_('Sync'), _('Collection'))
     label = _('Mode')
     description = _(
-        "Defines the syncing mode to use for collected media\n"
+        "Syncing mode for movie and episode collection metadata (applies to both automatic and manual syncs).\n"
         "\n"
-        " - **Full** - Synchronize collected media with your Trakt.tv profile (imports changes since your last sync, "
-        "then pushes any changes found in Plex)\n"
-        " - **Pull** - Import collected media from your Trakt.tv profile\n"
-        " - **Push** - Export collected media to your Trakt.tv profile"
+        " - **Full** - Synchronize collection metadata with your Trakt.tv profile\n"
+        " - **Pull** - Unused\n"
+        " - **Push** - Only push collection metadata to your Trakt.tv profile\n"
+        " - **Fast Pull** - Unused\n"
+        " - **Disabled** - Completely disable syncing of collection metadata"
     )
     order = 230
 
