@@ -27,7 +27,7 @@ class NameConflictError(ApiError):
 
 class DeletionBlockedError(ApiError):
     code = 'account.deletion_blocked'
-    message = 'Deletion of system/administrator accounts is blocked'
+    message = 'Deletion of system accounts is not allowed'
 
 
 class UpdateFailedError(ApiError):

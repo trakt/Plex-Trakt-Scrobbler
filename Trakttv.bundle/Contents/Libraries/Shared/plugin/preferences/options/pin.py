@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.managers.account import TraktAccountManager
 from plugin.models import TraktAccount
 from plugin.preferences.options.core.base import SimpleOption
@@ -10,8 +11,8 @@ log = logging.getLogger(__name__)
 class PinOption(SimpleOption):
     type = 'string'
 
-    group = ('Authentication', )
-    label = 'Authentication PIN'
+    group = (_('Authentication'), )
+    label = _('Authentication PIN')
 
     preference = 'pin'
 

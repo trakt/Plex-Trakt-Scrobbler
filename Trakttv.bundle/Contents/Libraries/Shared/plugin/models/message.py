@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.models.core import db
 
 from playhouse.apsw_ext import *
@@ -41,14 +42,14 @@ class MessageType(object):
         if cls.__titles__ is None:
             cls.__titles__ = {
                 MessageType.Generic:    None,
-                MessageType.Exception:  "Exception",
+                MessageType.Exception:  _("Exception"),
 
-                MessageType.Info:       "Info",
-                MessageType.Warning:    "Warning",
-                MessageType.Error:      "Error",
-                MessageType.Critical:   "Critical",
+                MessageType.Info:       _("Info"),
+                MessageType.Warning:    _("Warning"),
+                MessageType.Error:      _("Error"),
+                MessageType.Critical:   _("Critical"),
 
-                MessageType.Trakt:      "trakt.tv"
+                MessageType.Trakt:      _("Trakt.tv")
             }
 
         return cls.__titles__.get(value)

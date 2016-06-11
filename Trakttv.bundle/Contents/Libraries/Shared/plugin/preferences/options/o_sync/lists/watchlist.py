@@ -1,4 +1,6 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 
 import logging
@@ -13,8 +15,27 @@ class SyncListsWatchlistOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = None
 
-    group = ('Sync - Lists (Beta)', 'Watchlist')
-    label = 'Mode'
+    group = (_('Sync - Lists (Beta)'), _('Watchlist'))
+    label = _('Mode')
+    description = Description(
+        _("Syncing mode for watchlist items *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize watchlist items with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull watchlist items from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "*Not implemented yet*"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to watchlist items from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of watchlist items"
+            ))
+        ]
+    )
     order = 320
 
     preference = 'sync_watchlist'
@@ -49,8 +70,11 @@ class SyncListsWatchlistPlaylistsOption(SimpleOption):
 
     default = True
 
-    group = ('Sync - Lists (Beta)', 'Watchlist')
-    label = 'Create playlist in plex'
+    group = (_('Sync - Lists (Beta)'), _('Watchlist'))
+    label = _('Create playlist in plex')
+    description = _(
+        "Create playlist in Plex if it doesn't already exist."
+    )
     order = 321
 
     # preference = 'sync_watched'

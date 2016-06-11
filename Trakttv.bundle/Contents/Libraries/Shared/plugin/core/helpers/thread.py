@@ -49,6 +49,10 @@ def module_start():
         'core'
     ])
 
+    import_modules(os.path.join(plugin_dir, 'api', 'account'), exclude=[
+        '__init__.py'
+    ])
+
     import_modules(os.path.join(plugin_dir, 'api', 'session'), exclude=[
         '__init__.py'
     ])

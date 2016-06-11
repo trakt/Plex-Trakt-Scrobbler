@@ -1,7 +1,9 @@
 from plugin.core.enums import ActivityMode
 from plugin.core.helpers.variable import pms_path
 
-PLUGIN_NAME = 'Plex-Trakt-Scrobbler'
+PLUGIN_NAME = 'Trakt.tv'
+PLUGIN_ART = 'art-default.png'
+PLUGIN_ICON = 'icon-default.png'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
