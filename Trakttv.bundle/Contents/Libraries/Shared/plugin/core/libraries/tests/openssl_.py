@@ -12,6 +12,12 @@ class OpenSSL(BaseTest):
         # Try construct SSL context
         ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
 
+        # Ensure library has SNI support
+        cnx = OpenSSL.SSL.Connection(ctx)
+
+        if not hasattr(cnx, 'set_tlsext_host_name'):
+            raise Exception('Missing SNI extension')
+
         return {
             'versions': {
                 'pyopenssl': getattr(OpenSSL, '__version__', None)
