@@ -143,7 +143,14 @@ class Descriptor(Interface):
         omitted.sort()
 
         if omitted and not child:
-            log.warn('[%s] Omitted attributes: %s' % (cls.__name__, ', '.join(omitted)))
+            for key in omitted:
+                log.warn('[%s] Omitted attribute: %s' % (cls.__name__, key), extra={
+                    'event': {
+                        'module': __name__,
+                        'name': 'construct.omitted_attribute',
+                        'key': '%s:%s' % (cls.__name__, key)
+                    }
+                })
 
         return keys_used, obj
 
