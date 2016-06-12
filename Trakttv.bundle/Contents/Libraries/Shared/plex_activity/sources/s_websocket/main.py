@@ -118,8 +118,24 @@ class WebSocket(Source):
 
         try:
             info = json.loads(data)
+        except UnicodeDecodeError as ex:
+            log.warn('Error decoding message from websocket: %s' % ex, extra={
+                'event': {
+                    'module': __name__,
+                    'name': 'process.load_decode_error',
+                    'key': '%s:%s' % (ex.encoding, ex.reason)
+                }
+            })
+            log.debug(data)
+            return False
         except Exception as ex:
-            log.warn('Error decoding message from websocket: %s' % ex)
+            log.warn('Error decoding message from websocket: %s' % ex, extra={
+                'event': {
+                    'module': __name__,
+                    'name': 'process.load_exception',
+                    'key': ex.message
+                }
+            })
             log.debug(data)
             return False
 
