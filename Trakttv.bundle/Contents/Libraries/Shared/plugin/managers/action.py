@@ -120,7 +120,13 @@ class ActionManager(Manager):
 
                 log.debug('Action %r sent, moved action to history', action.event)
             except Exception, ex:
-                log.warn('Unable to process action %r - %s', action.event, ex, exc_info=True)
+                log.warn('Unable to process action %%r - %s' % ex.message, action.event, exc_info=True, extra={
+                    'event': {
+                        'module': __name__,
+                        'name': 'run.process_exception',
+                        'key': ex.message
+                    }
+                })
             finally:
                 time.sleep(5)
 

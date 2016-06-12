@@ -41,7 +41,8 @@ class ServerSSLCertVerification(object):
         'userid':                   'UID'
     }
     SUBJ_ALT_NAME_EXT_NAME = 'subjectAltName'
-    PARSER_RE_STR = '/(%s)=' % '|'.join(list(DN_LUT.keys()) + list(DN_LUT.values()))
+    PARSER_RE_STR = '/(%s)=' % '|'.join(list(DN_LUT.keys()) + \
+                                        list(DN_LUT.values()))
     PARSER_RE = re.compile(PARSER_RE_STR)
 
     __slots__ = ('__hostname', '__certDN', '__subj_alt_name_match')

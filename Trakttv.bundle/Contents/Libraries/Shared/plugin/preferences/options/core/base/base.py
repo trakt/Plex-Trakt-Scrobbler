@@ -1,5 +1,6 @@
 from plugin.core.constants import PLUGIN_IDENTIFIER
 from plugin.models import Account
+from plugin.preferences.options.core.description import Description
 
 from plex import Plex
 import logging
@@ -18,6 +19,7 @@ class Option(object):
     # Display
     group = None
     label = None
+    description = None
     order = 0
 
     # Plex
@@ -66,6 +68,20 @@ class Option(object):
         pass
 
     def to_dict(self):
+        if not self.description:
+            log.warn('No description defined for the %r option' % self.key, extra={
+                'event': {
+                    'module': __name__,
+                    'name': 'to_dict.no_description',
+                    'key': self.key
+                }
+            })
+
+        # Ensure descriptions have been built
+        if self.description and isinstance(self.description, Description):
+            self.description = self.description.build()
+
+        # Build dictionary
         data = {
             'key':      self.key,
             'type':     self.type,
@@ -75,6 +91,7 @@ class Option(object):
             'group':    self.group,
             'label':    self.label,
             'order':    self.order,
+            'description': self.description,
 
             'value':    self.value
         }

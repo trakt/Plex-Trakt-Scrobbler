@@ -1,4 +1,6 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, MODE_IDS_BY_KEY
 from plugin.sync.core.enums import SyncMode
 
@@ -14,8 +16,27 @@ class SyncWatchedOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = SyncMode.Full
 
-    group = ('Sync', 'Watched')
-    label = 'Mode'
+    group = (_('Sync'), _('Watched'))
+    label = _('Mode')
+    description = Description(
+        _("Syncing mode for movie and episode watched states *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize watched states with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull watched states from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "Only push watched states to your Trakt.tv profile"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to watched states from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of watched states"
+            ))
+        ]
+    )
     order = 200
 
     preference = 'sync_watched'

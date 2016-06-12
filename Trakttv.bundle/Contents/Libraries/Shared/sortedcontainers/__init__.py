@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
-
-"""
-sortedcontainers Sorted Container Types Library
-===============================================
+"""Sorted Container Types: SortedList, SortedDict, SortedSet
 
 SortedContainers is an Apache2 licensed containers library, written in
 pure-Python, and fast as C-extensions.
 
-Python's standard library is great until you need a sorted container type. Many
-will attest that you can get really far without one, but the moment you
-**really need** a sorted list, dict, or set, you're faced with a dozen
+
+Python's standard library is great until you need a sorted collections
+type. Many will attest that you can get really far without one, but the moment
+you **really need** a sorted list, dict, or set, you're faced with a dozen
 different implementations, most using C-extensions without great documentation
 and benchmarking.
 
-Things shouldn't be this way. Not in Python.
+In Python, we can do better. And we can do it in pure-Python!
 
 ::
 
@@ -35,20 +32,21 @@ deployment and use of Python easy. There's no need to install a C compiler or
 pre-build and distribute custom extensions. Performance is a feature and
 testing has 100% coverage with unit tests and hours of stress.
 
-:copyright: (c) 2015 by Grant Jenks.
+:copyright: (c) 2016 by Grant Jenks.
 :license: Apache 2.0, see LICENSE for more details.
 
 """
 
-__title__ = 'sortedcontainers'
-__version__ = '1.4.4'
-__build__ = 0x010404
-__author__ = 'Grant Jenks'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2015 Grant Jenks'
 
 from .sortedlist import SortedList, SortedListWithKey
 from .sortedset import SortedSet
 from .sorteddict import SortedDict
 
 __all__ = ['SortedList', 'SortedSet', 'SortedDict', 'SortedListWithKey']
+
+__title__ = 'sortedcontainers'
+__version__ = '1.5.3'
+__build__ = 0x010503
+__author__ = 'Grant Jenks'
+__license__ = 'Apache 2.0'
+__copyright__ = 'Copyright 2016 Grant Jenks'

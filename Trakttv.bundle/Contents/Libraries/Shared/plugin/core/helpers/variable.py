@@ -64,6 +64,9 @@ def json_date_serializer(obj):
 
 
 def merge(a, b, recursive=False):
+    if not b:
+        return a
+
     if not recursive:
         a.update(b)
         return a

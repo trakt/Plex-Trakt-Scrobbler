@@ -1,8 +1,7 @@
 # ------------------------------------------------
 # Environment
 # ------------------------------------------------
-from plugin.core.environment import Environment
-import locale
+from plugin.core.environment import Environment, translate as _
 import os
 
 Environment.setup(Core, Dict, Platform, Prefs)
@@ -13,11 +12,6 @@ os.environ['LIBRARY_DB'] = os.path.join(
     'com.plexapp.plugins.library.db'
 )
 
-# locale
-try:
-    Log.Debug('Using locale: %s', locale.setlocale(locale.LC_ALL, ''))
-except Exception, ex:
-    Log.Warn('Unable to update locale: %s', ex)
 # ------------------------------------------------
 # FS Migrator
 # ------------------------------------------------
@@ -31,12 +25,25 @@ from plugin.core.logger import LoggerManager
 
 LoggerManager.setup(storage=False)
 # ------------------------------------------------
+# Language
+# ------------------------------------------------
+Environment.setup_locale()
+Environment.setup_translation()
+# ------------------------------------------------
 # Libraries
 # ------------------------------------------------
-from plugin.core.libraries import LibrariesManager
+from plugin.core.libraries.manager import LibrariesManager
 
 LibrariesManager.setup(cache=True)
 LibrariesManager.test()
+# ------------------------------------------------
+# Warnings
+# ------------------------------------------------
+from requests.packages.urllib3.exceptions import InsecurePlatformWarning, SNIMissingWarning
+import warnings
+
+warnings.filterwarnings('once', category=InsecurePlatformWarning)
+warnings.filterwarnings('once', category=SNIMissingWarning)
 # ------------------------------------------------
 # Modules
 # ------------------------------------------------
@@ -52,11 +59,10 @@ from interface.resources import Cover, Thumb
 # Local imports
 from core.logger import Logger
 from core.helpers import spawn
-from core.plugin import ART, NAME, ICON
 from main import Main
 
 from plugin.api.core.manager import ApiManager
-from plugin.core.constants import PLUGIN_IDENTIFIER
+from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_IDENTIFIER
 from plugin.core.singleton import Singleton
 from plugin.models.account import Account
 from plugin.modules.migrations.account import AccountMigration
@@ -74,18 +80,21 @@ log = Logger()
 
 
 def Start():
-    ObjectContainer.art = R(ART)
-    ObjectContainer.title1 = NAME
-    DirectoryObject.thumb = R(ICON)
-    DirectoryObject.art = R(ART)
-    PopupDirectoryObject.thumb = R(ICON)
-    PopupDirectoryObject.art = R(ART)
+    ObjectContainer.art = R(PLUGIN_ART)
+    ObjectContainer.title1 = PLUGIN_NAME
+    DirectoryObject.thumb = R(PLUGIN_ICON)
+    DirectoryObject.art = R(PLUGIN_ART)
+    PopupDirectoryObject.thumb = R(PLUGIN_ICON)
+    PopupDirectoryObject.art = R(PLUGIN_ART)
 
     if not Singleton.acquire():
         log.warn('Unable to acquire plugin instance')
 
     # Complete logger initialization
     LoggerManager.setup(storage=True)
+
+    # Store current language
+    Dict['language'] = Prefs['language']
 
     # Start plugin
     m = Main()
@@ -134,8 +143,8 @@ def ValidatePrefs():
         log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
-    if Preferences.get('activity.mode') != last_activity_mode:
-        log.info('Activity mode has changed, restarting plugin...')
+    if Preferences.get('activity.mode') != last_activity_mode or Prefs['language'] != Dict['language']:
+        log.info('Restart required to apply changes, restarting plugin...')
 
         def restart():
             # Delay until after `ValidatePrefs` returns
@@ -145,9 +154,9 @@ def ValidatePrefs():
             Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
 
         spawn(restart)
-        return MessageContainer("Success", "Success")
+        return MessageContainer(_("Success"), _("Success"))
 
     # Fire configuration changed callback
     spawn(Main.on_configuration_changed)
 
-    return MessageContainer("Success", "Success")
+    return MessageContainer(_("Success"), _("Success"))

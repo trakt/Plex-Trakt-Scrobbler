@@ -144,6 +144,12 @@
         "default": "*"
     },
     {
+        "id": "language",
+        "type": "text",
+        "label": "Language (e.g. \"en_US\", defaults to system language)",
+        "default": ""
+    },
+    {
         "id": "activity_mode",
         "type": "enum",
         "label": "Activity mode",

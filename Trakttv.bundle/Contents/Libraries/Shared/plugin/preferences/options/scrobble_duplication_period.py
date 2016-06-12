@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 from plugin.preferences.options.o_sync.constants import DUPLICATION_PERIOD_LABELS_BY_KEY, DUPLICATION_PERIOD_IDS_BY_KEY, \
     DUPLICATION_PERIOD_KEYS_BY_LABEL
@@ -17,8 +18,14 @@ class ScrobbleDuplicationPeriodOption(SimpleOption):
     default = ScrobbleDuplicationPeriod.H6
     scope = 'server'
 
-    group = ('Advanced', 'Scrobble')
-    label = 'Ignore duplicates for'
+    group = (_('Advanced'), _('Scrobble'))
+    label = _('Ignore duplicates for')
+    description = _(
+        "Duplicate scrobbles for a movie or episode are ignored for the defined period.\n"
+        "\n"
+        "This can help reduce the chances of unintended history duplication if you resume watching something that "
+        "has already reached 80% progress (so has already been scrobbled)."
+    )
     order = 115
 
     preference = 'scrobble_duplication_period'

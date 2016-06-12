@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 
 import logging
@@ -11,8 +12,11 @@ class SyncLibraryUpdateOption(SimpleOption):
 
     default = False
 
-    group = ('Sync', 'Triggers')
-    label = 'After library updates'
+    group = (_('Sync'), _('Triggers'))
+    label = _('After library updates')
+    description = _(
+        "Automatically trigger a \"Full\" sync after your Plex libraries are updated."
+    )
     order = 251
 
     preference = 'sync_run_library'

@@ -30,6 +30,7 @@ class Detail(Container):
 
     certificate = Property(type=(int, bool))
     multiuser = Property(type=(int, bool))
+    owner_features = Property('ownerFeatures')
     sync = Property(type=(int, bool))
 
     start_state = Property('startState')

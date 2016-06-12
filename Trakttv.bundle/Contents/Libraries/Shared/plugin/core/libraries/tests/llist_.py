@@ -1,7 +1,7 @@
-from plugin.core.libraries.tests.core.base import TestBase
+from plugin.core.libraries.tests.core.base import BaseTest
 
 
-class LList(TestBase):
+class LList(BaseTest):
     name = 'llist'
     optional = True
 

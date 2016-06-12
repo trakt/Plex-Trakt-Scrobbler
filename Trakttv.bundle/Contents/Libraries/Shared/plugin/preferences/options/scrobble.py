@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
 
 import logging
@@ -11,8 +12,12 @@ class ScrobbleOption(SimpleOption):
 
     default = True
 
-    group = ('Scrobble',)
-    label = 'Enabled'
+    group = (_('Scrobble'),)
+    label = _('Enabled')
+    description = _(
+        "Send your watching activity to Trakt.tv in real-time - this will update the \"currently watching\" status on "
+        "your profile and mark items as watched when they reach 80% progress."
+    )
     order = 100
 
     preference = 'start_scrobble'

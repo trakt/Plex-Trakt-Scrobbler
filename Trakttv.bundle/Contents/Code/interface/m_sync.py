@@ -1,20 +1,18 @@
 from core.helpers import timestamp, pad_title, function_path, redirect
-from core.localization import localization
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.core.environment import translate as _
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
 from plugin.managers.account import AccountManager
 from plugin.models import Account, SyncResult
-from plugin.sync import SyncData, SyncMode
+from plugin.sync import SyncMode
 from plugin.sync.main import Sync, QueueError
 
 from ago import human
 from datetime import datetime
 from plex import Plex
-
-L, LF = localization('interface.m_sync')
 
 log = Logger('interface.m_sync')
 
@@ -24,7 +22,7 @@ log = Logger('interface.m_sync')
 @route(PLUGIN_PREFIX + '/sync/accounts')
 def AccountsMenu(refresh=None):
     oc = ObjectContainer(
-        title2=L('accounts:title'),
+        title2=_("Accounts"),
         no_cache=True
     )
 
@@ -53,7 +51,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
     # Build sync controls menu
     oc = ObjectContainer(
-        title2=LF('controls:title', account.name),
+        title2=_("Sync (%s)") % account.name,
         no_cache=True,
 
         art=function_path('Cover.png', account_id=account.id, refresh=account.refreshed_ts)
@@ -96,7 +94,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
     oc.add(DirectoryObject(
         key=Trigger.callback(Pull, account),
-        title=pad_title('%s from trakt' % SyncMode.title(SyncMode.Pull)),
+        title=pad_title(_('%s from Trakt.tv') % SyncMode.title(SyncMode.Pull)),
         summary=Status.build(account, SyncMode.Pull),
 
         thumb=R("icon-sync_down.png"),
@@ -105,7 +103,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
     oc.add(DirectoryObject(
         key=Trigger.callback(FastPull, account),
-        title=pad_title('%s from trakt' % SyncMode.title(SyncMode.FastPull)),
+        title=pad_title(_('%s from Trakt.tv') % SyncMode.title(SyncMode.FastPull)),
         summary=Status.build(account, SyncMode.FastPull),
 
         thumb=R("icon-sync_down.png"),
@@ -125,7 +123,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     except Exception, ex:
         # Build message
         if p_account is None:
-            message = "Plex account hasn't been authenticated"
+            message = _("Plex account hasn't been authenticated")
         else:
             message = str(ex.message or ex)
 
@@ -134,7 +132,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
         return redirect('/sync',
             account_id=account_id,
-            title='Error',
+            title=_('Error'),
             message=message,
             message_only=True
         )
@@ -146,7 +144,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     for section in sections.filter(['show', 'movie'], titles=f_allow):
         oc.add(DirectoryObject(
             key=Trigger.callback(Push, account, section),
-            title=pad_title('%s "%s" to trakt' % (SyncMode.title(SyncMode.Push), section.title)),
+            title=pad_title(_('%s "%s" to Trakt.tv') % (SyncMode.title(SyncMode.Push), section.title)),
             summary=Status.build(account, SyncMode.Push, section.key),
 
             thumb=R("icon-sync_up.png"),
@@ -157,7 +155,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
     if len(section_keys) > 1:
         oc.add(DirectoryObject(
             key=Trigger.callback(Push, account),
-            title=pad_title('%s all to trakt' % SyncMode.title(SyncMode.Push)),
+            title=pad_title(_('%s all to Trakt.tv') % SyncMode.title(SyncMode.Push)),
             summary=Status.build(account, SyncMode.Push),
 
             thumb=R("icon-sync_up.png"),
@@ -257,19 +255,19 @@ class Active(object):
     def build_status(cls, current, title, callback=None):
         return DirectoryObject(
             key=callback,
-            title=pad_title('%s - Status' % title),
+            title=pad_title(_('%s - Status') % title),
             summary=cls.build_status_summary(current)
         )
 
     @staticmethod
     def build_status_summary(current):
-        summary = 'Working'
+        summary = _('Working')
 
         # Estimated time remaining
         remaining_seconds = current.progress.remaining_seconds
 
         if remaining_seconds is not None:
-            summary += ', %.02f seconds remaining' % remaining_seconds
+            summary += _(', %.02f seconds remaining') % remaining_seconds
 
         return summary
 
@@ -281,7 +279,7 @@ class Active(object):
     def build_cancel(cls, current, title):
         return DirectoryObject(
             key=Callback(Cancel, account_id=current.account.id, id=current.id),
-            title=pad_title('%s - Cancel' % title)
+            title=pad_title(_('%s - Cancel') % title)
         )
 
 
@@ -291,7 +289,7 @@ class Status(object):
         status = SyncResult.get_latest(account, mode, section).first()
 
         if status is None or status.latest is None:
-            return 'Not run yet.'
+            return _('Not run yet.')
 
         # Build status fragments
         fragments = []
@@ -311,16 +309,16 @@ class Status(object):
         if len(fragments):
             return ', '.join(fragments) + '.'
 
-        return 'Not run yet.'
+        return _('Not run yet.')
 
     @staticmethod
     def build_elapsed(status):
         elapsed = status.latest.ended_at - status.latest.started_at
 
         if elapsed.seconds < 1:
-            return 'taking less than a second'
+            return _('taking less than a second')
 
-        return 'taking %s' % human(
+        return _('taking %s') % human(
             elapsed,
             precision=1,
             past_tense='%s'
@@ -329,19 +327,19 @@ class Status(object):
     @staticmethod
     def build_result(status):
         if status.latest.success:
-            return 'was successful'
+            return _('was successful')
 
-        message = 'failed'
+        message = _('failed')
 
         # Resolve errors
         errors = list(status.latest.get_errors())
 
         if len(errors) > 1:
             # Multiple errors
-            message += ' (%d errors, %s)' % (len(errors), errors[0].summary)
+            message += _(' (%d errors, %s)') % (len(errors), errors[0].summary)
         elif len(errors) == 1:
             # Single error
-            message += ' (%s)' % errors[0].summary
+            message += _(' (%s)') % errors[0].summary
 
         return message
 
@@ -350,9 +348,9 @@ class Status(object):
         since = datetime.utcnow() - status.latest.ended_at
 
         if since.seconds < 1:
-            return 'Last run just a moment ago'
+            return _('Last run just a moment ago')
 
-        return 'Last run %s' % human(since, precision=1)
+        return _('Last run %s') % human(since, precision=1)
 
 
 class Trigger(object):

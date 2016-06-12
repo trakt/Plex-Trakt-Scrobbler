@@ -1,3 +1,4 @@
+from plugin.core.environment import translate as _
 from plugin.models import SyncStatus, SyncResult
 from plugin.preferences.options.core.base import SchedulerOption
 from plugin.preferences.options.o_sync.constants import INTERVAL_LABELS_BY_KEY, INTERVAL_KEYS_BY_LABEL, \
@@ -16,8 +17,11 @@ class SyncIntervalOption(SchedulerOption):
     choices = INTERVAL_LABELS_BY_KEY
     default = None
 
-    group = ('Sync', 'Triggers')
-    label = 'Interval'
+    group = (_('Sync'), _('Triggers'))
+    label = _('Interval')
+    description = _(
+        "Automatically trigger a \"Full\" sync at the specified interval."
+    )
     order = 250
 
     preference = 'sync_run_interval'
