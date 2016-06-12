@@ -90,9 +90,12 @@ class Environment(object):
 
     @classmethod
     def setup_locale(cls):
-        # Setup locale
+        # Use language defined in preferences (if available)
+        language = cls.get_pref('language') or ''
+
+        # Initialize locale
         try:
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, language)
         except Exception, ex:
             log.warn('Unable to set locale: %s', ex, exc_info=True)
             return False
