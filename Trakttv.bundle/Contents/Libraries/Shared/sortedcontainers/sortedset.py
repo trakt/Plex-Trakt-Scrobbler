@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
-#
-# Sorted set implementation.
+"""Sorted set implementation.
 
-from .sortedlist import SortedList, recursive_repr, SortedListWithKey
+"""
+
 from collections import Set, MutableSet, Sequence
 from itertools import chain
 import operator as op
+
+from .sortedlist import SortedList, recursive_repr, SortedListWithKey
 
 class SortedSet(MutableSet, Sequence):
     """
@@ -36,6 +37,7 @@ class SortedSet(MutableSet, Sequence):
         on your usage.  It's best to leave the load factor at the default until
         you start benchmarking.
         """
+        # pylint: disable=redefined-variable-type
         self._key = key
         self._load = load
 
@@ -70,7 +72,7 @@ class SortedSet(MutableSet, Sequence):
 
     def __contains__(self, value):
         """Return True if and only if *value* is an element in the set."""
-        return (value in self._set)
+        return value in self._set
 
     def __getitem__(self, index):
         """
@@ -86,17 +88,21 @@ class SortedSet(MutableSet, Sequence):
 
         Supports slice notation and negative indexes.
         """
+        _set = self._set
         _list = self._list
         if isinstance(index, slice):
             values = _list[index]
-            self._set.difference_update(values)
+            _set.difference_update(values)
         else:
             value = _list[index]
-            self._set.remove(value)
+            _set.remove(value)
         del _list[index]
 
-    def _make_cmp(set_op, doc):
+    def _make_cmp(self, set_op, doc):
+        "Make comparator method."
         def comparer(self, that):
+            "Compare method for sorted set and set-like object."
+            # pylint: disable=protected-access
             if isinstance(that, SortedSet):
                 return set_op(self._set, that._set)
             elif isinstance(that, Set):
@@ -110,12 +116,12 @@ class SortedSet(MutableSet, Sequence):
 
         return comparer
 
-    __eq__ = _make_cmp(op.eq, 'equal to')
-    __ne__ = _make_cmp(op.ne, 'not equal to')
-    __lt__ = _make_cmp(op.lt, 'a proper subset of')
-    __gt__ = _make_cmp(op.gt, 'a proper superset of')
-    __le__ = _make_cmp(op.le, 'a subset of')
-    __ge__ = _make_cmp(op.ge, 'a superset of')
+    __eq__ = _make_cmp(None, op.eq, 'equal to')
+    __ne__ = _make_cmp(None, op.ne, 'not equal to')
+    __lt__ = _make_cmp(None, op.lt, 'a proper subset of')
+    __gt__ = _make_cmp(None, op.gt, 'a proper superset of')
+    __le__ = _make_cmp(None, op.le, 'a subset of')
+    __ge__ = _make_cmp(None, op.ge, 'a superset of')
 
     def __len__(self):
         """Return the number of elements in the set."""
@@ -143,8 +149,9 @@ class SortedSet(MutableSet, Sequence):
 
     def add(self, value):
         """Add the element *value* to the set."""
-        if value not in self._set:
-            self._set.add(value)
+        _set = self._set
+        if value not in _set:
+            _set.add(value)
             self._list.add(value)
 
     def clear(self):
@@ -167,8 +174,9 @@ class SortedSet(MutableSet, Sequence):
         Remove the first occurrence of *value*.  If *value* is not a member,
         does nothing.
         """
-        if value in self._set:
-            self._set.remove(value)
+        _set = self._set
+        if value in _set:
+            _set.remove(value)
             self._list.discard(value)
 
     def pop(self, index=-1):
@@ -177,6 +185,7 @@ class SortedSet(MutableSet, Sequence):
         set is empty or index is out of range.  Negative indexes are supported,
         as for slice indices.
         """
+        # pylint: disable=arguments-differ
         value = self._list.pop(index)
         self._set.remove(value)
         return value
@@ -206,11 +215,13 @@ class SortedSet(MutableSet, Sequence):
         Update the set, removing elements found in keeping only elements
         found in any of the *iterables*.
         """
+        _set = self._set
         values = set(chain(*iterables))
-        if (4 * len(values)) > len(self):
-            self._set.difference_update(values)
-            self._list.clear()
-            self._list.update(self._set)
+        if (4 * len(values)) > len(_set):
+            _list = self._list
+            _set.difference_update(values)
+            _list.clear()
+            _list.update(_set)
         else:
             _discard = self.discard
             for value in values:
@@ -234,9 +245,11 @@ class SortedSet(MutableSet, Sequence):
         """
         Update the set, keeping only elements found in it and all *iterables*.
         """
-        self._set.intersection_update(*iterables)
-        self._list.clear()
-        self._list.update(self._set)
+        _set = self._set
+        _list = self._list
+        _set.intersection_update(*iterables)
+        _list.clear()
+        _list.update(_set)
         return self
 
     __iand__ = intersection_update
@@ -257,9 +270,11 @@ class SortedSet(MutableSet, Sequence):
         Update the set, keeping only elements found in either *self* or *that*,
         but not in both.
         """
-        self._set.symmetric_difference_update(that)
-        self._list.clear()
-        self._list.update(self._set)
+        _set = self._set
+        _list = self._list
+        _set.symmetric_difference_update(that)
+        _list.clear()
+        _list.update(_set)
         return self
 
     __ixor__ = symmetric_difference_update
@@ -275,11 +290,13 @@ class SortedSet(MutableSet, Sequence):
 
     def update(self, *iterables):
         """Update the set, adding elements from all *iterables*."""
+        _set = self._set
         values = set(chain(*iterables))
-        if (4 * len(values)) > len(self):
-            self._set.update(values)
-            self._list.clear()
-            self._list.update(self._set)
+        if (4 * len(values)) > len(_set):
+            _list = self._list
+            _set.update(values)
+            _list.clear()
+            _list.update(_set)
         else:
             _add = self.add
             for value in values:
@@ -303,6 +320,7 @@ class SortedSet(MutableSet, Sequence):
         )
 
     def _check(self):
+        # pylint: disable=protected-access
         self._list._check()
         assert len(self._set) == len(self._list)
         _set = self._set

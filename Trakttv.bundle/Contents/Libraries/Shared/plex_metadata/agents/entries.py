@@ -28,6 +28,7 @@ AGENTS = {
         'media': ['show', 'season', 'episode'],
 
         'children': [
+            {'pattern': r'(\d+)',      'service': 'anidb', 'type': int},
             {'pattern': r'anidb-(.*)', 'service': 'anidb', 'type': int},
             {'pattern': r'tmdb-(.*)',  'service': 'tmdb',  'type': int},
             {'pattern': r'tvdb-(.*)',  'service': 'tvdb',  'type': int},
@@ -57,6 +58,13 @@ AGENTS = {
         'media': ['show', 'season', 'episode'],
 
         'service': 'tvdb',
+        'type': int
+    },
+
+    'com.plexapp.agents.kinopoiskrushow': {
+        'media': ['show', 'season', 'episode'],
+
+        'service': 'kinopoisk',
         'type': int
     },
 
@@ -118,6 +126,13 @@ AGENTS = {
     },
 
     'com.plexapp.agents.kinopoisk': {
+        'media': ['movie'],
+
+        'service': 'kinopoisk',
+        'type': int
+    },
+
+    'com.plexapp.agents.kinopoiskru': {
         'media': ['movie'],
 
         'service': 'kinopoisk',

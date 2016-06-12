@@ -188,8 +188,8 @@ def open_url(url, config, data=None, handlers=None):
         # currently only supports http basic auth
         auth_handler = HTTPBasicAuthHandler_(HTTPPasswordMgrWithDefaultRealm_())
         auth_handler.add_password(realm=None, uri=url,
-                                  user=config.httpauth[0],
-                                  passwd=config.httpauth[1])
+                                  user=config.http_basicauth[0],
+                                  passwd=config.http_basicauth[1])
         handlers.append(auth_handler)
 
 

@@ -1,6 +1,7 @@
 from core.helpers import pad_title, timestamp
 
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.core.environment import translate as _
 from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
 from plugin.models import Exception, Message
 
@@ -36,7 +37,7 @@ def ListMessages(viewed=None):
 
     # Construct container
     oc = ObjectContainer(
-        title2="Messages"
+        title2=_("Messages")
     )
 
     for m in messages:
@@ -63,7 +64,7 @@ def ListMessages(viewed=None):
     if len(messages) != 50 and len(messages) < total_messages:
         oc.add(DirectoryObject(
             key=Callback(ListMessages),
-            title=pad_title("View All")
+            title=pad_title(_("View All"))
         ))
 
     return oc
@@ -105,14 +106,14 @@ def ViewMessage(error_id):
         # Display message code
         oc.add(DirectoryObject(
             key='',
-            title=pad_title('Code: %s' % hex(message.code))
+            title=pad_title(_('Code: %s') % hex(message.code))
         ))
 
         # Display message description
         if message.description:
             oc.add(DirectoryObject(
                 key='',
-                title=pad_title('Description: %s' % message.description)
+                title=pad_title(_('Description: %s') % message.description)
             ))
 
     return oc

@@ -39,6 +39,7 @@ DELETE_FILES = [
 ]
 
 DELETE_EXTENSIONS = [
+    '.pth',
     '.pyd'
 ]
 
@@ -91,6 +92,19 @@ def run_compact():
 def run_extras():
     # Create "ndg/__init__.py" file
     touch(os.path.join('ndg', '__init__.py'))
+
+    # Delete "*.dist-info" "*.egg-info" directories
+    for name in os.listdir(BASE_PATH):
+        if not name.endswith('.dist-info') and not name.endswith('.egg-info'):
+            continue
+
+        path = os.path.join(BASE_PATH, name)
+
+        try:
+            shutil.rmtree(path)
+            print "Deleted directory: %r" % path
+        except Exception, ex:
+            print "Unable to delete directory: %r - %s" % (path, ex)
 
 
 def write(path, content):

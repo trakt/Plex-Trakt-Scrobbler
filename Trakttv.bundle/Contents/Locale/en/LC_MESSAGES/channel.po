@@ -1,0 +1,817 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2016-06-12 23:55+1200\n"
+"PO-Revision-Date: 2016-06-13 00:05+1200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ..\Code\__init__.py:157 ..\Code\__init__.py:162
+msgid "Success"
+msgstr "Success"
+
+#: ..\Code\interface\m_main.py:23
+msgid "Messages (%s)"
+msgstr "Messages (%s)"
+
+#: ..\Code\interface\m_main.py:33
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:73
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:76
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:19
+msgid "Sync"
+msgstr "Sync"
+
+#: ..\Code\interface\m_main.py:34
+msgid "Synchronize your libraries with Trakt.tv"
+msgstr "Synchronise your libraries with Trakt.tv"
+
+#: ..\Code\interface\m_main.py:43 ..\Code\interface\m_main.py:58
+msgid "About"
+msgstr "About"
+
+#: ..\Code\interface\m_main.py:48
+msgid "Preferences"
+msgstr "Preferences"
+
+#: ..\Code\interface\m_main.py:63 ..\Code\interface\m_messages.py:40
+msgid "Messages"
+msgstr "Messages"
+
+#: ..\Code\interface\m_main.py:68
+msgid "Version: %s"
+msgstr "Version: %s"
+
+#: ..\Code\interface\m_messages.py:67
+msgid "View All"
+msgstr "View All"
+
+#: ..\Code\interface\m_messages.py:109
+msgid "Code: %s"
+msgstr "Code: %s"
+
+#: ..\Code\interface\m_messages.py:116
+msgid "Description: %s"
+msgstr "Description: %s"
+
+#: ..\Code\interface\m_sync.py:25
+msgid "Accounts"
+msgstr "Accounts"
+
+#: ..\Code\interface\m_sync.py:54
+msgid "Sync (%s)"
+msgstr "Sync (%s)"
+
+#: ..\Code\interface\m_sync.py:97 ..\Code\interface\m_sync.py:106
+msgid "%s from Trakt.tv"
+msgstr "%s from Trakt.tv"
+
+#: ..\Code\interface\m_sync.py:126
+msgid "Plex account hasn't been authenticated"
+msgstr "Plex account hasn't been authenticated"
+
+#: ..\Code\interface\m_sync.py:135
+#: ..\Libraries\Shared\plugin\models\message.py:49
+msgid "Error"
+msgstr "Error"
+
+#: ..\Code\interface\m_sync.py:147
+msgid "%s \"%s\" to Trakt.tv"
+msgstr "%s \"%s\" to Trakt.tv"
+
+#: ..\Code\interface\m_sync.py:158
+msgid "%s all to Trakt.tv"
+msgstr "%s all to Trakt.tv"
+
+#: ..\Code\interface\m_sync.py:258
+msgid "%s - Status"
+msgstr "%s - Status"
+
+#: ..\Code\interface\m_sync.py:264
+msgid "Working"
+msgstr "Working"
+
+#: ..\Code\interface\m_sync.py:270
+msgid ", %.02f seconds remaining"
+msgstr ", %.02f seconds remaining"
+
+#: ..\Code\interface\m_sync.py:282
+msgid "%s - Cancel"
+msgstr "%s - Cancel"
+
+#: ..\Code\interface\m_sync.py:292 ..\Code\interface\m_sync.py:312
+msgid "Not run yet."
+msgstr "Not run yet."
+
+#: ..\Code\interface\m_sync.py:319
+msgid "taking less than a second"
+msgstr "taking less than a second"
+
+#: ..\Code\interface\m_sync.py:321
+msgid "taking %s"
+msgstr "taking %s"
+
+#: ..\Code\interface\m_sync.py:330
+msgid "was successful"
+msgstr "was successful"
+
+#: ..\Code\interface\m_sync.py:332
+msgid "failed"
+msgstr "failed"
+
+#: ..\Code\interface\m_sync.py:339
+msgid " (%d errors, %s)"
+msgstr " (%d errors, %s)"
+
+#: ..\Code\interface\m_sync.py:342
+msgid " (%s)"
+msgstr " (%s)"
+
+#: ..\Code\interface\m_sync.py:351
+msgid "Last run just a moment ago"
+msgstr "Last run just a moment ago"
+
+#: ..\Code\interface\m_sync.py:353
+msgid "Last run %s"
+msgstr "Last run %s"
+
+#: ..\Libraries\Shared\plugin\models\message.py:45
+msgid "Exception"
+msgstr "Exception"
+
+#: ..\Libraries\Shared\plugin\models\message.py:47
+msgid "Info"
+msgstr "Info"
+
+#: ..\Libraries\Shared\plugin\models\message.py:48
+msgid "Warning"
+msgstr "Warning"
+
+#: ..\Libraries\Shared\plugin\models\message.py:50
+msgid "Critical"
+msgstr "Critical"
+
+#: ..\Libraries\Shared\plugin\models\message.py:52
+msgid "Trakt.tv"
+msgstr "Trakt.tv"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:20
+msgid "Activity"
+msgstr "Activity"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:16
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
+msgid "Advanced"
+msgstr "Advanced"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:21
+msgid "Method"
+msgstr "Method"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:23
+msgid "Method used to retrieve watching activity"
+msgstr "Method used to retrieve watching activity"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:24
+msgid "Automatic"
+msgstr "Automatic"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:24
+msgid "Automatically determine available activity method"
+msgstr "Automatically determine available activity method"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:27
+msgid "Retrieve watching activity from the Plex notification channel"
+msgstr "Retrieve watching activity from the Plex notification channel"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:27
+msgid "WebSocket"
+msgstr "WebSocket"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:30
+msgid "Logging"
+msgstr "Logging"
+
+#: ..\Libraries\Shared\plugin\preferences\options\activity.py:30
+msgid ""
+"Parse \"Plex Media Server.log\" for watching activity *(higher CPU + Disk IO "
+"usage, may block system sleep)*"
+msgstr ""
+"Parse \"Plex Media Server.log\" for watching activity *(higher CPU + Disk IO "
+"usage, may block system sleep)*"
+
+#: ..\Libraries\Shared\plugin\preferences\options\api.py:16
+msgid "API"
+msgstr "API"
+
+#: ..\Libraries\Shared\plugin\preferences\options\api.py:17
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:16
+msgid "Enabled"
+msgstr "Enabled"
+
+#: ..\Libraries\Shared\plugin\preferences\options\api.py:18
+msgid ""
+"Enables the plugin administration API, disabling this option will block "
+"access to the configuration site."
+msgstr ""
+"Enables the plugin administration API, disabling this option will block "
+"access to the configuration site."
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:21
+msgid "Matcher"
+msgstr "Matcher"
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:19
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:21
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:20
+msgid "Mode"
+msgstr "Mode"
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:24
+msgid "Matcher to use for episode identification."
+msgstr "Matcher to use for episode identification."
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:25
+msgid "Use the episode identifier provided by Plex"
+msgstr "Use the episode identifier provided by Plex"
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:86
+msgid "Plex"
+msgstr "Plex"
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:28
+msgid "Plex Extended"
+msgstr "Plex Extended"
+
+#: ..\Libraries\Shared\plugin\preferences\options\matcher.py:28
+msgid ""
+"Use [Caper](https://github.com/fuzeman/caper) to parse episode filenames for "
+"an identifier *(provides better support for multi-episode files)*"
+msgstr ""
+"Use [Caper](https://github.com/fuzeman/caper) to parse episode filenames for "
+"an identifier *(provides better support for multi-episode files)*"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:19
+msgid "Backups"
+msgstr "Backups"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:20
+msgid "Maintenance Interval"
+msgstr "Maintenance Interval"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_backup\maintenance_interval.py:21
+msgid ""
+"Interval to perform backup maintenance tasks, this involves:\n"
+" - Compressing backups for the previous month and year\n"
+" - Deleting backups for the previous period by these rules:\n"
+"     - 4 backups per day\n"
+"     - 14 backups per week\n"
+"     - 28 backups per month"
+msgstr ""
+"Interval to perform backup maintenance tasks, this involves:\n"
+" - Compressing backups for the previous month and year\n"
+" - Deleting backups for the previous period by these rules:\n"
+"     - 4 backups per day\n"
+"     - 14 backups per week\n"
+"     - 28 backups per month"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:17
+msgid "Action"
+msgstr "Action"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:19
+msgid "Action to perform during syncs."
+msgstr "Action to perform during syncs."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:20
+msgid "Update"
+msgstr "Update"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:20
+msgid "Update Trakt.tv and Plex with any changes"
+msgstr "Update Trakt.tv and Plex with any changes"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:23
+msgid "Don't perform any updates, just display changes in the plugin log file"
+msgstr "Don't perform any updates, just display changes in the plugin log file"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\action.py:23
+msgid "Log"
+msgstr "Log"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:73
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:68
+msgid "Collection"
+msgstr "Collection"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:21
+msgid ""
+"Syncing mode for movie and episode collection metadata *(applies to both "
+"automatic and manual syncs)*."
+msgstr ""
+"Syncing mode for movie and episode collection metadata *(applies to both "
+"automatic and manual syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:22
+msgid "Synchronize collection metadata with your Trakt.tv profile"
+msgstr "Synchronise collection metadata with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:22
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:24
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:23
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:146
+msgid "Full"
+msgstr "Full"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:31
+msgid "*Unused*"
+msgstr "*Unused*"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:25
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:27
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:26
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:147
+msgid "Pull"
+msgstr "Pull"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:28
+msgid "Only push collection metadata to your Trakt.tv profile"
+msgstr "Only push collection metadata to your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:30
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:29
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:148
+msgid "Push"
+msgstr "Push"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:31
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:31
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:31
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:31
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:31
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:33
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:32
+msgid "Fast Pull"
+msgstr "Fast Pull"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:34
+msgid "Completely disable syncing of collection metadata"
+msgstr "Completely disable syncing of collection metadata"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:34
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:34
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:34
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:34
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:34
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:23
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:36
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:35
+msgid "Disabled"
+msgstr "Disabled"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:74
+msgid "Clean collection"
+msgstr "Clean collection"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\collection.py:75
+msgid ""
+"Remove movies and episodes from your Trakt.tv collection that are unable to "
+"be found in your Plex libraries."
+msgstr ""
+"Remove movies and episodes from your Trakt.tv collection that are unable to "
+"be found in your Plex libraries."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:12
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:21
+msgid "Sync - Triggers"
+msgstr "Sync - Triggers"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:13
+msgid "Defer until server is idle"
+msgstr "Defer until server is idle"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_defer.py:14
+msgid "Defer automatic syncs until the server isn't streaming any media."
+msgstr "Defer automatic syncs until the server isn't streaming any media."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:22
+msgid "Idle delay"
+msgstr "Idle delay"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\idle_delay.py:23
+msgid ""
+"Wait time before the server is considered idle after media stops being "
+"streamed."
+msgstr ""
+"Wait time before the server is considered idle after media stops being "
+"streamed."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:15
+msgid "Triggers"
+msgstr "Triggers"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:21
+msgid "Interval"
+msgstr "Interval"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\interval.py:22
+msgid "Automatically trigger a \"Full\" sync at the specified interval."
+msgstr "Automatically trigger a \"Full\" sync at the specified interval."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:16
+msgid "After library updates"
+msgstr "After library updates"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\library_update.py:17
+msgid ""
+"Automatically trigger a \"Full\" sync after your Plex libraries are updated."
+msgstr ""
+"Automatically trigger a \"Full\" sync after your Plex libraries are updated."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:73
+msgid "Liked"
+msgstr "Liked"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:73
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:73
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:73
+msgid "Sync - Lists (Beta)"
+msgstr "Sync - Lists (Beta)"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:21
+msgid ""
+"Syncing mode for liked lists *(applies to both automatic and manual syncs)*."
+msgstr ""
+"Syncing mode for liked lists *(applies to both automatic and manual syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:22
+msgid "Synchronize liked lists with your Trakt.tv profile"
+msgstr "Synchronise liked lists with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:25
+msgid "Only pull liked lists from your Trakt.tv profile"
+msgstr "Only pull liked lists from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:28
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:28
+msgid "*Not implemented yet*"
+msgstr "*Not implemented yet*"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:31
+msgid "Only pull changes to liked lists from your Trakt.tv profile"
+msgstr "Only pull changes to liked lists from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:34
+msgid "Completely disable syncing of liked lists"
+msgstr "Completely disable syncing of liked lists"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:74
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:74
+msgid "Create playlists in plex"
+msgstr "Create playlists in plex"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\liked.py:75
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:75
+msgid "Create playlists in Plex if they don't already exist."
+msgstr "Create playlists in Plex if they don't already exist."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:73
+msgid "Personal"
+msgstr "Personal"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:21
+msgid ""
+"Syncing mode for personal lists *(applies to both automatic and manual "
+"syncs)*."
+msgstr ""
+"Syncing mode for personal lists *(applies to both automatic and manual "
+"syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:22
+msgid "Synchronize personal lists with your Trakt.tv profile"
+msgstr "Synchronise personal lists with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:25
+msgid "Only pull personal lists from your Trakt.tv profile"
+msgstr "Only pull personal lists from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:31
+msgid "Only pull changes to personal lists from your Trakt.tv profile"
+msgstr "Only pull changes to personal lists from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\personal.py:34
+msgid "Completely disable syncing of personal lists"
+msgstr "Completely disable syncing of personal lists"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:18
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:73
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:72
+msgid "Watchlist"
+msgstr "Watchlist"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:21
+msgid ""
+"Syncing mode for watchlist items *(applies to both automatic and manual "
+"syncs)*."
+msgstr ""
+"Syncing mode for watchlist items *(applies to both automatic and manual "
+"syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:22
+msgid "Synchronize watchlist items with your Trakt.tv profile"
+msgstr "Synchronise watchlist items with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:25
+msgid "Only pull watchlist items from your Trakt.tv profile"
+msgstr "Only pull watchlist items from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:31
+msgid "Only pull changes to watchlist items from your Trakt.tv profile"
+msgstr "Only pull changes to watchlist items from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:34
+msgid "Completely disable syncing of watchlist items"
+msgstr "Completely disable syncing of watchlist items"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:74
+msgid "Create playlist in plex"
+msgstr "Create playlist in plex"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\lists\watchlist.py:75
+msgid "Create playlist in Plex if it doesn't already exist."
+msgstr "Create playlist in Plex if it doesn't already exist."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:18
+msgid "Playback Progress"
+msgstr "Playback Progress"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:21
+msgid ""
+"Syncing mode for movie and episode playback progress *(applies to both "
+"automatic and manual syncs)*."
+msgstr ""
+"Syncing mode for movie and episode playback progress *(applies to both "
+"automatic and manual syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:22
+msgid "Synchronize playback progress with your Trakt.tv profile"
+msgstr "Synchronise playback progress with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:25
+msgid "Only pull playback progress from your Trakt.tv profile"
+msgstr "Only pull playback progress from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:28
+msgid "Only push playback progress to your Trakt.tv profile"
+msgstr "Only push playback progress to your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:31
+msgid "Only pull changes to playback progress from your Trakt.tv profile"
+msgstr "Only pull changes to playback progress from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\playback.py:34
+msgid "Completely disable syncing of playback progress"
+msgstr "Completely disable syncing of playback progress"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:17
+msgid "Profiler"
+msgstr "Profiler"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:19
+msgid "Profiler to use for performance analysis during syncs"
+msgstr "Profiler to use for performance analysis during syncs"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:20
+msgid "Basic"
+msgstr "Basic"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:20
+msgid ""
+"Basic per-method elapsed time reports *([elapsed.py](https://github.com/"
+"fuzeman/elapsed.py))*"
+msgstr ""
+"Basic per-method elapsed time reports *([elapsed.py](https://github.com/"
+"fuzeman/elapsed.py))*"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\profiler.py:23
+msgid "Disable sync profiling"
+msgstr "Disable sync profiling"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:20
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:76
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:70
+msgid "Ratings"
+msgstr "Ratings"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:23
+msgid ""
+"Syncing mode for movie and episode ratings *(applies to both automatic and "
+"manual syncs)*."
+msgstr ""
+"Syncing mode for movie and episode ratings *(applies to both automatic and "
+"manual syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:24
+msgid "Synchronize ratings with your Trakt.tv profile"
+msgstr "Synchronise ratings with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:27
+msgid "Only pull ratings from your Trakt.tv profile"
+msgstr "Only pull ratings from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:30
+msgid "Only push ratings to your Trakt.tv profile"
+msgstr "Only push ratings to your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:33
+msgid "Only pull changes to ratings from your Trakt.tv profile"
+msgstr "Only pull changes to ratings from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:36
+msgid "Completely disable syncing of ratings"
+msgstr "Completely disable syncing of ratings"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:77
+msgid "Conflict resolution"
+msgstr "Conflict resolution"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:79
+msgid ""
+"Rating to use when a conflict exists between Plex and your Trakt.tv profile."
+msgstr ""
+"Rating to use when a conflict exists between Plex and your Trakt.tv profile."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:80
+msgid "Latest"
+msgstr "Latest"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:80
+msgid "Use the most recent rating"
+msgstr "Use the most recent rating"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:83
+msgid "Trakt"
+msgstr "Trakt"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:83
+msgid "Use the rating from your Trakt.tv profile"
+msgstr "Use the rating from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\ratings.py:86
+msgid "Use the rating from Plex"
+msgstr "Use the rating from Plex"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:19
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:71
+msgid "Watched"
+msgstr "Watched"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:22
+msgid ""
+"Syncing mode for movie and episode watched states *(applies to both "
+"automatic and manual syncs)*."
+msgstr ""
+"Syncing mode for movie and episode watched states *(applies to both "
+"automatic and manual syncs)*."
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:23
+msgid "Synchronize watched states with your Trakt.tv profile"
+msgstr "Synchronise watched states with your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:26
+msgid "Only pull watched states from your Trakt.tv profile"
+msgstr "Only pull watched states from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:29
+msgid "Only push watched states to your Trakt.tv profile"
+msgstr "Only push watched states to your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:32
+msgid "Only pull changes to watched states from your Trakt.tv profile"
+msgstr "Only pull changes to watched states from your Trakt.tv profile"
+
+#: ..\Libraries\Shared\plugin\preferences\options\o_sync\watched.py:35
+msgid "Completely disable syncing of watched states"
+msgstr "Completely disable syncing of watched states"
+
+#: ..\Libraries\Shared\plugin\preferences\options\pin.py:14
+msgid "Authentication"
+msgstr "Authentication"
+
+#: ..\Libraries\Shared\plugin\preferences\options\pin.py:15
+msgid "Authentication PIN"
+msgstr "Authentication PIN"
+
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:15
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:21
+msgid "Scrobble"
+msgstr "Scrobble"
+
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble.py:17
+msgid ""
+"Send your watching activity to Trakt.tv in real-time - this will update the "
+"\"currently watching\" status on your profile and mark items as watched when "
+"they reach 80% progress."
+msgstr ""
+"Send your watching activity to Trakt.tv in real-time - this will update the "
+"\"currently watching\" status on your profile and mark items as watched when "
+"they reach 80% progress."
+
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:22
+msgid "Ignore duplicates for"
+msgstr "Ignore duplicates for"
+
+#: ..\Libraries\Shared\plugin\preferences\options\scrobble_duplication_period.py:23
+msgid ""
+"Duplicate scrobbles for a movie or episode are ignored for the defined "
+"period.\n"
+"\n"
+"This can help reduce the chances of unintended history duplication if you "
+"resume watching something that has already reached 80% progress (so has "
+"already been scrobbled)."
+msgstr ""
+"Duplicate scrobbles for a movie or episode are ignored for the defined "
+"period.\n"
+"\n"
+"This can help reduce the chances of unintended history duplication if you "
+"resume watching something that has already reached 80% progress (so has "
+"already been scrobbled)."
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:67
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:123
+msgid "All"
+msgstr "All"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:69
+msgid "Playback"
+msgstr "Playback"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:124
+msgid "Movies"
+msgstr "Movies"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:125
+msgid "Shows"
+msgstr "Shows"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:126
+msgid "Seasons"
+msgstr "Seasons"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:127
+msgid "Episodes"
+msgstr "Episodes"
+
+#: ..\Libraries\Shared\plugin\sync\core\enums.py:149
+msgid "Quick Pull"
+msgstr "Quick Pull"

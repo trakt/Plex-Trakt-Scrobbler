@@ -1,4 +1,6 @@
+from plugin.core.environment import translate as _
 from plugin.preferences.options.core.base import SimpleOption
+from plugin.preferences.options.core.description import Description
 from plugin.preferences.options.o_sync.constants import MODE_KEYS_BY_LABEL, RESOLUTION_KEYS_BY_LABEL, MODE_LABELS_BY_KEY, \
     RESOLUTION_LABELS_BY_KEY, MODE_IDS_BY_KEY, RESOLUTION_IDS_BY_KEY
 from plugin.sync.core.enums import SyncConflictResolution, SyncMode
@@ -15,8 +17,27 @@ class SyncRatingsOption(SimpleOption):
     choices = MODE_LABELS_BY_KEY
     default = SyncMode.Full
 
-    group = ('Sync', 'Ratings')
-    label = 'Mode'
+    group = (_('Sync'), _('Ratings'))
+    label = _('Mode')
+    description = Description(
+        _("Syncing mode for movie and episode ratings *(applies to both automatic and manual syncs)*."), [
+            (_("Full"), _(
+                "Synchronize ratings with your Trakt.tv profile"
+            )),
+            (_("Pull"), _(
+                "Only pull ratings from your Trakt.tv profile"
+            )),
+            (_("Push"), _(
+                "Only push ratings to your Trakt.tv profile"
+            )),
+            (_("Fast Pull"), _(
+                "Only pull changes to ratings from your Trakt.tv profile"
+            )),
+            (_("Disabled"), _(
+                "Completely disable syncing of ratings"
+            )),
+        ]
+    )
     order = 210
 
     preference = 'sync_ratings'
@@ -52,8 +73,21 @@ class SyncRatingsConflictOption(SimpleOption):
     choices = RESOLUTION_LABELS_BY_KEY
     default = SyncConflictResolution.Latest
 
-    group = ('Sync', 'Ratings')
-    label = 'Conflict resolution'
+    group = (_('Sync'), _('Ratings'))
+    label = _('Conflict resolution')
+    description = Description(
+        _("Rating to use when a conflict exists between Plex and your Trakt.tv profile."), [
+            (_("Latest"), _(
+                "Use the most recent rating"
+            )),
+            (_("Trakt"), _(
+                "Use the rating from your Trakt.tv profile"
+            )),
+            (_("Plex"), _(
+                "Use the rating from Plex"
+            ))
+        ]
+    )
     order = 211
 
     preference = 'sync_ratings_conflict'

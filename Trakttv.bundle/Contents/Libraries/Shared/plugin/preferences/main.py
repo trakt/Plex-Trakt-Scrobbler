@@ -24,7 +24,7 @@ class Preferences(object):
             raise ValueError('Invalid value provided for "key"')
 
         if key not in OPTIONS_BY_KEY:
-            raise ValueError('Unknown option %r', key)
+            raise ValueError('Unknown option: %r' % key)
 
         # Retrieve option from database
         option = OPTIONS_BY_KEY[key].get(account)
@@ -54,7 +54,7 @@ class Preferences(object):
             raise ValueError('Invalid value provided for "key"')
 
         if key not in OPTIONS_BY_KEY:
-            raise ValueError('Unknown option %r', key)
+            raise ValueError('Unknown option: %r' % key)
 
         # Update option in database
         option = OPTIONS_BY_KEY[key]
@@ -70,7 +70,7 @@ class Preferences(object):
             raise ValueError('Invalid value provided for "key"')
 
         if key not in OPTIONS_BY_KEY:
-            raise ValueError('Unknown option %r', key)
+            raise ValueError('Unknown option: %r' % key)
 
         option = OPTIONS_BY_KEY[key]
 
@@ -90,7 +90,7 @@ class Preferences(object):
             raise ValueError('Invalid value provided for "key"')
 
         if key not in OPTIONS_BY_PREFERENCE:
-            raise ValueError('Unknown option %r', key)
+            raise ValueError('Unknown option: %r' % key)
 
         option = OPTIONS_BY_PREFERENCE[key]
 
