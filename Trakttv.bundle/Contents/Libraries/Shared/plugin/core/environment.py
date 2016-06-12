@@ -181,7 +181,7 @@ class Environment(object):
 
         # Ensure language code is valid
         if not code or type(code) is not str:
-            log.warn('Invalid language code returned: %r', code)
+            log.info('Unable to detect system language, defaulting to the "%s" locale', DEFAULT_LOCALE)
             return DEFAULT_LOCALE.lower()
 
         # Parse language code
