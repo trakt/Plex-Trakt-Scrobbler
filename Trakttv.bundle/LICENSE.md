@@ -693,12 +693,15 @@ Public License instead of this License.  But first, please read
 | Name                                                              | License                                        |                                                                                                                  |
 |-------------------------------------------------------------------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | [ago](https://pypi.python.org/pypi/ago)                           | Public Domain                                  | [README](https://bitbucket.org/russellballestrini/ago/src/ad1209d7237ce713efeed7825865d36ec203f97b/README.rst)   |
+| [apsw](https://pypi.python.org/pypi/apsw)                         | OSI Approved                                   | [LICENSE](https://github.com/rogerbinns/apsw/blob/d8931a4d4f9170ad71820706f9fd292c6f9bcc9b/LICENSE)              |
 | [arrow](https://pypi.python.org/pypi/arrow)                       | Apache License, Version 2.0                    | [LICENSE](https://github.com/crsmithdev/arrow/blob/56418534f61eba795305293f315b65844ff664d7/LICENSE)             |
 | [asio](https://pypi.python.org/pypi/ASIO)                         | Unknown                                        | |
 | [bencode](https://pypi.python.org/pypi/bencode)                   | BitTorrent Open Source License                 | |
 | [caper](https://github.com/fuzeman/caper)                         | Apache License, Version 2.0                    | [README](https://github.com/fuzeman/Caper/blob/c96bb8a45410aac06badb51fdcf8661e0305db89/README.md)               |
+| [cffi](https://pypi.python.org/pypi/cffi)                         | MIT License                                    | [LICENSE](https://bitbucket.org/cffi/cffi/src/50807f7805dbcd740da9e8ce0e5892b9c98fa382/LICENSE)                  |
 | [concurrent.futures](https://pypi.python.org/pypi/futures)        | BSD License                                    | [LICENSE](https://github.com/agronholm/pythonfutures/blob/170be4d1fea993c2c2c19211b2aeecf71790e6d9/LICENSE)      |
 | [croniter](https://pypi.python.org/pypi/croniter)                 | MIT License                                    | |
+| [cryptography](https://pypi.python.org/pypi/cryptography)         | Apache License, Version 2.0 or BSD License     | [LICENSE.APACHE](https://github.com/pyca/cryptography/blob/6eeb4da58149615bebac5504bc846a18f062ccff/LICENSE.APACHE), [LICENSE.BSD](https://github.com/pyca/cryptography/blob/6eeb4da58149615bebac5504bc846a18f062ccff/LICENSE.BSD) |
 | [elapsed](https://github.com/fuzeman/elapsed.py)                  | MIT License                                    | |
 | [elftools](https://pypi.python.org/pypi/pyelftools)               | Public Domain                                  | [LICENSE](https://github.com/eliben/pyelftools/blob/db74f6886179bac427e1fc535d20e063089b5392/LICENSE)            |
 | [enum](https://pypi.python.org/pypi/enum34)                       | BSD License                                    | |
@@ -706,6 +709,7 @@ Public License instead of this License.  But first, please read
 | [ipaddress](https://pypi.python.org/pypi/ipaddress)               | Python Software Foundation License, Version 2  | [LICENSE](https://github.com/phihag/ipaddress/blob/283f8c5177e82d52506ed85cd97f53699bf14028/LICENSE)             |
 | [itsdangerous](https://pypi.python.org/pypi/itsdangerous)         | BSD License                                    | [LICENSE](https://github.com/pallets/itsdangerous/blob/b393ac71cb83e67b037b5766a765b9138fbd15e5/LICENSE)         |
 | [jsonpickle](https://pypi.python.org/pypi/jsonpickle)             | BSD License                                    | [README](https://github.com/jsonpickle/jsonpickle/blob/af9fa64b621b2c39e0975cd38e1a8ce23b5284c0/README.rst)      |
+| [llist](https://pypi.python.org/pypi/llist)                       | MIT License                                    | [LICENSE](https://github.com/ajakubek/python-llist/blob/baa63485de91a28e2a0255575d73dc3c167ea192/LICENSE)        |
 | [logr](https://pypi.python.org/pypi/Logr)                         | GNU General Public License v3+                 | |
 | [msgpack](https://pypi.python.org/pypi/msgpack-python)            | Apache License, Version 2.0                    | [LICENSE](https://github.com/msgpack/msgpack-python/blob/1a81f6364dcb4356d26b8e3ae48966a9c2a66832/COPYING)       |
 | [multiprocessing](https://pypi.python.org/pypi/multiprocessing)   | BSD License                                    | |
@@ -720,7 +724,7 @@ Public License instead of this License.  But first, please read
 | [plex_metadata](https://pypi.python.org/pypi/plex.metadata.py)    | MIT License                                    | [LICENSE](https://github.com/fuzeman/plex.metadata.py/blob/c738de8d24d9f65ce483aa878b588aabb2fe6cbb/LICENSE.rst) |
 | [pyasn1](https://pypi.python.org/pypi/pyasn1)                     | BSD License                                    | |
 | [pyemitter](https://pypi.python.org/pypi/PyEmitter)               | Unknown                                        | |
-| [pyllist](https://pypi.python.org/pypi/pyllist)                   | MIT License                                    | [LICENSE](https://github.com/ajakubek/python-llist/blob/baa63485de91a28e2a0255575d73dc3c167ea192/LICENSE)        |
+| [pyllist](https://pypi.python.org/pypi/pyllist)                   | MIT License                                    | [LICENSE](https://github.com/rgsoda/pypy-llist/blob/466c5af964fa32fd87104c3f5b7cf0d582a42351/LICENSE)            |
 | [pytz](https://pypi.python.org/pypi/pytz)                         | MIT License                                    | |
 | [raven](https://pypi.python.org/pypi/raven)                       | BSD License                                    | [LICENSE](https://github.com/getsentry/raven-python/blob/585be7494235dd0c913d826ac03eb85a56571543/LICENSE)       |
 | [requests](https://pypi.python.org/pypi/requests)                 | Apache License, Version 2.0                    | [LICENSE](https://github.com/kennethreitz/requests/blob/b782e6646219fffa5f1c82e5d1c53f7671d757a5/LICENSE)        |
