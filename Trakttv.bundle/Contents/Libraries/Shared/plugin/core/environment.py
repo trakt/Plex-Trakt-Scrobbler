@@ -106,7 +106,11 @@ class Environment(object):
         code, _ = locale.getlocale()
 
         if not code:
-            locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
+            try:
+                locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
+            except Exception, ex:
+                log.warn('Unable to set locale: %s', ex, exc_info=True)
+                return False
 
         log.info('Using locale: %r', locale.getlocale())
         return True
