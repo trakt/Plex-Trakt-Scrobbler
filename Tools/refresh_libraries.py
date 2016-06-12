@@ -39,6 +39,7 @@ DELETE_FILES = [
 ]
 
 DELETE_EXTENSIONS = [
+    '.pth',
     '.pyd'
 ]
 
