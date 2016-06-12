@@ -6,6 +6,8 @@ import logging
 import os
 import platform
 
+DEFAULT_LOCALE = 'en_US'
+
 log = logging.getLogger(__name__)
 
 
@@ -90,12 +92,21 @@ class Environment(object):
 
     @classmethod
     def setup_locale(cls):
-        # Setup locale
+        # Use language defined in preferences (if available)
+        language = cls.get_pref('language') or ''
+
+        # Initialize locale
         try:
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, language)
         except Exception, ex:
             log.warn('Unable to set locale: %s', ex, exc_info=True)
             return False
+
+        # Default to the "en_US" locale
+        code, _ = locale.getlocale()
+
+        if not code:
+            locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
 
         log.info('Using locale: %r', locale.getlocale())
         return True
@@ -170,8 +181,8 @@ class Environment(object):
 
         # Ensure language code is valid
         if not code or type(code) is not str:
-            log.warn('Invalid language code returned: %r', code)
-            return None
+            log.info('Unable to detect system language, defaulting to the "%s" locale', DEFAULT_LOCALE)
+            return DEFAULT_LOCALE.lower()
 
         # Parse language code
         if len(code) == 2:
