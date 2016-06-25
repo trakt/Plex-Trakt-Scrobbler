@@ -56,7 +56,7 @@ class Movie(BaseMedia):
 
     def __repr__(self):
         if self.identifiers and self.names:
-            service = self.identifiers.keys()[0]
+            service = list(self.identifiers.keys())[0]
 
             return '<Movie %s: %r, names: %r>' % (
                 service,
@@ -65,7 +65,7 @@ class Movie(BaseMedia):
             )
 
         if self.identifiers:
-            service = self.identifiers.keys()[0]
+            service = list(self.identifiers.keys())[0]
 
             return '<Movie %s: %r>' % (
                 service,

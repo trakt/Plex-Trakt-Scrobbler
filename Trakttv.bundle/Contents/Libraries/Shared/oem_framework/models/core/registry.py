@@ -1,4 +1,5 @@
 import logging
+import six
 
 log = logging.getLogger(__name__)
 
@@ -10,9 +11,8 @@ class ModelRegistryMeta(type):
         return self._models[key]
 
 
+@six.add_metaclass(ModelRegistryMeta)
 class ModelRegistry(object):
-    __metaclass__ = ModelRegistryMeta
-
     @classmethod
     def get(cls, name, default=None):
         return cls._models.get(name, default)

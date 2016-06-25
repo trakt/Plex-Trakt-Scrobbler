@@ -1,10 +1,12 @@
+# flake8: noqa
+
 from oem.providers.release.core.base import ReleaseProvider
 
 from semantic_version import Version
+from six.moves.urllib.parse import urlparse, urljoin
 import logging
 import requests
 import time
-import urlparse
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +18,18 @@ class IncrementalReleaseProvider(ReleaseProvider):
     def __init__(self, *args, **kwargs):
         super(IncrementalReleaseProvider, self).__init__(*args, **kwargs)
 
+        self._client_version = None
+
         self._database_latest_version = {}
         self._database_unavailable = {}
 
+        self._version_disabled = {}
         self._version_unavailable = {}
+
+    def initialize(self, client):
+        super(IncrementalReleaseProvider, self).initialize(client)
+
+        self._client_version = Version(client.version)
 
     def fetch(self, source, target, key, metadata):
         version = self.get_available_version(source, target)
@@ -55,13 +65,16 @@ class IncrementalReleaseProvider(ReleaseProvider):
             last_error = time.time() - unavailable_at
 
             if last_error < UPDATE_RETRY_INTERVAL:
-                log.debug('Database %r is unavailable, will retry in %d seconds', repo, UPDATE_RETRY_INTERVAL - last_error)
+                log.debug(
+                    'Database %r is unavailable, will retry in %d seconds',
+                    repo, UPDATE_RETRY_INTERVAL - last_error
+                )
                 return None
 
         # Retrieve latest release information
         try:
             response = requests.get('https://api.github.com/repos/%s/releases/latest' % repo)
-        except requests.ConnectionError, ex:
+        except requests.ConnectionError as ex:
             log.warn('Unable to fetch release information for %r - %s', repo, ex)
             return None
 
@@ -94,7 +107,7 @@ class IncrementalReleaseProvider(ReleaseProvider):
         available = self.get_available_version(source, target)
 
         if available is None:
-            return None
+            return False
 
         # Update index
         if not self.update_index(source, target, available):
@@ -109,14 +122,37 @@ class IncrementalReleaseProvider(ReleaseProvider):
             log.info('[%s -> %s] Collection is up to date (v%s)', source, target, current_version)
             return True
 
+        if (source, target, version) in self._version_disabled and not force:
+            log.warn(
+                '[%s -> %s] Update to v%s has been disabled: %s',
+                source, target, version, self._version_disabled[(source, target, version)]
+            )
+            return False
+
         log.info('[%s -> %s] Updating collection to v%s', source, target, version)
-    
+
+        # Fetch package information
+        version_details = self._fetch_version_details(source, target, version)
+
+        if version_details is None:
+            return False
+
+        # Ensure package version is compatible with the client
+        minimum_version = version_details.get('client', {}).get('minimum_version')
+
+        if minimum_version and self._client_version < Version(minimum_version):
+            reason = "oem-client needs to be updated to at least v%s" % minimum_version
+
+            log.warn('[%s -> %s] Unable to update collection to v%s: %s', source, target, version, reason)
+            self._version_disabled[(source, target, version)] = reason
+            return False
+
         # Fetch index
-        response = self._fetch(source, target, version, 'index.%s' % self.format.__extension__)
+        response = self._fetch(source, target, version, 'database:///index.%s' % self.format.__extension__)
 
         if response is None:
             return False
-    
+
         # Update cache
         if not self.storage.update_index(source, target, response):
             return False
@@ -133,14 +169,14 @@ class IncrementalReleaseProvider(ReleaseProvider):
             return True
 
         # Fetch item
-        response = self._fetch(source, target, version, '/'.join([
+        response = self._fetch(source, target, version, 'database:///%s' % '/'.join([
             'items',
             '%s.%s' % (key, self.format.__extension__)
         ]))
 
         if response is None:
             return False
-    
+
         # Update cache
         return self.storage.update_item(source, target, key, response, metadata)
 
@@ -148,21 +184,30 @@ class IncrementalReleaseProvider(ReleaseProvider):
     # Private methods
     #
 
-    def _fetch(self, source, target, version, filename):
-        name = self._client.package_name(source, target)
+    def _fetch_version_details(self, source, target, version):
+        response = self._fetch(source, target, version, 'package:///package.json')
 
+        if response is None:
+            return None
+
+        return response.json()
+
+    def _fetch(self, source, target, version, uri):
         # Check if version is unavailable
-        unavailable_at = self._version_unavailable.get((name, version))
+        unavailable_at = self._version_unavailable.get((source, target, version))
 
         if unavailable_at:
             last_error = time.time() - unavailable_at
 
             if last_error < UPDATE_RETRY_INTERVAL:
-                log.debug('Version %s is unavailable, will retry in %d seconds', version, UPDATE_RETRY_INTERVAL - last_error)
+                log.debug(
+                    'Version %s is unavailable, will retry in %d seconds',
+                    version, UPDATE_RETRY_INTERVAL - last_error
+                )
                 return None
 
         # Build URL
-        url = self._build_url(source, target, version, filename)
+        url = self._build_url(source, target, version, uri)
 
         if url is None:
             return None
@@ -170,28 +215,38 @@ class IncrementalReleaseProvider(ReleaseProvider):
         # Fetch file
         try:
             response = requests.get(url)
-        except requests.ConnectionError, ex:
-            log.warn('Unable to fetch file %r - %s', filename, ex)
+        except requests.ConnectionError as ex:
+            log.warn('Unable to fetch file %r - %s', uri, ex)
             return None
 
         if response.status_code < 200 or response.status_code >= 300:
             log.info('Unable to fetch version %s, will retry in %d seconds', version, UPDATE_RETRY_INTERVAL)
-            self._version_unavailable[(name, version)] = time.time()
+            self._version_unavailable[(source, target, version)] = time.time()
             return None
 
         return response
 
-    def _build_url(self, source, target, version, path):
+    def _build_url(self, source, target, version, uri):
         if self.database_url is None:
             return None
 
-        return urlparse.urljoin(
+        # Parse URI
+        p_uri = urlparse(uri)
+
+        # Build path fragments
+        parts = [
+            self._client.package_name(source, target),
+            str(version),
+            self._client.database_name(source, target),
+        ]
+
+        if p_uri.scheme == 'database':
+            parts.append(source)
+
+        # Build URL
+        return urljoin(
             self.database_url,
-            '/'.join([
-                self._client.package_name(source, target),
-                str(version),
-                self._client.database_name(source, target),
-                source,
-                path
-            ])
+            '/'.join(parts + [
+                p_uri.path.lstrip('/')
+            ]),
         )

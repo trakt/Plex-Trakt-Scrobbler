@@ -2,6 +2,7 @@ from oem_framework.core.helpers import get_attribute
 from oem_framework.models.core import BaseMapping, BaseMedia, ModelRegistry
 
 import logging
+import six
 
 log = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ class Season(BaseMedia):
 
     def __repr__(self):
         if self.identifiers and self.names:
-            service = self.identifiers.keys()[0]
+            service = list(self.identifiers.keys())[0]
 
             return '<Season %s: %r, names: %r>' % (
                 service,
@@ -108,7 +109,7 @@ class Season(BaseMedia):
             )
 
         if self.identifiers:
-            service = self.identifiers.keys()[0]
+            service = list(self.identifiers.keys())[0]
 
             return '<Season %s: %r>' % (
                 service,
@@ -157,7 +158,7 @@ class SeasonMapping(BaseMapping):
             elif type(self.names) is dict:
                 result['names'] = {}
 
-                for key, value in self.names.iteritems():
+                for key, value in six.iteritems(self.names):
                     if type(value) is set:
                         value = list(value)
 

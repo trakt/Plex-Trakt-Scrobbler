@@ -48,7 +48,10 @@ class ShowMapper(object):
                 default_season = try_convert(default_season, int)
 
                 if default_season is None:
-                    log.warn('Invalid value provided for the "default_season" parameter: %r', show.parameters['default_season'])
+                    log.warn(
+                        'Invalid value provided for the "default_season" parameter: %r',
+                        show.parameters['default_season']
+                    )
                     return None
 
         # Retrieve season number
@@ -113,17 +116,46 @@ class ShowMapper(object):
                 identifier.episode_num + season_mapping.offset
             )
 
+        # Retrieve "default_season" parameter
+        default_season = None
+
+        if 'default_season' in season.parameters:
+            default_season = season.parameters['default_season']
+
+            if default_season != 'a':
+                # Cast season number to an integer
+                default_season = try_convert(default_season, int)
+
+                if default_season is None:
+                    log.warn(
+                        'Invalid value provided for the "default_season" parameter: %r',
+                        season.parameters['default_season']
+                    )
+                    return season, None
+
         # Retrieve season number
-        season_num = int(season.number)
+        season_num = identifier.season_num
 
         if season.identifiers:
             season_num = 1
+
+        if default_season is not None:
+            season_num = default_season
+
+        # Retrieve episode number
+        episode_num = identifier.episode_num
+
+        # Apply episode offset
+        episode_offset = self._get_parameter('episode_offset', show, season)
+
+        if episode_offset is not None:
+            episode_num += int(episode_offset)
 
         # Build season match
         match = EpisodeMatch(
             self._get_identifiers(show, season),
             season_num=season_num,
-            episode_num=identifier.episode_num
+            episode_num=episode_num
         )
 
         if not match.valid:
@@ -194,3 +226,12 @@ class ShowMapper(object):
             del identifiers[self._service.source_key]
 
         return identifiers
+
+    def _get_parameter(self, key, show, season=None, episode=None):
+        for obj in [episode, season, show]:
+            if not obj:
+                continue
+
+            return obj.parameters.get(key)
+
+        return None

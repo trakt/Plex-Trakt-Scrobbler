@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from oem.media.movie import MovieMapper
 from oem.media.show import ShowMapper
 from oem.services.core.base import Service

@@ -1,7 +1,7 @@
 from oem_framework.models.core import Model
 
 import logging
-import sys
+import six
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class Index(Model):
         if data and 'items' in data:
             index.items = dict([
                 (key, storage.parse(collection, key, value))
-                for key, value in data['items'].iteritems()
+                for key, value in six.iteritems(data['items'])
             ])
 
         return index

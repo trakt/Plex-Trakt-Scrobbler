@@ -18,7 +18,7 @@ class Format(object):
         raise NotImplementedError
 
     def dump_path(self, obj, path):
-        with open(self.parse_path(path), 'wb') as fp:
+        with open(self.parse_path(path), 'wb' if self.__supports_binary__ else 'w') as fp:
             return self.dump_file(obj, fp)
 
     def dump_string(self, obj):
@@ -32,7 +32,7 @@ class Format(object):
         raise NotImplementedError
 
     def load_path(self, path):
-        with open(self.parse_path(path), 'rb') as fp:
+        with open(self.parse_path(path), 'rb' if self.__supports_binary__ else 'r') as fp:
             return self.load_file(fp)
 
     def load_string(self, value):

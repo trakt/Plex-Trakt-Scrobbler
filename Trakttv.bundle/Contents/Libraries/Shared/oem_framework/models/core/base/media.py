@@ -8,6 +8,7 @@ import collections
 import hashlib
 import inspect
 import logging
+import six
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ class BaseMedia(Model, NamesMixin):
         # Convert object to bencode
         data = self.to_bencode(flatten=False)
 
+        if six.PY3:
+            data = data.encode('utf-8')
+
         # Calculate hash of bencode string
         m = hashlib.md5()
         m.update(data)
@@ -59,7 +63,7 @@ class BaseMedia(Model, NamesMixin):
         # Encode `data` to a bencode string
         try:
             return bencode(data)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to encode object to bencode: %s', ex, exc_info=True)
             return None
 
@@ -124,7 +128,7 @@ class BaseMedia(Model, NamesMixin):
 
     @classmethod
     def _flatten(cls, value, key=None, flatten=True):
-        if type(value) in [str, unicode, int]:
+        if isinstance(value, six.string_types + (int,)):
             return value
 
         if isinstance(value, BaseMapping):

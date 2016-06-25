@@ -17,7 +17,12 @@ class EpisodeIdentifier(Identifier):
 
     @property
     def valid(self):
-        return (self.season_num is not None and self.episode_num is not None) or self.absolute_num is not None
+        return (
+            self.season_num is not None and
+            self.episode_num is not None
+        ) or (
+            self.absolute_num is not None
+        )
 
     def __hash__(self):
         return hash((

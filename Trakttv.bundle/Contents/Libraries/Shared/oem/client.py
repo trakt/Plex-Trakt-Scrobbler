@@ -1,7 +1,13 @@
 from oem.services import SERVICES
 from oem.providers import PROVIDERS
 from oem.providers.core.base import Provider
+from oem.version import __version__
 from oem_core.core.plugin import PluginManager
+
+import logging
+import six
+
+log = logging.getLogger(__name__)
 
 DATABASES = {
     ('anidb', 'tvdb'): 'oem_database_anidb_tvdb',
@@ -21,6 +27,8 @@ PACKAGES = {
 
 
 class Client(object):
+    version = __version__
+
     def __init__(self, formats=None, provider='package'):
         """OpenEntityMap (OEM) Client
 
@@ -54,7 +62,7 @@ class Client(object):
         return self._provider
 
     def load_all(self):
-        for service in self._services.itervalues():
+        for service in six.itervalues(self._services):
             service.load()
 
     def database_name(self, source, target):

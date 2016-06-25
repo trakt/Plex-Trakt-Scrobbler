@@ -1,11 +1,12 @@
+from oem_framework.core.elapsed import Elapsed
+from oem_framework.plugin import Plugin
+
 import imp
 import inspect
 import logging
 import os
+import six
 import sys
-
-from oem_framework.core.elapsed import Elapsed
-from oem_framework.plugin import Plugin
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +79,10 @@ class PluginManager(object):
             for k in [key] + children:
                 # Store available plugin
                 if k in cls._available[kind]:
+                    if cls._available[kind][k]['package_path'] == descriptor['package_path']:
+                        # Plugin has already been found
+                        continue
+
                     log.warn('Found multiple installations of %r, using installation at %r', package_name, cls._available[kind][k])
                     continue
 
@@ -151,7 +156,7 @@ class PluginManager(object):
         # Find plugin class
         plugin = None
 
-        for value in module.__dict__.itervalues():
+        for value in six.itervalues(module.__dict__):
             if not inspect.isclass(value):
                 continue
 
@@ -225,7 +230,7 @@ class PluginManager(object):
                 descriptor['package_name'],
                 [descriptor['root_path']]
             )
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find package %r - %s', descriptor['package_name'], ex, exc_info=True)
             return None
 
@@ -235,14 +240,14 @@ class PluginManager(object):
 
         try:
             package = imp.load_module(descriptor['package_name'], fp, filename, (suffix, mode, type))
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to load package %r - %s', descriptor['package_name'], ex, exc_info=True)
             return None
 
         # Load module
         try:
             fp, filename, (suffix, mode, type) = imp.find_module(module_name, package.__path__)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find module %r in %r - %s', module_name, package.__name__, ex)
             return None
 
@@ -254,7 +259,7 @@ class PluginManager(object):
 
         try:
             module = imp.load_module(name, fp, filename, (suffix, mode, type))
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to load module %r - %s', name, ex, exc_info=True)
             return None
 
@@ -264,10 +269,11 @@ class PluginManager(object):
     def _list_plugins(cls):
         for package_path in cls.search_paths + sys.path:
             # Ignore invalid paths
-            if package_path.endswith('.egg') or package_path.endswith('.zip'):
+            if package_path.endswith('.dist-info') or package_path.endswith('.egg') or \
+               package_path.endswith('.egg-info') or package_path.endswith('.zip'):
                 continue
 
-            if not os.path.exists(package_path):
+            if not os.path.exists(package_path) or os.path.isfile(package_path):
                 continue
 
             # Check if `package_path` is a plugin
@@ -275,7 +281,7 @@ class PluginManager(object):
 
             if cls._is_plugin(package_name):
                 # Find module
-                name, descriptor = cls._find_plugin(name, path)
+                name, descriptor = cls._find_plugin(package_name, package_path)
 
                 if descriptor is None:
                     continue
@@ -285,7 +291,7 @@ class PluginManager(object):
             # List items in `package_path`
             try:
                 items = os.listdir(package_path)
-            except Exception, ex:
+            except Exception as ex:
                 log.debug('Unable to list directory %r - %s', package_path, ex, exc_info=True)
                 continue
 
@@ -293,22 +299,63 @@ class PluginManager(object):
             for name in items:
                 path = os.path.join(package_path, name)
 
-                # Ignore files
-                if os.path.isfile(path):
+                # Ignore invalid paths
+                if path.endswith('.dist-info') or path.endswith('.egg') or \
+                   path.endswith('.egg-info') or path.endswith('.zip'):
                     continue
 
-                # Ensure package name matches a valid plugin prefix
-                if not cls._is_plugin(name):
-                    continue
+                if cls._is_plugin(name) and path.endswith('.egg-link'):
+                    name, path = cls._parse_link(path)
+
+                    # Ensure package had been found
+                    if not path:
+                        continue
+                else:
+                    # Ignore files
+                    if os.path.isfile(path):
+                        continue
+
+                    # Ensure package name matches a valid plugin prefix
+                    if not cls._is_plugin(name):
+                        continue
 
                 # Find module
-                name, descriptor = cls._find_plugin(name, path)
+                module_name, descriptor = cls._find_plugin(name, path)
 
                 if descriptor is None:
-                    log.debug('No descriptor returned for %r', name, path)
+                    log.debug('No descriptor returned for %r (path: %r)', name, path)
                     continue
 
-                yield name, descriptor
+                yield module_name, descriptor
+
+    @classmethod
+    def _parse_link(cls, path):
+        with open(path, 'r') as fp:
+            package_path = fp.readline().strip()
+
+        if not package_path:
+            log.warn('Link has no path defined (link: %r)', path)
+            return None, None
+
+        try:
+            items = os.listdir(package_path)
+        except Exception as ex:
+            log.warn('Unable to list directory %r (link: %r)', package_path, path)
+            return None, None
+
+        for name in items:
+            path = os.path.join(package_path, name)
+
+            # Ignore files
+            if os.path.isfile(path):
+                continue
+
+            # Ensure package name matches a valid plugin prefix
+            if cls._is_plugin(name):
+                return name, path
+
+        log.warn('Unable to find plugin module in %r (link: %r)', package_path, path)
+        return None, None
 
     @classmethod
     def _find_plugin(cls, name, path):

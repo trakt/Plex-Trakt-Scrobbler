@@ -1,6 +1,7 @@
 from oem_framework.core.helpers import median
 
 import inspect
+import six
 import sys
 import time
 
@@ -66,8 +67,9 @@ class Elapsed(object):
                 items.append((f_name, result, statistics))
 
         # Sort by total elapsed time
-        def sort_key((function_name, result, statistics)):
-            return statistics['total']
+        def sort_key(item):
+            _, _, i_statistics = item
+            return i_statistics['total']
 
         items.sort(key=sort_key, reverse=True)
         return items
@@ -114,7 +116,7 @@ class Elapsed(object):
                 exc_info = sys.exc_info()
                 failure = True
 
-                raise exc_info[0], exc_info[1], exc_info[2]
+                six.reraise(exc_info[0], exc_info[1], exc_info[2])
             finally:
                 elapsed = round((time.time() - started_at) * 1000, 4)
 

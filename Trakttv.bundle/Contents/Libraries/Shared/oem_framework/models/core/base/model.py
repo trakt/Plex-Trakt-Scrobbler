@@ -1,6 +1,7 @@
 from oem_framework.models.core.registry import ModelRegistry
 
 import logging
+import six
 
 log = logging.getLogger(__name__)
 
@@ -13,9 +14,8 @@ class ModelMeta(type):
         return cls
 
 
+@six.add_metaclass(ModelMeta)
 class Model(object):
-    __metaclass__ = ModelMeta
-
     __protocols__ = None
     __wrapper__ = False
 

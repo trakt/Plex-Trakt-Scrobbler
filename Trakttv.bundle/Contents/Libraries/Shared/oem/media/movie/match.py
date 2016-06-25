@@ -19,7 +19,12 @@ class MovieMatch(MovieIdentifier):
 
         # Identifiers
         if self.identifiers:
-            fragments.append('(' + (', '.join(('%s: %r' % (key, value)) for key, value in self.identifiers.items())) + ')')
+            fragments.append(
+                '(' + (', '.join(
+                    ('%s: %r' % (key, value))
+                    for key, value in self.identifiers.items()
+                )) + ')'
+            )
 
         # Attributes
         attributes = [

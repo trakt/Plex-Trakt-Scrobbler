@@ -25,7 +25,7 @@ class MessagePackFormat(Format, Plugin):
         try:
             msgpack.dump(obj, fp)
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to dump object to file: %s', ex, exc_info=True)
 
         return False
@@ -34,7 +34,7 @@ class MessagePackFormat(Format, Plugin):
         try:
             msgpack.dumps(obj)
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to dump object: %s', ex, exc_info=True)
 
         return False
@@ -42,7 +42,7 @@ class MessagePackFormat(Format, Plugin):
     def load_file(self, fp):
         try:
             return msgpack.load(fp)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to load object from file: %s', ex, exc_info=True)
 
         return None
@@ -50,7 +50,7 @@ class MessagePackFormat(Format, Plugin):
     def load_string(self, value):
         try:
             return msgpack.loads(value)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to load object: %s', ex, exc_info=True)
 
         return None

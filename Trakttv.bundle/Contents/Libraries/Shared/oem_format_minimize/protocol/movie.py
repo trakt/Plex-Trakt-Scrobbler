@@ -1,4 +1,5 @@
 from oem_format_minimize.core.minimize import MinimizeProtocol
+from oem_format_minimize.protocol.name import NameMinimizeProtocol
 
 
 class MovieMinimizeProtocol(MinimizeProtocol):
@@ -10,6 +11,13 @@ class MovieMinimizeProtocol(MinimizeProtocol):
 
     supplemental    = 0x11
     parameters      = 0x12
+
+    NameMinimizeProtocol = NameMinimizeProtocol.to_child(
+        key='names',
+        process={
+            'children': True
+        }
+    )
 
     class IdentifiersMinimizeProtocol(MinimizeProtocol):
         __key__ = 'identifiers'

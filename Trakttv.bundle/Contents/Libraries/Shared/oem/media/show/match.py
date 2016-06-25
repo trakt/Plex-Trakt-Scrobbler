@@ -13,6 +13,10 @@ class EpisodeMatch(EpisodeIdentifier):
 
         self.identifiers = identifiers or {}
 
+    @property
+    def valid(self):
+        return len(self.identifiers) > 0 and super(EpisodeMatch, self).valid
+
     def __hash__(self):
         return hash((
             hash(frozenset(self.identifiers.items())),
@@ -28,7 +32,11 @@ class EpisodeMatch(EpisodeIdentifier):
 
         # Identifiers
         if self.identifiers:
-            fragments.append('(' + (', '.join(('%s: %r' % (key, value)) for key, value in self.identifiers.items())) + ')')
+            fragments.append(
+                '(' + (', '.join(
+                    ('%s: %r' % (key, value)) for key, value in self.identifiers.items()
+                )) + ')'
+            )
 
             if self.absolute_num is not None or self.season_num is not None:
                 fragments.append('-')
