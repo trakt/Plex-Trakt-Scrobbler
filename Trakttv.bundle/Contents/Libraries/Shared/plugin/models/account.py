@@ -89,7 +89,7 @@ class Account(Model):
         t = self.trakt
 
         # Set `name` to trakt/plex username (if `name` isn't already set)
-        if self.name is None and (t or p):
+        if (self.name is None or self.name == 'administrator') and (t or p):
             self.name = t.username or p.username
 
         # Update account thumb
