@@ -73,7 +73,13 @@ class LibraryBase(object):
             try:
                 row = result.iterate()
             except UnicodeDecodeError, ex:
-                log.warn('Unable to retrieve row: %s', ex, exc_info=True)
+                log.warn('Unable to retrieve row: %s', ex, exc_info=True, extra={
+                    'event': {
+                        'module': __name__,
+                        'name': '_tuple_iterator.iterate.unicode_decode_error',
+                        'key': '%s:%s' % (ex.encoding, ex.reason)
+                    }
+                })
                 continue
 
             yield row

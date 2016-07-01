@@ -83,7 +83,10 @@ class PlexRequest(object):
         self.headers = self.kwargs.get('headers') or {}
 
         # Authentication
-        self.headers['X-Plex-Token'] = self.client.configuration['authentication.token']
+        token = self.client.configuration['authentication.token']
+
+        if token is not None:
+            self.headers['X-Plex-Token'] = token
 
         # Client
         self.headers['X-Plex-Client-Identifier'] = self.client.configuration['client.identifier']

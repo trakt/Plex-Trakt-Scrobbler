@@ -131,19 +131,44 @@ class BaseTest(object):
     def find_python_executable(cls):
         candidates = [sys.executable]
 
-        # Add candidates relative to the PMS home directory
+        # Add candidates based on the script path in `sys.argv`
+        if sys.argv and len(sys.argv) > 0 and os.path.exists(sys.argv[0]):
+            bootstrap_path = sys.argv[0]
+            resources_pos = bootstrap_path.lower().find('resources')
+
+            if resources_pos > 0:
+                pms_path = bootstrap_path[:resources_pos]
+
+                cls._add_python_home_candidates(candidates, pms_path)
+
+        # Add candidates relative to `PLEX_MEDIA_SERVER_HOME`
         pms_home = os.environ.get('PLEX_MEDIA_SERVER_HOME')
 
         if pms_home and os.path.exists(pms_home):
-            candidates.append(os.path.join(pms_home, 'Resources', 'Plex Script Host'))
-            candidates.append(os.path.join(pms_home, 'Resources', 'Python', 'bin', 'python'))
+            cls._add_python_home_candidates(candidates, pms_home)
+
+        # Add candidates relative to `PYTHONHOME`
+        python_home = os.environ.get('PYTHONHOME')
+
+        if python_home and os.path.exists(python_home):
+            candidates.append(os.path.join(python_home, 'bin', 'python'))
 
         # Use first candidate that exists
         for path in candidates:
             if os.path.exists(path):
                 return path
 
+        log.warn('Unable to find python executable', extra={'candidates': candidates})
         return None
+
+    @staticmethod
+    def _add_python_home_candidates(candidates, path):
+        # Windows
+        candidates.append(os.path.join(path, 'PlexScriptHost.exe'))
+
+        # *nix
+        candidates.append(os.path.join(path, 'Resources', 'Plex Script Host'))
+        candidates.append(os.path.join(path, 'Resources', 'Python', 'bin', 'python'))
 
     #
     # Events

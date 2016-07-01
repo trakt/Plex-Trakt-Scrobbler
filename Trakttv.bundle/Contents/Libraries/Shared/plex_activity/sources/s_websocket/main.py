@@ -122,7 +122,7 @@ class WebSocket(Source):
             log.warn('Error decoding message from websocket: %s' % ex, extra={
                 'event': {
                     'module': __name__,
-                    'name': 'process.load_decode_error',
+                    'name': 'process.loads.unicode_decode_error',
                     'key': '%s:%s' % (ex.encoding, ex.reason)
                 }
             })
