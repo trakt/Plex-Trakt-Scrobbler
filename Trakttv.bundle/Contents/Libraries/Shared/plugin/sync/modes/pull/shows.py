@@ -138,5 +138,5 @@ class Shows(Base):
             self.checkpoint()
 
         # Log details
-        log_unsupported(log, 'Found %d unsupported show(s)\n%s', unsupported_shows)
+        log_unsupported(log, 'Found %d unsupported show(s)', unsupported_shows)
         log.debug('Pending: %r', pending)
