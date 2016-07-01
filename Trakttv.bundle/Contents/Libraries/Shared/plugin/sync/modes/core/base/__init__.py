@@ -21,11 +21,7 @@ def log_unsupported(logger, message, dictionary):
         return
 
     # Display unsupported service list
-    logger.info(
-        message,
-        len(dictionary),
-        '\n'.join(format_unsupported(dictionary))
-    )
+    logger.info(message, len(dictionary))
 
     # Display individual warnings for each service
     for service in dictionary.keys():
@@ -41,13 +37,3 @@ def log_unsupported(logger, message, dictionary):
                 'key': service
             }
         })
-
-
-def format_unsupported(dictionary):
-    keys = sorted(dictionary.keys())
-
-    for service in keys:
-        yield '    [%14s] Service not supported (%d items)' % (
-            service,
-            len(dictionary[service])
-        )

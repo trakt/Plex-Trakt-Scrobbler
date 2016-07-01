@@ -121,7 +121,7 @@ class Movies(Base):
         self.current.progress.group(Movies, 'matched:movies').stop()
 
         # Report unsupported movies (unsupported guid)
-        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', self.p_unsupported)
+        log_unsupported(log, 'Found %d unsupported movie(s)', self.p_unsupported)
 
     def process_missing_movies(self):
         """Trigger actions for movies that are in trakt, but was unable to be found in plex"""
@@ -179,4 +179,7 @@ class Movies(Base):
         self.current.progress.group(Movies, 'missing:movies').stop()
 
         # Report pending movies (no actions triggered)
-        self.log_pending('Unable to find %d movie(s) in Plex\n%s', self.p_pending)
+        self.log_pending(
+            log, 'Unable to find %d movie(s) in Plex, list has been saved to: %s',
+            self.current.account, 'movies', self.p_pending
+        )

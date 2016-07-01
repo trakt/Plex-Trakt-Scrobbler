@@ -84,5 +84,5 @@ class Movies(Base):
             self.checkpoint()
 
         # Log details
-        log_unsupported(log, 'Found %d unsupported movie(s)\n%s', unsupported_movies)
+        log_unsupported(log, 'Found %d unsupported movie(s)', unsupported_movies)
         log.debug('Pending: %r', pending)

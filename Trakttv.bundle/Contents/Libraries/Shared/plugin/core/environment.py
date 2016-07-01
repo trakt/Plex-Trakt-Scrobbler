@@ -28,6 +28,10 @@ class PathEnvironment(object):
         return self._core.code_path
 
     @property
+    def home(self):
+        return os.path.abspath(os.path.join(self.plugin_support, '..'))
+
+    @property
     def libraries(self):
         return os.path.join(self.contents, 'Libraries')
 

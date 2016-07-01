@@ -220,4 +220,4 @@ class Shows(Mode):
         self.current.progress.group(Shows, 'episodes').stop()
 
         # Log details
-        log_unsupported(log, 'Found %d unsupported show(s)\n%s', self.p_shows_unsupported)
+        log_unsupported(log, 'Found %d unsupported show(s)', self.p_shows_unsupported)
