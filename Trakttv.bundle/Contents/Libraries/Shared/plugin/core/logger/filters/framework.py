@@ -1,6 +1,13 @@
 from logging import Filter
 import logging
 
+FRAMEWORK_FILES = [
+    '/framework/components/runtime.py',
+    '/framework/core.py',
+    '/libraries/tornado/ioloop.py',
+    '/libraries/tornado/iostream.py'
+]
+
 
 class FrameworkFilter(Filter):
     def filter(self, record):
@@ -13,8 +20,8 @@ class FrameworkFilter(Filter):
         record.levelname = logging.getLevelName(level)
         return True
 
-    @staticmethod
-    def map(record):
+    @classmethod
+    def map(cls, record):
         if record.levelno < logging.ERROR:
             return None
 
@@ -26,13 +33,15 @@ class FrameworkFilter(Filter):
 
         path = record.pathname.lower().replace('\\', '/')
 
-        if path.endswith('/libraries/tornado/ioloop.py'):
-            return logging.INFO
+        if cls.is_framework_file(path):
+            return logging.DEBUG
 
-        if path.endswith('/framework/components/runtime.py'):
-            return logging.INFO
+        return None
 
-        if path.endswith('/framework/core.py'):
-            return logging.INFO
+    @staticmethod
+    def is_framework_file(path):
+        for name in FRAMEWORK_FILES:
+            if path.endswith(name):
+                return True
 
         return None
