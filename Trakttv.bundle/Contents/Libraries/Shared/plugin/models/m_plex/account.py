@@ -69,9 +69,13 @@ class PlexAccount(Model):
         if basic_credential.token_server is None:
             raise AccountAuthenticationError("Plex account is missing the server token")
 
-        log.debug('Using basic authorization for %r', self)
+        # Handle anonymous authentication
+        if basic_credential.token_server == 'anonymous':
+            log.debug('Using anonymous authorization for %r', self)
+            return Plex.configuration.authentication(token=None)
 
-        # Return authorization context
+        # Configure client
+        log.debug('Using basic authorization for %r', self)
         return Plex.configuration.authentication(basic_credential.token_server)
 
     def refresh(self, force=False, save=True):

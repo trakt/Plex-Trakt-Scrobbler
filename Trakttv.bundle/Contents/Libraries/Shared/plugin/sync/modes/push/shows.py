@@ -94,7 +94,7 @@ class Shows(Base):
         self.process_matched_episodes()
 
         # Report unsupported shows
-        log_unsupported(log, 'Found %d unsupported show(s)\n%s', self.p_shows_unsupported)
+        log_unsupported(log, 'Found %d unsupported show(s)', self.p_shows_unsupported)
 
         # Process missing items
         self.process_missing_shows()
@@ -199,7 +199,10 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'missing:shows').stop()
 
-        self.log_pending('Unable to find %d show(s) in Plex\n%s', self.p_shows_pending)
+        self.log_pending(
+            log, 'Unable to find %d show(s) in Plex, list has been saved to: %s',
+            self.current.account, 'shows', self.p_shows_pending
+        )
 
     #
     # Episodes
@@ -318,7 +321,10 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'missing:episodes').stop()
 
-        self.log_pending('Unable to find %d episode(s) in Plex\n%s', self.p_episodes_pending)
+        self.log_pending(
+            log, 'Unable to find %d episode(s) in Plex, list has been saved to: %s',
+            self.current.account, 'episodes', self.p_episodes_pending
+        )
 
     @staticmethod
     def t_objects(collection, pk, season_num, episode_num):

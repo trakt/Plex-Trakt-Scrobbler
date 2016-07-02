@@ -28,6 +28,10 @@ class PathEnvironment(object):
         return self._core.code_path
 
     @property
+    def home(self):
+        return os.path.abspath(os.path.join(self.plugin_support, '..'))
+
+    @property
     def libraries(self):
         return os.path.join(self.contents, 'Libraries')
 
@@ -99,7 +103,7 @@ class Environment(object):
         try:
             locale.setlocale(locale.LC_ALL, language)
         except Exception, ex:
-            log.warn('Unable to set locale: %s', ex, exc_info=True)
+            log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
             return False
 
         # Default to the "en_US" locale
@@ -109,7 +113,7 @@ class Environment(object):
             try:
                 locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
             except Exception, ex:
-                log.warn('Unable to set locale: %s', ex, exc_info=True)
+                log.warn('Unable to set locale to %r: %s', DEFAULT_LOCALE, ex, exc_info=True)
                 return False
 
         log.info('Using locale: %r', locale.getlocale())

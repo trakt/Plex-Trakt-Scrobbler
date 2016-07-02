@@ -11,6 +11,7 @@ import datetime
 import logging
 import os
 import platform
+import raven
 import re
 import sys
 
@@ -53,7 +54,7 @@ PARAMS = {
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = '51814d6692f142ad88393d90a606643a:02374118037e4908a0dc627fcba3e613'
+    key = '6afe79a788d64af2ad3f0f5a7fc83912:fdcabc5f09aa4b7b93edfb21263bb33e'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):
@@ -78,6 +79,23 @@ class ErrorReporter(Client):
 
         # Update client DSN
         self.set_dsn(dsn)
+
+    def send_remote(self, url, data, headers=None):
+        if headers is None:
+            headers = {}
+
+        # Update user agent
+        headers['User-Agent'] = 'raven-python/%s tfp/%s-%s' % (
+            # Raven
+            raven.VERSION,
+
+            # Trakt.tv (for Plex)
+            VERSION,
+            PLUGIN_VERSION_BRANCH
+        )
+
+        # Send event
+        super(ErrorReporter, self).send_remote(url, data, headers)
 
 
 class ErrorReporterHandler(SentryHandler):
