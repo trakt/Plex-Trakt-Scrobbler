@@ -103,7 +103,7 @@ class Environment(object):
         try:
             locale.setlocale(locale.LC_ALL, language)
         except Exception, ex:
-            log.warn('Unable to set locale: %s', ex, exc_info=True)
+            log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
             return False
 
         # Default to the "en_US" locale
@@ -113,7 +113,7 @@ class Environment(object):
             try:
                 locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
             except Exception, ex:
-                log.warn('Unable to set locale: %s', ex, exc_info=True)
+                log.warn('Unable to set locale to %r: %s', DEFAULT_LOCALE, ex, exc_info=True)
                 return False
 
         log.info('Using locale: %r', locale.getlocale())
