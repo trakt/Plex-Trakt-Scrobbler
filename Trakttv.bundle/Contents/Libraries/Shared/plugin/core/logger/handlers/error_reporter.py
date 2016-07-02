@@ -11,6 +11,7 @@ import datetime
 import logging
 import os
 import platform
+import raven
 import re
 import sys
 
@@ -78,6 +79,23 @@ class ErrorReporter(Client):
 
         # Update client DSN
         self.set_dsn(dsn)
+
+    def send_remote(self, url, data, headers=None):
+        if headers is None:
+            headers = {}
+
+        # Update user agent
+        headers['User-Agent'] = 'raven-python/%s tfp/%s-%s' % (
+            # Raven
+            raven.VERSION,
+
+            # Trakt.tv (for Plex)
+            VERSION,
+            PLUGIN_VERSION_BRANCH
+        )
+
+        # Send event
+        super(ErrorReporter, self).send_remote(url, data, headers)
 
 
 class ErrorReporterHandler(SentryHandler):
