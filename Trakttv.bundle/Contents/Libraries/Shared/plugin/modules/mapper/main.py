@@ -5,7 +5,7 @@ from plugin.modules.core.base import Module
 from oem import OemClient, AbsoluteNumberRequiredError
 from oem.media.movie import MovieMatch
 from oem.media.show import EpisodeIdentifier, EpisodeMatch
-from oem.providers import IncrementalReleaseProvider
+from oem_client_provider_release import IncrementalReleaseProvider
 from oem_storage_codernitydb.main import CodernityDbStorage
 from plex_metadata import Guid
 import logging
@@ -27,6 +27,9 @@ class Mapper(Module):
     def start(self):
         # Construct oem client
         self._client = OemClient(
+            services=[
+                'anidb'
+            ],
             provider=IncrementalReleaseProvider(
                 fmt='minimize+msgpack',
                 storage=CodernityDbStorage(os.path.join(
