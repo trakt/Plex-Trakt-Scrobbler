@@ -1,4 +1,4 @@
-arrow==0.7.0
+arrow==0.8.0
 asio==1.1
 croniter==0.3.12
 enum34==1.1.6
@@ -10,7 +10,7 @@ msgpack-python==0.4.7
 ndg-httpsclient==0.4.1
 pyasn1==0.1.9
 pyOpenSSL==16.0.0
-pytz==2016.4
+pytz==2016.6.1
 requests==2.10.0
 six==1.10.0
 sortedcontainers==1.5.3

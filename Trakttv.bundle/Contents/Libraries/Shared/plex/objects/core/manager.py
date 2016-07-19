@@ -57,7 +57,7 @@ class ObjectManager(object):
             try:
                 mod = __import__(name, fromlist=['*'])
             except Exception as ex:
-                log.warn('Unable to import "%s" - %s', name, ex)
+                log.warn('Unable to import "%s" - %s', name, ex, exc_info=True)
                 continue
 
             # Get classes in module

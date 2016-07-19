@@ -100,7 +100,7 @@ class PlexAccount(Model):
         if not self.refresh_details(basic):
             return False
 
-        if not basic.refresh():
+        if not basic.refresh(force=True):
             return False
 
         # Store changes in database
@@ -115,13 +115,15 @@ class PlexAccount(Model):
         if basic.token_plex == 'anonymous':
             return self.refresh_anonymous()
 
+        log.info('Refreshing plex account: %r', self)
+
         # Fetch account details
         response = requests.get('https://plex.tv/users/account', headers={
             'X-Plex-Token': basic.token_plex
         })
 
         if not (200 <= response.status_code < 300):
-            # Invalid response
+            log.warn('Unable to retrieve account details from plex.tv (status_code: %s)', response.status_code)
             return False
 
         user = ElementTree.fromstring(response.content)
@@ -150,7 +152,7 @@ class PlexAccount(Model):
         return True
 
     def refresh_anonymous(self):
-        log.debug('Refreshing anonymous plex account')
+        log.info('Refreshing plex account: %r (anonymous)', self)
 
         self.username = 'administrator'
 
@@ -171,7 +173,7 @@ class PlexAccount(Model):
         if self.title is None:
             return True
 
-        if basic.token_server is None:
+        if not basic.token_server:
             return True
 
         return False
