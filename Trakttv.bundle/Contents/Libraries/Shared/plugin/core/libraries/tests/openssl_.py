@@ -26,6 +26,18 @@ class OpenSSL(BaseTest):
         from cryptography.hazmat.bindings.openssl.binding import Binding
         assert Binding
 
+        # Ensure secure connections work with requests
+        from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
+        import requests
+
+        inject_into_urllib3()
+
+        try:
+            requests.head('https://api-v2launch.trakt.tv', timeout=3)
+        except requests.RequestException, ex:
+            # Ignore failed requests (server error, network problem, etc..)
+            log.warn('Request failed: %s', ex, exc_info=True)
+
         return {
             'versions': {
                 'pyopenssl': getattr(OpenSSL, '__version__', None)
