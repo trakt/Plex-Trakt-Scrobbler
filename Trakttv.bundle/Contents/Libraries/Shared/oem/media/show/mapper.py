@@ -73,7 +73,8 @@ class ShowMapper(object):
             match = EpisodeMatch(
                 self._get_identifiers(show),
                 season_num=season_num,
-                episode_num=episode_num
+                episode_num=episode_num,
+                progress=identifier.progress
             )
         else:
             if identifier.absolute_num is None:
@@ -81,7 +82,8 @@ class ShowMapper(object):
 
             match = EpisodeMatch(
                 self._get_identifiers(show),
-                absolute_num=identifier.absolute_num
+                absolute_num=identifier.absolute_num,
+                progress=identifier.progress
             )
 
         if not match.valid:
@@ -102,7 +104,8 @@ class ShowMapper(object):
 
             return season, EpisodeMatch(
                 self._get_identifiers(show, season),
-                absolute_num=identifier.absolute_num
+                absolute_num=identifier.absolute_num,
+                progress=identifier.progress
             )
 
         # Look for matching season mapping
@@ -113,7 +116,8 @@ class ShowMapper(object):
             return season, EpisodeMatch(
                 self._get_identifiers(show, season),
                 int(season_mapping.season),
-                identifier.episode_num + season_mapping.offset
+                identifier.episode_num + season_mapping.offset,
+                progress=identifier.progress
             )
 
         # Retrieve "default_season" parameter
@@ -155,7 +159,8 @@ class ShowMapper(object):
         match = EpisodeMatch(
             self._get_identifiers(show, season),
             season_num=season_num,
-            episode_num=episode_num
+            episode_num=episode_num,
+            progress=identifier.progress
         )
 
         if not match.valid:
@@ -171,15 +176,33 @@ class ShowMapper(object):
 
         for episode_mapping in episode.mappings:
             # Parse timeline attributes
-            if episode_mapping.timeline and 'source' in episode_mapping.timeline:
+            progress = identifier.progress
+
+            if episode_mapping.timeline:
                 if identifier.progress is None:
                     raise ValueError('Missing required parameter "progress"')
 
-                timeline_source = episode_mapping.timeline['source']
+                if 'source' in episode_mapping.timeline:
+                    timeline_source = episode_mapping.timeline['source']
 
-                if not (timeline_source.start <= identifier.progress <= timeline_source.end):
-                    # Ignore `episode_mapping`
-                    continue
+                    if not (timeline_source.start <= identifier.progress <= timeline_source.end):
+                        continue
+
+                    # Calculate progress
+                    progress = (
+                        float(identifier.progress - timeline_source.start) *
+                        (100 / (timeline_source.end - timeline_source.start))
+                    )
+                elif 'target' in episode_mapping.timeline:
+                    timeline_target = episode_mapping.timeline['target']
+
+                    # Calculate progress
+                    progress = (
+                        timeline_target.start + (
+                            float(identifier.progress) /
+                            (100 / (timeline_target.end - timeline_target.start))
+                        )
+                    )
 
             # Parse mapping attributes
             try:
@@ -196,7 +219,8 @@ class ShowMapper(object):
             match = EpisodeMatch(
                 self._get_identifiers(show, season, episode),
                 season_num=season_num,
-                episode_num=episode_num
+                episode_num=episode_num,
+                progress=progress
             )
 
             if not match.valid:

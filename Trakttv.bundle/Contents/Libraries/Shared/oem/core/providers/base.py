@@ -1,8 +1,9 @@
 from oem_core.core.plugin import PluginManager
+from oem_framework.plugin import Plugin
 from oem_framework.storage import ProviderStorage
 
 
-class Provider(object):
+class Provider(Plugin):
     def __init__(self, storage):
         self._storage = storage
 

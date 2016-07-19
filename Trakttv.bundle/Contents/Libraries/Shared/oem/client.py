@@ -1,42 +1,28 @@
-from oem.services import SERVICES
-from oem.providers import PROVIDERS
-from oem.providers.core.base import Provider
+from oem.core.providers.base import Provider
 from oem.version import __version__
 from oem_core.core.plugin import PluginManager
 
+import inspect
 import logging
 import six
 
 log = logging.getLogger(__name__)
 
-DATABASES = {
-    ('anidb', 'tvdb'): 'oem_database_anidb_tvdb',
-    ('tvdb', 'anidb'): 'oem_database_anidb_tvdb',
-
-    ('anidb', 'imdb'): 'oem_database_anidb_imdb',
-    ('imdb', 'anidb'): 'oem_database_anidb_imdb'
-}
-
-PACKAGES = {
-    ('anidb', 'tvdb'): 'oem-database-anidb-tvdb',
-    ('tvdb', 'anidb'): 'oem-database-anidb-tvdb',
-
-    ('anidb', 'imdb'): 'oem-database-anidb-imdb',
-    ('imdb', 'anidb'): 'oem-database-anidb-imdb'
-}
-
 
 class Client(object):
     version = __version__
 
-    def __init__(self, formats=None, provider='package'):
+    def __init__(self, services, provider, formats=None):
         """OpenEntityMap (OEM) Client
+
+        :param services: List of services to load (e.g. "anidb")
+        :type services: list
+
+        :param provider: Provider to use for databases (e.g. "package", "release/incremental")
+        :type provider: str or oem.core.providers.base.Base
 
         :param formats: List of formats to use, or `None` for any
         :type formats: list or None
-
-        :param provider: Source to use for databases
-        :type provider: str or oem.sources.core.base.Source
         """
 
         self._formats = formats
@@ -46,8 +32,25 @@ class Client(object):
         self._plugins.discover()
 
         # Construct plugins
+        self._services = self._construct_services(services)
         self._provider = self._construct_provider(provider)
-        self._services = self._construct_services()  # { (<source>, <target>): <service> }
+
+        # Build database + package tables
+        self._databases = {}
+        self._packages = {}
+
+        for _, cls in self._load_plugins('client', services, construct=False):
+            # Merge service databases into client
+            if cls.__databases__:
+                self._databases.update(cls.__databases__)
+            else:
+                log.warn('Service %r has no "__databases__" defined', cls.__key__)
+
+            # Merge service packages into client
+            if cls.__packages__:
+                self._packages.update(cls.__packages__)
+            else:
+                log.warn('Service %r has no "__packages__" defined', cls.__key__)
 
     @property
     def formats(self):
@@ -66,10 +69,10 @@ class Client(object):
             service.load()
 
     def database_name(self, source, target):
-        return DATABASES.get((source, target))
+        return self._databases.get((source, target))
 
     def package_name(self, source, target):
-        return PACKAGES.get((source, target))
+        return self._packages.get((source, target))
 
     def __getitem__(self, source):
         return ServiceInterface(self, source)
@@ -78,10 +81,10 @@ class Client(object):
     # Private methods
     #
 
-    def _construct_services(self):
+    def _construct_services(self, services):
         result = {}
 
-        for key, cls in SERVICES.items():
+        for _, cls in self._load_plugins('client', services, construct=False):
             # Add supported service conversions
             for source, targets in cls.__services__.items():
                 for target in targets:
@@ -92,17 +95,45 @@ class Client(object):
 
     def _construct_provider(self, provider_or_key):
         if isinstance(provider_or_key, Provider):
-            # Use provided source
+            # Class
             provider = provider_or_key
-        elif provider_or_key in PROVIDERS:
-            # Construct source by key
-            provider = PROVIDERS[provider_or_key]()
+        elif isinstance(provider_or_key, six.string_types):
+            # Identifier
+            provider = PluginManager.get('client-provider', provider_or_key)
+
+            if provider is None:
+                raise ValueError('Unable to find provider: %r' % provider_or_key)
         else:
             raise ValueError('Unknown provider: %r' % provider_or_key)
 
-        # Initialize source
+        # Ensure provider has been constructed
+        if inspect.isclass(provider):
+            provider = provider()
+
+        # Initialize provider
         provider.initialize(self)
         return provider
+
+    @staticmethod
+    def _load_plugins(kind, keys, construct=True):
+        if not keys:
+            return
+
+        for name in keys:
+            cls = PluginManager.get(kind, name)
+
+            if cls is None:
+                log.warn('Unable to find plugin: %r', name)
+                continue
+
+            if not cls.available:
+                log.warn('Plugin %r is not available', name)
+                continue
+
+            if construct:
+                yield cls.__key__, cls()
+            else:
+                yield cls.__key__, cls
 
 
 class ServiceInterface(object):

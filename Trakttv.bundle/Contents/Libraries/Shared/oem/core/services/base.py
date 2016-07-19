@@ -1,11 +1,14 @@
 from oem_framework.core.elapsed import Elapsed
+from oem_framework.plugin import Plugin
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class Service(object):
+class Service(Plugin):
+    __databases__ = {}
+    __packages__ = {}
     __services__ = {}
 
     def __init__(self, client, source, target, formats=None):

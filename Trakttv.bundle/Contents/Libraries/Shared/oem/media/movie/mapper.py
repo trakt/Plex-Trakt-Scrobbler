@@ -1,8 +1,7 @@
 from oem.media.movie.match import MovieMatch
+from oem.media.show import EpisodeIdentifier
 
 from copy import deepcopy
-
-from oem.media.show import EpisodeIdentifier
 
 
 class MovieMapper(object):

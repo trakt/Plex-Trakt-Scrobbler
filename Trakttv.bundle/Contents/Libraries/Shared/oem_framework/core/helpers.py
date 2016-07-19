@@ -21,7 +21,7 @@ def convert_keys_to_string(value):
             result[k] = [
                 convert_keys_to_string(v)
                 for v in v
-                ]
+            ]
         else:
             result[k] = v
 
