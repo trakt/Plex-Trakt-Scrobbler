@@ -1,4 +1,4 @@
-from plex.lib.six import add_metaclass
+from plex.lib import six as six
 from plex.interfaces.core.base import Interface
 
 import collections
@@ -47,7 +47,7 @@ class Property(object):
             try:
                 result = target_type(result)
             except Exception as ex:
-                raise ex, None, sys.exc_info()[2]
+                six.reraise(ex, None, sys.exc_info()[2])
 
         return result
 
@@ -71,7 +71,7 @@ class DescriptorMeta(type):
         Interface.object_map[self.__name__] = self
 
 
-@add_metaclass(DescriptorMeta)
+@six.add_metaclass(DescriptorMeta)
 class Descriptor(Interface):
     attribute_map = None
 

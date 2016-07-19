@@ -1,4 +1,5 @@
-from plex.lib.six import string_types, StringIO
+from plex.lib import six
+from plex.lib.six import StringIO
 from plex.lib.six.moves.urllib_parse import urlparse
 
 from functools import wraps
@@ -172,7 +173,7 @@ class Interface(object):
         else:
             descriptor = item
 
-        if isinstance(descriptor, string_types):
+        if isinstance(descriptor, six.string_types):
             if descriptor not in cls.object_map:
                 raise Exception('Unable to find descriptor by name "%s"' % descriptor)
 

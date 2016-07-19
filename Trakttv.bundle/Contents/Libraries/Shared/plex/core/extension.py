@@ -3,7 +3,7 @@
 # :copyright: (c) 2014 by Armin Ronacher.
 # :license: BSD, see LICENSE for more details.
 
-from plex.lib.six import reraise
+from plex.lib import six as six
 
 import os
 import sys
@@ -63,7 +63,7 @@ class ExtensionImporter(object):
                 # we swallow it and try the next choice.  The skipped frame
                 # is the one from __import__ above which we don't care about
                 if self.is_important_traceback(realname, tb):
-                    reraise(exc_type, exc_value, tb.tb_next)
+                    six.reraise(exc_type, exc_value, tb.tb_next)
                 continue
             module = sys.modules[fullname] = sys.modules[realname]
             if '.' not in modname:

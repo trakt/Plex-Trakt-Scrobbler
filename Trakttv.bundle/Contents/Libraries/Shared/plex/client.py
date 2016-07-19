@@ -3,7 +3,7 @@ from plex.core.http import HttpClient
 from plex.helpers import has_attribute
 from plex.interfaces import construct_map
 from plex.interfaces.core.base import InterfaceProxy
-from plex.lib.six import add_metaclass
+from plex.lib import six as six
 from plex.objects.core.manager import ObjectManager
 
 import logging
@@ -107,7 +107,7 @@ class PlexMeta(type):
         return self.client[key]
 
 
-@add_metaclass(PlexMeta)
+@six.add_metaclass(PlexMeta)
 class Plex(object):
     _client = None
 

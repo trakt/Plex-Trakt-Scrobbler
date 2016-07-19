@@ -1,4 +1,4 @@
-from plex.lib.six import string_types
+from plex.lib import six as six
 
 class idict(dict):
     def __init__(self, initial=None):
@@ -6,7 +6,7 @@ class idict(dict):
             self.update(initial)
 
     def get(self, k, d=None):
-        if isinstance(k, string_types):
+        if isinstance(k, six.string_types):
             k = k.lower()
 
         if super(idict, self).__contains__(k):
@@ -30,25 +30,25 @@ class idict(dict):
             self[k] = F[k]
 
     def __contains__(self, k):
-        if isinstance(k, string_types):
+        if isinstance(k, six.string_types):
             k = k.lower()
 
         return super(idict, self).__contains__(k)
 
     def __delitem__(self, k):
-        if isinstance(k, string_types):
+        if isinstance(k, six.string_types):
             k = k.lower()
 
         super(idict, self).__delitem__(k)
 
     def __getitem__(self, k):
-        if isinstance(k, string_types):
+        if isinstance(k, six.string_types):
             k = k.lower()
 
         return super(idict, self).__getitem__(k)
 
     def __setitem__(self, k, value):
-        if isinstance(k, string_types):
+        if isinstance(k, six.string_types):
             k = k.lower()
 
         super(idict, self).__setitem__(k, value)
