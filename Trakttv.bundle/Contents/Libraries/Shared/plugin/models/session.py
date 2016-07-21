@@ -19,10 +19,13 @@ class Session(Model):
 
     state = CharField(null=True)
 
-    progress = FloatField(null=True)
+    part = IntegerField(default=1)
+    part_count = IntegerField(default=1)
+    part_duration = IntegerField(null=True)
 
     duration = IntegerField(null=True)
     view_offset = IntegerField(null=True)
+    progress = FloatField(null=True)
 
     updated_at = DateTimeField(null=True)
 
@@ -33,6 +36,7 @@ class Session(Model):
     @property
     def payload(self):
         return {
+            'part': self.part,
             'rating_key': self.rating_key,
             'view_offset': self.view_offset
         }
