@@ -21,7 +21,7 @@ class SyncStatePlex(object):
 
     @elapsed.clock
     def prime(self):
-        return ModuleManager['matcher'].database.prime(force=True)
+        return ModuleManager['matcher'].prime(force=True)
 
     @elapsed.clock
     def flush(self):
@@ -29,4 +29,4 @@ class SyncStatePlex(object):
             log.debug('Flushing matcher cache...')
 
             # Flush matcher cache to disk
-            ModuleManager['matcher'].database.flush(force=True)
+            ModuleManager['matcher'].flush(force=True)

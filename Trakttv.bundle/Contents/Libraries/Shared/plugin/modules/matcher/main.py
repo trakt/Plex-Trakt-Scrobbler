@@ -55,6 +55,22 @@ class Matcher(Module):
 
         return True
 
+    def flush(self, force=False):
+        if not self._cache:
+            return False
+
+        self._cache.flush(force=force)
+        return True
+
+    def prime(self, keys=None, force=False):
+        if not self._cache:
+            return DummyContext()
+
+        return self._cache.prime(
+            keys=keys,
+            force=force
+        )
+
     def process(self, episode):
         if not episode or not isinstance(episode, Episode):
             raise ValueError('Invalid value specified for the "episode" parameter: %r' % (episode,))
@@ -91,3 +107,11 @@ class Matcher(Module):
 
         # Configure matchers
         self.configure()
+
+
+class DummyContext(object):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
