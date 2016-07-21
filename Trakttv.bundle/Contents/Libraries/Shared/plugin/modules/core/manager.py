@@ -19,11 +19,13 @@ class ModuleManager(object):
 
     @classmethod
     def discover(cls):
+        from plugin.modules.matcher.main import Matcher
         from plugin.modules.scheduler.main import Scheduler
         from plugin.modules.sessions.main import Sessions
         from plugin.modules.upgrade.main import Upgrade
 
         return [
+            Matcher,
             Scheduler,
             Sessions,
             Upgrade

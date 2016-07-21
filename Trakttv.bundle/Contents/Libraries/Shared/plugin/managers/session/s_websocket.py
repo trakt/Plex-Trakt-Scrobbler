@@ -75,7 +75,10 @@ class UpdateWSession(UpdateSession):
         if not fetch:
             # Return simple update
             return merge(result, {
-                'progress': self.get_progress(obj.duration, view_offset)
+                'progress': self.get_progress(
+                    obj.duration, view_offset,
+                    obj.part, obj.part_count, obj.part_duration
+                )
             })
 
         # Retrieve session key
@@ -114,6 +117,24 @@ class UpdateWSession(UpdateSession):
                 'progress': self.get_progress(p_metadata.duration, view_offset)
             })
 
+        # Parse episode with matcher
+        part = 1
+        part_count = 1
+        part_duration = p_metadata.duration
+
+        if p_metadata.type == 'episode':
+            p_season, p_episodes = ModuleManager['matcher'].process(p_metadata)
+
+            # Determine the current part number
+            part_duration, part = self.get_part(p_metadata.duration, view_offset, len(p_episodes))
+
+            # Update `part_count` attribute
+            part_count = len(p_episodes)
+
+            if part_count > 1:
+                log.debug('Current part: %s (part_count: %s, part_duration: %s)', part, part_count, part_duration)
+
+        # Find matching client + user for session
         try:
             # Create/Retrieve `Client` for session
             result['client'] = ClientManager.get.or_create(
@@ -144,8 +165,15 @@ class UpdateWSession(UpdateSession):
             result['account'] = None
 
         return merge(result, {
+            'part': part,
+            'part_count': part_count,
+            'part_duration': part_duration,
+
             'duration': p_metadata.duration,
-            'progress': self.get_progress(p_metadata.duration, view_offset)
+            'progress': self.get_progress(
+                p_metadata.duration, view_offset,
+                part, part_count, part_duration
+            )
         })
 
 
