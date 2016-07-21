@@ -92,8 +92,6 @@ class Base(object):
             log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
             episode_num = episode.index
 
-        log.info('Episode matched to season: %r, episode: %r (part: %r)', season_num, episode_num, part)
-
         # Build request
         return {
             'show': {
