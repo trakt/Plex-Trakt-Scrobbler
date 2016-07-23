@@ -65,7 +65,7 @@ class AniDbService(Service):
         except KeyError:
             return default
 
-    def map(self, key, identifier=None):
+    def map(self, key, identifier=None, resolve_mappings=True):
         # Retrieve item
         item = self.get(key)
 
@@ -73,9 +73,15 @@ class AniDbService(Service):
             return None
 
         if isinstance(item, Movie):
-            match = self._movie_mapper.match(item, identifier)
+            match = self._movie_mapper.match(
+                item, identifier,
+                resolve_mappings=resolve_mappings
+            )
         elif isinstance(item, Show):
-            match = self._show_mapper.match(item, identifier)
+            match = self._show_mapper.match(
+                item, identifier,
+                resolve_mappings=resolve_mappings
+            )
         else:
             raise ValueError('Unknown item: %r' % item)
 
