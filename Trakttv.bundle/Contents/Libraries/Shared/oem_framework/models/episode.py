@@ -164,14 +164,14 @@ class EpisodeMapping(BaseMapping):
 
         return episode_mapping
 
-    def to_dict(self, key=None, flatten=True):
+    def to_dict(self, key=None, compact=True, flatten=True):
         result = {}
 
         # Identifier
-        if self.season != self.parent.season:
+        if not compact or self.season != self.parent.season:
             result['season'] = self.season
 
-        if len(result) < 1 or self.number != self.parent.number:
+        if not compact or len(result) < 1 or self.number != self.parent.number:
             result['number'] = self.number
 
         # Range
