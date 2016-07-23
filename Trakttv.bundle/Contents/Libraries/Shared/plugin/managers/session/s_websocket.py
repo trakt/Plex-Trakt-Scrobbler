@@ -117,22 +117,10 @@ class UpdateWSession(UpdateSession):
                 'progress': self.get_progress(p_metadata.duration, view_offset)
             })
 
-        # Parse episode with matcher
-        part = 1
-        part_count = 1
-        part_duration = p_metadata.duration
+        # Retrieve media parts
+        part, part_count, part_duration = self.match_parts(p_metadata, guid, view_offset)
 
-        if p_metadata.type == 'episode':
-            p_season, p_episodes = ModuleManager['matcher'].process(p_metadata)
-
-            # Determine the current part number
-            part_duration, part = self.get_part(p_metadata.duration, view_offset, len(p_episodes))
-
-            # Update `part_count` attribute
-            part_count = len(p_episodes)
-
-            if part_count > 1:
-                log.debug('Current part: %s (part_count: %s, part_duration: %s)', part, part_count, part_duration)
+        log.debug('Part: %s (part_count: %s, part_duration: %s)', part, part_count, part_duration)
 
         # Find matching client + user for session
         try:

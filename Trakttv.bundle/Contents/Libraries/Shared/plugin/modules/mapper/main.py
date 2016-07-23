@@ -43,7 +43,7 @@ class Mapper(Module):
     # Movie
     #
 
-    def map_movie(self, guid, movie):
+    def map_movie(self, guid, movie, progress=None, part=None):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
@@ -51,9 +51,14 @@ class Mapper(Module):
         # Try match movie against database
         return self.map(guid.service, guid.id)
 
-    def request_movie(self, guid, movie):
+    def request_movie(self, guid, movie, progress=None, part=None):
         # Try match movie against database
-        supported, match = self.map_movie(guid, movie)
+        supported, match = self.map_movie(
+            guid, movie,
+
+            progress=progress,
+            part=part
+        )
 
         if not match:
             return supported, None
@@ -65,7 +70,7 @@ class Mapper(Module):
     # Shows
     #
 
-    def map_episode(self, guid, season_num, episode_num):
+    def map_episode(self, guid, season_num, episode_num, progress=None, part=None):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
@@ -73,15 +78,25 @@ class Mapper(Module):
         # Build episode identifier
         identifier = EpisodeIdentifier(
             season_num=season_num,
-            episode_num=episode_num
+            episode_num=episode_num,
+
+            progress=progress,
+            part=part
         )
 
         # Try match episode against database
         return self.map(guid.service, guid.id, identifier)
 
-    def request_episode(self, guid, episode):
+    def request_episode(self, guid, episode, progress=None, part=None):
         # Try match episode against database
-        supported, match = self.map_episode(guid, episode.season.index, episode.index)
+        supported, match = self.map_episode(
+            guid,
+            episode.season.index,
+            episode.index,
+
+            progress=progress,
+            part=part
+        )
 
         if not match:
             return supported, None
@@ -93,13 +108,16 @@ class Mapper(Module):
     # Helper methods
     #
 
-    def map(self, source, key, identifier=None):
+    def map(self, source, key, identifier=None, resolve_mappings=True):
         if source not in self.services:
             return False, None
 
         for target, service in self._iter_services(source):
             try:
-                match = service.map(key, identifier)
+                match = service.map(
+                    key, identifier,
+                    resolve_mappings=resolve_mappings
+                )
             except AbsoluteNumberRequiredError:
                 log.info('Unable to retrieve mapping for %r (%s -> %s) - Absolute mappings are not supported yet', key, source, target)
                 continue

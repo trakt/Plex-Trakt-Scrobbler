@@ -92,7 +92,7 @@ class WebSocket(Base):
 
         # Calculate current part number
         # TODO handle null values from session?
-        _, part = UpdateSession.get_part(session.duration, view_offset, session.part_count)
+        part, _ = UpdateSession.get_part(session.duration, view_offset, session.part_count)
 
         # Build event
         return [
