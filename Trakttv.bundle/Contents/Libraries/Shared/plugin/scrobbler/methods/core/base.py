@@ -16,8 +16,11 @@ class Base(object):
     name = None
 
     @classmethod
-    def build_request(cls, session, rating_key=None, view_offset=None):
+    def build_request(cls, session, part=None, rating_key=None, view_offset=None):
         # Retrieve metadata for session
+        if part is None:
+            part = session.part
+
         if rating_key is None:
             rating_key = session.rating_key
 
@@ -45,9 +48,9 @@ class Base(object):
 
         # Build request from guid/metadata
         if type(metadata) is Movie:
-            result = cls.build_movie(metadata, guid)
+            result = cls.build_movie(metadata, guid, part)
         elif type(metadata) is Episode:
-            result = cls.build_episode(metadata, guid)
+            result = cls.build_episode(metadata, guid, part)
         else:
             return None
 
@@ -57,7 +60,10 @@ class Base(object):
         # Retrieve media progress
         if view_offset is not None:
             # Calculate progress from `view_offset` parameter
-            progress = UpdateSession.get_progress(metadata.duration, view_offset)
+            progress = UpdateSession.get_progress(
+                metadata.duration, view_offset,
+                part, session.part_count, session.part_duration
+            )
         else:
             # Use session progress
             progress = session.progress
@@ -67,8 +73,8 @@ class Base(object):
             'progress': progress
         })
 
-    @staticmethod
-    def build_episode(episode, guid):
+    @classmethod
+    def build_episode(cls, episode, guid, part):
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
@@ -77,6 +83,19 @@ class Base(object):
 
             return request
 
+        # Retrieve episode number
+        season_num, episodes = ModuleManager['matcher'].process(episode)
+
+        if len(episodes) > 1 and part - 1 < len(episodes):
+            episode_num = episodes[part - 1]
+        elif len(episodes) > 1:
+            log.warn('Part %s doesn\'t exist in episodes: %r', part, episodes)
+            episode_num = episodes[0]
+        else:
+            log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
+            episode_num = episode.index
+
+        # Build request
         return {
             'show': {
                 'title': episode.show.title,
@@ -87,13 +106,13 @@ class Base(object):
             'episode': {
                 'title': episode.title,
 
-                'season': episode.season.index,
-                'number': episode.index
+                'season': season_num,
+                'number': episode_num
             }
         }
 
     @staticmethod
-    def build_movie(movie, guid):
+    def build_movie(movie, guid, part):
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:

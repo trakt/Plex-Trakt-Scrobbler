@@ -290,6 +290,7 @@ class SyncArtifacts(object):
             return False
 
         # Check for duplicate scrobbles in `duplication_period`
+        # TODO check `part` attribute
         scrobbled = ActionHistory.has_scrobbled(
             self.task.account, p_key,
             after=datetime.utcnow() - timedelta(minutes=duplication_period)

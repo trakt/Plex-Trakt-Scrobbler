@@ -24,6 +24,7 @@ class SessionHandler(Handler):
             return False
 
         # Calculate session progress
+        # TODO update to support multi-part sessions
         progress = float(payload.get('view_offset')) / session.duration
 
         # Session is finished when `progress` reaches at least 100%
@@ -34,4 +35,10 @@ class SessionHandler(Handler):
         if not session or not session.rating_key:
             return False
 
-        return session.rating_key != payload.get('rating_key')
+        if session.rating_key != payload.get('rating_key'):
+            return True
+
+        if session.part != payload.get('part', 1):
+            return True
+
+        return False

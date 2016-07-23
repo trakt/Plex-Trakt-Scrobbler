@@ -61,6 +61,8 @@ class ActionManager(Manager):
                 session=session,
 
                 progress=session.progress,
+
+                part=session.part,
                 rating_key=session.rating_key,
 
                 event=event,
@@ -173,6 +175,7 @@ class ActionManager(Manager):
         # Check for duplicate scrobbles in `duplication_period`
         scrobbled = ActionHistory.has_scrobbled(
             action.account, action.rating_key,
+            part=action.part,
             after=action.queued_at - timedelta(minutes=duplication_period)
         )
 
@@ -215,6 +218,7 @@ class ActionManager(Manager):
             account=action.account_id,
             session=action.session_id,
 
+            part=action.part,
             rating_key=action.rating_key,
 
             event=action.event,

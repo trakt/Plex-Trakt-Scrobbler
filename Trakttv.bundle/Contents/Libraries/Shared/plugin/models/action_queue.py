@@ -15,6 +15,8 @@ class ActionQueue(Model):
     session = ForeignKeyField(Session, 'action_queue', null=True)
 
     progress = FloatField(null=True)
+
+    part = IntegerField(default=1)
     rating_key = IntegerField(null=True)
 
     event = CharField()
