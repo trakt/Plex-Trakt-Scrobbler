@@ -3,6 +3,7 @@ from plugin.scrobbler.core.session_prefix import SessionPrefix
 
 from plex_metadata import Metadata, Guid
 import logging
+import math
 
 log = logging.getLogger(__name__)
 
@@ -82,8 +83,31 @@ class UpdateSession(Update, Base):
         return metadata, guid
 
     @staticmethod
-    def get_progress(duration, view_offset):
+    def get_part(duration, view_offset, part_count):
+        if duration is None:
+            return 1
+
+        part_duration = int(math.floor(
+            float(duration) / part_count
+        ))
+
+        # Calculate current part number
+        part = int(math.floor(
+            float(view_offset) / part_duration
+        )) + 1
+
+        # Clamp `part` to: 0 - `total_parts`
+        return part_duration, max(0, min(part, part_count))
+
+    @staticmethod
+    def get_progress(duration, view_offset, part=1, part_count=1, part_duration=None):
         if duration is None:
             return None
 
+        if part_count > 1 and part_duration is not None:
+            # Update attributes for part progress calculations
+            duration = part_duration
+            view_offset -= (part_duration * (part - 1))
+
+        # Calculate progress (0 - 100)
         return round((float(view_offset) / duration) * 100, 2)

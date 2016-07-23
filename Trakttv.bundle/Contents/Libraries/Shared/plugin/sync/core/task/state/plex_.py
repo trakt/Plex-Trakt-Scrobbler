@@ -1,8 +1,6 @@
-from plugin.core.cache import CacheManager
+from plugin.modules.core.manager import ModuleManager
 
-from plex import Plex
 from plex_database.library import Library
-from plex_database.matcher import Matcher
 import elapsed
 import logging
 
@@ -14,23 +12,16 @@ class SyncStatePlex(object):
         self.state = state
         self.task = state.task
 
-        # Retrieve matcher cache
-        self.matcher_cache = CacheManager.get('plex.matcher')
-
         # Initialize plex.database.py
-        self.matcher = Matcher(self.matcher_cache, Plex.client)
-        self.library = Library(self.matcher)
+        self.library = Library(ModuleManager['matcher'].database)
 
     def load(self):
-        # Configure matcher
-        if self.task.configuration['matcher.mode'] == 0:
-            # Disable extended matcher
-            self.matcher.caper_enabled = False
-            self.matcher.extend_enabled = False
+        # Ensure matcher configuration is up to date
+        ModuleManager['matcher'].configure()
 
     @elapsed.clock
     def prime(self):
-        return self.matcher_cache.prime(force=True)
+        return ModuleManager['matcher'].prime(force=True)
 
     @elapsed.clock
     def flush(self):
@@ -38,4 +29,4 @@ class SyncStatePlex(object):
             log.debug('Flushing matcher cache...')
 
             # Flush matcher cache to disk
-            self.matcher_cache.flush(force=True)
+            ModuleManager['matcher'].flush(force=True)
