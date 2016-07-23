@@ -31,7 +31,8 @@ https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-cli
 git+https://github.com/OpenEntityMap/oem-framework.git#egg=oem-framework
 git+https://github.com/OpenEntityMap/oem-core.git#egg=oem-core
 git+https://github.com/OpenEntityMap/oem-client.git#egg=oem-client
-
+git+https://github.com/OpenEntityMap/oem-client-anidb.git#egg=oem-client-anidb
+git+https://github.com/OpenEntityMap/oem-client-provider-release.git#egg=oem-client-provider-release
 git+https://github.com/OpenEntityMap/oem-format-minimize.git#egg=oem-format-minimize
 git+https://github.com/OpenEntityMap/oem-format-minimize-msgpack.git#egg=oem-format-minimize-msgpack
 git+https://github.com/OpenEntityMap/oem-format-msgpack.git#egg=oem-format-msgpack
