@@ -13,7 +13,7 @@ class ShowMapper(object):
     def __init__(self, service):
         self._service = service
 
-    def match(self, show, identifier):
+    def match(self, show, identifier, resolve_mappings=True):
         if identifier is None or not isinstance(identifier, EpisodeIdentifier) or not identifier.valid:
             raise ValueError('Invalid value provided for "identifier" parameter')
 
@@ -28,7 +28,10 @@ class ShowMapper(object):
 
         if season:
             # Episode
-            result = self._match_episode(show, season, identifier)
+            result = self._match_episode(
+                show, season, identifier,
+                resolve_mappings=resolve_mappings
+            )
 
             if result:
                 best = result
@@ -74,6 +77,7 @@ class ShowMapper(object):
                 self._get_identifiers(show),
                 season_num=season_num,
                 episode_num=episode_num,
+
                 progress=identifier.progress
             )
         else:
@@ -83,6 +87,7 @@ class ShowMapper(object):
             match = EpisodeMatch(
                 self._get_identifiers(show),
                 absolute_num=identifier.absolute_num,
+
                 progress=identifier.progress
             )
 
@@ -105,6 +110,7 @@ class ShowMapper(object):
             return season, EpisodeMatch(
                 self._get_identifiers(show, season),
                 absolute_num=identifier.absolute_num,
+
                 progress=identifier.progress
             )
 
@@ -117,6 +123,7 @@ class ShowMapper(object):
                 self._get_identifiers(show, season),
                 int(season_mapping.season),
                 identifier.episode_num + season_mapping.offset,
+
                 progress=identifier.progress
             )
 
@@ -160,6 +167,7 @@ class ShowMapper(object):
             self._get_identifiers(show, season),
             season_num=season_num,
             episode_num=episode_num,
+
             progress=identifier.progress
         )
 
@@ -168,11 +176,32 @@ class ShowMapper(object):
 
         return season, match
 
-    def _match_episode(self, show, season, identifier):
+    def _match_episode(self, show, season, identifier, resolve_mappings=True):
         episode = season.episodes.get(str(identifier.episode_num))
 
         if not episode:
             return None
+
+        if not resolve_mappings:
+            match = EpisodeMatch(
+                self._get_identifiers(show, season, episode),
+                mappings=episode.mappings
+            )
+
+            if not match.valid:
+                return None
+
+            return match
+
+        if identifier.part is not None and identifier.part - 1 < len(episode.mappings):
+            # Parse episode mapping
+            valid, match = self._parse_episode_mapping(
+                show, season, episode, episode.mappings[identifier.part - 1],
+                part=identifier.part
+            )
+
+            if valid:
+                return match
 
         for episode_mapping in episode.mappings:
             # Parse timeline attributes
@@ -204,31 +233,43 @@ class ShowMapper(object):
                         )
                     )
 
-            # Parse mapping attributes
-            try:
-                season_num = int(episode_mapping.season)
-            except:
-                continue
-
-            try:
-                episode_num = int(episode_mapping.number)
-            except:
-                continue
-
-            # Return episode match
-            match = EpisodeMatch(
-                self._get_identifiers(show, season, episode),
-                season_num=season_num,
-                episode_num=episode_num,
+            # Parse episode mapping
+            valid, match = self._parse_episode_mapping(
+                show, season, episode, episode_mapping,
                 progress=progress
             )
 
-            if not match.valid:
-                return None
-
-            return match
+            if valid:
+                return match
 
         return None
+
+    def _parse_episode_mapping(self, show, season, episode, episode_mapping, progress=None, part=None):
+        # Parse mapping attributes
+        try:
+            season_num = int(episode_mapping.season)
+        except:
+            return False, None
+
+        try:
+            episode_num = int(episode_mapping.number)
+        except:
+            return False, None
+
+        # Return episode match
+        match = EpisodeMatch(
+            self._get_identifiers(show, season, episode),
+            season_num=season_num,
+            episode_num=episode_num,
+
+            progress=progress,
+            part=part
+        )
+
+        if not match.valid:
+            return True, None
+
+        return True, match
 
     def _get_identifiers(self, show, season=None, episode=None):
         # Retrieve identifiers from objects

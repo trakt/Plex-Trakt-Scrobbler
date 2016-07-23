@@ -8,7 +8,7 @@ class MovieMapper(object):
     def __init__(self, service):
         self._service = service
 
-    def match(self, movie, identifier):
+    def match(self, movie, identifier, resolve_mappings=True):
         if identifier is not None and not identifier.valid:
             raise ValueError('Invalid value provided for "identifier" parameter')
 

@@ -2,30 +2,37 @@ from oem.media.show.identifier import EpisodeIdentifier
 
 
 class EpisodeMatch(EpisodeIdentifier):
-    def __init__(self, identifiers, season_num=None, episode_num=None, absolute_num=None, progress=None):
+    def __init__(self, identifiers, season_num=None, episode_num=None, absolute_num=None,
+                 progress=None, part=None, mappings=None):
+
         super(EpisodeMatch, self).__init__(
             season_num=season_num,
             episode_num=episode_num,
             absolute_num=absolute_num,
 
-            progress=progress
+            progress=progress,
+            part=part
         )
 
         self.identifiers = identifiers or {}
+        self.mappings = mappings or []
 
     @property
     def valid(self):
-        return len(self.identifiers) > 0 and super(EpisodeMatch, self).valid
+        return len(self.identifiers) > 0 and (
+            super(EpisodeMatch, self).valid or
+            len(self.mappings) > 0
+        )
 
-    def __hash__(self):
-        return hash((
-            hash(frozenset(self.identifiers.items())),
+    def to_dict(self):
+        result = super(EpisodeMatch, self).to_dict()
 
-            self.season_num,
-            self.episode_num,
-            self.absolute_num,
-            self.progress
-        ))
+        result['identifiers'] = self.identifiers
+
+        if self.mappings:
+            result['mappings'] = [m.to_dict(compact=False) for m in self.mappings]
+
+        return result
 
     def __repr__(self):
         fragments = []
