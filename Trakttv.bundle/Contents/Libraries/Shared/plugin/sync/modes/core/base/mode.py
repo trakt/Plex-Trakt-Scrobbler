@@ -226,72 +226,105 @@ class Mode(object):
     @elapsed.clock
     def process_guid(self, guid):
         if not guid:
-            return False, guid
+            return False, False, guid
 
-        if guid.service not in GUID_SERVICES:
-            # Try map show to a supported service (via OEM)
-            supported, item = ModuleManager['mapper'].match(guid.service, guid.id)
+        if guid.service in GUID_SERVICES:
+            return True, True, guid
 
-            if not supported:
-                return False, guid
+        # Try map show to a supported service (via OEM)
+        supported, (id_service, id_key) = ModuleManager['mapper'].id(
+            guid.service, guid.id,
+            resolve_mappings=False
+        )
 
-            if item and item.identifiers:
-                # Retrieve mapped show identifier
-                service = item.identifiers.keys()[0]
-                key = try_convert(item.identifiers[service], int, item.identifiers[service])
+        if not supported:
+            return False, False, guid
 
-                if type(key) not in [int, str]:
-                    log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, key)
-                    return False, guid
+        if not id_service or not id_key:
+            return True, False, guid
 
-                log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, item)
+        # Validate identifier
+        if type(id_key) is list:
+            log.info('[%s/%s] - List keys are not supported', guid.service, guid.id)
+            return True, False, guid
 
-                # Return mapped guid
-                return True, Guid.construct(service, key)
+        if type(id_key) not in [int, str]:
+            log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, id_key)
+            return True, False, guid
 
-            log.debug('Unable to find mapping for %r', guid)
-            return False, guid
+        log.debug('[%s/%s] - Mapped to: %s/%s', guid.service, guid.id, id_service, id_key)
 
-        return True, guid
+        # Return mapped guid
+        return True, True, Guid.construct(id_service, id_key)
 
     @elapsed.clock
     def process_guid_episode(self, guid, season_num, episode_num):
+        episodes = [(season_num, episode_num)]
+
         if not guid:
-            return False, guid, season_num, episode_num
+            return False, False, guid, episodes
 
-        if guid.service not in GUID_SERVICES:
-            # Try map episode to a supported service (via OEM)
-            supported, match = ModuleManager['mapper'].map_episode(guid, season_num, episode_num)
+        if guid.service in GUID_SERVICES:
+            return True, True, guid, episodes
 
-            if not supported:
-                return False, guid, season_num, episode_num
+        # Try map episode to a supported service (via OEM)
+        supported, match = ModuleManager['mapper'].map_episode(
+            guid, season_num, episode_num,
+            resolve_mappings=False
+        )
 
-            if match and match.identifiers:
-                if not isinstance(match, EpisodeMatch):
-                    log.info('[%s/%s] - Episode -> Movie mappings are not supported', guid.service, guid.id)
-                    return False, guid, season_num, episode_num
+        if not supported:
+            return False, False, guid, episodes
 
-                if match.absolute_num is not None:
-                    log.info('[%s/%s] - Episode mappings with absolute numbers are not supported yet', guid.service, guid.id)
-                    return False, guid, season_num, episode_num
+        if match and match.identifiers:
+            if not isinstance(match, EpisodeMatch):
+                log.info('[%s/%s] - Episode -> Movie mappings are not supported', guid.service, guid.id)
+                return True, False, guid, episodes
 
-                # Retrieve mapped show identifier
-                service = match.identifiers.keys()[0]
-                key = try_convert(match.identifiers[service], int, match.identifiers[service])
+            if match.absolute_num is not None:
+                log.info('[%s/%s] - Episode mappings with absolute numbers are not supported yet', guid.service, guid.id)
+                return True, False, guid, episodes
 
-                if type(key) not in [int, str]:
-                    log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, key)
-                    return False, guid, season_num, episode_num
+            # Retrieve mapped show identifier
+            id_service = match.identifiers.keys()[0]
+            id_key = match.identifiers[id_service]
 
+            # Parse list keys (episode -> movie mappings)
+            if type(id_key) is list:
+                log.info('[%s/%s] - List keys are not supported', guid.service, guid.id)
+                return True, False, guid, episodes
+
+                # if episode_num - 1 >= len(id_key):
+                #     log.info('[%s/%s] - Episode %r was not found in the key %r', guid.service, guid.id, episode_num, id_key)
+                #     return True, False, guid, episodes
+
+                # id_key = id_key[episode_num - 1]
+
+            # Cast `id_key` numbers to integers
+            id_key = try_convert(id_key, int, id_key)
+
+            if type(id_key) not in [int, str]:
+                log.info('[%s/%s] - Unsupported key: %r', guid.service, guid.id, id_key)
+                return True, False, guid, episodes
+
+            # Update `episodes` list
+            if match.mappings:
+                # Use match mappings
+                episodes = []
+
+                for mapping in match.mappings:
+                    log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, mapping)
+                    episodes.append((mapping.season, mapping.number))
+            else:
+                # Use match identifier
                 log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
+                episodes = [(match.season_num, match.episode_num)]
 
-                # Return mapped episode result
-                return True, Guid.construct(service, key), match.season_num, match.episode_num
+            # Return mapped episode result
+            return True, True, Guid.construct(id_service, id_key), episodes
 
-            log.debug('Unable to find mapping for %r S%02dE%02d', guid, season_num, episode_num)
-            return False, guid, season_num, episode_num
-
-        return True, guid, season_num, episode_num
+        log.debug('Unable to find mapping for %r S%02dE%02d', guid, season_num, episode_num)
+        return True, False, guid, episodes
 
     def sections(self, section_type=None):
         # Retrieve "section" for current task

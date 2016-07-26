@@ -18,7 +18,13 @@ class Mapper(Module):
     __key__ = 'mapper'
 
     services = {
-        'anidb': ['imdb', 'tvdb']  # Try match against imdb database first
+        'anidb': [
+            # Prefer movies
+            'imdb', 'tmdb:movie',
+
+            # Fallback to shows
+            'tvdb'
+        ]
     }
 
     def __init__(self):
@@ -43,13 +49,16 @@ class Mapper(Module):
     # Movie
     #
 
-    def map_movie(self, guid, movie, progress=None, part=None):
+    def map_movie(self, guid, movie, progress=None, part=None, resolve_mappings=True):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
 
         # Try match movie against database
-        return self.map(guid.service, guid.id)
+        return self.map(
+            guid.service, guid.id,
+            resolve_mappings=resolve_mappings
+        )
 
     def request_movie(self, guid, movie, progress=None, part=None):
         # Try match movie against database
@@ -70,7 +79,7 @@ class Mapper(Module):
     # Shows
     #
 
-    def map_episode(self, guid, season_num, episode_num, progress=None, part=None):
+    def map_episode(self, guid, season_num, episode_num, progress=None, part=None, resolve_mappings=True):
         # Ensure guid has been parsed
         if type(guid) is str:
             guid = Guid.parse(guid)
@@ -85,7 +94,10 @@ class Mapper(Module):
         )
 
         # Try match episode against database
-        return self.map(guid.service, guid.id, identifier)
+        return self.map(
+            guid.service, guid.id, identifier,
+            resolve_mappings=resolve_mappings
+        )
 
     def request_episode(self, guid, episode, progress=None, part=None):
         # Try match episode against database
@@ -107,6 +119,39 @@ class Mapper(Module):
     #
     # Helper methods
     #
+
+    def id(self, source, key, identifier=None, resolve_mappings=True):
+        # Retrieve mapping from database
+        supported, match = self.map(
+            source, key,
+            identifier=identifier,
+            resolve_mappings=resolve_mappings
+        )
+
+        if not supported:
+            return False, (None, None)
+
+        if not match or not match.valid:
+            return True, (None, None)
+
+        # Find valid identifier
+        for id_service, id_key in match.identifiers.items():
+            if id_service == source:
+                continue
+
+            # Strip media from identifier key
+            id_service_parts = id_service.split(':', 1)
+
+            if len(id_service_parts) == 2:
+                id_service, _ = tuple(id_service_parts)
+
+            if id_service in ['tvdb', 'tmdb', 'tvrage']:
+                id_key = try_convert(id_key, int, id_key)
+
+            return True, (id_service, id_key)
+
+        log.info('[%s/%s] - Unable to find valid identifier in %r', source, key, match.identiifers)
+        return True, (None, None)
 
     def map(self, source, key, identifier=None, resolve_mappings=True):
         if source not in self.services:
@@ -163,11 +208,11 @@ class Mapper(Module):
             return None
 
         # Retrieve identifier
-        service = match.identifiers.keys()[0]
-        key = try_convert(match.identifiers[service], int, match.identifiers[service])
+        id_service = match.identifiers.keys()[0]
+        id_key = try_convert(match.identifiers[id_service], int, match.identifiers[id_service])
 
-        if type(key) not in [int, str]:
-            log.info('Unsupported key: %r', key)
+        if type(id_key) not in [int, str]:
+            log.info('Unsupported key: %r', id_key)
             return None
 
         # Determine media type
@@ -179,13 +224,25 @@ class Mapper(Module):
             log.warn('Unknown match: %r', match)
             return None
 
+        # Strip media from identifier key
+        id_service_parts = id_service.split(':', 1)
+
+        if len(id_service_parts) == 2:
+            id_service, id_media = tuple(id_service_parts)
+        else:
+            id_media = None
+
+        if id_media and id_media != media:
+            log.warn('Identifier mismatch, [%s: %r] doesn\'t match %r', id_service, id_key, media)
+            return None
+
         # Build request
         request = {
             media: {
                 'title': item.title,
 
                 'ids': {
-                    service: key
+                    id_service: id_key
                 }
             }
         }
@@ -199,13 +256,8 @@ class Mapper(Module):
 
         # Add episode parameters
         if isinstance(match, EpisodeMatch):
-            if not episode:
-                log.warn('Missing "episode" parameter')
-                return None
-
             if match.absolute_num is not None:
-                # TODO support for absolute episode scrobbling
-                log.info('Absolute mappings are not supported yet')
+                log.info('Absolute mappings are not supported')
                 return None
 
             if match.season_num is None or match.episode_num is None:
@@ -213,11 +265,12 @@ class Mapper(Module):
                 return None
 
             request['episode'] = {
-                'title': episode.title,
-
                 'season': match.season_num,
                 'number': match.episode_num
             }
+
+            if episode:
+                request['episode']['title'] = episode.title
 
         return request
 

@@ -47,10 +47,14 @@ class Movies(Base):
 
         for mo_id, p_guid, p_item in p_items:
             # Process `p_guid` (map + validate)
-            supported, p_guid = self.process_guid(p_guid)
+            supported, matched, p_guid = self.process_guid(p_guid)
 
             if not supported:
                 mark_unsupported(unsupported_movies, mo_id, p_guid)
+                continue
+
+            if not matched:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, mo_id)
                 continue
 
             key = (p_guid.service, p_guid.id)

@@ -85,10 +85,14 @@ class Movies(Base):
             self.current.progress.group(Movies, 'matched:movies').step()
 
             # Process `p_guid` (map + validate)
-            supported, p_guid = self.process_guid(p_guid)
+            supported, matched, p_guid = self.process_guid(p_guid)
 
             if not supported:
                 mark_unsupported(self.p_unsupported, mo_id, p_guid)
+                continue
+
+            if not matched:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, mo_id)
                 continue
 
             key = (p_guid.service, p_guid.id)
