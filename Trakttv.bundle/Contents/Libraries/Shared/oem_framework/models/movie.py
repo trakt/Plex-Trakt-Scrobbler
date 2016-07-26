@@ -3,19 +3,22 @@ from oem_framework.models.core import BaseMedia
 
 import logging
 
+from oem_framework.models.core import ModelRegistry
+
 log = logging.getLogger(__name__)
 
 
 class Movie(BaseMedia):
-    __slots__ = ['names', 'mappings']
-    __attributes__ = ['names', 'mappings']
+    __slots__ = ['names', 'mappings', 'parts']
+    __attributes__ = ['names', 'mappings', 'parts']
 
-    def __init__(self, collection, identifiers, names, mappings=None, **kwargs):
+    def __init__(self, collection, identifiers, names, mappings=None, parts=None, **kwargs):
         super(Movie, self).__init__(collection, 'movie', identifiers, **kwargs)
 
         self.names = self._parse_names(collection, identifiers, names) or {}
 
         self.mappings = mappings or []
+        self.parts = parts or {}
 
     def to_dict(self, key=None, flatten=True):
         result = super(Movie, self).to_dict(key=key, flatten=flatten)
@@ -42,6 +45,13 @@ class Movie(BaseMedia):
             supplemental=get_attribute(touched, data, 'supplemental', {}),
             **get_attribute(touched, data, 'parameters', {})
         )
+
+        # Construct seasons
+        if 'parts' in data:
+            movie.parts = dict([
+                (k, ModelRegistry['Part'].from_dict(collection, v, key=k, parent=movie))
+                for k, v in get_attribute(touched, data, 'parts').items()
+            ])
 
         # Ensure all attributes were touched
         omitted = [
