@@ -1,6 +1,7 @@
 from oem.core.services.base import Service
 from oem.media.movie import MovieMapper
 from oem.media.show import ShowMapper
+from oem_client_anidb.constants import DATABASES, PACKAGES, SERVICES
 from oem_framework.models import Movie, Show
 
 import logging
@@ -11,27 +12,10 @@ log = logging.getLogger(__name__)
 class AniDbService(Service):
     __key__ = 'anidb'
 
-    __databases__ = {
-        ('anidb', 'tvdb'): 'oem_database_anidb_tvdb',
-        ('tvdb', 'anidb'): 'oem_database_anidb_tvdb',
+    __databases__ = DATABASES
+    __packages__ = PACKAGES
 
-        ('anidb', 'imdb'): 'oem_database_anidb_imdb',
-        ('imdb', 'anidb'): 'oem_database_anidb_imdb'
-    }
-
-    __packages__ = {
-        ('anidb', 'tvdb'): 'oem-database-anidb-tvdb',
-        ('tvdb', 'anidb'): 'oem-database-anidb-tvdb',
-
-        ('anidb', 'imdb'): 'oem-database-anidb-imdb',
-        ('imdb', 'anidb'): 'oem-database-anidb-imdb'
-    }
-
-    __services__ = {
-        'anidb': ['imdb', 'tvdb'],
-        'imdb': ['anidb'],
-        'tvdb': ['anidb']
-    }
+    __services__ = SERVICES
 
     def __init__(self, client, source, target, formats=None):
         super(AniDbService, self).__init__(client, source, target, formats)
