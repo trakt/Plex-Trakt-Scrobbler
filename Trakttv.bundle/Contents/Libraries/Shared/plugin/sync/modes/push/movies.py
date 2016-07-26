@@ -1,5 +1,6 @@
 from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMedia, SyncData
+from plugin.sync.core.guid.parser import GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.push.base import Base
 
@@ -80,39 +81,26 @@ class Movies(Base):
         """Trigger actions for movies that have been matched in plex"""
 
         # Iterate over movies
-        for mo_id, p_guid, p_item in self.p_movies:
+        for mo_id, guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies, 'matched:movies').step()
 
-            # Process `p_guid` (map + validate)
-            supported, matched, p_guid = self.process_guid(p_guid)
+            # Parse guid
+            match = GuidParser.parse(guid)
 
-            if not supported:
-                mark_unsupported(self.p_unsupported, mo_id, p_guid)
+            if not match.supported:
+                mark_unsupported(self.p_unsupported, mo_id, guid)
                 continue
 
-            if not matched:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, mo_id)
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, mo_id)
                 continue
 
-            key = (p_guid.service, p_guid.id)
+            # Retrieve primary key for item
+            pk = self.trakt.table('movies').get((match.guid.service, match.guid.id))
 
-            # Try retrieve `pk` for `key`
-            pk = self.trakt.table('movies').get(key)
-
-            for data in self.get_data(SyncMedia.Movies):
-                t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
-
-                self.execute_handlers(
-                    SyncMedia.Movies, data,
-
-                    key=mo_id,
-
-                    guid=p_guid,
-                    p_item=p_item,
-
-                    t_item=t_movie
-                )
+            # Process movie (execute handlers)
+            self.execute_movie(mo_id, pk, match.guid, p_item)
 
             # Remove movie from `pending` set
             if pk and pk in self.p_pending:
