@@ -7,12 +7,12 @@ class MovieMatch(MovieIdentifier):
 
         self.identifiers = identifiers or {}
 
-    def __hash__(self):
-        return hash((
-            hash(frozenset(self.identifiers.items())),
+    def to_dict(self):
+        result = super(MovieMatch, self).to_dict()
 
-            self.progress
-        ))
+        result['identifiers'] = self.identifiers
+
+        return result
 
     def __repr__(self):
         fragments = []

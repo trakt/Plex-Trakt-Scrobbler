@@ -2,26 +2,22 @@ from oem.media.core.base.identifier import Identifier
 
 
 class MovieIdentifier(Identifier):
-    def __init__(self, progress=None):
+    def __init__(self, part=None, progress=None):
+        self.part = part
+
         self.progress = progress
 
     @property
     def valid(self):
         return True
 
-    def __hash__(self):
-        return hash((
-            self.progress,
-        ))
+    def to_dict(self):
+        result = {}
 
-    def __eq__(self, other):
-        if not other:
-            return False
+        if self.progress is not None:
+            result['progress'] = self.progress
 
-        return self.__hash__() == other.__hash__()
-
-    def __ne__(self, other):
-        return not(self == other)
+        return result
 
     def __repr__(self):
         attributes = [
