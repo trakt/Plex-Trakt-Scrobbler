@@ -1,4 +1,4 @@
-from oem_format_minimize.core.minimize import MinimizeProtocol
+from oem_format_minimize.core.minimize import MinimizeProtocol, MinimizeProperty
 from oem_format_minimize.protocol.season import SeasonMinimizeProtocol
 from oem_format_minimize.protocol.name import NameMinimizeProtocol
 
@@ -35,6 +35,8 @@ class ShowMinimizeProtocol(MinimizeProtocol):
         anidb           = 0x01
         imdb            = 0x02
         tvdb            = 0x03
+        tmdb_movie      = MinimizeProperty('tmdb:movie', 0x04)
+        tmdb_show       = MinimizeProperty('tmdb:show',  0x05)
 
     class SupplementalMinimizeProtocol(MinimizeProtocol):
         __key__ = 'supplemental'

@@ -32,6 +32,10 @@ class MinimizeProtocol(object):
             if key.startswith('__') or key.startswith('_MinimizeProtocol__') or inspect.ismethod(value):
                 continue
 
+            if isinstance(value, MinimizeProperty):
+                key = value.key
+                value = value.value
+
             if type(value) is int:
                 cls.__decode_map[value] = key
                 cls.__encode_map[key] = value
@@ -96,6 +100,12 @@ class MinimizeProtocol(object):
 
         Child.__name__ = cls.__name__
         return Child
+
+
+class MinimizeProperty(object):
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
 
 
 class Minimize(object):
