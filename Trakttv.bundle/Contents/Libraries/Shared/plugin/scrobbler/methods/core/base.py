@@ -88,7 +88,7 @@ class Base(object):
         # Retrieve episode number
         season_num, episodes = ModuleManager['matcher'].process(episode)
 
-        if len(episodes) > 1 and part - 1 < len(episodes):
+        if len(episodes) > 0 and part - 1 < len(episodes):
             episode_num = episodes[part - 1]
         elif len(episodes) > 1:
             log.warn('Part %s doesn\'t exist in episodes: %r', part, episodes)
