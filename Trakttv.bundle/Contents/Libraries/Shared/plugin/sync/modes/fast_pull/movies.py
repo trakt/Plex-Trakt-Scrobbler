@@ -1,5 +1,7 @@
-from plugin.sync.core.enums import SyncMode, SyncData, SyncMedia
-from plugin.sync.modes.core.base import Mode, log_unsupported, mark_unsupported
+from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.guid import GuidParser
+from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
+from plugin.sync.modes.fast_pull.base import Base
 
 from plex_database.models import MetadataItem
 from trakt_sync.cache.main import Cache
@@ -9,14 +11,13 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Movies(Mode):
+class Movies(Base):
     data = [
         SyncData.Collection,
         SyncData.Playback,
         SyncData.Ratings,
         SyncData.Watched
     ]
-    mode = SyncMode.FastPull
 
     def __init__(self, task):
         super(Movies, self).__init__(task)
@@ -62,22 +63,22 @@ class Movies(Mode):
     @elapsed.clock
     def run(self):
         # Process movies
-        for mo_id, p_guid, p_item in self.p_movies:
+        for mo_id, guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies).step()
 
-            # Process `p_guid` (map + validate)
-            supported, matched, p_guid = self.process_guid(p_guid)
+            # Parse guid
+            match = GuidParser.parse(guid)
 
-            if not supported:
-                mark_unsupported(self.p_unsupported, mo_id, p_guid)
+            if not match.supported:
+                mark_unsupported(self.p_unsupported, mo_id, guid)
                 continue
 
-            if not matched:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, mo_id)
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, mo_id)
                 continue
 
-            key = (p_guid.service, p_guid.id)
+            key = (match.guid.service, match.guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('movies').get(key)

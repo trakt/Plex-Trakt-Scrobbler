@@ -1,8 +1,6 @@
 from plugin.core.environment import Environment
 from plugin.sync.core.enums import SyncMode, SyncMedia
-from plugin.sync.core.guid.match import GuidMatch
 from plugin.sync.modes.core.base import Mode
-from plugin.sync.modes.core.pending import Pending
 
 import json
 import logging
@@ -16,11 +14,6 @@ class Base(Mode):
 
     def __init__(self, task):
         super(Base, self).__init__(task)
-
-        self.pending = None
-
-    def start(self):
-        self.pending = Pending()
 
     #
     # Execute handlers

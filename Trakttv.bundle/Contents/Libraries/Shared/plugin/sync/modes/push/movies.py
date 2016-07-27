@@ -1,6 +1,5 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMedia, SyncData
-from plugin.sync.core.guid.parser import GuidParser
+from plugin.sync.core.guid import GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.push.base import Base
 
@@ -31,7 +30,6 @@ class Movies(Base):
         self.p_count = None
         self.p_movies = None
 
-        self.p_pending = None
         self.p_unsupported = None
 
     @elapsed.clock
@@ -67,20 +65,14 @@ class Movies(Base):
             parse_guid=True
         )
 
+        # Update pending item collections
+        self.current.pending.create('movies', self.trakt.table.movie_keys.copy())
+
         # Reset state
-        self.p_pending = self.trakt.table.movie_keys.copy()
         self.p_unsupported = {}
 
     @elapsed.clock
     def run(self):
-        # Process movies
-        self.process_matched_movies()
-        self.process_missing_movies()
-
-    def process_matched_movies(self):
-        """Trigger actions for movies that have been matched in plex"""
-
-        # Iterate over movies
         for mo_id, guid, p_item in self.p_movies:
             # Increment one step
             self.current.progress.group(Movies, 'matched:movies').step()
@@ -102,9 +94,8 @@ class Movies(Base):
             # Process movie (execute handlers)
             self.execute_movie(mo_id, pk, match.guid, p_item)
 
-            # Remove movie from `pending` set
-            if pk and pk in self.p_pending:
-                self.p_pending.remove(pk)
+            # Remove movie from pending items collection
+            self.current.pending['movies'].remove(pk)
 
             # Task checkpoint
             self.checkpoint()
@@ -115,18 +106,17 @@ class Movies(Base):
         # Report unsupported movies (unsupported guid)
         log_unsupported(log, 'Found %d unsupported movie(s)', self.p_unsupported)
 
-    def process_missing_movies(self):
-        """Trigger actions for movies that are in trakt, but was unable to be found in plex"""
-
+    @elapsed.clock
+    def finish(self):
         if self.current.kwargs.get('section'):
             # Collection cleaning disabled for individual syncs
             return
 
         # Increment progress steps
-        self.current.progress.group(Movies, 'missing:movies').add(len(self.p_pending))
+        self.current.progress.group(Movies, 'missing:movies').add(len(self.current.pending['movies'].keys))
 
         # Iterate over movies
-        for pk in list(self.p_pending):
+        for pk in list(self.current.pending['movies'].keys):
             # Increment one step
             self.current.progress.group(Movies, 'missing:movies').step()
 
@@ -165,7 +155,7 @@ class Movies(Base):
                 continue
 
             # Remove movie from `pending` set
-            self.p_pending.remove(pk)
+            self.current.pending['movies'].keys.remove(pk)
 
         # Stop progress group
         self.current.progress.group(Movies, 'missing:movies').stop()
@@ -173,5 +163,5 @@ class Movies(Base):
         # Report pending movies (no actions triggered)
         self.log_pending(
             log, 'Unable to find %d movie(s) in Plex, list has been saved to: %s',
-            self.current.account, 'movies', self.p_pending
+            self.current.account, 'movies', self.current.pending['movies'].keys
         )

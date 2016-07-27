@@ -1,7 +1,5 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncMedia, SyncData
-from plugin.sync.core.guid.match import GuidMatch
-from plugin.sync.core.guid.parser import GuidParser
+from plugin.sync.core.guid import GuidMatch, GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.push.base import Base
 
@@ -84,31 +82,23 @@ class Shows(Base):
         )
 
         # Update pending item collections
-        self.pending.create('shows', self.trakt.table.show_keys.copy())
-        self.pending.create('episodes', copy.deepcopy(self.trakt.table.episode_keys))
+        self.current.pending.create('shows', self.trakt.table.show_keys.copy())
+        self.current.pending.create('episodes', copy.deepcopy(self.trakt.table.episode_keys))
 
         # Reset state
         self.p_shows_unsupported = {}
 
+    #
+    # Run
+    #
+
     @elapsed.clock
     def run(self):
-        # Process matched items
-        self.process_matched_shows()
-        self.process_matched_episodes()
-
-        # Report unsupported shows
-        log_unsupported(log, 'Found %d unsupported show(s)', self.p_shows_unsupported)
-
-        # Process missing items
-        self.process_missing_shows()
-        self.process_missing_episodes()
-
-    #
-    # Shows
-    #
+        self.run_shows()
+        self.run_episodes()
 
     @elapsed.clock
-    def process_matched_shows(self):
+    def run_shows(self):
         # Iterate over plex shows
         for sh_id, guid, p_show in self.p_shows:
             # Increment one step
@@ -126,7 +116,7 @@ class Shows(Base):
                 continue
 
             # Process show
-            self.process_show(sh_id, match, p_show)
+            self.run_show(sh_id, match, p_show)
 
             # Task checkpoint
             self.checkpoint()
@@ -134,7 +124,7 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'matched:shows').stop()
 
-    def process_show(self, sh_id, match, p_show):
+    def run_show(self, sh_id, match, p_show):
         # Try retrieve `pk` for `key`
         pk = self.trakt.table('shows').get((match.guid.service, match.guid.id))
 
@@ -145,19 +135,108 @@ class Shows(Base):
         )
 
         # Remove show from pending items collection
-        self.pending['shows'].remove(pk)
+        self.current.pending['shows'].remove(pk)
 
     @elapsed.clock
-    def process_missing_shows(self):
+    def run_episodes(self):
+        # Iterate over plex episodes
+        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
+            # Increment one step
+            self.current.progress.group(Shows, 'matched:episodes').step()
+
+            # Parse guid
+            match = GuidParser.parse(guid, (season_num, episode_num))
+
+            if not match.supported:
+                mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
+                continue
+
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, ids['show'])
+                continue
+
+            # Process episode
+            self.run_episode(
+                ids, match,
+                p_show, p_season, p_episode
+            )
+
+            # Task checkpoint
+            self.checkpoint()
+
+        # Stop progress group
+        self.current.progress.group(Shows, 'matched:episodes').stop()
+
+    def run_episode(self, ids, match, p_show, p_season, p_episode):
+        # Try retrieve `pk` for `key`
+        pk = self.trakt.table(match.table_key).get((
+            match.guid.service,
+            match.guid.id
+        ))
+
+        # Process episode
+        if match.media == GuidMatch.Media.Episode:
+            # Ensure `match` contains episodes
+            if not match.episodes:
+                log.warn('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
+                return
+
+            # Process each episode
+            for identifier in match.episodes:
+                # Execute handlers for episode
+                self.execute_episode(
+                    ids['episode'], pk, match.guid, identifier,
+                    p_show, p_season, p_episode
+                )
+
+                # Remove episode from pending items collection
+                self.current.pending['episodes'].remove(pk, identifier)
+
+            return True
+
+        # Process movie
+        if match.media == GuidMatch.Media.Movie:
+            # Build movie item from plex episode
+            p_movie = p_episode.copy()
+
+            p_movie['title'] = p_show.get('title')
+            p_movie['year'] = p_show.get('year')
+
+            # Execute handlers for movie
+            self.execute_movie(
+                ids['episode'], pk, match.guid,
+                p_movie
+            )
+
+            # Remove episode from pending items collection
+            self.current.pending['movies'].remove(pk)
+            return True
+
+        raise ValueError('Unknown media type: %r' % (match.media,))
+
+    #
+    # Finish
+    #
+
+    @elapsed.clock
+    def finish(self):
+        log_unsupported(log, 'Found %d unsupported show(s)', self.p_shows_unsupported)
+
+        # Process missing items
+        self.finish_shows()
+        self.finish_episodes()
+
+    @elapsed.clock
+    def finish_shows(self):
         if self.current.kwargs.get('section'):
             # Collection cleaning disabled for individual syncs
             return
 
         # Increment progress steps
-        self.current.progress.group(Shows, 'missing:shows').add(len(self.pending['shows'].keys))
+        self.current.progress.group(Shows, 'missing:shows').add(len(self.current.pending['shows'].keys))
 
         # Iterate over trakt shows (that aren't in plex)
-        for pk in list(self.pending['shows'].keys):
+        for pk in list(self.current.pending['shows'].keys):
             # Increment one step
             self.current.progress.group(Shows, 'missing:shows').step()
 
@@ -196,107 +275,27 @@ class Shows(Base):
                 continue
 
             # Remove movie from `pending` set
-            self.pending['shows'].keys.remove(pk)
+            self.current.pending['shows'].keys.remove(pk)
 
         # Stop progress group
         self.current.progress.group(Shows, 'missing:shows').stop()
 
         self.log_pending(
             log, 'Unable to find %d show(s) in Plex, list has been saved to: %s',
-            self.current.account, 'shows', self.pending['shows'].keys
+            self.current.account, 'shows', self.current.pending['shows'].keys
         )
 
-    #
-    # Episodes
-    #
-
     @elapsed.clock
-    def process_matched_episodes(self):
-        # Iterate over plex episodes
-        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
-            # Increment one step
-            self.current.progress.group(Shows, 'matched:episodes').step()
-
-            # Parse guid
-            match = GuidParser.parse(guid, (season_num, episode_num))
-
-            if not match.supported:
-                mark_unsupported(self.p_shows_unsupported, ids['show'], guid)
-                continue
-
-            if not match.found:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, ids['show'])
-                continue
-
-            # Process episode
-            self.process_episode(
-                ids, match,
-                p_show, p_season, p_episode
-            )
-
-            # Task checkpoint
-            self.checkpoint()
-
-        # Stop progress group
-        self.current.progress.group(Shows, 'matched:episodes').stop()
-
-    def process_episode(self, ids, match, p_show, p_season, p_episode):
-        # Try retrieve `pk` for `key`
-        pk = self.trakt.table(match.table_key).get((
-            match.guid.service,
-            match.guid.id
-        ))
-
-        # Process episode
-        if match.media == GuidMatch.Media.Episode:
-            # Ensure `match` contains episodes
-            if not match.episodes:
-                log.warn('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
-                return
-
-            # Process each episode
-            for identifier in match.episodes:
-                # Execute handlers for episode
-                self.execute_episode(
-                    ids['episode'], pk, match.guid, identifier,
-                    p_show, p_season, p_episode
-                )
-
-                # Remove episode from pending items collection
-                self.pending['episodes'].remove(pk, identifier)
-
-            return True
-
-        # Process movie
-        if match.media == GuidMatch.Media.Movie:
-            # Build movie item from plex episode
-            p_movie = p_episode.copy()
-
-            p_movie['title'] = p_show.get('title')
-            p_movie['year'] = p_show.get('year')
-
-            # Execute handlers for movie
-            self.execute_movie(
-                ids['episode'], pk, match.guid,
-                p_movie
-            )
-
-            # TODO remove from pending movies??
-            return True
-
-        raise ValueError('Unknown media type: %r' % (match.media,))
-
-    @elapsed.clock
-    def process_missing_episodes(self):
+    def finish_episodes(self):
         if self.current.kwargs.get('section'):
             # Collection cleaning disabled for individual syncs
             return
 
         # Increment progress steps
-        self.current.progress.group(Shows, 'missing:episodes').add(len(self.pending['episodes'].keys))
+        self.current.progress.group(Shows, 'missing:episodes').add(len(self.current.pending['episodes'].keys))
 
         # Iterate over trakt episodes (that aren't in plex)
-        for pk, episodes in [(p, list(e)) for (p, e) in self.pending['episodes'].keys.items()]:
+        for pk, episodes in [(p, list(e)) for (p, e) in self.current.pending['episodes'].keys.items()]:
             # Increment one step
             self.current.progress.group(Shows, 'missing:episodes').step()
 
@@ -343,12 +342,12 @@ class Shows(Base):
                     continue
 
                 # Remove movie from `pending` set
-                self.pending['episodes'].keys[pk].remove(identifier)
+                self.current.pending['episodes'].keys[pk].remove(identifier)
 
         # Stop progress group
         self.current.progress.group(Shows, 'missing:episodes').stop()
 
         self.log_pending(
             log, 'Unable to find %d episode(s) in Plex, list has been saved to: %s',
-            self.current.account, 'episodes', self.pending['episodes'].keys
+            self.current.account, 'episodes', self.current.pending['episodes'].keys
         )

@@ -1,5 +1,5 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.guid import GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
 
@@ -45,19 +45,19 @@ class Movies(Base):
         # Task started
         unsupported_movies = {}
 
-        for mo_id, p_guid, p_item in p_items:
-            # Process `p_guid` (map + validate)
-            supported, matched, p_guid = self.process_guid(p_guid)
+        for mo_id, guid, p_item in p_items:
+            # Parse guid
+            match = GuidParser.parse(guid)
 
-            if not supported:
-                mark_unsupported(unsupported_movies, mo_id, p_guid)
+            if not match.supported:
+                mark_unsupported(unsupported_movies, mo_id, guid)
                 continue
 
-            if not matched:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, mo_id)
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, mo_id)
                 continue
 
-            key = (p_guid.service, p_guid.id)
+            key = (match.guid.service, match.guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('movies').get(key)

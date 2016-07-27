@@ -242,6 +242,7 @@ class Main(object):
             'construct',
             'start',
             'run',
+            'finish',
             'stop'
         ])
 

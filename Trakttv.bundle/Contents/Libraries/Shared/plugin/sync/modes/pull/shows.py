@@ -1,5 +1,5 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.guid import GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.pull.base import Base
 
@@ -55,19 +55,19 @@ class Shows(Base):
         unsupported_shows = {}
 
         # Process shows
-        for sh_id, p_guid, p_show in p_shows:
-            # Process `p_guid` (map + validate)
-            supported, matched, p_guid = self.process_guid(p_guid)
+        for sh_id, guid, p_show in p_shows:
+            # Parse guid
+            match = GuidParser.parse(guid)
 
-            if not supported:
-                mark_unsupported(unsupported_shows, sh_id, p_guid)
+            if not match.supported:
+                mark_unsupported(unsupported_shows, sh_id, guid)
                 continue
 
-            if not matched:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, sh_id)
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, sh_id)
                 continue
 
-            key = (p_guid.service, p_guid.id)
+            key = (match.guid.service, match.guid.id)
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('shows').get(key)
@@ -93,24 +93,24 @@ class Shows(Base):
                 )
 
         # Process episodes
-        for ids, p_guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
+        for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in p_episodes:
             # Process `p_guid` (map + validate)
-            supported, matched, p_guid, episodes = self.process_guid_episode(p_guid, season_num, episode_num)
+            match = GuidParser.parse(guid, (season_num, episode_num))
 
-            if not supported:
-                mark_unsupported(unsupported_shows, ids['show'], p_guid)
+            if not match.supported:
+                mark_unsupported(unsupported_shows, ids['show'], guid)
                 continue
 
-            if not matched:
-                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', p_guid.service, p_guid.id, ids['show'])
+            if not match.found:
+                log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, ids['show'])
                 continue
 
-            if not episodes:
-                log.warn('No episodes returned for: %s/%s', p_guid.service, p_guid.id)
+            if not match.episodes:
+                log.warn('No episodes returned for: %s/%s', guid.service, guid.id)
                 continue
 
-            key = (p_guid.service, p_guid.id)
-            season_num, episode_num = episodes[0]
+            key = (match.guid.service, match.guid.id)
+            season_num, episode_num = match.episodes[0]
 
             # Try retrieve `pk` for `key`
             pk = self.trakt.table('shows').get(key)

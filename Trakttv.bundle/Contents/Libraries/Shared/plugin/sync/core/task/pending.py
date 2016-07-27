@@ -1,5 +1,7 @@
-class Pending(object):
-    def __init__(self):
+class SyncPending(object):
+    def __init__(self, task):
+        self.task = task
+
         self._collections = {}
 
     def create(self, media, keys):
