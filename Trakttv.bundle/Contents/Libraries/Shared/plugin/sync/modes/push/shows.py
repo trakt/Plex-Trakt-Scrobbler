@@ -178,7 +178,7 @@ class Shows(Base):
         if match.media == GuidMatch.Media.Episode:
             # Ensure `match` contains episodes
             if not match.episodes:
-                log.warn('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
+                log.info('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
                 return
 
             # Process each episode
