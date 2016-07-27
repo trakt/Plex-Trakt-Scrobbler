@@ -142,11 +142,17 @@ class GuidParser(object):
 
                 for mapping in match.mappings:
                     log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, mapping)
-                    episodes.append((mapping.season, mapping.number))
+                    episodes.append((
+                        int(mapping.season),
+                        int(mapping.number)
+                    ))
             else:
                 # Use match identifier
                 log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
-                episodes = [(match.season_num, match.episode_num)]
+                episodes = [(
+                    int(match.season_num),
+                    int(match.episode_num)
+                )]
 
             # Return episode match
             return GuidMatch(
@@ -158,6 +164,8 @@ class GuidParser(object):
 
         # Process movie matches
         if isinstance(match, MovieMatch):
+            log.debug('[%s/%s] (S%02dE%02d) - Mapped to: %r', guid.service, guid.id, season_num, episode_num, match)
+
             # Return movie match
             return GuidMatch(
                 GuidMatch.Media.Movie, Guid.construct(service, key),
