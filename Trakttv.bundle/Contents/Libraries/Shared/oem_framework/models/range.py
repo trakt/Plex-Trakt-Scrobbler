@@ -32,3 +32,17 @@ class Range(Model):
             result['end'] = self.end
 
         return result
+
+    def __repr__(self):
+        attributes = ', '.join([
+            ('%s: %r' % (key, getattr(self, key))) for key in [
+                'start',
+                'end'
+            ]
+            if getattr(self, key)
+        ])
+
+        if not attributes:
+            return '<Range>'
+
+        return '<Range %s>' % attributes
