@@ -139,10 +139,6 @@ class Shows(Base):
                 log.info('Unable to find identifier for: %s/%s (rating_key: %r)', guid.service, guid.id, ids['show'])
                 continue
 
-            if not match.episodes:
-                log.warn('No episodes returned for: %s/%s', guid.service, guid.id)
-                continue
-
             # Process episode
             self.run_episode(ids, match, p_show, p_episode)
 
