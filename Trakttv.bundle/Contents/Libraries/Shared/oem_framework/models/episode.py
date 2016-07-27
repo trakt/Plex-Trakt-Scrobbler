@@ -191,3 +191,18 @@ class EpisodeMapping(BaseMapping):
                 result['timeline'] = timeline
 
         return result
+
+    def __repr__(self):
+        attributes = ', '.join([
+            ('%s: %r' % (key, getattr(self, key))) for key in [
+                'season',
+                'number',
+                'timeline'
+            ]
+            if getattr(self, key)
+        ])
+
+        if not attributes:
+            return '<EpisodeMapping>'
+
+        return '<EpisodeMapping %s>' % attributes

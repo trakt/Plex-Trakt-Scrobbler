@@ -1,13 +1,102 @@
 from plugin.core.environment import Environment
-from plugin.sync.core.enums import SyncMode
+from plugin.sync.core.enums import SyncMode, SyncMedia
 from plugin.sync.modes.core.base import Mode
 
 import json
+import logging
 import os
+
+log = logging.getLogger(__name__)
 
 
 class Base(Mode):
     mode = SyncMode.Push
+
+    def __init__(self, task):
+        super(Base, self).__init__(task)
+
+    #
+    # Execute handlers
+    #
+
+    def execute_movie(self, mo_id, pk, guid, p_item):
+        # Execute handlers for each data type
+        for data in self.get_data(SyncMedia.Movies):
+            t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
+
+            self.execute_handlers(
+                SyncMedia.Movies, data,
+
+                key=mo_id,
+
+                guid=guid,
+                p_item=p_item,
+
+                t_item=t_movie
+            )
+
+    def execute_show(self, sh_id, pk, guid, p_show):
+        for data in self.get_data(SyncMedia.Shows):
+            t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
+
+            # Execute show handlers
+            self.execute_handlers(
+                SyncMedia.Shows, data,
+                key=sh_id,
+                guid=guid,
+
+                p_item=p_show,
+
+                t_item=t_show
+            )
+
+    def execute_episode(self, ep_id, pk, guid, identifier, p_show, p_season, p_episode):
+        season_num, episode_num = identifier
+
+        # Execute handlers for each data type
+        for data in self.get_data(SyncMedia.Episodes):
+            t_show, t_season, t_episode = self.t_objects(
+                self.trakt[(SyncMedia.Episodes, data)], pk,
+                season_num, episode_num
+            )
+
+            # Execute episode handlers
+            self.execute_handlers(
+                SyncMedia.Episodes, data,
+
+                key=ep_id,
+                identifier=identifier,
+
+                guid=guid,
+                p_show=p_show,
+                p_item=p_episode,
+
+                t_show=t_show,
+                t_item=t_episode
+            )
+
+    #
+    # Helpers
+    #
+
+    @staticmethod
+    def t_objects(collection, pk, season_num, episode_num):
+        # Try find trakt `Show` from `collection`
+        t_show = collection.get(pk)
+
+        if t_show is None:
+            return t_show, None, None
+
+        # Try find trakt `Season`
+        t_season = t_show.seasons.get(season_num)
+
+        if t_season is None:
+            return t_show, t_season, None
+
+        # Try find trakt `Episode`
+        t_episode = t_season.episodes.get(episode_num)
+
+        return t_show, t_season, t_episode
 
     @classmethod
     def log_pending(cls, log, message, account, key, items):
