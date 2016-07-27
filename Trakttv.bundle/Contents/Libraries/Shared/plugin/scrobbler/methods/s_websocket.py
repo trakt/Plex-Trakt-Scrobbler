@@ -62,6 +62,7 @@ class WebSocket(Base):
             )
 
             if not request:
+                log.warn('No request returned for action %r (payload: %r)', action, payload)
                 continue
 
             # Queue request to be sent

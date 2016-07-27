@@ -41,6 +41,7 @@ class Base(object):
 
         # Apply library/section filter
         if not Filters.is_valid_metadata_section(metadata):
+            log.info('Ignoring session in filtered section: %r', metadata.section.title)
             return None
 
         # Parse guid
@@ -52,9 +53,11 @@ class Base(object):
         elif type(metadata) is Episode:
             result = cls.build_episode(metadata, guid, part)
         else:
+            log.warn('Unknown metadata type: %r', type(metadata))
             return None
 
         if not result:
+            log.warn('Unable to build request for session: %r', session)
             return None
 
         # Retrieve media progress
