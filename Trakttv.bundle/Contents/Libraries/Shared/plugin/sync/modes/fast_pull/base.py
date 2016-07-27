@@ -1,8 +1,7 @@
-from trakt_sync.cache.main import Cache
-
-from plugin.sync import SyncData
-from plugin.sync import SyncMode
+from plugin.sync.core.enums import SyncData, SyncMode
 from plugin.sync.modes.core.base import Mode
+
+from trakt_sync.cache.main import Cache
 
 
 class Base(Mode):

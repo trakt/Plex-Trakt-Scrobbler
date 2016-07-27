@@ -70,24 +70,20 @@ class Shows(Base):
         # Reset state
         self.p_shows_unsupported = {}
 
+    #
+    # Run
+    #
+
     @elapsed.clock
     def run(self):
         # TODO process seasons
-
-        # Process shows
-        self.process_shows()
-
-        # Process episodes
-        self.process_episodes()
+        self.run_shows()
+        self.run_episodes()
 
         # Log details
         log_unsupported(log, 'Found %d unsupported show(s)', self.p_shows_unsupported)
 
-    #
-    # Shows
-    #
-
-    def process_shows(self):
+    def run_shows(self):
         # Iterate over plex shows
         for sh_id, guid, p_show in self.p_shows:
             # Increment one step
@@ -105,12 +101,12 @@ class Shows(Base):
                 continue
 
             # Process show
-            self.process_show(sh_id, match, p_show)
+            self.run_show(sh_id, match, p_show)
 
         # Stop progress group
         self.current.progress.group(Shows, 'shows').stop()
 
-    def process_show(self, sh_id, match, p_show):
+    def run_show(self, sh_id, match, p_show):
         key = (match.guid.service, match.guid.id)
 
         # Try retrieve `pk` for `key`
@@ -136,11 +132,7 @@ class Shows(Base):
                 t_item=t_show
             )
 
-    #
-    # Episodes
-    #
-
-    def process_episodes(self):
+    def run_episodes(self):
         # Iterate over plex episodes
         for ids, guid, (season_num, episode_num), p_show, p_season, p_episode in self.p_episodes:
             # Increment one step
@@ -158,7 +150,7 @@ class Shows(Base):
                 continue
 
             # Process episode
-            self.process_episode(ids, match, p_show, p_episode)
+            self.run_episode(ids, match, p_show, p_episode)
 
             # Task checkpoint
             self.checkpoint()
@@ -166,7 +158,7 @@ class Shows(Base):
         # Stop progress group
         self.current.progress.group(Shows, 'episodes').stop()
 
-    def process_episode(self, ids, match, p_show, p_episode):
+    def run_episode(self, ids, match, p_show, p_episode):
         key = (match.guid.service, match.guid.id)
 
         # Determine media type
@@ -183,22 +175,20 @@ class Shows(Base):
         pk = self.trakt.table(c_media).get(key)
 
         if pk is None:
-            log.warn('No primary key found for: %r', key)
             return
 
         if not ids.get('episode'):
-            log.debug('Missing episode id, in ids: %r', ids)
             return
 
         # Process actions for episode
         for data, action, t_item in self.iter_changes(s_media, pk):
-            self.process_episode_action(
+            self.run_episode_action(
                 ids, match,
                 p_show, p_episode,
                 data, action, t_item
             )
 
-    def process_episode_action(self, ids, match, p_show, p_episode, data, action, t_item):
+    def run_episode_action(self, ids, match, p_show, p_episode, data, action, t_item):
         if match.media == GuidMatch.Media.Movie:
             # Process movie
             self.execute_episode_action(
