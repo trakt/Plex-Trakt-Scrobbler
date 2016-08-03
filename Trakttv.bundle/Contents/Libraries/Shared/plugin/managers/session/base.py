@@ -112,7 +112,7 @@ class UpdateSession(Update, Base):
                 log.info('Movie mappings are not supported')
                 return 1, 1, p_metadata.duration
 
-            part_count = len(match.mappings)
+            part_count = len(match.mappings) or 1
 
         # Determine the current part number
         part, part_duration = cls.get_part(
