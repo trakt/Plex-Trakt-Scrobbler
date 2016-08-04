@@ -56,10 +56,13 @@ class ModuleManager(object):
         log.debug('Constructed %d module(s): %s', len(constructed), ', '.join(constructed))
 
     @classmethod
-    def start(cls):
+    def start(cls, keys=None):
         started = []
 
         for key, module in cls.modules.items():
+            if keys is not None and key not in keys:
+                continue
+
             try:
                 module.start()
 

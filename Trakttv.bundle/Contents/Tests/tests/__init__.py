@@ -69,11 +69,32 @@ os.environ['LIBRARY_DB'] = os.path.join(
 )
 
 #
+# Preferences
+#
+
+from plugin.preferences.main import Preferences
+
+@classmethod
+def preferences_get(cls, key, account=None):
+    return None
+
+# Patch `Preferences.get` method
+Preferences.get = preferences_get
+
+#
 # Modules
 #
 
 from plugin.core.importer import import_modules
+from plugin.modules.core.manager import ModuleManager
 
+# ModuleManager
+ModuleManager.initialize()
+ModuleManager.start([
+    'matcher'
+])
+
+# Scrobbler
 import_modules(os.path.join(PLUGIN_DIR, 'scrobbler', 'handlers'), exclude=[
     '__init__.py'
 ])
