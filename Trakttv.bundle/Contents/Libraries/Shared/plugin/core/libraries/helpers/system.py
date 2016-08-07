@@ -51,6 +51,60 @@ class SystemHelper(object):
 
         return system
 
+    @classmethod
+    def attributes(cls):
+        # Retrieve platform attributes
+        system = cls.name()
+
+        release = platform.release()
+        version = platform.version()
+
+        # Build attributes dictionary
+        result = {
+            'cpu.architecture': cls.architecture(),
+            'cpu.name': cls.cpu_name(),
+
+            'os.system': system,
+
+            'os.name': system,
+            'os.release': release,
+            'os.version': version
+        }
+
+        if system == 'Linux':
+            # Update with linux distribution attributes
+            result.update(cls.attributes_linux(
+                release, version
+            ))
+
+        return result
+
+    @classmethod
+    def attributes_linux(cls, release=None, version=None):
+        d_name, d_version, d_id = platform.linux_distribution()
+
+        # Build linux attributes dictionary
+        result = {
+            'os.name': None,
+            'os.release': None,
+            'os.version': None,
+
+            'linux.release': release,
+            'linux.version': version
+        }
+        
+        if d_name:
+            result['os.name'] = d_name
+
+        if d_version:
+            result['os.version'] = d_version
+
+        if d_id:
+            result['os.release'] = d_id
+
+        return result
+
+    @classmethod
     def architecture(cls):
         """Retrieve system architecture (i386, i686, x86_64)"""
 
@@ -165,6 +219,9 @@ class SystemHelper(object):
 
     @classmethod
     def cpu_name(cls, executable_path=sys.executable):
+        if cls.name() == 'Windows':
+            return None
+
         # Retrieve CPU name from ELF
         section, attributes = cls.elf_attributes(executable_path)
 
