@@ -1,4 +1,5 @@
 from plugin.core.configuration import Configuration
+from plugin.core.libraries.helpers.android import AndroidHelper
 from plugin.core.libraries.helpers.arm import ArmHelper
 
 from elftools.elf.attributes import AttributesSection
@@ -34,6 +35,21 @@ FALLBACK_EXECUTABLE = '/bin/ls'
 
 class SystemHelper(object):
     @classmethod
+    def name(cls):
+        """Retrieve system name (Windows, Linux, FreeBSD, MacOSX)"""
+
+        system = platform.system()
+
+        # Check for android platform
+        if system == 'Linux' and AndroidHelper.is_android():
+            system = 'Android'
+
+        # Apply system name map
+        if system in NAME_MAP:
+            system = NAME_MAP[system]
+
+        return system
+
     def architecture(cls):
         """Retrieve system architecture (i386, i686, x86_64)"""
 
@@ -64,18 +80,6 @@ class SystemHelper(object):
 
         log.error('Unable to determine system architecture - bits: %r, machine: %r', bits, machine)
         return None
-
-    @classmethod
-    def name(cls):
-        """Retrieve system name (Windows, Linux, FreeBSD, MacOSX)"""
-
-        system = platform.system()
-
-        # Apply system map
-        if system in NAME_MAP:
-            system = NAME_MAP[system]
-
-        return system
 
     @classmethod
     def arm(cls, machine, float_type=None):
@@ -120,8 +124,8 @@ class SystemHelper(object):
         if machine.startswith('armv7'):
             return True, 'armv7'
 
-        # AArch64
-        if machine.startswith('aarch64'):
+        # ARMv8 / AArch64
+        if machine.startswith('armv8') or machine.startswith('aarch64'):
             return False, 'aarch64'
 
         return False, None
