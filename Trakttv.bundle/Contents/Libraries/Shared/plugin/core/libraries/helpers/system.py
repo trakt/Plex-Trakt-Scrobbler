@@ -7,9 +7,14 @@ from elftools.elf.elffile import ELFFile
 import logging
 import os
 import platform
+import re
 import sys
 
 log = logging.getLogger(__name__)
+
+_distributor_id_file_re = re.compile("(?:DISTRIB_ID\s*=)\s*(.*)", re.I)
+_release_file_re = re.compile("(?:DISTRIB_RELEASE\s*=)\s*(.*)", re.I)
+_codename_file_re = re.compile("(?:DISTRIB_CODENAME\s*=)\s*(.*)", re.I)
 
 BITS_MAP = {
     '32bit': 'i386',
@@ -81,7 +86,7 @@ class SystemHelper(object):
 
     @classmethod
     def attributes_linux(cls, release=None, version=None):
-        d_name, d_version, d_id = platform.linux_distribution()
+        d_name, d_version, d_id = cls.distribution()
 
         # Build linux attributes dictionary
         result = {
@@ -255,6 +260,51 @@ class SystemHelper(object):
 
         # Fallback to using the ELF cpu name
         return cls.cpu_name(executable_path)
+
+    @classmethod
+    def distribution(cls, distname='', version='', id='',
+                     supported_dists=platform._supported_dists,
+                     full_distribution_name=1):
+
+        # check for the Debian/Ubuntu /etc/lsb-release file first, needed so
+        # that the distribution doesn't get identified as Debian.
+        try:
+            _distname = None
+            _version = None
+            _id = None
+
+            with open("/etc/lsb-release", "rU") as fp:
+                for line in fp:
+                    # Distribution Name
+                    m = _distributor_id_file_re.search(line)
+
+                    if m:
+                        _distname = m.group(1).strip()
+
+                    # Release
+                    m = _release_file_re.search(line)
+
+                    if m:
+                        _version = m.group(1).strip()
+
+                    # ID
+                    m = _codename_file_re.search(line)
+
+                    if m:
+                        _id = m.group(1).strip()
+
+                if _distname and _version:
+                    return _distname, _version, _id
+
+        except (EnvironmentError, UnboundLocalError):
+            pass
+
+        # Fallback to using the "platform" module
+        return platform.linux_distribution(
+            distname, version, id,
+            supported_dists=supported_dists,
+            full_distribution_name=full_distribution_name
+        )
 
     @classmethod
     def elf_attributes(cls, executable_path=sys.executable):
