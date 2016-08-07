@@ -22,6 +22,7 @@ MACHINE_MAP = {
 }
 
 MSVCR_MAP = {
+    'msvcr110.dll': 'vc11',
     'msvcr120.dll': 'vc12',
     'msvcr130.dll': 'vc14'
 }
