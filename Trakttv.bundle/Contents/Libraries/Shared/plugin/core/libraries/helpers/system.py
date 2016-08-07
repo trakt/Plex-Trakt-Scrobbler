@@ -49,7 +49,7 @@ class SystemHelper(object):
         machine = platform.machine()
 
         # Check for ARM machine
-        if bits == '32bit' and machine.startswith('armv'):
+        if (bits == '32bit' and machine.startswith('armv')) or machine.startswith('aarch64'):
             return cls.arm(machine)
 
         # Check (bits, machine) map
@@ -78,46 +78,53 @@ class SystemHelper(object):
         return system
 
     @classmethod
-    def arm(cls, machine):
+    def arm(cls, machine, float_type=None):
+        # Determine ARM version
+        floats, architecture = cls.arm_architecture(machine)
+
+        if architecture is None:
+            log.warn('Unable to use ARM libraries, unsupported ARM architecture (%r)?' % machine)
+            return None
+
+        if not floats:
+            return architecture
+
         # Determine floating-point type
-        float_type = cls.arm_float_type()
+        float_type = float_type or cls.arm_float_type()
 
         if float_type is None:
             log.warn('Unable to use ARM libraries, unsupported floating-point type?')
             return None
 
-        # Determine ARM version
-        version = cls.arm_version()
-
-        if version is None:
-            log.warn('Unable to use ARM libraries, unsupported ARM version (%r)?' % machine)
-            return None
-
-        return '%s_%s' % (version, float_type)
+        return '%s_%s' % (architecture, float_type)
 
     @classmethod
-    def arm_version(cls, machine=None):
+    def arm_architecture(cls, machine=None):
         # Read `machine` name if not provided
         if machine is None:
             machine = platform.machine()
 
         # Ensure `machine` is valid
         if not machine:
-            return None
+            return False, None
 
         # ARMv5
         if machine.startswith('armv5'):
-            return 'armv5'
+            return True, 'armv5'
 
         # ARMv6
         if machine.startswith('armv6'):
-            return 'armv6'
+            return True, 'armv6'
 
         # ARMv7
         if machine.startswith('armv7'):
-            return 'armv7'
+            return True, 'armv7'
 
-        return None
+        # AArch64
+        if machine.startswith('aarch64'):
+            return False, 'aarch64'
+
+        return False, None
 
     @classmethod
     def arm_float_type(cls, executable_path=sys.executable):
