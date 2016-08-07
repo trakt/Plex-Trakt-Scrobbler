@@ -7,12 +7,10 @@ class Cryptography(BaseTest):
 
     @staticmethod
     def test_import():
-        import cryptography
-        from cryptography.hazmat.bindings.openssl.binding import Binding
+        import cryptography.hazmat.bindings.openssl.binding
 
         return {
             'versions': {
-                'cryptography': getattr(cryptography, '__version__', None),
-                'openssl': Binding.lib.SSLeay()
+                'cryptography': getattr(cryptography, '__version__', None)
             }
         }
