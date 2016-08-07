@@ -1,5 +1,7 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
+from plugin.core.helpers.variable import merge
+from plugin.core.libraries.helpers.system import SystemHelper
 from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
@@ -39,16 +41,10 @@ PARAMS = {
 
     # Plugin + System details
     'release': VERSION,
-    'tags': {
-        # Plugin
+    'tags': merge(SystemHelper.attributes(), {
         'plugin.version': VERSION,
-        'plugin.branch': PLUGIN_VERSION_BRANCH,
-
-        # System
-        'os.system': platform.system(),
-        'os.release': platform.release(),
-        'os.version': platform.version()
-    }
+        'plugin.branch': PLUGIN_VERSION_BRANCH
+    })
 }
 
 
