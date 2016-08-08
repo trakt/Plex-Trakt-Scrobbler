@@ -93,7 +93,7 @@ class Base(object):
 
         if len(episodes) > 0 and part - 1 < len(episodes):
             episode_num = episodes[part - 1]
-        elif len(episodes) > 1:
+        elif len(episodes) > 0:
             log.warn('Part %s doesn\'t exist in episodes: %r', part, episodes)
             episode_num = episodes[0]
         else:
