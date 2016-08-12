@@ -68,15 +68,10 @@ class Mapper(Module):
             return False, None
 
         # Try match movie against database
-        supported, match = self.map(
+        return self.map(
             guid.service, guid.id,
             resolve_mappings=resolve_mappings
         )
-
-        if supported:
-            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
-
-        return supported, match
 
     def request_movie(self, guid, movie, progress=None, part=None):
         # Try match movie against database
@@ -89,6 +84,9 @@ class Mapper(Module):
 
         if not match:
             return supported, None
+
+        if supported:
+            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
 
         # Build request for Trakt.tv
         return supported, self._build_request(match, movie)
@@ -116,15 +114,10 @@ class Mapper(Module):
         )
 
         # Try match episode against database
-        supported, match = self.map(
+        return self.map(
             guid.service, guid.id, identifier,
             resolve_mappings=resolve_mappings
         )
-
-        if supported:
-            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
-
-        return supported, match
 
     def request_episode(self, guid, episode, progress=None, part=None):
         season_num = episode.season.index
@@ -146,6 +139,9 @@ class Mapper(Module):
 
         if not match:
             return supported, None
+
+        if supported:
+            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
 
         # Build request for Trakt.tv
         return supported, self._build_request(match, episode.show, episode)
