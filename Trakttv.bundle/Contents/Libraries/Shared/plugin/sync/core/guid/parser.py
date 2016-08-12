@@ -156,7 +156,7 @@ class GuidParser(object):
 
             # Return episode match
             return GuidMatch(
-                GuidMatch.Media.Episode, Guid.construct(service, key),
+                GuidMatch.Media.Episode, Guid.construct(service, key, matched=True),
                 episodes=episodes,
                 supported=True,
                 found=True
@@ -168,7 +168,7 @@ class GuidParser(object):
 
             # Return movie match
             return GuidMatch(
-                GuidMatch.Media.Movie, Guid.construct(service, key),
+                GuidMatch.Media.Movie, Guid.construct(service, key, matched=True),
                 supported=True,
                 found=True
             )

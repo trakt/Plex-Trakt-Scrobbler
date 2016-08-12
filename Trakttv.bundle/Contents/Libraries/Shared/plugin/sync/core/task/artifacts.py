@@ -319,7 +319,7 @@ class SyncArtifacts(object):
             return False
 
         if not guid or not guid.valid:
-            log.warn('Invalid GUID attribute on %s', identifier)
+            log.warn('Invalid GUID attribute on %s (guid: %r)', identifier, guid)
             return False
 
         if guid.service not in GUID_SERVICES:
