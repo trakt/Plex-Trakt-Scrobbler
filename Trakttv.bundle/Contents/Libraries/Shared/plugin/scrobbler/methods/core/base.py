@@ -28,9 +28,6 @@ class Base(object):
         # Retrieve metadata
         metadata = Metadata.get(rating_key)
 
-        # Queue a flush for the metadata cache
-        Metadata.cache.flush_queue()
-
         # Validate metadata
         if not metadata:
             log.warn('Unable to retrieve metadata for rating_key %r', rating_key)
