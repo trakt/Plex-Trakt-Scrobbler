@@ -80,6 +80,7 @@ class Base(object):
 
     @classmethod
     def build_episode(cls, episode, guid, part):
+        # Retrieve show identifier
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
@@ -105,6 +106,10 @@ class Base(object):
         else:
             log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
             episode_num = episode.index
+
+        # Process guid episode identifier overrides
+        if guid.season is not None:
+            season_num = guid.season
 
         # Build request
         return {

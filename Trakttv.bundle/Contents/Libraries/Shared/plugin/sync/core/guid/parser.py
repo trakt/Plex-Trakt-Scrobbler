@@ -26,6 +26,13 @@ class GuidParser(object):
                 invalid=True
             )
 
+        # Process guid episode identifier overrides
+        if episode and len(episode) == 2:
+            season_num, episode_num = episode
+
+            if guid.season is not None:
+                episode = guid.season, episode_num
+
         # Process natively supported guid services
         if guid.service in GUID_SERVICES:
             episodes = None

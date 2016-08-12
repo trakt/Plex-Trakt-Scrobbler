@@ -95,10 +95,17 @@ class UpdateSession(Update, Base):
 
             part_count = len(episodes)
         else:
+            season_num = p_metadata.season.index
+            episode_num = p_metadata.index
+
+            # Process guid episode identifier overrides
+            if guid.season is not None:
+                season_num = guid.season
+
             # Retrieve episode mappings from OEM
             supported, match = ModuleManager['mapper'].map(
                 guid.service, guid.id,
-                EpisodeIdentifier(p_metadata.season.index, p_metadata.index),
+                EpisodeIdentifier(season_num, episode_num),
                 resolve_mappings=False
             )
 

@@ -1,6 +1,7 @@
 from plugin.core.environment import Environment
 from plugin.core.helpers.variable import try_convert
 from plugin.modules.core.base import Module
+from plugin.modules.mapper.handlers.hama import HamaMapper
 
 from oem import OemClient, AbsoluteNumberRequiredError
 from oem.media.movie import MovieMatch
@@ -24,11 +25,19 @@ class Mapper(Module):
 
             # Fallback to shows
             'tvdb'
+        ],
+        'tvdb': [
+            'anidb'
         ]
     }
 
     def __init__(self):
         self._client = None
+
+        # Construct handlers
+        self._handlers = {
+            'hama': HamaMapper(self)
+        }
 
     def start(self):
         # Construct oem client
@@ -59,10 +68,15 @@ class Mapper(Module):
             return False, None
 
         # Try match movie against database
-        return self.map(
+        supported, match = self.map(
             guid.service, guid.id,
             resolve_mappings=resolve_mappings
         )
+
+        if supported:
+            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
+
+        return supported, match
 
     def request_movie(self, guid, movie, progress=None, part=None):
         # Try match movie against database
@@ -102,17 +116,29 @@ class Mapper(Module):
         )
 
         # Try match episode against database
-        return self.map(
+        supported, match = self.map(
             guid.service, guid.id, identifier,
             resolve_mappings=resolve_mappings
         )
 
+        if supported:
+            log.debug('[%s/%s] - Mapped to: %r', guid.service, guid.id, match)
+
+        return supported, match
+
     def request_episode(self, guid, episode, progress=None, part=None):
+        season_num = episode.season.index
+        episode_num = episode.index
+
+        # Process guid episode identifier overrides
+        if guid.season is not None:
+            season_num = guid.season
+
         # Try match episode against database
         supported, match = self.map_episode(
             guid,
-            episode.season.index,
-            episode.index,
+            season_num,
+            episode_num,
 
             progress=progress,
             part=part
@@ -161,10 +187,19 @@ class Mapper(Module):
         log.info('[%s/%s] - Unable to find valid identifier in %r', source, key, match.identiifers)
         return True, (None, None)
 
-    def map(self, source, key, identifier=None, resolve_mappings=True):
+    def map(self, source, key, identifier=None, resolve_mappings=True, use_handlers=True):
         if source not in self.services:
+            if use_handlers:
+                # Try find handler to map the identifier
+                return self._map_handler(
+                    source, key,
+                    identifier=identifier,
+                    resolve_mappings=resolve_mappings
+                )
+
             return False, None
 
+        # Iterate through available services until we find a match
         for target, service in self._iter_services(source):
             try:
                 match = service.map(
@@ -297,3 +332,25 @@ class Mapper(Module):
                 continue
 
             yield target, service
+
+    def _map_handler(self, source, key, identifier=None, resolve_mappings=True):
+        if not source:
+            return False, None
+
+        parts = source.split('/', 1)
+
+        if len(parts) != 2:
+            return False, None
+
+        # Try find a matching handler
+        handler, source = tuple(parts)
+
+        if handler not in self._handlers:
+            return False, None
+
+        # Map identifier with handler
+        return self._handlers[handler].map(
+            source, key,
+            identifier=identifier,
+            resolve_mappings=resolve_mappings
+        )
