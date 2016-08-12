@@ -25,6 +25,9 @@ class Logging(Base):
         # Create or retrieve existing session
         session = LSessionManager.get.or_create(info, fetch=True)
 
+        if not session:
+            return
+
         # Validate session
         if session.updated_at is None or (datetime.utcnow() - session.updated_at) > timedelta(minutes=5):
             log.info('Updating session, last update was over 5 minutes ago')
