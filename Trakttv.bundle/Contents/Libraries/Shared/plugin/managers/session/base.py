@@ -125,7 +125,7 @@ class UpdateSession(Update, Base):
 
     @staticmethod
     def get_part(duration, view_offset, part_count):
-        if duration is None:
+        if duration is None or part_count is None or part_count < 1:
             return 1, duration
 
         part_duration = int(math.floor(
