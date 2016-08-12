@@ -52,7 +52,11 @@ class Mapper(Module):
     def map_movie(self, guid, movie, progress=None, part=None, resolve_mappings=True):
         # Ensure guid has been parsed
         if type(guid) is str:
-            guid = Guid.parse(guid)
+            guid = Guid.parse(guid, strict=True)
+
+        # Ensure parsed guid is valid
+        if not guid or not isinstance(guid, Guid) or not guid.valid:
+            return False, None
 
         # Try match movie against database
         return self.map(
@@ -82,7 +86,11 @@ class Mapper(Module):
     def map_episode(self, guid, season_num, episode_num, progress=None, part=None, resolve_mappings=True):
         # Ensure guid has been parsed
         if type(guid) is str:
-            guid = Guid.parse(guid)
+            guid = Guid.parse(guid, strict=True)
+
+        # Ensure parsed guid is valid
+        if not guid or not isinstance(guid, Guid) or not guid.valid:
+            return False, None
 
         # Build episode identifier
         identifier = EpisodeIdentifier(

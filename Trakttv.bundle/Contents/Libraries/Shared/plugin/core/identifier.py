@@ -17,9 +17,9 @@ class Identifier(object):
 
         if type(guid) is str:
             # Parse raw guid
-            guid = Guid.parse(guid)
+            guid = Guid.parse(guid, strict=strict)
 
-        if guid.service in GUID_SERVICES:
+        if guid and guid.valid and guid.service in GUID_SERVICES:
             ids[guid.service] = guid.id
         elif strict:
             return None

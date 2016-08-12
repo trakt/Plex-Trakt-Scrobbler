@@ -1,6 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
+from plugin.core.logger.helpers import log_unsupported_guid
 from plugin.managers.session.base import UpdateSession
 from plugin.modules.core.manager import ModuleManager
 
@@ -45,7 +46,11 @@ class Base(object):
             return None
 
         # Parse guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid, strict=True)
+
+        if not guid or not guid.valid:
+            log_unsupported_guid(log, guid)
+            return None
 
         # Build request from guid/metadata
         if type(metadata) is Movie:
@@ -57,7 +62,7 @@ class Base(object):
             return None
 
         if not result:
-            log.warn('Unable to build request for session: %r', session)
+            log.info('Unable to build request for session: %r', session)
             return None
 
         # Retrieve media progress
@@ -82,10 +87,14 @@ class Base(object):
 
         if not ids:
             # Try map episode to a supported service (with OEM)
-            _, request = ModuleManager['mapper'].request_episode(
+            supported, request = ModuleManager['mapper'].request_episode(
                 guid, episode,
                 part=part
             )
+
+            if not supported:
+                log_unsupported_guid(log, guid)
+
             return request
 
         # Retrieve episode number
@@ -122,10 +131,14 @@ class Base(object):
 
         if not ids:
             # Try map episode to a supported service (with OEM)
-            _, request = ModuleManager['mapper'].request_movie(
+            supported, request = ModuleManager['mapper'].request_movie(
                 guid, movie,
                 part=part
             )
+
+            if not supported:
+                log_unsupported_guid(log, guid)
+
             return request
 
         return {

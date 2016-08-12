@@ -20,7 +20,7 @@ class GuidParser(object):
         )
 
         # Ensure guid is valid
-        if not guid:
+        if not guid or not guid.valid:
             return GuidMatch(
                 media, guid,
                 invalid=True

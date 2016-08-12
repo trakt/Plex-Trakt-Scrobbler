@@ -89,7 +89,7 @@ class UpdateLSession(UpdateSession):
             log.warn('Unable to retrieve metadata for rating_key %r', rating_key)
             return result
 
-        if not guid:
+        if not guid or not guid.valid:
             return merge(result, {
                 'duration': p_metadata.duration,
                 'progress': self.get_progress(p_metadata.duration, view_offset)

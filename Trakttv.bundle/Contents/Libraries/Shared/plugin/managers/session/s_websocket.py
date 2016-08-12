@@ -111,7 +111,7 @@ class UpdateWSession(UpdateSession):
             log.info('Unable to retrieve metadata for rating_key %r', p_item.rating_key)
             return result
 
-        if not guid:
+        if not guid or not guid.valid:
             return merge(result, {
                 'duration': p_metadata.duration,
                 'progress': self.get_progress(p_metadata.duration, view_offset)

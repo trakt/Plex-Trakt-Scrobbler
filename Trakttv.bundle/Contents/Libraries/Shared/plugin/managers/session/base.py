@@ -81,7 +81,7 @@ class UpdateSession(Update, Base):
             return metadata, None
 
         # Parse guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid, strict=True)
 
         return metadata, guid
 
