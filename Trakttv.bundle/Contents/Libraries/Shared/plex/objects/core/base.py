@@ -25,10 +25,11 @@ class Property(object):
 
     def value_node(self, descriptor, key, node, keys_used):
         value = self.helpers.get(node, key)
-        keys_used.append(key.lower())
 
         if value is None:
             return None
+
+        keys_used.append(key.lower())
 
         try:
             return self.value_convert(value)
@@ -134,6 +135,10 @@ class Descriptor(Interface):
 
             #log.debug('%s - Found property "%s"', cls.__name__, key)
             setattr(obj, key, prop.value(cls, client, node_key, node, keys_used))
+
+        # Ensure attributes were matched
+        if child and not keys_used:
+            return [], None
 
         # Post-fill transformation
         obj.__transform__()

@@ -3,9 +3,10 @@ from plex.objects.library.container import ChildrenContainer
 from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
 from plex.objects.library.video import Directory
+from plex.objects.mixins.rate import RateMixin
 
 
-class Season(Directory, Metadata):
+class Season(Directory, Metadata, RateMixin):
     show = Property(resolver=lambda: Season.construct_show)
 
     index = Property(type=int)
