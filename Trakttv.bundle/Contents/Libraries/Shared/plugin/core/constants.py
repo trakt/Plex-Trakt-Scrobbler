@@ -8,7 +8,7 @@ PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
 PLUGIN_VERSION_BASE = (1, 1, 0, 5)
-PLUGIN_VERSION_BRANCH = 'beta'
+PLUGIN_VERSION_BRANCH = 'develop'
 
 PLUGIN_VERSION = ''.join([
     '.'.join([str(x) for x in PLUGIN_VERSION_BASE]),
