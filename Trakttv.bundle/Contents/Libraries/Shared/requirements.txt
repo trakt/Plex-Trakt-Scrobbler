@@ -14,7 +14,6 @@ pytz==2016.6.1
 requests==2.11.1
 six==1.10.0
 sortedcontainers==1.5.3
-tzlocal==1.2.2
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
@@ -26,6 +25,7 @@ https://github.com/fuzeman/pyemitter/archive/develop.zip#egg=pyemitter
 https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
 https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
+https://github.com/fuzeman/tzlocal/archive/master.zip#egg=tzlocal
 https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-client
 
 git+https://github.com/OpenEntityMap/oem-framework.git#egg=oem-framework
