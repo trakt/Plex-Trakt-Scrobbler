@@ -77,7 +77,7 @@ class GuidParser(object):
 
         # Return movie/show match
         return GuidMatch(
-            media, Guid.construct(service, key),
+            media, Guid.construct(service, key, matched=True),
             supported=True,
             found=True
         )
