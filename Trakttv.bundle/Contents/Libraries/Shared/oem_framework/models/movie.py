@@ -1,9 +1,6 @@
 from oem_framework.core.helpers import get_attribute
-from oem_framework.models.core import BaseMedia
-
+from oem_framework.models.core import ModelRegistry, BaseMedia
 import logging
-
-from oem_framework.models.core import ModelRegistry
 
 log = logging.getLogger(__name__)
 
