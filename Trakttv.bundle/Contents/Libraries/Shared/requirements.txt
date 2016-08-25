@@ -7,7 +7,7 @@ futures==3.0.5
 ipaddress==1.0.16
 itsdangerous==0.24
 msgpack-python==0.4.8
-ndg-httpsclient==0.4.1
+ndg-httpsclient==0.4.2
 pyasn1==0.1.9
 pyOpenSSL==16.0.0
 pytz==2016.6.1
