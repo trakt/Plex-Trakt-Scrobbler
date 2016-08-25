@@ -91,9 +91,9 @@ class Library(object):
         item.guid = metadata.guid
 
         # Parse guid
-        guid = Guid.parse(item.guid)
+        guid = Guid.parse(item.guid, strict=True)
 
-        if not guid:
+        if not guid or not guid.valid:
             log.warn('Unable to map item "%s" - invalid/missing "guid" property (guid: %r)', item.rating_key, item.guid)
             return False
 

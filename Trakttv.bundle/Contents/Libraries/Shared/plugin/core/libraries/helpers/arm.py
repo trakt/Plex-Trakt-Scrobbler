@@ -203,8 +203,11 @@ CPU_TABLE = {
     (0x41, 0xB56): ('arm', '1156'),
     (0x41, 0xB76): ('arm', '1176'),                                 # (Raspberry Pi 1)
     (0x41, 0xC05): ('arm', 'cortex-a5'),
+    (0x41, 0xC08): ('arm', 'cortex-a8'),
     (0x41, 0xC07): ('arm', 'cortex-a7'),                            # (Raspberry Pi 2)
-    (0x41, 0xD03): ('arm', 'cortex-a53'),                           # (Raspberry Pi 3)
+    (0x41, 0xC0F): ('arm', 'cortex-a15'),                           # (DS215+)
+    (0x41, 0xD03): ('arm', 'cortex-a53'),                           # (NVIDIA SHIELD, Raspberry Pi 3)
+    (0x41, 0xD07): ('arm', 'cortex-a57'),                           # (NVIDIA SHIELD)
 
     # Marvell
     (0x56, 0x131): ('marvell', 'kirkwood-88f6281'),                 # (DS112j, DS212j, DS211j, DS411j, DS110j, DS210j, DS410j, DS109, DS209, DS409, DS409slim, RS409)

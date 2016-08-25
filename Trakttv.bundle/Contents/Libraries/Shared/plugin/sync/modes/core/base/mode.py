@@ -1,7 +1,12 @@
+from plugin.core.constants import GUID_SERVICES
 from plugin.core.filters import Filters
+from plugin.core.helpers.variable import try_convert
+from plugin.modules.core.manager import ModuleManager
 from plugin.sync import SyncMedia, SyncData, SyncMode
 
+from oem.media.show import EpisodeMatch
 from plex import Plex
+from plex_metadata import Guid
 import elapsed
 import itertools
 import logging
@@ -102,6 +107,9 @@ class Mode(object):
 
     def run(self):
         raise NotImplementedError
+
+    def finish(self):
+        pass
 
     def stop(self):
         pass

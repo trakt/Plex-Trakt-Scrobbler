@@ -1,0 +1,35 @@
+================================== BUILD ===================================
+ID: 113
+GCC: gcc~aarch64-debian-generic-linux-gnueabi
+LIBC: glibc-2.18
+
+Python Version: 2.7
+Python UCS: ucs2
+
+Revision: 9e75830ad17f36f5351df0c9a63fde083bf7d66b
+Tag: 9e75830
+
+================================== HEADER ==================================
+ Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+ Class:                             ELF64
+ Data:                              2's complement, little endian
+ Version:                           1 (current)
+ OS/ABI:                            UNIX - System V
+ ABI Version:                       0
+ Type:                              DYN (Shared object file)
+ Machine:                           AArch64
+ Version:                           0x1
+ Entry point address:               0xb10
+ Start of program headers:          64 (bytes into file)
+ Start of section headers:          31272 (bytes into file)
+ Flags:                             0x0
+ Size of this header:               64 (bytes)
+ Size of program headers:           56 (bytes)
+ Number of program headers:         5
+ Size of section headers:           64 (bytes)
+ Number of section headers:         35
+ Section header string table index: 32
+
+=============================== DEPENDENCIES ===============================
+ 0x0000000000000001 (NEEDED)             Shared library: [libpthread.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]

@@ -1,4 +1,5 @@
 from plugin.core.configuration import Configuration
+from plugin.core.libraries.helpers.android import AndroidHelper
 from plugin.core.libraries.helpers.arm import ArmHelper
 
 from elftools.elf.attributes import AttributesSection
@@ -6,9 +7,14 @@ from elftools.elf.elffile import ELFFile
 import logging
 import os
 import platform
+import re
 import sys
 
 log = logging.getLogger(__name__)
+
+_distributor_id_file_re = re.compile("(?:DISTRIB_ID\s*=)\s*(.*)", re.I)
+_release_file_re = re.compile("(?:DISTRIB_RELEASE\s*=)\s*(.*)", re.I)
+_codename_file_re = re.compile("(?:DISTRIB_CODENAME\s*=)\s*(.*)", re.I)
 
 BITS_MAP = {
     '32bit': 'i386',
@@ -21,6 +27,7 @@ MACHINE_MAP = {
 }
 
 MSVCR_MAP = {
+    'msvcr110.dll': 'vc11',
     'msvcr120.dll': 'vc12',
     'msvcr130.dll': 'vc14'
 }
@@ -33,6 +40,75 @@ FALLBACK_EXECUTABLE = '/bin/ls'
 
 
 class SystemHelper(object):
+    @classmethod
+    def name(cls):
+        """Retrieve system name (Windows, Linux, FreeBSD, MacOSX)"""
+
+        system = platform.system()
+
+        # Check for android platform
+        if system == 'Linux' and AndroidHelper.is_android():
+            system = 'Android'
+
+        # Apply system name map
+        if system in NAME_MAP:
+            system = NAME_MAP[system]
+
+        return system
+
+    @classmethod
+    def attributes(cls):
+        # Retrieve platform attributes
+        system = cls.name()
+
+        release = platform.release()
+        version = platform.version()
+
+        # Build attributes dictionary
+        result = {
+            'cpu.architecture': cls.architecture(),
+            'cpu.name': cls.cpu_name(),
+
+            'os.system': system,
+
+            'os.name': system,
+            'os.release': release,
+            'os.version': version
+        }
+
+        if system == 'Linux':
+            # Update with linux distribution attributes
+            result.update(cls.attributes_linux(
+                release, version
+            ))
+
+        return result
+
+    @classmethod
+    def attributes_linux(cls, release=None, version=None):
+        d_name, d_version, d_id = cls.distribution()
+
+        # Build linux attributes dictionary
+        result = {
+            'os.name': None,
+            'os.release': None,
+            'os.version': None,
+
+            'linux.release': release,
+            'linux.version': version
+        }
+        
+        if d_name:
+            result['os.name'] = d_name
+
+        if d_version:
+            result['os.version'] = d_version
+
+        if d_id:
+            result['os.release'] = d_id
+
+        return result
+
     @classmethod
     def architecture(cls):
         """Retrieve system architecture (i386, i686, x86_64)"""
@@ -49,7 +125,7 @@ class SystemHelper(object):
         machine = platform.machine()
 
         # Check for ARM machine
-        if bits == '32bit' and machine.startswith('armv'):
+        if (bits == '32bit' and machine.startswith('armv')) or machine.startswith('aarch64'):
             return cls.arm(machine)
 
         # Check (bits, machine) map
@@ -66,58 +142,53 @@ class SystemHelper(object):
         return None
 
     @classmethod
-    def name(cls):
-        """Retrieve system name (Windows, Linux, FreeBSD, MacOSX)"""
+    def arm(cls, machine, float_type=None):
+        # Determine ARM version
+        floats, architecture = cls.arm_architecture(machine)
 
-        system = platform.system()
+        if architecture is None:
+            log.warn('Unable to use ARM libraries, unsupported ARM architecture (%r)?' % machine)
+            return None
 
-        # Apply system map
-        if system in NAME_MAP:
-            system = NAME_MAP[system]
+        if not floats:
+            return architecture
 
-        return system
-
-    @classmethod
-    def arm(cls, machine):
         # Determine floating-point type
-        float_type = cls.arm_float_type()
+        float_type = float_type or cls.arm_float_type()
 
         if float_type is None:
             log.warn('Unable to use ARM libraries, unsupported floating-point type?')
             return None
 
-        # Determine ARM version
-        version = cls.arm_version()
-
-        if version is None:
-            log.warn('Unable to use ARM libraries, unsupported ARM version (%r)?' % machine)
-            return None
-
-        return '%s_%s' % (version, float_type)
+        return '%s_%s' % (architecture, float_type)
 
     @classmethod
-    def arm_version(cls, machine=None):
+    def arm_architecture(cls, machine=None):
         # Read `machine` name if not provided
         if machine is None:
             machine = platform.machine()
 
         # Ensure `machine` is valid
         if not machine:
-            return None
+            return False, None
 
         # ARMv5
         if machine.startswith('armv5'):
-            return 'armv5'
+            return True, 'armv5'
 
         # ARMv6
         if machine.startswith('armv6'):
-            return 'armv6'
+            return True, 'armv6'
 
         # ARMv7
         if machine.startswith('armv7'):
-            return 'armv7'
+            return True, 'armv7'
 
-        return None
+        # ARMv8 / AArch64
+        if machine.startswith('armv8') or machine.startswith('aarch64'):
+            return False, 'aarch64'
+
+        return False, None
 
     @classmethod
     def arm_float_type(cls, executable_path=sys.executable):
@@ -153,6 +224,9 @@ class SystemHelper(object):
 
     @classmethod
     def cpu_name(cls, executable_path=sys.executable):
+        if cls.name() == 'Windows':
+            return None
+
         # Retrieve CPU name from ELF
         section, attributes = cls.elf_attributes(executable_path)
 
@@ -186,6 +260,51 @@ class SystemHelper(object):
 
         # Fallback to using the ELF cpu name
         return cls.cpu_name(executable_path)
+
+    @classmethod
+    def distribution(cls, distname='', version='', id='',
+                     supported_dists=platform._supported_dists,
+                     full_distribution_name=1):
+
+        # check for the Debian/Ubuntu /etc/lsb-release file first, needed so
+        # that the distribution doesn't get identified as Debian.
+        try:
+            _distname = None
+            _version = None
+            _id = None
+
+            with open("/etc/lsb-release", "rU") as fp:
+                for line in fp:
+                    # Distribution Name
+                    m = _distributor_id_file_re.search(line)
+
+                    if m:
+                        _distname = m.group(1).strip()
+
+                    # Release
+                    m = _release_file_re.search(line)
+
+                    if m:
+                        _version = m.group(1).strip()
+
+                    # ID
+                    m = _codename_file_re.search(line)
+
+                    if m:
+                        _id = m.group(1).strip()
+
+                if _distname and _version:
+                    return _distname, _version, _id
+
+        except (EnvironmentError, UnboundLocalError):
+            pass
+
+        # Fallback to using the "platform" module
+        return platform.linux_distribution(
+            distname, version, id,
+            supported_dists=supported_dists,
+            full_distribution_name=full_distribution_name
+        )
 
     @classmethod
     def elf_attributes(cls, executable_path=sys.executable):

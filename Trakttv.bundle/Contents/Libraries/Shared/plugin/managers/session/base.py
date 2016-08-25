@@ -1,6 +1,9 @@
+from plugin.core.constants import GUID_SERVICES
 from plugin.managers.core.base import Get, Update
+from plugin.modules.core.manager import ModuleManager
 from plugin.scrobbler.core.session_prefix import SessionPrefix
 
+from oem.media.show import EpisodeIdentifier, EpisodeMatch
 from plex_metadata import Metadata, Guid
 import logging
 import math
@@ -69,23 +72,65 @@ class UpdateSession(Update, Base):
         if not metadata:
             return None, None
 
-        # Queue flush for metadata cache
-        Metadata.cache.flush_queue()
-
         # Validate metadata
         if metadata.type not in ['movie', 'episode']:
             log.info('Ignoring metadata with type %r for rating_key %r', metadata.type, rating_key)
             return metadata, None
 
         # Parse guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid, strict=True)
 
         return metadata, guid
 
+    @classmethod
+    def match_parts(cls, p_metadata, guid, view_offset):
+        if p_metadata.type != 'episode':
+            # TODO support multi-part movies
+            return 1, 1, p_metadata.duration
+
+        # Retrieve number of parts
+        if guid.service in GUID_SERVICES:
+            # Parse parts from filename
+            _, episodes = ModuleManager['matcher'].process(p_metadata)
+
+            part_count = len(episodes)
+        else:
+            season_num = p_metadata.season.index
+            episode_num = p_metadata.index
+
+            # Process guid episode identifier overrides
+            if guid.season is not None:
+                season_num = guid.season
+
+            # Retrieve episode mappings from OEM
+            supported, match = ModuleManager['mapper'].map(
+                guid.service, guid.id,
+                EpisodeIdentifier(season_num, episode_num),
+                resolve_mappings=False
+            )
+
+            if not supported or not match:
+                return 1, 1, p_metadata.duration
+
+            if not isinstance(match, EpisodeMatch):
+                log.info('Movie mappings are not supported')
+                return 1, 1, p_metadata.duration
+
+            part_count = len(match.mappings) or 1
+
+        # Determine the current part number
+        part, part_duration = cls.get_part(
+            p_metadata.duration,
+            view_offset,
+            part_count
+        )
+
+        return part, part_count, part_duration
+
     @staticmethod
     def get_part(duration, view_offset, part_count):
-        if duration is None:
-            return 1
+        if duration is None or part_count is None or part_count < 1:
+            return 1, duration
 
         part_duration = int(math.floor(
             float(duration) / part_count
@@ -97,7 +142,7 @@ class UpdateSession(Update, Base):
         )) + 1
 
         # Clamp `part` to: 0 - `total_parts`
-        return part_duration, max(0, min(part, part_count))
+        return max(0, min(part, part_count)), part_duration
 
     @staticmethod
     def get_progress(duration, view_offset, part=1, part_count=1, part_duration=None):

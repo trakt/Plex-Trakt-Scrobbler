@@ -28,6 +28,16 @@ https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
 https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-client
 
+git+https://github.com/OpenEntityMap/oem-framework.git#egg=oem-framework
+git+https://github.com/OpenEntityMap/oem-core.git#egg=oem-core
+git+https://github.com/OpenEntityMap/oem-client.git#egg=oem-client
+git+https://github.com/OpenEntityMap/oem-client-anidb.git#egg=oem-client-anidb
+git+https://github.com/OpenEntityMap/oem-client-provider-release.git#egg=oem-client-provider-release
+git+https://github.com/OpenEntityMap/oem-format-minimize.git#egg=oem-format-minimize
+git+https://github.com/OpenEntityMap/oem-format-minimize-msgpack.git#egg=oem-format-minimize-msgpack
+git+https://github.com/OpenEntityMap/oem-format-msgpack.git#egg=oem-format-msgpack
+git+https://github.com/OpenEntityMap/oem-storage-codernitydb.git#egg=oem-storage-codernitydb
+
 https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex-py
 https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activity-py
 https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex-database-py

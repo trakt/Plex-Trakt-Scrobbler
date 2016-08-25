@@ -2,6 +2,7 @@ from __future__ import with_statement
 import os
 import re
 import pytz
+import subprocess
 
 _cache_tz = None
 
@@ -40,6 +41,20 @@ def _get_localzone(_root='/'):
         try:
             return _tz_from_env(tzenv)
         except pytz.UnknownTimeZoneError:
+            pass
+
+    # Use "getprop" to retrieve the android device timezone
+    getprop_path = os.path.join(_root, 'system/bin/getprop')
+
+    if os.path.exists(getprop_path):
+        try:
+            tz_prop = subprocess.check_output([getprop_path, 'persist.sys.timezone'])
+
+            if tz_prop:
+                return pytz.timezone(tz_prop.strip())
+        except pytz.UnknownTimeZoneError:
+            pass
+        except subprocess.CalledProcessError:
             pass
 
     # Now look for distribution specific configuration files

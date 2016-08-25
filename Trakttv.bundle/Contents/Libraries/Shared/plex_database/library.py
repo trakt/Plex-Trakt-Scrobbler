@@ -15,11 +15,11 @@ try:
     import pytz
 
     TZ_LOCAL = get_localzone()
-except ImportError:
+except Exception:
     pytz = None
     TZ_LOCAL = None
 
-    log.info('Unable to import "tzlocal" + "pytz": datetime objects will be returned without "tzinfo"')
+    log.warn('Unable to retrieve system timezone, datetime objects will be returned in local time', exc_info=True)
 
 MODEL_KEYS = {
     MediaItem:              'media',
@@ -328,7 +328,7 @@ class MovieLibrary(LibraryBase):
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
-                        guids[id] = Guid.parse(guid)
+                        guids[id] = Guid.parse(guid, strict=True)
 
                     guid = guids[id]
 
@@ -556,7 +556,7 @@ class EpisodeLibrary(LibraryBase):
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
-                        guids[sh_id] = Guid.parse(guid)
+                        guids[sh_id] = Guid.parse(guid, strict=True)
 
                     guid = guids[sh_id]
 
@@ -581,7 +581,7 @@ class EpisodeLibrary(LibraryBase):
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
-                        guids[sh_id] = Guid.parse(guid)
+                        guids[sh_id] = Guid.parse(guid, strict=True)
 
                     guid = guids[sh_id]
 

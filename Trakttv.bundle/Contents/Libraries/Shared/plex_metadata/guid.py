@@ -8,9 +8,15 @@ unsupported_agents = {}
 
 
 class Guid(object):
-    def __init__(self, value, extra=None):
+    def __init__(self, value=None, extra=None, matched=False, invalid=False, agent_id=None, original=None):
         self.value = value
         self.extra = extra
+
+        self.matched = matched
+        self.invalid = invalid
+
+        self.agent_id = agent_id
+        self.original = original
 
         # Identifier
         self.service = None
@@ -32,39 +38,62 @@ class Guid(object):
         # `sid` property always returns strings
         return str(self.id)
 
+    @property
+    def valid(self):
+        return not self.invalid and self.matched
+
     @classmethod
-    def construct(cls, service, id, extra=None):
-        result = cls(id, extra)
+    def construct(cls, service, id, extra=None, matched=False, invalid=False):
+        result = cls(
+            id, extra,
+            matched=matched,
+            invalid=invalid
+        )
+
         result.service = service
         result.id = id
-
         return result
 
     @classmethod
     def parse(cls, guid, match=True, media=None, strict=False):
         if not guid:
-            return None
+            return cls(
+                invalid=True,
+                original=guid
+            )
 
         # Parse Guid URI
-        agent_name, uri = urlparse(guid)
+        agent_id, uri = urlparse(guid)
 
-        if not agent_name or not uri or not uri.netloc:
-            return None
+        if not agent_id or not uri or not uri.netloc:
+            return cls(
+                invalid=True,
+                agent_id=agent_id,
+                original=guid
+            )
 
         # Construct `Guid` object
-        result = Guid(uri.netloc, uri.query)
+        result = cls(
+            uri.netloc,
+            extra=uri.query,
+
+            agent_id=agent_id,
+            original=guid
+        )
 
         # Match guid with agent, fill with details
-        if match and cls.match(agent_name, result, uri, media):
+        if match and cls.match(agent_id, result, uri, media):
+            result.matched = True
             return result
 
         if strict:
-            return None
+            return result
 
-        # No agent matching enabled, basic fill
-        result.service = agent_name[agent_name.rfind('.') + 1:]
+        # No agent matching enabled, automatically match guid parameters
+        log.warn('Unable to find agent mapping for %s://%s, result may be incorrect', agent_id, uri.netloc)
+
+        result.service = agent_id[agent_id.rfind('.') + 1:]
         result.id = uri.netloc
-
         return result
 
     @classmethod

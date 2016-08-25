@@ -167,6 +167,7 @@ class BaseTest(object):
         candidates.append(os.path.join(path, 'PlexScriptHost.exe'))
 
         # *nix
+        candidates.append(os.path.join(path, 'Plex Script Host'))
         candidates.append(os.path.join(path, 'Resources', 'Plex Script Host'))
         candidates.append(os.path.join(path, 'Resources', 'Python', 'bin', 'python'))
 

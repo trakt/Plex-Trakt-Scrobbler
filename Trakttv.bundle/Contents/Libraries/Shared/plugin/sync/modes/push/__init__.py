@@ -40,6 +40,11 @@ class Push(Mode):
             # Run children
             self.execute_children('run')
 
+    @elapsed.clock
+    def finish(self):
+        # Run children
+        self.execute_children('finish')
+
         # Send artifacts to trakt
         self.current.artifacts.send()
 

@@ -27,26 +27,27 @@ EXCLUDE_PATHS = [
 ]
 
 PLATFORMS = {
-    'universal':    None,
+    'universal':        None,
 
     # FreeBSD
-    'bsd_i386':     ('FreeBSD', 'i386'),
-    'bsd_x86_64':   ('FreeBSD', 'x86_64'),
+    'bsd_i386':         ('FreeBSD', 'i386'),
+    'bsd_x86_64':       ('FreeBSD', 'x86_64'),
 
     # Linux
-    'linux_armv5':  ('Linux', ['armv5_hf', 'armv5_sf']),
-    'linux_armv6':  ('Linux', ['armv6_hf', 'armv6_sf']),
-    'linux_armv7':  ('Linux', ['armv7_hf', 'armv7_sf']),
-    'linux_i386':   ('Linux', 'i386'),
-    'linux_ppc':    ('Linux', 'PowerPC'),
-    'linux_x86_64': ('Linux', 'x86_64'),
+    'linux_armv5':      ('Linux', ['armv5_hf', 'armv5_sf']),
+    'linux_armv6':      ('Linux', ['armv6_hf', 'armv6_sf']),
+    'linux_armv7':      ('Linux', ['armv7_hf', 'armv7_sf']),
+    'linux_aarch64':    ('Linux', 'aarch64'),
+    'linux_i386':       ('Linux', 'i386'),
+    'linux_ppc':        ('Linux', 'PowerPC'),
+    'linux_x86_64':     ('Linux', 'x86_64'),
 
     # Mac OSX
-    'mac_i386':     ('MacOSX', 'i386'),
-    'mac_x86_64':   ('MacOSX', 'x86_64'),
+    'mac_i386':         ('MacOSX', 'i386'),
+    'mac_x86_64':       ('MacOSX', 'x86_64'),
 
     # Windows
-    'win_i386':     ('Windows', 'i386')
+    'win_i386':         ('Windows', 'i386')
 }
 
 

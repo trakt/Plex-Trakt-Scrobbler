@@ -1,39 +1,51 @@
 from plugin.sync.modes.core.base.mode import Mode
 from plugin.sync.modes.core.base.pull import PullListsMode
 
-unsupported_services = {
-    'none': True,
-    'plex': True
-}
+IGNORED_AGENTS = [
+    'local',
+    'none',
+    'plex'
+]
 
 
 def mark_unsupported(dictionary, rating_key, guid):
-    service = guid.service if guid else None
+    agent = guid.agent_id if guid else None
 
-    if service not in dictionary:
-        dictionary[service] = []
+    if agent not in dictionary:
+        dictionary[agent] = {
+            'values': set(),
+            'rating_keys': set()
+        }
 
-    dictionary[service].append(rating_key)
+    if guid.value:
+        dictionary[agent]['values'].add(guid.value)
+
+    dictionary[agent]['rating_keys'].add(rating_key)
 
 
 def log_unsupported(logger, message, dictionary):
     if len(dictionary) < 1:
         return
 
-    # Display unsupported service list
-    logger.info(message, len(dictionary))
+    items_count = 0
 
-    # Display individual warnings for each service
-    for service in dictionary.keys():
-        if service not in unsupported_services:
-            # First occurrence of unsupported service
-            logger.warn('Unsupported service: %s' % service)
+    # Display individual warnings for each agent
+    for agent, details in dictionary.items():
+        items_count += len(details['values'])
 
-            # Mark unsupported service as "seen"
-            unsupported_services[service] = True
+        if agent is None or agent in IGNORED_AGENTS:
+            logger.info('Unsupported agent: %s (%%d items)' % agent, len(details['rating_keys']))
             continue
 
-        # Duplicate occurrence of unsupported service
-        logger.warn('Unsupported service: %s' % service, extra={
-            'duplicate': True
+        # Log unsupported agent warning
+        logger.warn('Unsupported agent: %s (%%d items)' % agent, len(details['rating_keys']), extra={
+            'values': list(details['values'])[:10],
+            'event': {
+                'module': __name__,
+                'name': 'unsupported_agent',
+                'key': agent
+            }
         })
+
+    # Display unsupported agent list
+    logger.info(message, items_count)

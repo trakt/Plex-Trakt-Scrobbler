@@ -1,6 +1,7 @@
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import merge
 from plugin.core.identifier import Identifier
+from plugin.core.logger.helpers import log_unsupported_guid
 from plugin.managers.session.base import UpdateSession
 from plugin.modules.core.manager import ModuleManager
 
@@ -27,9 +28,6 @@ class Base(object):
         # Retrieve metadata
         metadata = Metadata.get(rating_key)
 
-        # Queue a flush for the metadata cache
-        Metadata.cache.flush_queue()
-
         # Validate metadata
         if not metadata:
             log.warn('Unable to retrieve metadata for rating_key %r', rating_key)
@@ -41,10 +39,15 @@ class Base(object):
 
         # Apply library/section filter
         if not Filters.is_valid_metadata_section(metadata):
+            log.info('Ignoring session in filtered section: %r', metadata.section.title)
             return None
 
         # Parse guid
-        guid = Guid.parse(metadata.guid)
+        guid = Guid.parse(metadata.guid, strict=True)
+
+        if not guid or not guid.valid:
+            log_unsupported_guid(log, guid)
+            return None
 
         # Build request from guid/metadata
         if type(metadata) is Movie:
@@ -52,9 +55,11 @@ class Base(object):
         elif type(metadata) is Episode:
             result = cls.build_episode(metadata, guid, part)
         else:
+            log.warn('Unknown metadata type: %r', type(metadata))
             return None
 
         if not result:
+            log.info('Unable to build request for session: %r', session)
             return None
 
         # Retrieve media progress
@@ -75,22 +80,36 @@ class Base(object):
 
     @classmethod
     def build_episode(cls, episode, guid, part):
+        # Retrieve show identifier
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
-            return None
+            # Try map episode to a supported service (with OEM)
+            supported, request = ModuleManager['mapper'].request_episode(
+                guid, episode,
+                part=part
+            )
+
+            if not supported:
+                log_unsupported_guid(log, guid)
+
+            return request
 
         # Retrieve episode number
         season_num, episodes = ModuleManager['matcher'].process(episode)
 
-        if len(episodes) > 1 and part - 1 < len(episodes):
+        if len(episodes) > 0 and part - 1 < len(episodes):
             episode_num = episodes[part - 1]
-        elif len(episodes) > 1:
+        elif len(episodes) > 0:
             log.warn('Part %s doesn\'t exist in episodes: %r', part, episodes)
             episode_num = episodes[0]
         else:
             log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
             episode_num = episode.index
+
+        # Process guid episode identifier overrides
+        if guid.season is not None:
+            season_num = guid.season
 
         # Build request
         return {
@@ -113,7 +132,16 @@ class Base(object):
         ids = Identifier.get_ids(guid, strict=False)
 
         if not ids:
-            return None
+            # Try map episode to a supported service (with OEM)
+            supported, request = ModuleManager['mapper'].request_movie(
+                guid, movie,
+                part=part
+            )
+
+            if not supported:
+                log_unsupported_guid(log, guid)
+
+            return request
 
         return {
             'movie': {

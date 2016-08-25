@@ -62,6 +62,7 @@ class WebSocket(Base):
             )
 
             if not request:
+                log.info('No request returned for action %r (payload: %r)', action, payload)
                 continue
 
             # Queue request to be sent
@@ -92,7 +93,7 @@ class WebSocket(Base):
 
         # Calculate current part number
         # TODO handle null values from session?
-        _, part = UpdateSession.get_part(session.duration, view_offset, session.part_count)
+        part, _ = UpdateSession.get_part(session.duration, view_offset, session.part_count)
 
         # Build event
         return [

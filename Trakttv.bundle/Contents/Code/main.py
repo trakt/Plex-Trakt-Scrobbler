@@ -80,10 +80,6 @@ class Main(object):
 
         # plex.metadata.py
         Metadata.configure(
-            cache=CacheManager.get(
-                'plex.metadata',
-                serializer='pickle:///?protocol=2'
-            ),
             client=Plex.client
         )
 
