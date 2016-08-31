@@ -2,8 +2,8 @@ from plugin.sync.modes.core.base.mode import Mode
 from plugin.sync.modes.core.base.pull import PullListsMode
 
 IGNORED_AGENTS = [
+    'com.plexapp.agents.none',
     'local',
-    'none',
     'plex'
 ]
 
