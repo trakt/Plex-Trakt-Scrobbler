@@ -1,6 +1,6 @@
-from tzlocal.helpers import _get_timezone
-
 from __future__ import with_statement
+
+from tzlocal.helpers import _get_timezone
 import os
 import re
 import pytz
