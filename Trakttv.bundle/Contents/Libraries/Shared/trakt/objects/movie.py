@@ -8,11 +8,35 @@ class Movie(Video):
         super(Movie, self).__init__(client, keys, index)
 
         self.title = None
+        """
+        :type: :class:`~python:str`
+
+        Movie title
+        """
+
         self.year = None
+        """
+        :type: :class:`~python:int`
+
+        Movie year
+        """
 
         self.watchers = None  # trending
+        """
+        :type: :class:`~python:int`
+
+        Number of active watchers (returned by the :code:`Trakt['movies'].trending()`
+        and :code:`Trakt['shows'].trending()` methods)
+        """
 
     def to_identifier(self):
+        """Returns the movie identifier which is compatible with requests that require
+        movie definitions.
+
+        :return: Movie identifier/definition
+        :rtype: :class:`~python:dict`
+        """
+
         return {
             'ids': dict(self.keys),
             'title': self.title,
@@ -21,9 +45,16 @@ class Movie(Video):
 
     @deprecated('Movie.to_info() has been moved to Movie.to_dict()')
     def to_info(self):
+        """**Deprecated:** use the :code:`to_dict()` method instead"""
         return self.to_dict()
 
     def to_dict(self):
+        """Dump movie to a dictionary
+
+        :return: Movie dictionary
+        :rtype: :class:`~python:dict`
+        """
+
         result = self.to_identifier()
 
         result.update({
