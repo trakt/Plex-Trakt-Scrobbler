@@ -1,4 +1,4 @@
-from plex.lib.six import add_metaclass
+from plex.lib import six as six
 from plex.lib.six.moves import xrange
 from plex_activity.sources import Logging, WebSocket
 
@@ -17,7 +17,7 @@ class ActivityMeta(type):
         return None
 
 
-@add_metaclass(ActivityMeta)
+@six.add_metaclass(ActivityMeta)
 class Activity(Emitter):
     registered = []
 
