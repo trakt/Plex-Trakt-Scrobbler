@@ -59,7 +59,7 @@ def AboutMenu():
     )
 
     oc.add(DirectoryObject(
-        key=Callback(ListMessages, viewed=None),
+        key=Callback(ListMessages, days=None, viewed=None),
         title=pad_title(_("Messages"))
     ))
 
