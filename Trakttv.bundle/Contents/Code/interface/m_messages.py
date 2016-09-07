@@ -213,7 +213,6 @@ def Status(viewed=None):
 
 def List(days=None, version=None, viewed=None):
     """Get messages logged in the last week"""
-    log.debug('List(%r, %r, %r)', days, version, viewed)
     where = []
 
     # Days
