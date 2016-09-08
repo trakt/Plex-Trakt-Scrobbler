@@ -98,7 +98,7 @@ class Agent(object):
             id = try_convert(id, self.type, id)
 
         # Update `guid`
-        guid.service = self.service
+        guid.service = self.service or guid.agent_id
         guid.id = id
 
         # Fill `guid` with extra details from URI

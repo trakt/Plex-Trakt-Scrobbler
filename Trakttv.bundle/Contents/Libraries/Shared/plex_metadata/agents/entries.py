@@ -75,9 +75,10 @@ AGENTS = {
     'com.plexapp.agents.mcm': {
         'media': ['show', 'season', 'episode'],
 
-        'pattern': r'MCM_TV_A_(.*)',
-        'service': 'tvdb',
-        'type': int
+        'children': [
+            {'pattern': r'MCM_TV_A_(.*)', 'service': 'tvdb', 'type': int}
+        ],
+        'service': 'mcm'
     },
 
     'com.plexapp.agents.thetvdb': {
