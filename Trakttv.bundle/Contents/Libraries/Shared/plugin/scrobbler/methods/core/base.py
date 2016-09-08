@@ -91,7 +91,7 @@ class Base(object):
             )
 
             if not supported:
-                log_unsupported_guid(log, guid)
+                log.info('No mappings available for service: %r', guid.service)
 
             return request
 
@@ -139,7 +139,7 @@ class Base(object):
             )
 
             if not supported:
-                log_unsupported_guid(log, guid)
+                log.info('No mappings available for service: %r', guid.service)
 
             return request
 

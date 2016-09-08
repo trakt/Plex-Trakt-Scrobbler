@@ -96,7 +96,7 @@ class Matcher(Module):
 
             self._database_matcher = plex_database.matcher.Matcher(self._cache, Plex.client)
             self._metadata_matcher = plex_metadata.matcher.Matcher(self._cache, Plex.client)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to initialize matchers: %s', ex, exc_info=True)
 
             # Mark attributes as disabled
