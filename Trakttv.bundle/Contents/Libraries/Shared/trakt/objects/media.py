@@ -115,6 +115,7 @@ class Media(object):
          - **season:** tvdb
          - **episode:** tvdb
          - **custom_list:** trakt
+         - **person:** tmdb
 
         :return: :code:`(<service>, <value>)` or :code:`None` if no primary key is available
         :rtype: :class:`~python:tuple`
