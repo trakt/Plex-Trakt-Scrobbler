@@ -11,10 +11,10 @@ __all__ = [
     "__title__", "__uri__", "__version__",
 ]
 
-__version__ = "16.0.0"
+__version__ = "16.1.0"
 
 __title__ = "pyOpenSSL"
-__uri__ = "https://pyopenssl.readthedocs.org/"
+__uri__ = "https://pyopenssl.readthedocs.io/"
 __summary__ = "Python wrapper module around the OpenSSL library"
 __author__ = "The pyOpenSSL developers"
 __email__ = "cryptography-dev@python.org"
