@@ -543,7 +543,7 @@ class EpisodeLibrary(LibraryBase):
         episodes = self.mapped_episodes(sections, ep_fields, account)
 
         # Prime `Matcher` cache
-        if self.matcher.cache is not None and hasattr(self.matcher.cache, 'prime'):
+        if self.matcher is not None and self.matcher.cache is not None and hasattr(self.matcher.cache, 'prime'):
             context = self.matcher.cache.prime(force=True)
         else:
             context = PrimeContext()
