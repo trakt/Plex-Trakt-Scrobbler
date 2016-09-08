@@ -14,6 +14,9 @@ class Detail(Container):
     platform = Property
     platform_version = Property('platformVersion')
 
+    country_code = Property('countryCode')
+    streaming_brain_version = Property('streamingBrainVersion', int)
+
     allow_camera_upload = Property('allowCameraUpload', (int, bool))
     allow_channel_access = Property('allowChannelAccess', (int, bool))
     allow_media_deletion = Property('allowMediaDeletion', (int, bool))
@@ -25,6 +28,7 @@ class Detail(Container):
     diagnostics = Property(resolver=lambda: Detail.parse_diagnostics)
     event_stream = Property('eventStream', (int, bool))
     hub_search = Property('hubSearch', (int, bool))
+    media_providers = Property('mediaProviders', (int, bool))
     plugin_host = Property('pluginHost', (int, bool))
     read_only_libraries = Property('readOnlyLibraries', (int, bool))
     updater = Property('updater', (int, bool))

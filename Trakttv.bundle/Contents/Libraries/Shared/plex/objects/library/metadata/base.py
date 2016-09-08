@@ -50,7 +50,10 @@ class Metadata(Descriptor):
     def construct_section(client, node):
         attribute_map = {
             'key': 'librarySectionID',
+            'id': 'librarySectionID',
             'uuid': 'librarySectionUUID',
+            'path': 'librarySectionKey',
+
             'title': 'librarySectionTitle'
         }
 
