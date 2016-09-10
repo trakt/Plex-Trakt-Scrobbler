@@ -68,8 +68,19 @@ class Person(object):
 
         return person
 
+    def __getstate__(self):
+        state = self.__dict__
+
+        if hasattr(self, '_client'):
+            del state['_client']
+
+        return state
+
     def __repr__(self):
         if self.name:
             return '<Person %r>' % self.name
 
         return '<Person>'
+
+    def __str__(self):
+        return self.__repr__()
