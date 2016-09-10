@@ -113,13 +113,16 @@ class BaseTest(object):
         if stdout:
             try:
                 result = json.loads(stdout)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Invalid output returned %r - %s', stdout, ex, exc_info=True)
 
         # Build result
         if process.returncode != 0:
             # Test failed
-            if result and 'message' in result:
+            if result and result.get('message'):
+                if result.get('traceback'):
+                    log.info('%s - %s', result['message'], result['traceback'])
+
                 raise Exception(result['message'])
 
             raise Exception('Unknown error (code: %s)' % process.returncode)
