@@ -20,7 +20,7 @@ log = Logger('interface.m_sync')
 # NOTE: pad_title(...) is used to force the UI to use 'media-details-list'
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
-def AccountsMenu(refresh=None):
+def AccountsMenu(refresh=None, *args, **kwargs):
     oc = ObjectContainer(
         title2=_("Accounts"),
         no_cache=True
@@ -46,7 +46,7 @@ def AccountsMenu(refresh=None):
 
 
 @route(PLUGIN_PREFIX + '/sync')
-def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False):
+def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False, *args, **kwargs):
     account = AccountManager.get(Account.id == account_id)
 
     # Build sync controls menu
@@ -166,27 +166,27 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
-def Synchronize(account_id=1, **kwargs):
+def Synchronize(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Full, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
-def FastPull(account_id=1, **kwargs):
+def FastPull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.FastPull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
-def Push(account_id=1, section=None, **kwargs):
+def Push(account_id=1, section=None, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Push, section=section, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
-def Pull(account_id=1, **kwargs):
+def Pull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Pull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
-def Cancel(account_id, id):
+def Cancel(account_id, id, *args, **kwargs):
     id = int(id)
 
     # Cancel sync task

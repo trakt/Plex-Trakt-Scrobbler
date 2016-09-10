@@ -21,7 +21,7 @@ ERROR_TYPES = [
 
 
 @route(PLUGIN_PREFIX + '/messages/list')
-def ListMessages(days=14, version='latest', viewed=False):
+def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
     # Cast `viewed` to boolean
     if type(viewed) is str:
         if viewed == 'None':
@@ -84,7 +84,7 @@ def ListMessages(days=14, version='latest', viewed=False):
     return oc
 
 @route(PLUGIN_PREFIX + '/messages/view')
-def ViewMessage(error_id):
+def ViewMessage(error_id, *args, **kwargs):
     # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
 
@@ -133,7 +133,7 @@ def ViewMessage(error_id):
     return oc
 
 @route(PLUGIN_PREFIX + '/exceptions/view')
-def ViewException(exception_id):
+def ViewException(exception_id, *args, **kwargs):
     # Retrieve exception from database
     exception = ExceptionManager.get.by_id(exception_id)
 
@@ -169,7 +169,7 @@ def ViewException(exception_id):
 
 
 @route(PLUGIN_PREFIX + '/messages/dismissAll')
-def DismissMessages(days=14, version='latest'):
+def DismissMessages(days=14, version='latest', *args, **kwargs):
     # Retrieve messages that match the specified criteria
     messages = List(
         days=days,
