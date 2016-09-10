@@ -9,7 +9,7 @@
         "id": "start_scrobble",
         "type": "bool",
         "label": "Scrobble",
-        "default": "false"
+        "default": "true"
     },
     {
         "id": "scrobble_duplication_period",
