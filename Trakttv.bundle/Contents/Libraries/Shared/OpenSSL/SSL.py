@@ -59,10 +59,7 @@ OP_NO_TLSv1 = _lib.SSL_OP_NO_TLSv1
 OP_NO_TLSv1_1 = getattr(_lib, "SSL_OP_NO_TLSv1_1", 0)
 OP_NO_TLSv1_2 = getattr(_lib, "SSL_OP_NO_TLSv1_2", 0)
 
-try:
-    MODE_RELEASE_BUFFERS = _lib.SSL_MODE_RELEASE_BUFFERS
-except AttributeError:
-    pass
+MODE_RELEASE_BUFFERS = _lib.SSL_MODE_RELEASE_BUFFERS
 
 OP_SINGLE_DH_USE = _lib.SSL_OP_SINGLE_DH_USE
 OP_SINGLE_ECDH_USE = _lib.SSL_OP_SINGLE_ECDH_USE
@@ -74,10 +71,7 @@ OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG = (
 )
 OP_SSLREF2_REUSE_CERT_TYPE_BUG = _lib.SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
 OP_MICROSOFT_BIG_SSLV3_BUFFER = _lib.SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
-try:
-    OP_MSIE_SSLV2_RSA_PADDING = _lib.SSL_OP_MSIE_SSLV2_RSA_PADDING
-except AttributeError:
-    pass
+OP_MSIE_SSLV2_RSA_PADDING = _lib.SSL_OP_MSIE_SSLV2_RSA_PADDING
 OP_SSLEAY_080_CLIENT_DH_BUG = _lib.SSL_OP_SSLEAY_080_CLIENT_DH_BUG
 OP_TLS_D5_BUG = _lib.SSL_OP_TLS_D5_BUG
 OP_TLS_BLOCK_PADDING_BUG = _lib.SSL_OP_TLS_BLOCK_PADDING_BUG
@@ -90,17 +84,11 @@ OP_NETSCAPE_CA_DN_BUG = _lib.SSL_OP_NETSCAPE_CA_DN_BUG
 OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG = (
     _lib.SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
 )
-try:
-    OP_NO_COMPRESSION = _lib.SSL_OP_NO_COMPRESSION
-except AttributeError:
-    pass
+OP_NO_COMPRESSION = _lib.SSL_OP_NO_COMPRESSION
 
 OP_NO_QUERY_MTU = _lib.SSL_OP_NO_QUERY_MTU
 OP_COOKIE_EXCHANGE = _lib.SSL_OP_COOKIE_EXCHANGE
-try:
-    OP_NO_TICKET = _lib.SSL_OP_NO_TICKET
-except AttributeError:
-    pass
+OP_NO_TICKET = _lib.SSL_OP_NO_TICKET
 
 OP_ALL = _lib.SSL_OP_ALL
 
@@ -406,34 +394,41 @@ def SSLeay_version(type):
     return _ffi.string(_lib.SSLeay_version(type))
 
 
-def _requires_npn(func):
+def _make_requires(flag, error):
     """
-    Wraps any function that requires NPN support in OpenSSL, ensuring that
-    NotImplementedError is raised if NPN is not present.
+    Builds a decorator that ensures that functions that rely on OpenSSL
+    functions that are not present in this build raise NotImplementedError,
+    rather than AttributeError coming out of cryptography.
+
+    :param flag: A cryptography flag that guards the functions, e.g.
+        ``Cryptography_HAS_NEXTPROTONEG``.
+    :param error: The string to be used in the exception if the flag is false.
     """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _lib.Cryptography_HAS_NEXTPROTONEG:
-            raise NotImplementedError("NPN not available.")
+    def _requires_decorator(func):
+        if not flag:
+            @wraps(func)
+            def explode(*args, **kwargs):
+                raise NotImplementedError(error)
+            return explode
+        else:
+            return func
 
-        return func(*args, **kwargs)
-
-    return wrapper
+    return _requires_decorator
 
 
-def _requires_alpn(func):
-    """
-    Wraps any function that requires ALPN support in OpenSSL, ensuring that
-    NotImplementedError is raised if ALPN support is not present.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _lib.Cryptography_HAS_ALPN:
-            raise NotImplementedError("ALPN not available.")
+_requires_npn = _make_requires(
+    _lib.Cryptography_HAS_NEXTPROTONEG, "NPN not available"
+)
 
-        return func(*args, **kwargs)
 
-    return wrapper
+_requires_alpn = _make_requires(
+    _lib.Cryptography_HAS_ALPN, "ALPN not available"
+)
+
+
+_requires_sni = _make_requires(
+    _lib.Cryptography_HAS_TLSEXT_HOSTNAME, "SNI not available"
+)
 
 
 class Session(object):
@@ -472,14 +467,10 @@ class Context(object):
             raise ValueError("No such protocol")
 
         method_obj = method_func()
-        if method_obj == _ffi.NULL:
-            # TODO: This is untested.
-            _raise_current_error()
+        _openssl_assert(method_obj != _ffi.NULL)
 
         context = _lib.SSL_CTX_new(method_obj)
-        if context == _ffi.NULL:
-            # TODO: This is untested.
-            _raise_current_error()
+        _openssl_assert(context != _ffi.NULL)
         context = _ffi.gc(context, _lib.SSL_CTX_free)
 
         self._context = context
@@ -564,9 +555,7 @@ class Context(object):
         :return: None
         """
         set_result = _lib.SSL_CTX_set_default_verify_paths(self._context)
-        if not set_result:
-            # TODO: This is untested.
-            _raise_current_error()
+        _openssl_assert(set_result == 1)
 
     def use_certificate_chain_file(self, certfile):
         """
@@ -854,9 +843,7 @@ class Context(object):
         :return: None
         """
         name_stack = _lib.sk_X509_NAME_new_null()
-        if name_stack == _ffi.NULL:
-            # TODO: This is untested.
-            _raise_current_error()
+        _openssl_assert(name_stack != _ffi.NULL)
 
         try:
             for ca_name in certificate_authorities:
@@ -868,9 +855,7 @@ class Context(object):
                         )
                     )
                 copy = _lib.X509_NAME_dup(ca_name._name)
-                if copy == _ffi.NULL:
-                    # TODO: This is untested.
-                    _raise_current_error()
+                _openssl_assert(copy != _ffi.NULL)
                 push_result = _lib.sk_X509_NAME_push(name_stack, copy)
                 if not push_result:
                     _lib.X509_NAME_free(copy)
@@ -897,9 +882,7 @@ class Context(object):
 
         add_result = _lib.SSL_CTX_add_client_CA(
             self._context, certificate_authority._x509)
-        if not add_result:
-            # TODO: This is untested.
-            _raise_current_error()
+        _openssl_assert(add_result == 1)
 
     def set_timeout(self, timeout):
         """
@@ -991,6 +974,7 @@ class Context(object):
 
         return _lib.SSL_CTX_set_mode(self._context, mode)
 
+    @_requires_sni
     def set_tlsext_servername_callback(self, callback):
         """
         Specify a callback function to be called when clients specify a server
@@ -1123,11 +1107,10 @@ class Connection(object):
             self._socket = None
             # Don't set up any gc for these, SSL_free will take care of them.
             self._into_ssl = _lib.BIO_new(_lib.BIO_s_mem())
-            self._from_ssl = _lib.BIO_new(_lib.BIO_s_mem())
+            _openssl_assert(self._into_ssl != _ffi.NULL)
 
-            if self._into_ssl == _ffi.NULL or self._from_ssl == _ffi.NULL:
-                # TODO: This is untested.
-                _raise_current_error()
+            self._from_ssl = _lib.BIO_new(_lib.BIO_s_mem())
+            _openssl_assert(self._from_ssl != _ffi.NULL)
 
             _lib.SSL_set_bio(self._ssl, self._into_ssl, self._from_ssl)
         else:
@@ -1136,9 +1119,7 @@ class Connection(object):
             self._socket = socket
             set_result = _lib.SSL_set_fd(
                 self._ssl, _asFileDescriptor(self._socket))
-            if not set_result:
-                # TODO: This is untested.
-                _raise_current_error()
+            _openssl_assert(set_result == 1)
 
     def __getattr__(self, name):
         """
@@ -1209,6 +1190,7 @@ class Connection(object):
         _lib.SSL_set_SSL_CTX(self._ssl, context._context)
         self._context = context
 
+    @_requires_sni
     def get_servername(self):
         """
         Retrieve the servername extension value if provided in the client hello
@@ -1224,6 +1206,7 @@ class Connection(object):
 
         return _ffi.string(name)
 
+    @_requires_sni
     def set_tlsext_host_name(self, name):
         """
         Set the value of the servername extension to send in the client hello.
@@ -1304,9 +1287,7 @@ class Connection(object):
 
     def recv(self, bufsiz, flags=None):
         """
-        Receive data on the connection. NOTE: If you get one of the WantRead,
-        WantWrite or WantX509Lookup exceptions on this, you have to call the
-        method again with the SAME buffer.
+        Receive data on the connection.
 
         :param bufsiz: The maximum number of bytes to read
         :param flags: (optional) The only supported flag is ``MSG_PEEK``,
@@ -1557,9 +1538,7 @@ class Connection(object):
         for i in range(_lib.sk_X509_NAME_num(ca_names)):
             name = _lib.sk_X509_NAME_value(ca_names, i)
             copy = _lib.X509_NAME_dup(name)
-            if copy == _ffi.NULL:
-                # TODO: This is untested.
-                _raise_current_error()
+            _openssl_assert(copy != _ffi.NULL)
 
             pyname = X509Name.__new__(X509Name)
             pyname._name = _ffi.gc(copy, _lib.X509_NAME_free)
@@ -1629,11 +1608,14 @@ class Connection(object):
 
         :return: A string representing the state
         """
-        if self._ssl.session == _ffi.NULL:
+        session = _lib.SSL_get_session(self._ssl)
+        if session == _ffi.NULL:
             return None
-        return _ffi.buffer(
-            self._ssl.s3.server_random,
-            _lib.SSL3_RANDOM_SIZE)[:]
+        length = _lib.SSL_get_server_random(self._ssl, _ffi.NULL, 0)
+        assert length > 0
+        outp = _ffi.new("char[]", length)
+        _lib.SSL_get_server_random(self._ssl, outp, length)
+        return _ffi.buffer(outp, length)[:]
 
     def client_random(self):
         """
@@ -1641,11 +1623,15 @@ class Connection(object):
 
         :return: A string representing the state
         """
-        if self._ssl.session == _ffi.NULL:
+        session = _lib.SSL_get_session(self._ssl)
+        if session == _ffi.NULL:
             return None
-        return _ffi.buffer(
-            self._ssl.s3.client_random,
-            _lib.SSL3_RANDOM_SIZE)[:]
+
+        length = _lib.SSL_get_client_random(self._ssl, _ffi.NULL, 0)
+        assert length > 0
+        outp = _ffi.new("char[]", length)
+        _lib.SSL_get_client_random(self._ssl, outp, length)
+        return _ffi.buffer(outp, length)[:]
 
     def master_key(self):
         """
@@ -1653,11 +1639,15 @@ class Connection(object):
 
         :return: A string representing the state
         """
-        if self._ssl.session == _ffi.NULL:
+        session = _lib.SSL_get_session(self._ssl)
+        if session == _ffi.NULL:
             return None
-        return _ffi.buffer(
-            self._ssl.session.master_key,
-            self._ssl.session.master_key_length)[:]
+
+        length = _lib.SSL_SESSION_get_master_key(session, _ffi.NULL, 0)
+        assert length > 0
+        outp = _ffi.new("char[]", length)
+        _lib.SSL_SESSION_get_master_key(session, outp, length)
+        return _ffi.buffer(outp, length)[:]
 
     def sock_shutdown(self, *args, **kwargs):
         """

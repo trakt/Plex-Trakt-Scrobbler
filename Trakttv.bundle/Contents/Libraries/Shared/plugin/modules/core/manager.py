@@ -19,11 +19,15 @@ class ModuleManager(object):
 
     @classmethod
     def discover(cls):
+        from plugin.modules.mapper.main import Mapper
+        from plugin.modules.matcher.main import Matcher
         from plugin.modules.scheduler.main import Scheduler
         from plugin.modules.sessions.main import Sessions
         from plugin.modules.upgrade.main import Upgrade
 
         return [
+            Mapper,
+            Matcher,
             Scheduler,
             Sessions,
             Upgrade
@@ -54,10 +58,13 @@ class ModuleManager(object):
         log.debug('Constructed %d module(s): %s', len(constructed), ', '.join(constructed))
 
     @classmethod
-    def start(cls):
+    def start(cls, keys=None):
         started = []
 
         for key, module in cls.modules.items():
+            if keys is not None and key not in keys:
+                continue
+
             try:
                 module.start()
 

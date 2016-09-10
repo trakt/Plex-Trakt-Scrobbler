@@ -1,4 +1,4 @@
-from plex.lib.six import add_metaclass
+from plex.lib import six as six
 from plex.interfaces.core.base import Interface
 
 import collections
@@ -25,10 +25,11 @@ class Property(object):
 
     def value_node(self, descriptor, key, node, keys_used):
         value = self.helpers.get(node, key)
-        keys_used.append(key.lower())
 
         if value is None:
             return None
+
+        keys_used.append(key.lower())
 
         try:
             return self.value_convert(value)
@@ -47,7 +48,7 @@ class Property(object):
             try:
                 result = target_type(result)
             except Exception as ex:
-                raise ex, None, sys.exc_info()[2]
+                six.reraise(ex, None, sys.exc_info()[2])
 
         return result
 
@@ -71,7 +72,7 @@ class DescriptorMeta(type):
         Interface.object_map[self.__name__] = self
 
 
-@add_metaclass(DescriptorMeta)
+@six.add_metaclass(DescriptorMeta)
 class Descriptor(Interface):
     attribute_map = None
 
@@ -134,6 +135,10 @@ class Descriptor(Interface):
 
             #log.debug('%s - Found property "%s"', cls.__name__, key)
             setattr(obj, key, prop.value(cls, client, node_key, node, keys_used))
+
+        # Ensure attributes were matched
+        if child and not keys_used:
+            return [], None
 
         # Post-fill transformation
         obj.__transform__()

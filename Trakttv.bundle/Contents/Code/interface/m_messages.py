@@ -1,4 +1,4 @@
-from core.helpers import pad_title, timestamp
+from core.helpers import pad_title, try_convert, redirect
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
@@ -7,6 +7,9 @@ from plugin.models import Exception, Message
 
 from ago import human
 from datetime import datetime, timedelta
+import logging
+
+log = logging.getLogger(__name__)
 
 ERROR_TYPES = [
     Message.Type.Exception,
@@ -18,7 +21,7 @@ ERROR_TYPES = [
 
 
 @route(PLUGIN_PREFIX + '/messages/list')
-def ListMessages(viewed=None):
+def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
     # Cast `viewed` to boolean
     if type(viewed) is str:
         if viewed == 'None':
@@ -28,17 +31,28 @@ def ListMessages(viewed=None):
 
     # Retrieve messages
     messages = list(List(
+        days=try_convert(days, int),
+        version=version,
         viewed=viewed
     ).order_by(
         Message.last_logged_at.desc()
     ).limit(50))
 
-    total_messages = List().count()
+    total_messages = List(
+        days=try_convert(days, int),
+        version=version,
+    ).count()
 
     # Construct container
     oc = ObjectContainer(
         title2=_("Messages")
     )
+
+    if viewed is False and len(messages) > 1:
+        oc.add(DirectoryObject(
+            key=Callback(DismissMessages),
+            title=pad_title(_("Dismiss all"))
+        ))
 
     for m in messages:
         if m.type is None or\
@@ -60,17 +74,17 @@ def ListMessages(viewed=None):
             thumb=thumb
         ))
 
-    # Append "View More" button
+    # Append "View All" button
     if len(messages) != 50 and len(messages) < total_messages:
         oc.add(DirectoryObject(
-            key=Callback(ListMessages),
+            key=Callback(ListMessages, days=None, viewed=None),
             title=pad_title(_("View All"))
         ))
 
     return oc
 
 @route(PLUGIN_PREFIX + '/messages/view')
-def ViewMessage(error_id):
+def ViewMessage(error_id, *args, **kwargs):
     # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
 
@@ -119,7 +133,7 @@ def ViewMessage(error_id):
     return oc
 
 @route(PLUGIN_PREFIX + '/exceptions/view')
-def ViewException(exception_id):
+def ViewException(exception_id, *args, **kwargs):
     # Retrieve exception from database
     exception = ExceptionManager.get.by_id(exception_id)
 
@@ -154,9 +168,36 @@ def ViewException(exception_id):
     return oc
 
 
+@route(PLUGIN_PREFIX + '/messages/dismissAll')
+def DismissMessages(days=14, version='latest', *args, **kwargs):
+    # Retrieve messages that match the specified criteria
+    messages = List(
+        days=days,
+        version=version,
+        viewed=False
+    )
+
+    # Mark all messages as viewed
+    for message in messages:
+        # Update `last_viewed_at` field
+        message.last_viewed_at = datetime.utcnow()
+        message.save()
+
+    # Redirect back to the messages view
+    return redirect(
+        '/messages/list',
+        days=days,
+        version=version
+    )
+
+
 def Status(viewed=None):
     """Get the number and type of messages logged in the last week"""
-    messages = List(viewed=viewed)
+    messages = List(
+        days=14,
+        version='latest',
+        viewed=viewed
+    )
 
     count = 0
     type = 'notification'
@@ -170,16 +211,25 @@ def Status(viewed=None):
     return count, type
 
 
-def List(viewed=None):
+def List(days=None, version=None, viewed=None):
     """Get messages logged in the last week"""
-    since = datetime.utcnow() - timedelta(days=7)
+    where = []
 
-    where = [
-        Message.last_logged_at > since,
-        Message.version_base == VERSION_BASE,
-        Message.version_branch == VERSION_BRANCH
-    ]
+    # Days
+    if days is not None:
+        where.append(
+            Message.last_logged_at > datetime.utcnow() - timedelta(days=days)
+        )
 
+    # Version
+    if version == 'latest':
+        where.append(
+            Message.version_base == VERSION_BASE
+        )
+    elif version is not None:
+        log.warn('Unknown version specified: %r', version)
+
+    # Viewed state
     if viewed is True:
         where.append(
             ~(Message.last_viewed_at >> None),
@@ -190,7 +240,11 @@ def List(viewed=None):
             (Message.last_viewed_at >> None) | (Message.last_viewed_at < Message.last_logged_at)
         )
 
-    return MessageManager.get.where(*where)
+    # Build query
+    if where:
+        return MessageManager.get.where(*where)
+
+    return MessageManager.get.all()
 
 
 def Trim(value, length=45):

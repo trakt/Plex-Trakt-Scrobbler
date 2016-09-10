@@ -4,7 +4,9 @@ from plex.objects.directory import Directory
 
 
 class Section(Directory):
+    id = Property
     uuid = Property
+    path = Property('key')
 
     filters = Property(type=bool)
     refreshing = Property(type=bool)

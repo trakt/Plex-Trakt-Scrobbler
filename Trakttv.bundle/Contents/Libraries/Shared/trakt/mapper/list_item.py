@@ -50,6 +50,28 @@ class ListItemMapper(Mapper):
         return None
 
     @classmethod
+    def person(cls, client, item, **kwargs):
+        if 'person' in item:
+            i_person = item['person']
+        else:
+            i_person = item
+
+        # Retrieve item keys
+        pk, keys = cls.get_ids('person', i_person)
+
+        if pk is None:
+            return None
+
+        # Create object
+        person = cls.construct(client, 'person', i_person, keys, **kwargs)
+
+        # Update with root info
+        if 'person' in item:
+            person._update(item)
+
+        return person
+
+    @classmethod
     def show(cls, client, item, **kwargs):
         if 'show' in item:
             i_show = item['show']

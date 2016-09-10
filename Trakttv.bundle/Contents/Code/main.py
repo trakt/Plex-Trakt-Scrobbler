@@ -60,13 +60,19 @@ class Main(object):
             # Generate identifier
             Dict['plex.client.identifier'] = uuid.uuid4()
 
+        # Retrieve current client identifier
+        client_id = Dict['plex.client.identifier']
+
+        if isinstance(client_id, uuid.UUID):
+            client_id = str(client_id)
+
         # plex.py
         Plex.configuration.defaults.authentication(
             os.environ.get('PLEXTOKEN')
         )
 
         Plex.configuration.defaults.client(
-            identifier=Dict['plex.client.identifier'],
+            identifier=client_id,
 
             product='trakt (for Plex)',
             version=PLUGIN_VERSION
@@ -80,10 +86,6 @@ class Main(object):
 
         # plex.metadata.py
         Metadata.configure(
-            cache=CacheManager.get(
-                'plex.metadata',
-                serializer='pickle:///?protocol=2'
-            ),
             client=Plex.client
         )
 

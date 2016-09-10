@@ -1,9 +1,13 @@
 from __future__ import with_statement
+
+from tzlocal.helpers import _get_timezone
 import os
 import re
 import pytz
+import subprocess
 
 _cache_tz = None
+
 
 def _tz_from_env(tzenv):
     if tzenv[0] == ':':
@@ -16,13 +20,14 @@ def _tz_from_env(tzenv):
 
     # TZ specifies a zoneinfo zone.
     try:
-        tz = pytz.timezone(tzenv)
+        tz = _get_timezone(tzenv)
         # That worked, so we return this:
         return tz
     except pytz.UnknownTimeZoneError:
         raise pytz.UnknownTimeZoneError(
             "tzlocal() does not support non-zoneinfo timezones like %s. \n"
             "Please use a timezone in the form of Continent/City")
+
 
 def _get_localzone(_root='/'):
     """Tries to find the local timezone configuration.
@@ -42,6 +47,20 @@ def _get_localzone(_root='/'):
         except pytz.UnknownTimeZoneError:
             pass
 
+    # Use "getprop" to retrieve the android device timezone
+    getprop_path = os.path.join(_root, 'system/bin/getprop')
+
+    if os.path.exists(getprop_path):
+        try:
+            tz_prop = subprocess.check_output([getprop_path, 'persist.sys.timezone'])
+
+            if tz_prop:
+                return _get_timezone(tz_prop.strip())
+        except pytz.UnknownTimeZoneError:
+            pass
+        except subprocess.CalledProcessError:
+            pass
+
     # Now look for distribution specific configuration files
     # that contain the timezone name.
     tzpath = os.path.join(_root, 'etc/timezone')
@@ -58,7 +77,7 @@ def _get_localzone(_root='/'):
                     etctz, dummy = etctz.split(' ', 1)
                 if '#' in etctz:
                     etctz, dummy = etctz.split('#', 1)
-                return pytz.timezone(etctz.replace(' ', '_'))
+                return _get_timezone(etctz.replace(' ', '_'))
 
     # CentOS has a ZONE setting in /etc/sysconfig/clock,
     # OpenSUSE has a TIMEZONE setting in /etc/sysconfig/clock and
@@ -88,7 +107,7 @@ def _get_localzone(_root='/'):
                 etctz = line[:end_re.search(line).start()]
 
                 # We found a timezone
-                return pytz.timezone(etctz.replace(' ', '_'))
+                return _get_timezone(etctz.replace(' ', '_'))
 
     # systemd distributions use symlinks that include the zone name, 
     # see manpage of localtime(5) and timedatectl(1)
@@ -99,7 +118,7 @@ def _get_localzone(_root='/'):
         while start is not 0:
             tzpath = tzpath[start:]
             try:
-                return pytz.timezone(tzpath)
+                return _get_timezone(tzpath)
             except pytz.UnknownTimeZoneError:
                 pass
             start = tzpath.find("/")+1
@@ -115,12 +134,14 @@ def _get_localzone(_root='/'):
 
     raise pytz.UnknownTimeZoneError('Can not find any timezone configuration')
 
+
 def get_localzone():
     """Get the computers configured local timezone, if any."""
     global _cache_tz
     if _cache_tz is None:
         _cache_tz = _get_localzone()
     return _cache_tz
+
 
 def reload_localzone():
     """Reload the cached localzone. You need to call this if the timezone has changed."""

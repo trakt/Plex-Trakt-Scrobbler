@@ -8,11 +8,34 @@ class Episode(Video):
         super(Episode, self).__init__(client, keys, index)
 
         self.show = None
+        """
+        :type: :class:`trakt.objects.show.Show`
+
+        Show
+        """
+
         self.season = None
+        """
+        :type: :class:`trakt.objects.season.Season`
+
+        Season
+        """
 
         self.title = None
+        """
+        :type: :class:`~python:str`
+
+        Episode title
+        """
 
     def to_identifier(self):
+        """Returns the episode identifier which is compatible with requests that require
+        episode definitions.
+
+        :return: Episode identifier/definition
+        :rtype: :class:`~python:dict`
+        """
+
         _, number = self.pk
 
         return {
@@ -21,9 +44,16 @@ class Episode(Video):
 
     @deprecated('Episode.to_info() has been moved to Episode.to_dict()')
     def to_info(self):
+        """**Deprecated:** use the :code:`to_dict()` method instead"""
         return self.to_dict()
 
     def to_dict(self):
+        """Dump episode to a dictionary
+
+        :return: Episode dictionary
+        :rtype: :class:`~python:dict`
+        """
+
         result = self.to_identifier()
 
         result.update({

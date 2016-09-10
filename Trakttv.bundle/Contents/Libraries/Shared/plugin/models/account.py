@@ -107,6 +107,9 @@ class Account(Model):
         return True
 
     def refresh_required(self):
+        if self.name is None:
+            return True
+
         if self.thumb is None:
             return True
 

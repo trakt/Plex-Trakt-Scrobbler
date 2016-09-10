@@ -3,6 +3,7 @@ from plugin.preferences import Preferences
 
 from threading import Lock
 import logging
+import six
 
 log = logging.getLogger(__name__)
 
@@ -69,15 +70,25 @@ class ApiManager(object):
             log.warn('Method is not exposed: %r', k_method)
             return cls.build_error('restricted.method', 'Method is not exposed: %r' % k_method)
 
-        # TODO validate authentication
+        # Decode strings in the `args` parameter
+        try:
+            args = cls.decode(args)
+        except Exception as ex:
+            return cls.build_error('args.decode_error', 'Unable to decode provided args')
+
+        # Decode strings in the `kwargs` parameter
+        try:
+            kwargs = cls.decode(kwargs)
+        except Exception as ex:
+            return cls.build_error('kwargs.decode_error', 'Unable to decode provided kwargs')
 
         # Execute request handler
         try:
             result = cls.call(method, headers, body, func, args, kwargs)
-        except ApiError, ex:
+        except ApiError as ex:
             log.warn('Error returned while handling request %r: %r', key, ex, exc_info=True)
             return cls.build_error('error.%s' % ex.code, ex.message)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised while handling request %r: %s', key, ex, exc_info=True)
             return cls.build_error('exception', 'Exception raised while handling the request')
 
@@ -119,6 +130,40 @@ class ApiManager(object):
         cls.services[key] = cls.service_classes[key](cls)
 
         return cls.services[key]
+
+    @classmethod
+    def decode(cls, data):
+        if not data:
+            return data
+
+        # Strings
+        if isinstance(data, six.string_types):
+            try:
+                return data.decode('unicode-escape')
+            except Exception as ex:
+                log.warn('Unable to decode string: %s', ex, exc_info=True)
+                return data
+
+        # Collections
+        if type(data) is dict:
+            return dict([
+                (cls.decode(key), cls.decode(value))
+                for key, value in data.items()
+            ])
+
+        if type(data) is list:
+            return [
+                cls.decode(value)
+                for value in data
+            ]
+
+        if type(data) is tuple:
+            return tuple([
+                cls.decode(value)
+                for value in list(data)
+            ])
+
+        return data
 
     @classmethod
     def build_error(cls, code, message=None):

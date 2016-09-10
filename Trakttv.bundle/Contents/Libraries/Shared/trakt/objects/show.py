@@ -10,19 +10,56 @@ class Show(Media):
         super(Show, self).__init__(client, keys, index)
 
         self.title = None
+        """
+        :type: :class:`~python:str`
+
+        Show title
+        """
+
         self.year = None
+        """
+        :type: :class:`~python:int`
+
+        Show year
+        """
 
         self.seasons = {}
+        """
+        :type: :class:`~python:dict`
 
-        self.watchers = None  # trending
+        Seasons, defined as :code:`{season_num: Season}`
+
+        **Note:** this field might not be available with some methods
+        """
+
+        self.watchers = None
+        """
+        :type: :class:`~python:int`
+
+        Number of active watchers (returned by the :code:`Trakt['movies'].trending()`
+        and :code:`Trakt['shows'].trending()` methods)
+        """
 
     def episodes(self):
+        """Returns a flat episode iterator
+
+        :returns: Iterator :code:`((season_num, episode_num), Episode)`
+        :rtype: iterator
+        """
+
         for sk, season in iteritems(self.seasons):
             # Yield each episode in season
             for ek, episode in iteritems(season.episodes):
                 yield (sk, ek), episode
 
     def to_identifier(self):
+        """Returns the show identifier which is compatible with requests that require
+        show definitions.
+
+        :return: Show identifier/definition
+        :rtype: :class:`~python:dict`
+        """
+
         return {
             'ids': dict(self.keys),
             'title': self.title,
@@ -31,9 +68,16 @@ class Show(Media):
 
     @deprecated('Show.to_info() has been moved to Show.to_dict()')
     def to_info(self):
+        """**Deprecated:** use the :code:`to_dict()` method instead"""
         return self.to_dict()
 
     def to_dict(self):
+        """Dump show to a dictionary
+
+        :return: Show dictionary
+        :rtype: :class:`~python:dict`
+        """
+
         result = self.to_identifier()
 
         result['seasons'] = [

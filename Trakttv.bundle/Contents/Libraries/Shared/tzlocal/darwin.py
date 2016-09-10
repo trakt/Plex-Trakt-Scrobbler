@@ -1,4 +1,6 @@
 from __future__ import with_statement
+
+from tzlocal.helpers import _get_timezone
 import os
 import pytz
 import subprocess
@@ -19,7 +21,7 @@ def _get_localzone():
         # link will be something like /usr/share/zoneinfo/America/Los_Angeles.
         link = os.readlink("/etc/localtime")
         tzname = link[link.rfind("zoneinfo/") + 9:]
-    return pytz.timezone(tzname)
+    return _get_timezone(tzname)
 
 
 def get_localzone():

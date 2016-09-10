@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class Agent(object):
-    def __init__(self, media, service, regex=None, type=None, children=None):
+    def __init__(self, media, service, regex=None, type=None, children=None, season=None):
         self.media = media
         self.service = service
 
@@ -18,6 +18,8 @@ class Agent(object):
         self.type = type
 
         self.children = children
+
+        self.season = season
 
     #
     # Compile
@@ -38,7 +40,10 @@ class Agent(object):
             children=[
                 cls.compile(child, media)
                 for child in (entry.get('children') or [])
-            ]
+            ],
+
+            # Overrides
+            season=entry.get('season')
         )
 
     @staticmethod
@@ -93,12 +98,16 @@ class Agent(object):
             id = try_convert(id, self.type, id)
 
         # Update `guid`
-        guid.service = self.service
+        guid.service = self.service or guid.agent_id
         guid.id = id
 
         # Fill `guid` with extra details from URI
         self.fill_path(guid, uri.path)
         self.fill_query(guid, uri.query)
+
+        # Process overrides
+        if self.season is not None:
+            guid.season = self.season
 
         return True
 

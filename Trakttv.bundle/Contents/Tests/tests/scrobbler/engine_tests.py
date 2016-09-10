@@ -39,106 +39,106 @@ def assert_events(engine, session, events, expected):
 
 def test_event_duplication():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
     # playing
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3000, 'part': 1})], [])
 
     # paused
-    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 3000})], [('pause',)])
-    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 3000})], [])
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 3000, 'part': 1})], [('pause',)])
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 3000, 'part': 1})], [])
 
     # playing
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 4000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 4000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 4000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 4000, 'part': 1})], [])
 
     # stopped
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000})], [('stop',)])
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000, 'part': 1})], [('stop',)])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 5000, 'part': 1})], [])
 
     # media change
-    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1000})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1000, 'part': 1})], [('start',)])
 
 
 def test_finished_duplication():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
     # playing
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 2000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 2000, 'part': 1})], [])
 
     # stopped
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 50 * 1000})], [('stop',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 51 * 1000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 52 * 1000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 53 * 1000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 54 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 50 * 1000, 'part': 1})], [('stop',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 51 * 1000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 52 * 1000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 53 * 1000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 54 * 1000, 'part': 1})], [])
 
 
 def test_stopped_duplication():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
     # Start watching item
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset':  1000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 20000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 30000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 40000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset':  1000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 20000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 30000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 40000, 'part': 1})], [])
 
     # Ensure "stop" actions aren't duplicated
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [('stop',)])
-    assert_events(engine, session, [('paused',  {'rating_key': 100, 'view_offset': 50000})], [])
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [('stop',)])
+    assert_events(engine, session, [('paused',  {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [])
 
     # Ensure item can be restarted
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000})], [('start',)])
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [('stop',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 10000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [('stop',)])
 
 
 def test_finished():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
     # playing
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1 * 1000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3 * 1000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 5 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1 * 1000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3 * 1000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 5 * 1000, 'part': 1})], [])
 
     # finished
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 50 * 1000})], [('stop',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 50 * 1000, 'part': 1})], [('stop',)])
 
     # stopped
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50 * 1000})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50 * 1000, 'part': 1})], [])
 
 
 def test_media_changed():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
     # playing
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1 * 1000})], [('start',)])
-    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3 * 1000})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 1 * 1000, 'part': 1})], [('start',)])
+    assert_events(engine, session, [('playing', {'rating_key': 100, 'view_offset': 3 * 1000, 'part': 1})], [])
 
-    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1 * 1000})], [
-        ('stop',  {'rating_key': 100, 'view_offset': 3 * 1000}),
-        ('start', {'rating_key': 101, 'view_offset': 1 * 1000})
+    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 1 * 1000, 'part': 1})], [
+        ('stop',  {'rating_key': 100, 'view_offset': 3 * 1000, 'part': 1}),
+        ('start', {'rating_key': 101, 'view_offset': 1 * 1000, 'part': 1})
     ])
 
 
 def test_media_changed_unplayed():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
-    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000})], [])
-    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 0})], [('start',)])
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [])
+    assert_events(engine, session, [('playing', {'rating_key': 101, 'view_offset': 0, 'part': 1})], [('start',)])
 
 
 def test_unplayed():
     engine = SessionEngine()
-    session = Session(duration=50 * 1000, rating_key=100, state='create', view_offset=0)
+    session = Session(rating_key=100, state='create', duration=50 * 1000, view_offset=0, part=1)
 
-    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000})], [])
-    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000})], [])
+    assert_events(engine, session, [('paused', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [])
+    assert_events(engine, session, [('stopped', {'rating_key': 100, 'view_offset': 50000, 'part': 1})], [])

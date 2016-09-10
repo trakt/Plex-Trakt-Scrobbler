@@ -56,7 +56,8 @@ class TraktPlaylistHandler(PlaylistHandler):
         if i_type is Episode:
             return [item.show.pk] + list(item.pk)
 
-        raise ValueError('Unknown item: %r, type: %r' % (item, i_type))
+        log.debug('Ignoring unsupported list item: %r', item)
+        return None
 
     def parse(self, items):
         for item in items:

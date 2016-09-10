@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 @route(PLUGIN_PREFIX + '/resources/cover')
-def Cover(account_id, refresh=None):
+def Cover(account_id, refresh=None, *args, **kwargs):
     account = AccountManager.get(Account.id == account_id)
 
     if not account.trakt:
@@ -39,7 +39,7 @@ def Cover(account_id, refresh=None):
 
 
 @route(PLUGIN_PREFIX + '/resources/thumb')
-def Thumb(account_id, refresh=None):
+def Thumb(account_id, refresh=None, *args, **kwargs):
     # Retrieve account
     account = AccountManager.get(Account.id == account_id)
 

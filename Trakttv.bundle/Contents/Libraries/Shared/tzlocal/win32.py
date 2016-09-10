@@ -1,9 +1,11 @@
+from tzlocal.helpers import _get_timezone
+from tzlocal.windows_tz import win_tz
+
 try:
     import _winreg as winreg
 except ImportError:
     import winreg
 
-from tzlocal.windows_tz import win_tz
 import pytz
 
 _cache_tz = None
@@ -84,10 +86,10 @@ def get_localzone():
     """Returns the zoneinfo-based tzinfo object that matches the Windows-configured timezone."""
     global _cache_tz
     if _cache_tz is None:
-        _cache_tz = pytz.timezone(get_localzone_name())
+        _cache_tz = _get_timezone(get_localzone_name())
     return _cache_tz
 
 def reload_localzone():
     """Reload the cached localzone. You need to call this if the timezone has changed."""
     global _cache_tz
-    _cache_tz = pytz.timezone(get_localzone_name())
+    _cache_tz = _get_timezone(get_localzone_name())

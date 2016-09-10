@@ -290,6 +290,7 @@ class Clean(Migration):
                 'Shared/trakt/interfaces/sync/base.py',
                 'Shared/trakt/media_mapper.py',
                 'Shared/trakt/objects.py',
+                'Shared/trakt/objects/list.py',
                 'Shared/trakt/request.py',
 
                 # tzlocal

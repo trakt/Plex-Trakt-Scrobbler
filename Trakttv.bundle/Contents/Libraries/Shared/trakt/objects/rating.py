@@ -6,7 +6,18 @@ class Rating(object):
         self._client = client
 
         self.value = value
+        """
+        :type: :class:`~python:int`
+
+        Rating value (0 - 10)
+        """
+
         self.timestamp = timestamp
+        """
+        :type: :class:`~python:datetime.datetime`
+
+        Rating timestamp
+        """
 
     @classmethod
     def _construct(cls, client, info):

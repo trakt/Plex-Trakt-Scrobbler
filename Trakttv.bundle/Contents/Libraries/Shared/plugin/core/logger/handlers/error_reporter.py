@@ -1,5 +1,7 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
+from plugin.core.helpers.variable import merge
+from plugin.core.libraries.helpers.system import SystemHelper
 from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
@@ -39,22 +41,16 @@ PARAMS = {
 
     # Plugin + System details
     'release': VERSION,
-    'tags': {
-        # Plugin
+    'tags': merge(SystemHelper.attributes(), {
         'plugin.version': VERSION,
-        'plugin.branch': PLUGIN_VERSION_BRANCH,
-
-        # System
-        'os.system': platform.system(),
-        'os.release': platform.release(),
-        'os.version': platform.version()
-    }
+        'plugin.branch': PLUGIN_VERSION_BRANCH
+    })
 }
 
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = '6afe79a788d64af2ad3f0f5a7fc83912:fdcabc5f09aa4b7b93edfb21263bb33e'
+    key = '240c00f6a02542f8900d8a6a1aba365a:7432061e2ac54ed0aabe4ec3fe3ea0d9'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):

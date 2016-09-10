@@ -10,10 +10,12 @@ class LibrarySection(object):
 
 class Session(object):
     def __init__(self, **kwargs):
-        self.duration = None
         self.rating_key = None
         self.state = None
+
+        self.duration = None
         self.view_offset = None
+        self.part = None
 
         self.update(**kwargs)
 
@@ -21,7 +23,8 @@ class Session(object):
     def payload(self):
         return {
             'rating_key': self.rating_key,
-            'view_offset': self.view_offset
+            'view_offset': self.view_offset,
+            'part': self.part
         }
 
     def save(self):

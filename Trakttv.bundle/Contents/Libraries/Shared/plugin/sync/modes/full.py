@@ -36,6 +36,12 @@ class Full(Mode):
             self.modes[SyncMode.FastPull].execute_children('run')
             self.modes[SyncMode.Push].execute_children('run')
 
+    @elapsed.clock
+    def finish(self):
+        # Run children
+        self.modes[SyncMode.FastPull].execute_children('finish')
+        self.modes[SyncMode.Push].execute_children('finish')
+
         # Send artifacts to trakt
         self.current.artifacts.send()
 

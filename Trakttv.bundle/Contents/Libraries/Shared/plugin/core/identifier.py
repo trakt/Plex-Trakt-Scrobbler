@@ -17,14 +17,11 @@ class Identifier(object):
 
         if type(guid) is str:
             # Parse raw guid
-            guid = Guid.parse(guid)
+            guid = Guid.parse(guid, strict=strict)
 
-        if guid.service in GUID_SERVICES:
+        if guid and guid.valid and guid.service in GUID_SERVICES:
             ids[guid.service] = guid.id
-        elif not strict:
-            log.info('Unknown identifier service: "%s"', guid.service)
-        else:
-            log.info('Unknown identifier service: "%s" [strict]', guid.service)
+        elif strict:
             return None
 
         return ids

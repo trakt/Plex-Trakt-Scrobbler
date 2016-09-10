@@ -75,7 +75,10 @@ class UpdateWSession(UpdateSession):
         if not fetch:
             # Return simple update
             return merge(result, {
-                'progress': self.get_progress(obj.duration, view_offset)
+                'progress': self.get_progress(
+                    obj.duration, view_offset,
+                    obj.part, obj.part_count, obj.part_duration
+                )
             })
 
         # Retrieve session key
@@ -108,12 +111,18 @@ class UpdateWSession(UpdateSession):
             log.info('Unable to retrieve metadata for rating_key %r', p_item.rating_key)
             return result
 
-        if not guid:
+        if not guid or not guid.valid:
             return merge(result, {
                 'duration': p_metadata.duration,
                 'progress': self.get_progress(p_metadata.duration, view_offset)
             })
 
+        # Retrieve media parts
+        part, part_count, part_duration = self.match_parts(p_metadata, guid, view_offset)
+
+        log.debug('Part: %s (part_count: %s, part_duration: %s)', part, part_count, part_duration)
+
+        # Find matching client + user for session
         try:
             # Create/Retrieve `Client` for session
             result['client'] = ClientManager.get.or_create(
@@ -144,8 +153,15 @@ class UpdateWSession(UpdateSession):
             result['account'] = None
 
         return merge(result, {
+            'part': part,
+            'part_count': part_count,
+            'part_duration': part_duration,
+
             'duration': p_metadata.duration,
-            'progress': self.get_progress(p_metadata.duration, view_offset)
+            'progress': self.get_progress(
+                p_metadata.duration, view_offset,
+                part, part_count, part_duration
+            )
         })
 
 

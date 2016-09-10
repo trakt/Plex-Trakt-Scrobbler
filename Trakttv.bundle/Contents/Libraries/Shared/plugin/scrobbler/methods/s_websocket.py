@@ -1,5 +1,6 @@
 from plugin.core.helpers.variable import to_integer
 from plugin.managers.action import ActionManager
+from plugin.managers.session.base import UpdateSession
 from plugin.managers.session.s_websocket import WSessionManager
 from plugin.scrobbler.core.constants import IGNORED_EVENTS
 from plugin.scrobbler.core.engine import SessionEngine
@@ -55,11 +56,13 @@ class WebSocket(Base):
             # Build request for the event
             request = self.build_request(
                 session,
+                part=payload.get('part', 1),
                 rating_key=payload.get('rating_key'),
                 view_offset=payload.get('view_offset')
             )
 
             if not request:
+                log.info('No request returned for action %r (payload: %r)', action, payload)
                 continue
 
             # Queue request to be sent
@@ -85,11 +88,19 @@ class WebSocket(Base):
         if cls.session_jumped(session, info.get('viewOffset')):
             return []
 
+        # Retrieve event parameters
+        view_offset = to_integer(info.get('viewOffset'))
+
+        # Calculate current part number
+        # TODO handle null values from session?
+        part, _ = UpdateSession.get_part(session.duration, view_offset, session.part_count)
+
         # Build event
         return [
             (state, {
+                'part': part,
                 'rating_key': to_integer(info.get('ratingKey')),
-                'view_offset': to_integer(info.get('viewOffset'))
+                'view_offset': view_offset
             })
         ]
 

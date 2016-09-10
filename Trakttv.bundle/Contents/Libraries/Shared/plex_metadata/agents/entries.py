@@ -28,11 +28,15 @@ AGENTS = {
         'media': ['show', 'season', 'episode'],
 
         'children': [
-            {'pattern': r'(\d+)',      'service': 'anidb', 'type': int},
-            {'pattern': r'anidb-(.*)', 'service': 'anidb', 'type': int},
-            {'pattern': r'tmdb-(.*)',  'service': 'tmdb',  'type': int},
-            {'pattern': r'tvdb-(.*)',  'service': 'tvdb',  'type': int},
-            {'pattern': r'imdb-(.*)',  'service': 'imdb'}
+            {'pattern': r'(\d+)',      'service': 'anidb',          'type': int},
+            {'pattern': r'anidb-(.*)', 'service': 'anidb',          'type': int},
+            {'pattern': r'tmdb-(.*)',  'service': 'tmdb',           'type': int},
+            {'pattern': r'tvdb-(.*)',  'service': 'tvdb',           'type': int},
+            {'pattern': r'imdb-(.*)',  'service': 'imdb'},
+
+            # Hybrid identifiers
+            {'pattern': r'tvdb2-(.*)',  'service': 'tvdb',          'type': int},
+            {'pattern': r'tvdb3-(.*)',  'service': 'hama/tvdb3',    'type': int, 'season': 1},
         ]
     },
 
@@ -71,9 +75,10 @@ AGENTS = {
     'com.plexapp.agents.mcm': {
         'media': ['show', 'season', 'episode'],
 
-        'pattern': r'MCM_TV_A_(.*)',
-        'service': 'tvdb',
-        'type': int
+        'children': [
+            {'pattern': r'MCM_TV_A_(.*)', 'service': 'tvdb', 'type': int}
+        ],
+        'service': 'mcm'
     },
 
     'com.plexapp.agents.thetvdb': {

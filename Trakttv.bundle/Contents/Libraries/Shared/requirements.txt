@@ -1,20 +1,20 @@
-arrow==0.7.0
+arrow==0.8.0
 asio==1.1
 croniter==0.3.12
 enum34==1.1.6
 expiringdict==1.1.3
 futures==3.0.5
+idna==2.1
 ipaddress==1.0.16
 itsdangerous==0.24
-msgpack-python==0.4.7
-ndg-httpsclient==0.4.1
+msgpack-python==0.4.8
+ndg-httpsclient==0.4.2
 pyasn1==0.1.9
-pyOpenSSL==16.0.0
-pytz==2016.4
-requests==2.10.0
+pyOpenSSL==16.1.0
+pytz==2016.6.1
+requests==2.11.1
 six==1.10.0
 sortedcontainers==1.5.3
-tzlocal==1.2.2
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
@@ -26,7 +26,18 @@ https://github.com/fuzeman/pyemitter/archive/develop.zip#egg=pyemitter
 https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
 https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
+https://github.com/fuzeman/tzlocal/archive/master.zip#egg=tzlocal
 https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-client
+
+git+https://github.com/OpenEntityMap/oem-framework.git#egg=oem-framework
+git+https://github.com/OpenEntityMap/oem-core.git#egg=oem-core
+git+https://github.com/OpenEntityMap/oem-client.git#egg=oem-client
+git+https://github.com/OpenEntityMap/oem-client-anidb.git#egg=oem-client-anidb
+git+https://github.com/OpenEntityMap/oem-client-provider-release.git#egg=oem-client-provider-release
+git+https://github.com/OpenEntityMap/oem-format-minimize.git#egg=oem-format-minimize
+git+https://github.com/OpenEntityMap/oem-format-minimize-msgpack.git#egg=oem-format-minimize-msgpack
+git+https://github.com/OpenEntityMap/oem-format-msgpack.git#egg=oem-format-msgpack
+git+https://github.com/OpenEntityMap/oem-storage-codernitydb.git#egg=oem-storage-codernitydb
 
 https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex-py
 https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activity-py

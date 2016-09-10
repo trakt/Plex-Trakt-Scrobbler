@@ -39,6 +39,8 @@ class Metadata(Descriptor):
     deferred = Property(type=(int, bool))
 
     added_at = Property('addedAt', int)
+    created_at_accuracy = Property('createdAtAccuracy')
+    created_at_tzoffset = Property('createdAtTZOffset', int)
     deleted_at = Property('deletedAt', int)
     first_scan_added_at = Property('firstScanAddedAt', int)
     last_viewed_at = Property('lastViewedAt', int)
@@ -48,7 +50,10 @@ class Metadata(Descriptor):
     def construct_section(client, node):
         attribute_map = {
             'key': 'librarySectionID',
+            'id': 'librarySectionID',
             'uuid': 'librarySectionUUID',
+            'path': 'librarySectionKey',
+
             'title': 'librarySectionTitle'
         }
 

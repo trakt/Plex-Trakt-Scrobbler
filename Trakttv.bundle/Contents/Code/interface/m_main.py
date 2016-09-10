@@ -9,7 +9,7 @@ import locale
 
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
-def MainMenu():
+def MainMenu(*args, **kwargs):
     oc = ObjectContainer(no_cache=True)
 
     #
@@ -53,13 +53,13 @@ def MainMenu():
 
 
 @route(PLUGIN_PREFIX + '/about')
-def AboutMenu():
+def AboutMenu(*args, **kwargs):
     oc = ObjectContainer(
         title2=_("About")
     )
 
     oc.add(DirectoryObject(
-        key=Callback(ListMessages, viewed=None),
+        key=Callback(ListMessages, days=None, viewed=None),
         title=pad_title(_("Messages"))
     ))
 

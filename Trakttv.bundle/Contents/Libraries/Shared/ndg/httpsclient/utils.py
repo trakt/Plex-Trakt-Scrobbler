@@ -217,9 +217,6 @@ def open_url(url, config, data=None, handlers=None):
     return_message = ''
     response = None
     
-    # FIXME
-    response = opener.open(request)
-
     try:
         response = opener.open(request)
         return_message = response.msg

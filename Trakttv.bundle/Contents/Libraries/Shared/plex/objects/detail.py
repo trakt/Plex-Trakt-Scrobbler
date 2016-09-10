@@ -14,6 +14,9 @@ class Detail(Container):
     platform = Property
     platform_version = Property('platformVersion')
 
+    country_code = Property('countryCode')
+    streaming_brain_version = Property('streamingBrainVersion', int)
+
     allow_camera_upload = Property('allowCameraUpload', (int, bool))
     allow_channel_access = Property('allowChannelAccess', (int, bool))
     allow_media_deletion = Property('allowMediaDeletion', (int, bool))
@@ -22,8 +25,10 @@ class Detail(Container):
 
     background_processing = Property('backgroundProcessing', (int, bool))
     companion_proxy = Property('companionProxy', (int, bool))
+    diagnostics = Property(resolver=lambda: Detail.parse_diagnostics)
     event_stream = Property('eventStream', (int, bool))
     hub_search = Property('hubSearch', (int, bool))
+    media_providers = Property('mediaProviders', (int, bool))
     plugin_host = Property('pluginHost', (int, bool))
     read_only_libraries = Property('readOnlyLibraries', (int, bool))
     updater = Property('updater', (int, bool))
@@ -49,6 +54,15 @@ class Detail(Container):
     @staticmethod
     def construct_transcoder(client, node):
         return TranscoderDetail.construct(client, node, child=True)
+
+    @classmethod
+    def parse_diagnostics(cls, client, node):
+        diagnostics = cls.helpers.get(node, 'diagnostics')
+
+        if not diagnostics:
+            return ['diagnostics'], []
+
+        return ['diagnostics'], diagnostics.split(',')
 
 
 class MyPlexDetail(Descriptor):
