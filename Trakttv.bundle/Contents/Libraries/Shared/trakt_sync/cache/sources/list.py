@@ -173,7 +173,7 @@ class ListSource(Source):
                 (self._item_key(t_item), t_item)
                 for t_item in t_list.items()
             ])
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve items for list %r - %s', t_list, ex, exc_info=True)
 
         return None
@@ -187,7 +187,7 @@ class ListSource(Source):
     def _item_key(t_item):
         key = list(t_item.pk) if type(t_item.pk) is tuple else [t_item.pk]
 
-        if type(t_item) in [trakt.objects.Movie, trakt.objects.Show]:
+        if type(t_item) in [trakt.objects.Movie, trakt.objects.Show, trakt.objects.Person]:
             return tuple(key)
 
         if type(t_item) in [trakt.objects.Season, trakt.objects.Episode]:
