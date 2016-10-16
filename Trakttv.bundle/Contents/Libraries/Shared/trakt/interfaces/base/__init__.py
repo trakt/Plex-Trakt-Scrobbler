@@ -108,7 +108,10 @@ class Interface(object):
             if pagination:
                 return PaginationIterator(self.client, response)
 
-            warnings.warn('Unhandled pagination response, more pages can be returned with `pagination=True`', stacklevel=3)
+            warnings.warn(
+                'Unhandled pagination response, more pages can be returned with `pagination=True`',
+                stacklevel=3
+            )
 
         # Parse response, return data
         content_type = response.headers.get('content-type')

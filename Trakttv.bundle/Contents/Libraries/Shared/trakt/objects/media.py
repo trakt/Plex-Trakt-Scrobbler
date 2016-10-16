@@ -125,6 +125,13 @@ class Media(object):
 
         return self.keys[0]
 
+    def get_key(self, service):
+        for k_service, k_value in self.keys:
+            if k_service == service:
+                return k_value
+
+        return None
+
     def _update(self, info=None, in_watchlist=None, **kwargs):
         if not info:
             return

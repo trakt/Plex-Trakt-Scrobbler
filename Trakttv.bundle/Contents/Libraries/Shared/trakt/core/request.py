@@ -101,7 +101,11 @@ class TraktRequest(object):
         path = [self.path]
         path.extend(self.params)
 
-        url = self.client.base_url + '/'.join(x for x in path if x)
+        # Build URL
+        url = self.client.base_url + '/'.join(
+            str(value) for value in path
+            if value
+        )
 
         # Append `query` to URL
         if self.query:

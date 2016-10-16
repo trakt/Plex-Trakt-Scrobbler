@@ -1,3 +1,4 @@
+from trakt.core.helpers import from_iso8601
 from trakt.objects.core.helpers import update_attributes
 
 
@@ -33,6 +34,14 @@ class Person(object):
         Name
         """
 
+        # Timestamps
+        self.listed_at = None
+        """
+        :type: :class:`~python:datetime.datetime`
+
+        Timestamp of when this item was added to the list (or `None`)
+        """
+
     @property
     def pk(self):
         """Primary Key (unique identifier for the item)
@@ -60,6 +69,10 @@ class Person(object):
         update_attributes(self, info, [
             'name'
         ])
+
+        # Set timestamps
+        if 'listed_at' in info:
+            self.listed_at = from_iso8601(info.get('listed_at'))
 
     @classmethod
     def _construct(cls, client, keys, info=None, index=None, **kwargs):

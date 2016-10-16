@@ -1,6 +1,7 @@
 from trakt.core.errors import ERRORS
 from trakt.core.helpers import try_convert
 
+from six.moves.urllib.parse import urlsplit, urlunsplit, parse_qsl
 import logging
 
 log = logging.getLogger(__name__)
@@ -16,25 +17,33 @@ class PaginationIterator(object):
         self.total_items = try_convert(response.headers.get('x-pagination-item-count'), int)
         self.total_pages = try_convert(response.headers.get('x-pagination-page-count'), int)
 
+        # Parse request url
+        scheme, netloc, path, query = urlsplit(self.response.request.url)[:4]
+
+        self.url = urlunsplit([scheme, netloc, path, '', ''])
+        self.query = dict(parse_qsl(query))
+
     def fetch(self, page, per_page=None):
-        if page == 1:
+        if int(page) == int(self.query.get('page', 1)):
             return self.response
 
         if per_page is None:
             per_page = self.per_page or 10
 
-        # Construct parameters
-        params = {}
+        # Retrieve request details
+        request = self.response.request.copy()
+
+        # Build query parameters
+        query = self.query.copy()
 
         if page != 1:
-            params['page'] = page
+            query['page'] = page
 
         if per_page != 10:
-            params['limit'] = per_page
+            query['limit'] = per_page
 
         # Construct request
-        request = self.response.request.copy()
-        request.prepare_url(request.url, params)
+        request.prepare_url(self.url, query)
 
         # Send request
         return self.client.http.send(request)
@@ -66,8 +75,10 @@ class PaginationIterator(object):
         return data
 
     def __iter__(self):
-        current = 1
+        # Retrieve current page number
+        current = int(self.query.get('page', 1))
 
+        # Fetch pages
         while current <= self.total_pages:
             items = self.get(current)
 

@@ -74,4 +74,7 @@ class Season(Media):
         return season
 
     def __repr__(self):
+        if self.show:
+            return '<Season %r - S%02d>' % (self.show.title, self.pk)
+
         return '<Season S%02d>' % self.pk

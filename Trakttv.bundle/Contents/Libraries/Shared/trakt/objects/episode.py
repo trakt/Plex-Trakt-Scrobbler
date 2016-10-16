@@ -94,6 +94,12 @@ class Episode(Video):
         return episode
 
     def __repr__(self):
+        if self.show and self.title:
+            return '<Episode %r - S%02dE%02d - %r>' % (self.show.title, self.pk[0], self.pk[1], self.title)
+
+        if self.show:
+            return '<Episode %r - S%02dE%02d>' % (self.show.title, self.pk[0], self.pk[1])
+
         if self.title:
             return '<Episode S%02dE%02d - %r>' % (self.pk[0], self.pk[1], self.title)
 
