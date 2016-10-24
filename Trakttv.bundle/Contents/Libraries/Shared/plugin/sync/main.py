@@ -99,7 +99,7 @@ class Main(object):
                 log.debug('Task %r has started', task)
                 return
 
-            time.sleep(2)
+            time.sleep(1)
 
         raise QueueError("Sync queued", "Sync will start once the currently queued tasks have finished")
 
