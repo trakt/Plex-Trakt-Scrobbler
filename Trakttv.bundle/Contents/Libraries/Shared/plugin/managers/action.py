@@ -71,7 +71,9 @@ class ActionManager(Manager):
                 queued_at=datetime.utcnow()
             )
             log.debug('Queued %r event for %r', event, session)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
+            log.info('Event %r has already been queued for session %r: %s', event, session.session_key, ex, exc_info=True)
+        except Exception as ex:
             log.warn('Unable to queue event %r for %r: %s', event, session, ex, exc_info=True)
 
         # Ensure process thread is started
