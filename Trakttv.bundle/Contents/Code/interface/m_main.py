@@ -19,14 +19,11 @@ def MainMenu(*args, **kwargs):
 
     if InterfaceMessages.critical:
         if not record:
-            record = Record(level=logging.CRITICAL, message='Unknown Error')
+            record = Record(message='Unknown Error')
 
         oc.add(DirectoryObject(
             key=PLUGIN_PREFIX,
-            title=pad_title('%s: %s' % (
-                logging.getLevelName(record.level).capitalize(),
-                record.message
-            ))
+            title=pad_title('Critical Error: %s' % record.message)
         ))
 
         return oc
