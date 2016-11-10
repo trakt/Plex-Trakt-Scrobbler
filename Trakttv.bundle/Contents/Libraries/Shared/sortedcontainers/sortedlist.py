@@ -100,11 +100,12 @@ class SortedList(MutableSequence):
         on your usage.  It's best to leave the load factor at the default until
         you start benchmarking.
         """
+        # pylint: disable=unused-argument
         if key is None:
             return object.__new__(cls)
         else:
             if cls is SortedList:
-                return SortedListWithKey(iterable=iterable, key=key, load=load)
+                return object.__new__(SortedListWithKey)
             else:
                 raise TypeError('inherit SortedListWithKey for key argument')
 

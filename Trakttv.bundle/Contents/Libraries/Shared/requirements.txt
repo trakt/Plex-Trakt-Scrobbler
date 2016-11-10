@@ -14,7 +14,7 @@ pyOpenSSL==16.2.0
 pytz==2016.7
 requests==2.11.1
 six==1.10.0
-sortedcontainers==1.5.3
+sortedcontainers==1.5.4
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
