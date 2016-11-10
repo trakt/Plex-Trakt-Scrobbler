@@ -1,5 +1,5 @@
 from plugin.core.helpers.variable import to_integer
-from plugin.core.message import MessageManager
+from plugin.core.message import InterfaceMessages
 from plugin.managers.action import ActionManager
 from plugin.managers.session.s_logging import LSessionManager
 from plugin.scrobbler.core import SessionEngine
@@ -23,7 +23,7 @@ class Logging(Base):
         self.engine = SessionEngine()
 
     def on_playing(self, info):
-        if MessageManager.blocked:
+        if InterfaceMessages.critical:
             return
 
         # Create or retrieve existing session

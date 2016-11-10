@@ -7,42 +7,42 @@ import time
 Record = collections.namedtuple('Record', 'level timestamp message')
 
 
-class MessageManagerMeta(type):
+class InterfaceMessagesMeta(type):
     @property
-    def blocked(cls):
+    def critical(cls):
         return cls.severity >= logging.CRITICAL
 
     @property
     def message(cls):
-        if not cls.errors:
+        if not cls.records:
             return logging.NOTSET
 
         # Return the latest highest level/severity message
-        return cls.errors[-1].message
+        return cls.records[-1].message
 
     @property
     def record(cls):
-        if not cls.errors:
+        if not cls.records:
             return None
 
-        return cls.errors[-1]
+        return cls.records[-1]
 
     @property
     def severity(cls):
-        if not cls.errors:
+        if not cls.records:
             return logging.NOTSET
 
         # Return the highest error level/severity
-        return cls.errors[-1].level
+        return cls.records[-1].level
 
 
-@add_metaclass(MessageManagerMeta)
-class MessageManager(object):
-    errors = SortedSet()
+@add_metaclass(InterfaceMessagesMeta)
+class InterfaceMessages(object):
+    records = SortedSet()
 
     @classmethod
     def add(cls, level, message, *args):
-        cls.errors.add(Record(
+        cls.records.add(Record(
             level=level,
             timestamp=time.time(),
             message=message % args

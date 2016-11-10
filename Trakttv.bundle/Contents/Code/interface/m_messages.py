@@ -2,7 +2,8 @@ from core.helpers import pad_title, try_convert, redirect
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
-from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
+from plugin.core.message import InterfaceMessages
+from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE
 from plugin.models import Exception, Message
 
 from ago import human
@@ -48,26 +49,43 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
         title2=_("Messages")
     )
 
+    # Add "Dismiss All" button
     if viewed is False and len(messages) > 1:
         oc.add(DirectoryObject(
             key=Callback(DismissMessages),
             title=pad_title(_("Dismiss all"))
         ))
 
+    # Add interface messages
+    for record in InterfaceMessages.records:
+        # Pick object thumb
+        if record.level >= logging.WARNING:
+            thumb = R("icon-error.png")
+        else:
+            thumb = R("icon-notification.png")
+
+        # Add object
+        oc.add(DirectoryObject(
+            key=PLUGIN_PREFIX + '/messages/list',
+            title=pad_title('[%s] %s' % (logging.getLevelName(record.level).capitalize(), record.message)),
+            thumb=thumb
+        ))
+
+    # Add stored messages
     for m in messages:
         if m.type is None or\
            m.summary is None:
             continue
 
-        thumb = None
-
+        # Pick thumb
         if m.type == Message.Type.Exception:
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
         elif m.type == Message.Type.Info:
             thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
-        elif m.type in ERROR_TYPES:
+        else:
             thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
 
+        # Add object
         oc.add(DirectoryObject(
             key=Callback(ViewMessage, error_id=m.id),
             title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
@@ -202,8 +220,16 @@ def Status(viewed=None):
     count = 0
     type = 'notification'
 
+    # Process stored messages
     for message in messages:
         if message.type in ERROR_TYPES:
+            type = 'error'
+
+        count += 1
+
+    # Process interface messages
+    for record in InterfaceMessages.records:
+        if record.level >= logging.ERROR:
             type = 'error'
 
         count += 1

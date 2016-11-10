@@ -1,5 +1,5 @@
 from plugin.core.helpers.variable import to_integer
-from plugin.core.message import MessageManager
+from plugin.core.message import InterfaceMessages
 from plugin.managers.action import ActionManager
 from plugin.managers.session.base import UpdateSession
 from plugin.managers.session.s_websocket import WSessionManager
@@ -24,7 +24,7 @@ class WebSocket(Base):
         self.engine = SessionEngine()
 
     def on_playing(self, info):
-        if MessageManager.blocked:
+        if InterfaceMessages.critical:
             return
 
         # Create or retrieve existing session

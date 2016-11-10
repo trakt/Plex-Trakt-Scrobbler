@@ -1,4 +1,4 @@
-from plugin.core.message import MessageManager
+from plugin.core.message import InterfaceMessages
 from plugin.models import SyncResult
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -10,6 +10,7 @@ from plugin.sync.modes import *
 from plugin.sync.triggers import LibraryUpdateTrigger
 
 from datetime import datetime, timedelta
+from plex_database.library import TZ_LOCAL
 from threading import Lock, Thread
 import logging
 import Queue
@@ -32,6 +33,10 @@ MODES = [
     Pull,
     Push
 ]
+
+# Display error if the system timezone is not available
+if TZ_LOCAL is None:
+    InterfaceMessages.add(logging.ERROR, 'Unable to retrieve system timezone, syncing will not be available')
 
 
 class Main(object):
@@ -67,8 +72,11 @@ class Main(object):
         :return: `SyncResult` object with details on the sync outcome.
         :rtype: plugin.sync.core.result.SyncResult
         """
-        if MessageManager.blocked:
-            raise QueueError('Error', MessageManager.message)
+        if InterfaceMessages.critical:
+            raise QueueError('Error', InterfaceMessages.message)
+
+        if TZ_LOCAL is None:
+            raise QueueError('Error', 'Unable to retrieve system timezone')
 
         try:
             # Create new task
