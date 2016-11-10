@@ -4,13 +4,39 @@ from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_PREFIX, PLUGIN_VERSION
 from plugin.core.environment import translate as _
+from plugin.core.message import MessageManager
 
 import locale
+import logging
 
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
 def MainMenu(*args, **kwargs):
     oc = ObjectContainer(no_cache=True)
+
+    # Display highest severity message
+    record = MessageManager.record
+
+    if record:
+        oc.add(DirectoryObject(
+            key=PLUGIN_PREFIX,
+            title=pad_title('%s: %s' % (
+                logging.getLevelName(record.level).capitalize(),
+                record.message
+            ))
+        ))
+
+        if MessageManager.blocked:
+            return oc
+
+    # Ensure message manager hasn't blocked plugin usage
+    if MessageManager.blocked:
+        oc.add(DirectoryObject(
+            key=PLUGIN_PREFIX,
+            title=pad_title('Critical: Unknown Error')
+        ))
+
+        return oc
 
     #
     # Messages
