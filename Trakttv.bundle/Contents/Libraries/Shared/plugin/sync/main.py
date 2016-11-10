@@ -1,3 +1,4 @@
+from plugin.core.message import MessageManager
 from plugin.models import SyncResult
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -66,10 +67,13 @@ class Main(object):
         :return: `SyncResult` object with details on the sync outcome.
         :rtype: plugin.sync.core.result.SyncResult
         """
+        if MessageManager.blocked:
+            raise QueueError('Error', MessageManager.message)
+
         try:
             # Create new task
             task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
             raise QueueError('Error', 'Unable to construct task: %s' % ex)
 
