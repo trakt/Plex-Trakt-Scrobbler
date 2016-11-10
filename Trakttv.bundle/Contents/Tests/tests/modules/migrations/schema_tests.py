@@ -1,4 +1,4 @@
-from plugin.core.helpers.database import db_connect
+from plugin.core.database.connection import db_connect
 from plugin.modules.migrations.schema import SchemaMigration
 from tests.helpers.database import DatabaseContext
 

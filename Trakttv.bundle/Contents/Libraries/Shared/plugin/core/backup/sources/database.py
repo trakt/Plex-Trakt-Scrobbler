@@ -1,6 +1,6 @@
 from plugin.core.backup.sources.base import BackupSource
 from plugin.core.backup.models import BackupRevision
-from plugin.core.helpers.database import db_connect, db_connection
+from plugin.core.database.connection import db_connect, db_connection
 
 from datetime import datetime
 import logging
@@ -25,7 +25,7 @@ class DatabaseBackupSource(BackupSource):
         log.info('[%s] Backing up database to %r', group, destination_path)
 
         # Backup database
-        destination = db_connect(destination_path, 'raw')
+        destination = db_connect(destination_path, 'raw', name='backup database')
 
         # Get `database` connection
         source = db_connection(database)

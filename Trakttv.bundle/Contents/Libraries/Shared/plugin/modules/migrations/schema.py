@@ -1,4 +1,4 @@
-from plugin.core.database import Database
+from plugin.core.database.manager import DatabaseManager
 from plugin.models.core import db, migrations_path
 from plugin.modules.migrations.core.base import Migration
 
@@ -27,7 +27,7 @@ class SchemaMigration(Migration):
 
     @classmethod
     def reset(cls):
-        if not Database.reset('main', db, 'invalid-schema'):
+        if not DatabaseManager.reset('main', db, 'invalid-schema'):
             # Unable to reset database
             return False
 
