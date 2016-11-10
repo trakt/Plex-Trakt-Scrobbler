@@ -73,20 +73,24 @@ class LoggerManager(object):
 
     @staticmethod
     def setup_logging(report=True, storage=True):
-        # Setup root logger
+        # Initialize "root" logger
         rootLogger = logging.getLogger()
+        rootLogger.setLevel(logging.DEBUG)
 
-        # Set filters
         rootLogger.filters = [
             FrameworkFilter()
         ]
 
-        # Set level
-        rootLogger.setLevel(logging.DEBUG)
-
-        # Set handlers
         rootLogger.handlers = [
             LOG_HANDLER
+        ]
+
+        # Initialize "com.plexapp.plugins.trakttv" logger
+        pluginLogger = logging.getLogger('com.plexapp.plugins.trakttv')
+        pluginLogger.setLevel(logging.DEBUG)
+
+        pluginLogger.filters = [
+            FrameworkFilter()
         ]
 
         # Setup error reporting (if enabled)
@@ -111,7 +115,7 @@ class LoggerManager(object):
         # Include server version in error reports
         try:
             RAVEN.tags.update({'server.version': Environment.platform.server_version})
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve server version - %s', ex, exc_info=True)
 
     @classmethod
@@ -132,13 +136,13 @@ class LoggerManager(object):
         # Try use hashed machine identifier
         try:
             return md5(Environment.platform.machine_identifier)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to generate id from machine identifier - %s', ex, exc_info=True)
 
         # Try use hashed hostname
         try:
             return md5(gethostname().encode('utf-8'))
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to generate id from hostname - %s', ex, exc_info=True)
 
         # Fallback to random identifier

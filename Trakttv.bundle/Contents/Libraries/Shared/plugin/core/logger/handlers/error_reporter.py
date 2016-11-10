@@ -2,7 +2,8 @@ from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.helpers.system import SystemHelper
-from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
+from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, FrameworkFilter,\
+    RequestsReportFilter, TraktReportFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
 from raven import Client
@@ -12,7 +13,6 @@ from raven.utils.stacks import iter_stack_frames, label_from_frame
 import datetime
 import logging
 import os
-import platform
 import raven
 import re
 import sys
@@ -145,7 +145,7 @@ class ErrorReporterHandler(SentryHandler):
         # http://docs.python.org/library/sys.html#sys.exc_info
         try:
             exc_info = self._exc_info(record)
-        except Exception, ex:
+        except Exception as ex:
             log.info('Unable to retrieve exception info - %s', ex, exc_info=True)
             exc_info = None
 
@@ -300,7 +300,7 @@ class ErrorReporterHandler(SentryHandler):
         # Try retrieve culprit from traceback
         try:
             culprit = cls._traceback_culprit(tb)
-        except Exception, ex:
+        except Exception as ex:
             log.info('Unable to retrieve traceback culprit - %s', ex, exc_info=True)
             culprit = None
 
@@ -313,7 +313,7 @@ class ErrorReporterHandler(SentryHandler):
             # Build module name from path
             try:
                 module = cls._module_name(file_path)
-            except Exception, ex:
+            except Exception as ex:
                 log.info('Unable to retrieve module name - %s', ex, exc_info=True)
                 module = None
 
@@ -366,6 +366,8 @@ RAVEN = ErrorReporter(**PARAMS)
 ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 
 ERROR_REPORTER_HANDLER.filters = [
+    FrameworkFilter('filter'),
+
     DuplicateReportFilter(),
     EventsReportFilter(),
     ExceptionReportFilter(),
