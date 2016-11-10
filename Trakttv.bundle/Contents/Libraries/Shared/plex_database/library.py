@@ -585,14 +585,17 @@ class EpisodeLibrary(LibraryBase):
 
                     guid = guids[sh_id]
 
-                # Use primed `Matcher` buffer
-                with context:
-                    # Run `Matcher` on episode
-                    season_num, episode_nums = self.matcher.process_episode(
-                        ep_id,
-                        (season['index'], ep_index),
-                        episode['part']['file']
-                    )
+                # Retrieve episode identifier
+                season_num, episode_nums = season['index'], [ep_index]
+
+                # Run `Matcher` on episode (if available)
+                if self.matcher is not None:
+                    with context:
+                        season_num, episode_nums = self.matcher.process_episode(
+                            ep_id,
+                            (season['index'], ep_index),
+                            episode['part']['file']
+                        )
 
                 for episode_num in episode_nums:
                     ids = {
