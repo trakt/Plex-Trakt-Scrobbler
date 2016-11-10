@@ -8,12 +8,23 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzutc
 
+step_search_re = re.compile(r'^([^-]+)-([^-/]+)(/(.*))?$')
 search_re = re.compile(r'^([^-]+)-([^-/]+)(/(.*))?$')
 only_int_re = re.compile(r'^\d+$')
 any_int_re = re.compile(r'^\d+')
 star_or_int_re = re.compile(r'^(\d+|\*)$')
 
-__all__ = ('croniter',)
+
+class CroniterBadCronError(ValueError):
+    '''.'''
+
+
+class CroniterBadDateError(ValueError):
+    '''.'''
+
+
+class CroniterNotAlphaError(ValueError):
+    '''.'''
 
 
 class croniter(object):
@@ -66,7 +77,7 @@ class croniter(object):
         self.exprs = expr_format.split()
 
         if len(self.exprs) != 5 and len(self.exprs) != 6:
-            raise ValueError(self.bad_length)
+            raise CroniterBadCronError(self.bad_length)
 
         expanded = []
 
@@ -76,26 +87,32 @@ class croniter(object):
 
             while len(e_list) > 0:
                 e = e_list.pop()
-                t = re.sub(r'^\*(/.+)$', r'%d-%d\1' % (
+                t = re.sub(r'^\*(\/.+)$', r'%d-%d\1' % (
                     self.RANGES[i][0],
                     self.RANGES[i][1]),
                     str(e))
                 m = search_re.search(t)
 
+                if not m:
+                    t = re.sub(r'^(.+)\/(.+)$', r'\1-%d/\2' % (
+                        self.RANGES[i][1]),
+                        str(e))
+                    m = step_search_re.search(t)
+
                 if m:
                     (low, high, step) = m.group(1), m.group(2), m.group(4) or 1
 
                     if not any_int_re.search(low):
-                        low = "{0}".format(self.ALPHACONV[i][low.lower()])
+                        low = "{0}".format(self._alphaconv(i, low))
 
                     if not any_int_re.search(high):
-                        high = "{0}".format(self.ALPHACONV[i][high.lower()])
+                        high = "{0}".format(self._alphaconv(i, high))
 
                     if (
                         not low or not high or int(low) > int(high)
                         or not only_int_re.search(str(step))
                     ):
-                        raise ValueError(
+                        raise CroniterBadDateError(
                             "[{0}] is not acceptable".format(expr_format))
 
                     low, high, step = map(int, [low, high, step])
@@ -110,8 +127,12 @@ class croniter(object):
                     #        if j % int(step) == 0:
                     #            e_list.append(j)
                 else:
+                    if t.startswith('-'):
+                        raise CroniterBadCronError(
+                            "[{0}] is not acceptable, negative numbers not allowed".format(
+                                expr_format))
                     if not star_or_int_re.search(t):
-                        t = self.ALPHACONV[i][t.lower()]
+                        t = self._alphaconv(i, t)
 
                     try:
                         t = int(t)
@@ -126,7 +147,7 @@ class croniter(object):
                         and (int(t) < self.RANGES[i][0] or
                              int(t) > self.RANGES[i][1])
                     ):
-                        raise ValueError(
+                        raise CroniterBadCronError(
                             "[{0}] is not acceptable, out of range".format(
                                 expr_format))
 
@@ -138,6 +159,13 @@ class croniter(object):
                             else res)
         self.expanded = expanded
 
+    def _alphaconv(self, index, key):
+        try:
+            return self.ALPHACONV[index][key.lower()]
+        except KeyError:
+            raise CroniterNotAlphaError(
+                "[{0}] is not acceptable".format(" ".join(self.exprs)))
+
     def get_next(self, ret_type=None):
         return self._get_next(ret_type or self._ret_type, is_prev=False)
 
@@ -146,7 +174,7 @@ class croniter(object):
 
     def get_current(self, ret_type=None):
         ret_type = ret_type or self._ret_type
-        if ret_type == datetime.datetime:
+        if issubclass(ret_type,  datetime.datetime):
             return self._timestamp_to_datetime(self.cur)
         return self.cur
 
@@ -208,7 +236,7 @@ class croniter(object):
 
         ret_type = ret_type or self._ret_type
 
-        if ret_type not in (float, datetime.datetime):
+        if not issubclass(ret_type, (float, datetime.datetime)):
             raise TypeError("Invalid ret_type, only 'float' or 'datetime' "
                             "is acceptable.")
 
@@ -228,7 +256,7 @@ class croniter(object):
             result = self._calc(self.cur, expanded, is_prev)
         self.cur = result
 
-        if ret_type == datetime.datetime:
+        if issubclass(ret_type, datetime.datetime):
             result = self._timestamp_to_datetime(result)
 
         return result
@@ -363,7 +391,9 @@ class croniter(object):
                 continue
             return self._datetime_to_timestamp(dst.replace(microsecond=0))
 
-        raise Exception("failed to find prev date")
+        if is_prev:
+            raise CroniterBadDateError("failed to find prev date")
+        raise CroniterBadDateError("failed to find next date")
 
     def _get_next_nearest(self, x, to_check):
         small = [item for item in to_check if item < x]
@@ -410,10 +440,3 @@ class croniter(object):
             return True
         else:
             return False
-
-if __name__ == '__main__':
-
-    base = datetime.datetime(2010, 1, 25)
-    itr = croniter('0 0 1 * *', base)
-    n1 = itr.get_next(datetime.datetime)
-    print(n1)
