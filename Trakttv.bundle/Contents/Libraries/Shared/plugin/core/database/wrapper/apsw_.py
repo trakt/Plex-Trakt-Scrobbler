@@ -23,7 +23,7 @@ class APSWCursorWrapper(object):
     def execute(self, *args, **kwargs):
         try:
             return self.__cursor.execute(*args, **kwargs)
-        except (apsw.CorruptError, apsw.FullError, apsw.IOError, apsw.NotADBError):
+        except self.__connection.critical_errors:
             self.__connection.on_exception(sys.exc_info())
 
     def __getattr__(self, key):

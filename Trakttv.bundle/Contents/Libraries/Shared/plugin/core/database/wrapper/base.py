@@ -11,6 +11,16 @@ disabled_databases = {}
 class APSWBaseWrapper(object):
     name = None
 
+    critical_errors = (
+        apsw.CantOpenError,
+        apsw.CorruptError,
+        apsw.FullError,
+        apsw.IOError,
+        apsw.NotADBError,
+        apsw.PermissionsError,
+        apsw.ReadOnlyError
+    )
+
     @property
     def error_message(self):
         return disabled_databases.get(self.name)
@@ -44,6 +54,9 @@ class APSWBaseWrapper(object):
         name = self.name if self.name else 'unknown'
         name_cap = name.capitalize()
 
+        if type(ex) is apsw.CantOpenError:
+            return 'Unable to open %s' % name
+
         if type(ex) is apsw.CorruptError:
             return '%s is corrupt' % name_cap
 
@@ -55,6 +68,12 @@ class APSWBaseWrapper(object):
 
         if type(ex) is apsw.NotADBError:
             return '%s doesn\'t have a valid SQLite header' % name_cap
+
+        if type(ex) is apsw.PermissionsError:
+            return 'Access denied to the %s' % name
+
+        if type(ex) is apsw.ReadOnlyError:
+            return 'Unable to write to the %s' % name
 
         # Unknown exception
         return '%s: %s' % (
