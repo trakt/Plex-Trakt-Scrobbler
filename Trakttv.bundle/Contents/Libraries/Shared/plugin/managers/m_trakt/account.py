@@ -3,8 +3,8 @@ from plugin.managers.core.exceptions import TraktAccountExistsException
 from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, TraktBasicCredentialManager
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
+from exception_wrappers.libraries import apsw
 from trakt import Trakt
-import apsw
 import inspect
 import logging
 import peewee

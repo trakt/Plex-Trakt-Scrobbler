@@ -1,10 +1,10 @@
-from plugin.core.database.wrapper.base import APSWBaseWrapper
+from __future__ import absolute_import
 
-import apsw
-import logging
+from exception_wrappers.database.apsw.base import APSWBaseWrapper
+from exception_wrappers.libraries import apsw
+from exception_wrappers.manager import ExceptionSource
+
 import sys
-
-log = logging.getLogger(__name__)
 
 
 class APSWConnectionWrapper(apsw.Connection, APSWBaseWrapper):
@@ -24,7 +24,7 @@ class APSWCursorWrapper(object):
         try:
             return self.__cursor.execute(*args, **kwargs)
         except self.__connection.critical_errors:
-            self.__connection.on_exception(sys.exc_info())
+            self.__connection.on_exception(ExceptionSource.Peewee, sys.exc_info())
 
     def __getattr__(self, key):
         if key.startswith('_APSWCursorWrapper__'):

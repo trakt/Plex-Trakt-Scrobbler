@@ -1,7 +1,7 @@
 from plugin.models import Account
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class UserRule(Model):

@@ -6,7 +6,7 @@ from plugin.models import (
 )
 from plugin.modules.migrations.core.base import Migration
 
-import apsw
+from exception_wrappers.libraries import apsw
 import logging
 import os
 import peewee

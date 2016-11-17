@@ -1,7 +1,7 @@
 from plugin.models.core import db
 
 from datetime import datetime, timedelta
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 import logging
 import requests
 

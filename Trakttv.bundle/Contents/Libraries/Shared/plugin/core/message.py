@@ -1,3 +1,4 @@
+from exception_wrappers import ExceptionWrapper
 from six import add_metaclass
 from sortedcontainers import SortedSet
 import collections
@@ -76,7 +77,7 @@ class InterfaceMessages(object):
         if ex_message:
             # Format message with exception
             try:
-                message = '%s: %r' % (message, ex_message)
+                message = '%s: %s' % (message, ex_message)
             except Exception as ex:
                 log.warn('Unable to format message: %s', ex)
                 message = ex_message
@@ -94,6 +95,17 @@ class InterfaceMessages(object):
             timestamp=time.time(),
             message=message
         ))
+
+    @classmethod
+    def bind(cls):
+        ExceptionWrapper.on('exception', cls._on_exception)
+
+        log.info('Bound to exception events')
+
+    @classmethod
+    def _on_exception(cls, source, message, exc_info):
+        # Append error message
+        InterfaceMessages.add_exception(logging.CRITICAL, message, exc_info)
 
     @classmethod
     def _clean_exception_message(cls, ex, message):

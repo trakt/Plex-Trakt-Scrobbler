@@ -8,8 +8,8 @@ from plugin.models import Session
 from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
+from exception_wrappers.libraries import apsw
 from plex import Plex
-import apsw
 import logging
 import peewee
 

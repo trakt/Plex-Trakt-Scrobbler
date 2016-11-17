@@ -4,9 +4,10 @@ from plugin.models import ActionHistory, ActionQueue
 from plugin.preferences import Preferences
 
 from datetime import datetime, timedelta
+from exception_wrappers.libraries import apsw
+from exception_wrappers.exceptions import ModuleDisabledError
 from threading import Thread
 from trakt import Trakt
-import apsw
 import json
 import logging
 import peewee

@@ -7,7 +7,6 @@ from plugin.core.environment import translate as _
 from plugin.core.message import InterfaceMessages, Record
 
 import locale
-import logging
 
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)

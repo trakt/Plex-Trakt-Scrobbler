@@ -3,7 +3,7 @@ from plugin.managers.core.exceptions import PlexAccountExistsException
 from plugin.managers.m_plex.credential import PlexBasicCredentialManager
 from plugin.models import PlexAccount, PlexBasicCredential
 
-import apsw
+from exception_wrappers.libraries import apsw
 import inspect
 import logging
 import peewee

@@ -2,24 +2,12 @@ from plugin.core.exceptions import PluginDisabledError
 from plugin.core.message import InterfaceMessages
 from plugin.models import db
 
+from exception_wrappers.libraries import apsw
 import inspect
 import logging
+import peewee
 
 log = logging.getLogger(__name__)
-
-# Try import "apsw", display any errors in the interface
-try:
-    import apsw
-except Exception:
-    InterfaceMessages.add_exception(logging.CRITICAL, 'Unable to import "apsw"')
-    apsw = None
-
-# Try import "peewee", display any errors in the interface
-try:
-    import peewee
-except Exception:
-    InterfaceMessages.add_exception(logging.CRITICAL, 'Unable to import "peewee"')
-    peewee = None
 
 
 class Method(object):

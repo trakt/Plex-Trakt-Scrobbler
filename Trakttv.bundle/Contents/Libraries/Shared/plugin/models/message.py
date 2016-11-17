@@ -1,7 +1,7 @@
 from plugin.core.environment import translate as _
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class MessageCode(object):
