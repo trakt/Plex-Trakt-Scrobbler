@@ -111,7 +111,9 @@ class ActionManager(Manager):
             except ActionQueue.DoesNotExist:
                 time.sleep(5)
                 continue
-            except Exception, ex:
+            except ModuleDisabledError:
+                break
+            except Exception as ex:
                 log.warn('Unable to retrieve action from queue - %s', ex, exc_info=True)
                 time.sleep(5)
                 continue

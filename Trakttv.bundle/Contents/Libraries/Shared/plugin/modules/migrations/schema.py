@@ -2,17 +2,26 @@ from plugin.core.database.manager import DatabaseManager
 from plugin.models.core import db, migrations_path
 from plugin.modules.migrations.core.base import Migration
 
-from peewee_migrate.core import Router
 import logging
 
 log = logging.getLogger(__name__)
+
+# Try import "peewee_migrate" router
+try:
+    from peewee_migrate.core import Router
+except (ImportError, NameError):
+    Router = None
 
 
 class SchemaMigration(Migration):
     def run(self):
         log.debug('migrations_path: %r', migrations_path)
 
+        # Build migration router
         router = self._build_router()
+
+        if not router:
+            return False
 
         # Validate current schema
         if not router.validate():
@@ -31,8 +40,13 @@ class SchemaMigration(Migration):
             # Unable to reset database
             return False
 
-        # Run migrations
+        # Build migration router
         router = cls._build_router()
+
+        if not router:
+            return False
+
+        # Run migrations
         router.run()
 
         # Log message to channel menu
@@ -48,4 +62,7 @@ class SchemaMigration(Migration):
 
     @staticmethod
     def _build_router():
+        if not Router:
+            return None
+
         return Router(migrations_path, DATABASE=db)

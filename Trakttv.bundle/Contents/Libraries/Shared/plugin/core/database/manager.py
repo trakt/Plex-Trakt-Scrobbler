@@ -63,7 +63,10 @@ class DatabaseManager(object):
 
         with cls._lock:
             if path not in cache:
-                cache[path] = db_connect(path, type, **kwargs)
+                try:
+                    cache[path] = db_connect(path, type, **kwargs)
+                except ModuleDisabledError:
+                    cache[path] = None
 
             # Return cached connection
             return cache[path]

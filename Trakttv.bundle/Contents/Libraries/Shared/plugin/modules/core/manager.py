@@ -1,3 +1,5 @@
+from plugin.core.message import InterfaceMessages
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -35,15 +37,24 @@ class ModuleManager(object):
 
     @classmethod
     def construct(cls):
+        if InterfaceMessages.critical:
+            log.info('Module construction has been cancelled due to a critical plugin error')
+            return
+
         try:
             available = cls.discover()
         except Exception, ex:
             log.error('Unable to import modules: %s', ex, exc_info=True)
             return
 
+        # Construct modules
         constructed = []
 
         for module in available:
+            if InterfaceMessages.critical:
+                log.info('Module construction has been cancelled due to a critical plugin error')
+                return
+
             try:
                 if module.__key__ is None:
                     # Automatically set module `__key__` (if one isn't specified)
@@ -59,11 +70,20 @@ class ModuleManager(object):
 
     @classmethod
     def start(cls, keys=None):
+        if InterfaceMessages.critical:
+            log.info('Module startup has been cancelled due to a critical plugin error')
+            return
+
+        # Start modules
         started = []
 
         for key, module in cls.modules.items():
             if keys is not None and key not in keys:
                 continue
+
+            if InterfaceMessages.critical:
+                log.info('Module startup has been cancelled due to a critical plugin error')
+                return
 
             try:
                 module.start()
