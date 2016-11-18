@@ -245,7 +245,7 @@ def spawn(func, *args, **kwargs):
     try:
         th.start()
         log.debug("Spawned thread with name '%s'" % thread_name)
-    except thread.error, ex:
+    except thread.error as ex:
         log.error('Unable to spawn thread: %s', ex, exc_info=True, extra={
             'data': {
                 'active_count': threading.active_count()
@@ -265,7 +265,7 @@ def thread_wrapper(func, args=None, kwargs=None, thread_name=None):
 
     try:
         func(*args, **kwargs)
-    except Exception, ex:
+    except Exception as ex:
         log.error('Exception raised in thread "%s": %s', thread_name, ex, exc_info=True)
 
 
@@ -357,7 +357,7 @@ def redirect(path, **kwargs):
         # Build URL
         if request and request.host and location[0] == "/":
             location = protocol + "://" + request.host + location
-    except Exception, ex:
+    except Exception as ex:
         log.warn('Redirect - %s', str(ex), exc_info=True)
 
     # Return redirect response

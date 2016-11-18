@@ -120,7 +120,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         # Retrieve account libraries/sections
         with p_account.authorization():
             sections = Plex['library'].sections()
-    except Exception, ex:
+    except Exception as ex:
         # Build message
         if p_account is None:
             message = _("Plex account hasn't been authenticated")
@@ -378,7 +378,7 @@ class Trigger(object):
         # Trigger sync
         try:
             Sync.queue(account_id, mode, **kwargs)
-        except QueueError, ex:
+        except QueueError as ex:
             return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
 
         return redirect('/sync', account_id=account_id)

@@ -124,7 +124,7 @@ def Api(*args, **kwargs):
         )
 
         return json.dumps(data)
-    except Exception, ex:
+    except Exception as ex:
         Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
         return None
 
