@@ -193,7 +193,7 @@ class Filters(object):
 
             try:
                 return ipaddress.ip_address(unicode(value))
-            except ValueError, ex:
+            except ValueError:
                 log.warn('validate "filter_networks" - unable to parse IP Address: %s', repr(value))
                 return None
 
@@ -221,7 +221,7 @@ class Filters(object):
 
             try:
                 return ipaddress.ip_network(unicode(value))
-            except ValueError, ex:
+            except ValueError:
                 log.warn('validate "filter_networks" - unable to parse IP Network: %s', repr(value))
                 return None
 

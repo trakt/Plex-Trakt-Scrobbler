@@ -3,8 +3,8 @@ from plugin.managers.core.exceptions import TraktAccountExistsException
 from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, TraktBasicCredentialManager
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
+from exception_wrappers.libraries import apsw
 from trakt import Trakt
-import apsw
 import inspect
 import logging
 import peewee
@@ -74,7 +74,7 @@ class UpdateAccount(Update):
         # Update `TraktAccount` username
         try:
             self.update_username(t_account, settings)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Trakt account already exists - %s', ex, exc_info=True)
 
             raise TraktAccountExistsException('Trakt account already exists')
@@ -134,7 +134,7 @@ class UpdateAccount(Update):
         # Update `TraktAccount` username
         try:
             self.update_username(t_account, settings)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Trakt account already exists - %s', ex, exc_info=True)
 
             raise TraktAccountExistsException('Trakt account already exists')
@@ -179,7 +179,7 @@ class TraktAccountManager(Manager):
         # Retrieve account
         try:
             account = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find trakt account (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

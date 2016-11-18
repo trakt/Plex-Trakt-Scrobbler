@@ -42,7 +42,7 @@ class TraktBasicCredentialManager(Manager):
         # Retrieve basic credential
         try:
             credential = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find basic credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 
@@ -91,7 +91,7 @@ class TraktOAuthCredentialManager(Manager):
         # Retrieve oauth credential
         try:
             credential = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find oauth credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

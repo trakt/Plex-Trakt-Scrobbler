@@ -6,7 +6,7 @@ from plugin.models import (
 )
 from plugin.modules.migrations.core.base import Migration
 
-import apsw
+from exception_wrappers.libraries import apsw
 import logging
 import os
 import peewee
@@ -154,7 +154,7 @@ class AccountMigration(Migration):
 
                 token_plex=token_plex
             )
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             # Ensure basic credential has a token
             rows_updated = PlexBasicCredential.update(
                 token_plex=token_plex,
@@ -201,7 +201,7 @@ class AccountMigration(Migration):
 
                 token=Environment.dict['trakt.token']
             )
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Ignoring basic credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 
@@ -219,7 +219,7 @@ class AccountMigration(Migration):
 
                 **Environment.dict['trakt.pin.authorization']
             )
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Ignoring oauth credential update for %r, already exists (%s)', trakt_account, ex)
             return False
 

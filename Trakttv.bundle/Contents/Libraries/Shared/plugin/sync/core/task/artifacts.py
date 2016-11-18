@@ -335,7 +335,7 @@ class SyncArtifacts(object):
                 try:
                     # Convert `datetime` object to string
                     value = value.strftime('%Y-%m-%dT%H:%M:%S') + '.000-00:00'
-                except Exception, ex:
+                except Exception:
                     log.warn('Unable to convert %r to string', value)
                     return False
 

@@ -1,6 +1,7 @@
 from plugin.core.environment import Environment
 from plugin.preferences.options import OPTIONS
 
+from exception_wrappers import DisabledError
 import logging
 
 log = logging.getLogger(__name__)
@@ -12,11 +13,16 @@ class Preferences(object):
         scope = 'account' if account is not None else 'server'
 
         # Initialize preferences
-        for option in OPTIONS_BY_KEY.values():
+        for key, option in OPTIONS_BY_KEY.items():
             if option.scope != scope:
                 continue
 
-            option.get(account)
+            try:
+                option.get(account)
+            except DisabledError:
+                return
+            except Exception as ex:
+                log.warn('Unable to initialize option %r: %s', key, ex, exc_info=True)
 
     @classmethod
     def get(cls, key, account=None):
@@ -27,7 +33,15 @@ class Preferences(object):
             raise ValueError('Unknown option: %r' % key)
 
         # Retrieve option from database
-        option = OPTIONS_BY_KEY[key].get(account)
+        option_cls = OPTIONS_BY_KEY[key]
+
+        try:
+            option = option_cls.get(account)
+        except DisabledError:
+            return option_cls.default
+        except Exception as ex:
+            log.warn('Unable to retrieve option %r: %s', key, ex, exc_info=True)
+            return option_cls.default
 
         # Return option value
         return option.value

@@ -1,7 +1,7 @@
 from plugin.models.m_trakt.account import TraktAccount
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class TraktBasicCredential(Model):

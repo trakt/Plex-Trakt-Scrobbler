@@ -4,7 +4,7 @@ from plugin.models.scheduler_task import SchedulerTask
 
 from croniter import croniter
 from datetime import datetime
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class SchedulerJob(Model):

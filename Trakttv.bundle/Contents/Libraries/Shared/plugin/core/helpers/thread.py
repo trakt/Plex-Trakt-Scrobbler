@@ -99,7 +99,7 @@ def module_start():
             else:
                 options['thread'] = spawn(f_start, _name=kls.__name__)
 
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to start %r module: %s', kls, ex, exc_info=True)
 
     log.debug('Finished starting %d module(s)', len(modules))
@@ -112,14 +112,14 @@ def spawn(func, *args, **kwargs):
     def wrapper(th_name, *args, **kwargs):
         try:
             func(*args, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Thread "%s" raised an exception: %s', th_name, ex, exc_info=True)
 
     # Spawn thread
     try:
         thread = Thread(target=wrapper, name=name, args=[name] + (args or []), kwargs=kwargs)
         thread.start()
-    except Exception, ex:
+    except Exception as ex:
         log.warn('Unable to spawn thread: %s', ex, exc_info=True)
         return None
 

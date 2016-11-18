@@ -35,7 +35,7 @@ class BackupManager(object):
             # Run policy maintenance tasks
             maintenance = BackupMaintenanceManager()
             maintenance.run()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised during backup maintenance: %s', ex, exc_info=True)
         finally:
             cls.maintenance_lock.release()

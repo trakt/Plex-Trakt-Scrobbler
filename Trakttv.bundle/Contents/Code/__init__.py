@@ -18,12 +18,23 @@ os.environ['LIBRARY_DB'] = os.path.join(
 from fs_migrator import FSMigrator
 
 FSMigrator.run()
+
 # ------------------------------------------------
 # Logger
 # ------------------------------------------------
+
 from plugin.core.logger import LoggerManager
 
 LoggerManager.setup(storage=False)
+
+# ------------------------------------------------
+# Interface messages
+# ------------------------------------------------
+
+from plugin.core.message import InterfaceMessages
+
+InterfaceMessages.bind()
+
 # ------------------------------------------------
 # Language
 # ------------------------------------------------
@@ -113,7 +124,7 @@ def Api(*args, **kwargs):
         )
 
         return json.dumps(data)
-    except Exception, ex:
+    except Exception as ex:
         Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
         return None
 

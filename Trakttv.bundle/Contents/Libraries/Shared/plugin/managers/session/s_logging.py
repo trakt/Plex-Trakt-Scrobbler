@@ -8,7 +8,7 @@ from plugin.models import Session
 from plugin.modules.core.manager import ModuleManager
 
 from datetime import datetime
-import apsw
+from exception_wrappers.libraries import apsw
 import logging
 import peewee
 

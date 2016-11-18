@@ -75,7 +75,7 @@ class BackupMaintenanceManager(object):
                 # Load metadata from file
                 try:
                     revision = BackupRevision.load(path)
-                except Exception, ex:
+                except Exception as ex:
                     log.warn('Unable to load revision at %r: %s', path, ex, exc_info=True)
                     continue
 

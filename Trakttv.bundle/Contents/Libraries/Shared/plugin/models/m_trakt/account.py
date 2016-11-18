@@ -3,7 +3,7 @@ from plugin.models.core import db
 from plugin.models.account import Account
 
 from datetime import datetime, timedelta
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 from trakt import Trakt
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl

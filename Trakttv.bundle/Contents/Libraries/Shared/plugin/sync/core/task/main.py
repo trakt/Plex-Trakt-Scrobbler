@@ -126,7 +126,7 @@ class SyncTask(object):
         for exc_info in self.exceptions:
             try:
                 self.store_exception(self.result, exc_info)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to store exception: %s', str(ex), exc_info=True)
 
         # Flush caches to archives

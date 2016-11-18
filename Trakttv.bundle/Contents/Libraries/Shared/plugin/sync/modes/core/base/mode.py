@@ -154,7 +154,7 @@ class Mode(object):
 
             try:
                 self.handlers[d].run(m, self.mode, *args, **kwargs)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
 
     def get_enabled_data(self):
@@ -246,7 +246,7 @@ class Mode(object):
 
             try:
                 key = int(section.key)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to cast section key %r to integer: %s', section.key, ex, exc_info=True)
                 continue
 

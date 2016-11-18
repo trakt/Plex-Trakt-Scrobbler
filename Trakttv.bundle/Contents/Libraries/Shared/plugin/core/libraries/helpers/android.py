@@ -30,7 +30,7 @@ class AndroidHelper(object):
                 log.warn('Found the "build.prop" file, but could\'t confirm if the system is running android')
                 cls._is_android = False
 
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to check if the system is running android: %s', ex, exc_info=True)
 
         return cls._is_android

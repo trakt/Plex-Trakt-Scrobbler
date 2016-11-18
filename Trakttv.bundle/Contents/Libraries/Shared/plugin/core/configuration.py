@@ -35,12 +35,12 @@ class ConfigurationFile(object):
         try:
             self._parser = SafeConfigParser()
             self._parser.read(self._path)
-        except ParsingError, ex:
+        except ParsingError as ex:
             log.info(ex.message)
 
             self._parser = None
             self._error = True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to parse configuration file: %r - %s', self._relpath, ex, exc_info=True)
 
             self._parser = None

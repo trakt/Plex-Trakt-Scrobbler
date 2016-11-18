@@ -4,8 +4,8 @@ from plugin.managers.core.base import Get, Manager, Update
 from plugin.managers.core.exceptions import ClientFilteredException
 from plugin.models import Client, ClientRule
 
+from exception_wrappers.libraries import apsw
 from plex import Plex
-import apsw
 import logging
 import peewee
 

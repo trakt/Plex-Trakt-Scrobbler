@@ -1,11 +1,14 @@
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.core.message import InterfaceMessages
 
 import base64
 import cerealizer
+import functools
 import hashlib
 import inspect
+import logging
 import sys
 import threading
 import thread
@@ -245,7 +248,7 @@ def spawn(func, *args, **kwargs):
     try:
         th.start()
         log.debug("Spawned thread with name '%s'" % thread_name)
-    except thread.error, ex:
+    except thread.error as ex:
         log.error('Unable to spawn thread: %s', ex, exc_info=True, extra={
             'data': {
                 'active_count': threading.active_count()
@@ -265,7 +268,7 @@ def thread_wrapper(func, args=None, kwargs=None, thread_name=None):
 
     try:
         func(*args, **kwargs)
-    except Exception, ex:
+    except Exception as ex:
         log.error('Exception raised in thread "%s": %s', thread_name, ex, exc_info=True)
 
 
@@ -357,8 +360,62 @@ def redirect(path, **kwargs):
         # Build URL
         if request and request.host and location[0] == "/":
             location = protocol + "://" + request.host + location
-    except Exception, ex:
+    except Exception as ex:
         log.warn('Redirect - %s', str(ex), exc_info=True)
 
     # Return redirect response
     return Redirect(location)
+
+
+def catch_errors(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        if InterfaceMessages.critical:
+            return error_record_view(logging.CRITICAL, InterfaceMessages.record)
+
+        try:
+            return func(*args, **kwargs)
+        except Exception as ex:
+            if InterfaceMessages.critical:
+                return error_record_view(logging.CRITICAL, InterfaceMessages.record)
+
+            return error_view(
+                'Exception',
+                ex.message
+            )
+
+    return inner
+
+
+def error_record_view(level, record):
+    # Retrieve level name
+    if level == logging.CRITICAL:
+        level_name = 'Critical Error'
+    else:
+        level_name = logging.getLevelName(level).capitalize()
+
+    # Build error view
+    if not record:
+        return error_view(level_name)
+
+    return error_view(
+        level_name,
+        record.message
+    )
+
+
+def error_view(title, message=None):
+    oc = ObjectContainer(
+        title2=title,
+        no_cache=True
+    )
+
+    oc.add(DirectoryObject(
+        key=PLUGIN_PREFIX,
+        title=pad_title('%s: %s' % (
+            title,
+            message or 'Unknown'
+        ))
+    ))
+
+    return oc

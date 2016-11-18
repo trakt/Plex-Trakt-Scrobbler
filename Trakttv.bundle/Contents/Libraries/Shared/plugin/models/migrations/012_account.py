@@ -1,4 +1,4 @@
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 def migrate(migrator, database):

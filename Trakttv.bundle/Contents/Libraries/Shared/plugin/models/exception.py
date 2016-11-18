@@ -1,7 +1,7 @@
 from plugin.models.core import db
 from plugin.models.message import Message
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class Exception(Model):

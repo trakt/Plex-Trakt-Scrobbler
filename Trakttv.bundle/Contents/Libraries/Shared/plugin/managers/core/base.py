@@ -2,7 +2,7 @@ from plugin.core.exceptions import PluginDisabledError
 from plugin.core.message import InterfaceMessages
 from plugin.models import db
 
-import apsw
+from exception_wrappers.libraries import apsw
 import inspect
 import logging
 import peewee
@@ -41,6 +41,9 @@ class Get(Method):
         return self(self.model.id == id)
 
     def or_create(self, *query, **kwargs):
+        if not apsw or not peewee:
+            raise PluginDisabledError()
+
         try:
             return self.manager.create(**kwargs)
         except (apsw.ConstraintError, peewee.IntegrityError) as ex:

@@ -55,7 +55,7 @@ class LibraryUpdateTrigger(Trigger):
     def _run_wrapper(self):
         try:
             self._run()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in _run(): %s', ex, exc_info=True)
 
     def _run(self):
@@ -77,7 +77,7 @@ class LibraryUpdateTrigger(Trigger):
 
         try:
             self._queue()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to queue sync: %s', ex, exc_info=True)
 
         # Reset state
@@ -112,5 +112,5 @@ class LibraryUpdateTrigger(Trigger):
                     priority=100,
                     trigger=SyncResult.Trigger.LibraryUpdate
                 )
-            except QueueError, ex:
+            except QueueError as ex:
                 log.info('Queue error: %s', ex)

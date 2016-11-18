@@ -3,7 +3,7 @@ from plugin.api.core.exceptions import ApiError
 from plugin.managers.account import AccountManager
 from plugin.managers.core.exceptions import TraktAccountExistsException, PlexAccountExistsException
 
-import apsw
+from exception_wrappers.libraries import apsw
 import logging
 import peewee
 

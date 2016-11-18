@@ -64,8 +64,8 @@ class UpdateSession(Update, Base):
         # Retrieve metadata for `rating_key`
         try:
             metadata = Metadata.get(rating_key)
-        except NotImplementedError, e:
-            log.debug('%r, ignoring session', e.message)
+        except NotImplementedError as ex:
+            log.debug('%r, ignoring session', ex.message)
             return None, None
 
         # Ensure metadata was returned

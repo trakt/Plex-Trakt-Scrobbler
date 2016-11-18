@@ -123,7 +123,7 @@ class Base(Mode):
         # Update pending items report
         try:
             report_path = cls.write_pending(account, key, keys)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to save report: %s', ex, exc_info=True)
             report_path = None
 
