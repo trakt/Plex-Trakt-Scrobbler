@@ -1,11 +1,14 @@
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
+from plugin.core.message import InterfaceMessages
 
 import base64
 import cerealizer
+import functools
 import hashlib
 import inspect
+import logging
 import sys
 import threading
 import thread
@@ -362,3 +365,57 @@ def redirect(path, **kwargs):
 
     # Return redirect response
     return Redirect(location)
+
+
+def catch_errors(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        if InterfaceMessages.critical:
+            return error_record_view(logging.CRITICAL, InterfaceMessages.record)
+
+        try:
+            return func(*args, **kwargs)
+        except Exception as ex:
+            if InterfaceMessages.critical:
+                return error_record_view(logging.CRITICAL, InterfaceMessages.record)
+
+            return error_view(
+                'Exception',
+                ex.message
+            )
+
+    return inner
+
+
+def error_record_view(level, record):
+    # Retrieve level name
+    if level == logging.CRITICAL:
+        level_name = 'Critical Error'
+    else:
+        level_name = logging.getLevelName(level).capitalize()
+
+    # Build error view
+    if not record:
+        return error_view(level_name)
+
+    return error_view(
+        level_name,
+        record.message
+    )
+
+
+def error_view(title, message=None):
+    oc = ObjectContainer(
+        title2=title,
+        no_cache=True
+    )
+
+    oc.add(DirectoryObject(
+        key=PLUGIN_PREFIX,
+        title=pad_title('%s: %s' % (
+            title,
+            message or 'Unknown'
+        ))
+    ))
+
+    return oc

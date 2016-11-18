@@ -1,35 +1,22 @@
-from core.helpers import pad_title
+from core.helpers import catch_errors, pad_title
 from interface.m_messages import Status as MessageStatus, ListMessages
 from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_PREFIX, PLUGIN_VERSION
 from plugin.core.environment import translate as _
-from plugin.core.message import InterfaceMessages, Record
 
 import locale
 
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
+@catch_errors
 def MainMenu(*args, **kwargs):
     oc = ObjectContainer(no_cache=True)
-
-    # Only display the interface message if it's critical severity
-    record = InterfaceMessages.record
-
-    if InterfaceMessages.critical:
-        if not record:
-            record = Record(message='Unknown Error')
-
-        oc.add(DirectoryObject(
-            key=PLUGIN_PREFIX,
-            title=pad_title('Critical Error: %s' % record.message)
-        ))
-
-        return oc
 
     #
     # Messages
     #
+
     m_count, m_type = MessageStatus(viewed=False)
 
     if m_count > 0:
@@ -53,6 +40,7 @@ def MainMenu(*args, **kwargs):
     #
     # About
     #
+
     oc.add(DirectoryObject(
         key=Callback(AboutMenu),
         title=_("About"),
@@ -68,6 +56,7 @@ def MainMenu(*args, **kwargs):
 
 
 @route(PLUGIN_PREFIX + '/about')
+@catch_errors
 def AboutMenu(*args, **kwargs):
     oc = ObjectContainer(
         title2=_("About")

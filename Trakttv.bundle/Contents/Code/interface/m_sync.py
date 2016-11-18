@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, function_path, redirect
+from core.helpers import catch_errors, timestamp, pad_title, function_path, redirect
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
@@ -20,6 +20,7 @@ log = Logger('interface.m_sync')
 # NOTE: pad_title(...) is used to force the UI to use 'media-details-list'
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
+@catch_errors
 def AccountsMenu(refresh=None, *args, **kwargs):
     oc = ObjectContainer(
         title2=_("Accounts"),
@@ -46,6 +47,7 @@ def AccountsMenu(refresh=None, *args, **kwargs):
 
 
 @route(PLUGIN_PREFIX + '/sync')
+@catch_errors
 def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False, *args, **kwargs):
     account = AccountManager.get(Account.id == account_id)
 
@@ -166,26 +168,31 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
+@catch_errors
 def Synchronize(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Full, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
+@catch_errors
 def FastPull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.FastPull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
+@catch_errors
 def Push(account_id=1, section=None, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Push, section=section, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
+@catch_errors
 def Pull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Pull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
+@catch_errors
 def Cancel(account_id, id, *args, **kwargs):
     id = int(id)
 
