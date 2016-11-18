@@ -56,32 +56,7 @@ class InterfaceMessages(object):
         if exc_info is None:
             exc_info = sys.exc_info()
 
-        # Parse exception information
-        if len(exc_info) == 3:
-            _, ex, tb = exc_info
-        else:
-            _, ex, tb = (None, None, None)
-
-        # Retrieve exception message
-        ex_message = None
-
-        if ex and hasattr(ex, 'message') and ex.message:
-            ex_message = ex.message
-        elif ex:
-            ex_message = type(ex).__name__
-
-        # Clean exception message
-        ex_message = cls._clean_exception_message(ex, ex_message)
-
-        # Format message
-        if ex_message:
-            # Format message with exception
-            try:
-                message = '%s: %s' % (message, ex_message)
-            except Exception as ex:
-                log.warn('Unable to format message: %s', ex)
-                message = ex_message
-
+        # Ensure message has been provided
         if not message:
             log.warn('Ignoring add_exception() call, no message was provided')
             return
@@ -106,22 +81,3 @@ class InterfaceMessages(object):
     def _on_exception(cls, source, message, exc_info):
         # Append error message
         InterfaceMessages.add_exception(logging.CRITICAL, message, exc_info)
-
-    @classmethod
-    def _clean_exception_message(cls, ex, message):
-        if not message:
-            return message
-
-        # ImportError
-        if isinstance(ex, ImportError):
-            if ':' not in message:
-                return message
-
-            # Strip path from message (if it looks like a path)
-            if message.startswith('/') or message.startswith('./'):
-                return message[message.index(':') + 1:].strip().capitalize()
-
-            return message
-
-        # Unknown exception type
-        return message
