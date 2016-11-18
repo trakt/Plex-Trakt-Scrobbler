@@ -5,7 +5,7 @@ from plugin.preferences import Preferences
 
 from datetime import datetime, timedelta
 from exception_wrappers.libraries import apsw
-from exception_wrappers.exceptions import ModuleDisabledError
+from exception_wrappers.exceptions import DisabledError
 from threading import Thread
 from trakt import Trakt
 import json
@@ -111,7 +111,7 @@ class ActionManager(Manager):
             except ActionQueue.DoesNotExist:
                 time.sleep(5)
                 continue
-            except ModuleDisabledError:
+            except DisabledError:
                 break
             except Exception as ex:
                 log.warn('Unable to retrieve action from queue - %s', ex, exc_info=True)

@@ -2,7 +2,7 @@ from plugin.core.backup import BackupManager
 from plugin.core.database.connection import db_connect, db_connection
 from plugin.core.environment import Environment
 
-from exception_wrappers import ModuleDisabledError
+from exception_wrappers import DisabledError
 from threading import RLock
 import logging
 import os
@@ -65,7 +65,7 @@ class DatabaseManager(object):
             if path not in cache:
                 try:
                     cache[path] = db_connect(path, type, **kwargs)
-                except ModuleDisabledError:
+                except DisabledError:
                     cache[path] = None
 
             # Return cached connection

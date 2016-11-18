@@ -1,7 +1,7 @@
 from plugin.core.environment import Environment
 from plugin.preferences.options import OPTIONS
 
-from exception_wrappers import ModuleDisabledError
+from exception_wrappers import DisabledError
 import logging
 
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class Preferences(object):
 
             try:
                 option.get(account)
-            except ModuleDisabledError:
+            except DisabledError:
                 return
             except Exception as ex:
                 log.warn('Unable to initialize option %r: %s', key, ex, exc_info=True)
@@ -37,7 +37,7 @@ class Preferences(object):
 
         try:
             option = option_cls.get(account)
-        except ModuleDisabledError:
+        except DisabledError:
             return option_cls.default
         except Exception as ex:
             log.warn('Unable to retrieve option %r: %s', key, ex, exc_info=True)
