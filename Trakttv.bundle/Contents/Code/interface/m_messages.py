@@ -176,14 +176,9 @@ def ViewException(exception_id, *args, **kwargs):
         if not line:
             continue
 
-        length = len(line)
-
-        line = line.lstrip()
-        spaces = length - len(line)
-
         oc.add(DirectoryObject(
             key=Callback(ViewException, exception_id=exception_id),
-            title=pad_title(('&nbsp;' * spaces) + line)
+            title=pad_title(line)
         ))
 
     return oc
