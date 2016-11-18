@@ -49,7 +49,7 @@ class BaseTest(object):
                 # Test successful
                 message = None
                 success = True
-            except Exception, ex:
+            except Exception as ex:
                 if success:
                     continue
 

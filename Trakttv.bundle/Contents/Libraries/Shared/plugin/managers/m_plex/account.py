@@ -46,7 +46,7 @@ class UpdateAccount(Update):
         # Update `PlexAccount` username
         try:
             self.update_username(p_account, username)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Plex account already exists - %s', ex, exc_info=True)
 
             raise PlexAccountExistsException('Plex account already exists')
@@ -82,7 +82,7 @@ class PlexAccountManager(Manager):
         # Retrieve account
         try:
             account = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find plex account (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

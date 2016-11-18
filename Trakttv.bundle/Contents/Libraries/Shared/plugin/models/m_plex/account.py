@@ -142,7 +142,7 @@ class PlexAccount(Model):
             # Retrieve user id from plex.tv details
             try:
                 user_id = int(user.attrib.get('id'))
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to cast user id to integer: %s', ex, exc_info=True)
                 user_id = None
 

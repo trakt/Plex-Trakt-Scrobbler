@@ -147,7 +147,7 @@ class Cache(object):
             self.stash.flush()
 
             log.debug('Flushed "%s" cache', self.key)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to flush "%s" cache: %s', self.key, ex, exc_info=True)
         finally:
             self.flush_clear()

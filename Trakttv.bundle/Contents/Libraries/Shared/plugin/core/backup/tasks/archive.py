@@ -38,7 +38,7 @@ class ArchiveTask(object):
         # Move archive to directory
         try:
             shutil.move(tar_path, base_path + '.tar.gz')
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to move archive to backups directory - %s', ex, exc_info=True)
             return False
 
@@ -59,13 +59,13 @@ class ArchiveTask(object):
         for path in files:
             try:
                 os.remove(path)
-            except Exception, ex:
+            except Exception as ex:
                 log.info('Unable to remove file: %r - %s', path, ex, exc_info=True)
 
         # Delete old directory (if no files exist inside it)
         try:
             os.rmdir(base_path)
-        except Exception, ex:
+        except Exception as ex:
             log.info('Unable to remove directory: %r (probably contains skipped files) - %s', base_path, ex, exc_info=True)
 
     #
@@ -118,7 +118,7 @@ class ArchiveTask(object):
         try:
             tar.add(path, arcname=os.path.relpath(path, base_path))
             tar_files.append(path)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to add file %r to archive - %s', path, ex, exc_info=True)
 
     #

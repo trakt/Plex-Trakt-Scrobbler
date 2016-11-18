@@ -49,9 +49,9 @@ class SyncIntervalHandler(Handler):
                 priority=100,
                 trigger=SyncResult.Trigger.Schedule
             )
-        except QueueError, ex:
+        except QueueError as ex:
             log.info('Queue error: %s', ex)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to queue sync: %s', ex, exc_info=True)
 
         return True

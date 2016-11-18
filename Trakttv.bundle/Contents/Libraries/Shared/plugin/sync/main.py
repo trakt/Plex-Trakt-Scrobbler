@@ -149,7 +149,7 @@ class Main(object):
 
                 # Select task
                 self.current = task
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Exception raised in run(): %s', ex, exc_info=True)
 
                 time.sleep(30)
@@ -171,7 +171,7 @@ class Main(object):
                         self.run()
 
                 self.current.success = True
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Exception raised in run(): %s', ex, exc_info=True)
 
                 self.current.exceptions.append(sys.exc_info())
@@ -180,7 +180,7 @@ class Main(object):
             try:
                 # Sync task complete, run final tasks
                 self.finish()
-            except Exception, ex:
+            except Exception as ex:
                 log.error('Unable to run final sync tasks: %s', ex, exc_info=True)
 
     def should_defer(self, task):

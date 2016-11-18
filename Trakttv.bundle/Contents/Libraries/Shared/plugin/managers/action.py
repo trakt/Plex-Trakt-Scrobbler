@@ -126,7 +126,7 @@ class ActionManager(Manager):
                 cls.resolve(action, performed)
 
                 log.debug('Action %r sent, moved action to history', action.event)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to process action %%r - %s' % ex.message, action.event, exc_info=True, extra={
                     'event': {
                         'module': __name__,
@@ -152,7 +152,7 @@ class ActionManager(Manager):
 
         try:
             result = cls.send(action, Trakt[interface][method], request)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
             return None
 

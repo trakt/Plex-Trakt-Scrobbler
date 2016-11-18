@@ -102,7 +102,7 @@ class Environment(object):
         # Initialize locale
         try:
             locale.setlocale(locale.LC_ALL, language)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
             return False
 
@@ -112,7 +112,7 @@ class Environment(object):
         if not code:
             try:
                 locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to set locale to %r: %s', DEFAULT_LOCALE, ex, exc_info=True)
                 return False
 
@@ -124,7 +124,7 @@ class Environment(object):
         # Retrieve preferred language
         try:
             cls.language = cls._get_language()
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve preferred language: %s', ex, exc_info=True)
             cls.language = None
             return
@@ -158,7 +158,7 @@ class Environment(object):
                 localedir=os.path.join(cls.path.locale),
                 languages=languages
             )
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to initialize languages: %r - %s', languages, ex, exc_info=True)
             return
 
@@ -206,7 +206,7 @@ class Environment(object):
         try:
             import ctypes
             lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to determine preferred language: %s', ex, exc_info=True)
             return None
 

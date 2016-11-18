@@ -37,13 +37,13 @@ class StorageHelper(object):
         try:
             os.makedirs(path, *args, **kwargs)
             return True
-        except OSError, ex:
+        except OSError as ex:
             if ex.errno == 17:
                 # Directory already exists
                 return True
 
             log.warn('Unable to create directories: %r - (%s) %s', cls.to_relative_path(path), ex.errno, ex)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to create directories: %r - (%s) %s', cls.to_relative_path(path), type(ex), ex)
 
         return False
@@ -64,7 +64,7 @@ class StorageHelper(object):
 
             log.debug('Copied %r to %r', cls.to_relative_path(source), cls.to_relative_path(destination))
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to copy %r to %r - %s', cls.to_relative_path(source), cls.to_relative_path(destination), ex)
 
         return False
@@ -82,7 +82,7 @@ class StorageHelper(object):
 
             log.debug('Copied %r to %r', cls.to_relative_path(source), cls.to_relative_path(destination))
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to copy %r to %r - %s', cls.to_relative_path(source), cls.to_relative_path(destination), ex)
 
         return False
@@ -102,7 +102,7 @@ class StorageHelper(object):
 
             log.debug('Deleted %r', cls.to_relative_path(path))
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to delete file: %r - %s', cls.to_relative_path(path), ex)
 
         return False
@@ -119,7 +119,7 @@ class StorageHelper(object):
 
             log.debug('Deleted %r', cls.to_relative_path(path))
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to delete directory: %r - %s', cls.to_relative_path(path), ex)
 
         return False

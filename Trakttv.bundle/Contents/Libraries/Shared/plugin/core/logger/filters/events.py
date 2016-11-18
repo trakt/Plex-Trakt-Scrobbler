@@ -35,7 +35,7 @@ class EventsReportFilter(Filter):
         # Remove "event" attribute from record (so it isn't included in error reports)
         try:
             delattr(record, 'event')
-        except Exception, ex:
+        except Exception as ex:
             log.debug('Unable to remove "event" attribute from record - %s', ex, exc_info=True)
 
         # Check if event has already been reported

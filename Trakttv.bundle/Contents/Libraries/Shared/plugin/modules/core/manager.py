@@ -43,7 +43,7 @@ class ModuleManager(object):
 
         try:
             available = cls.discover()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to import modules: %s', ex, exc_info=True)
             return
 
@@ -63,7 +63,7 @@ class ModuleManager(object):
                 yield module.__key__, module()
 
                 constructed.append(module.__key__)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to construct module: %r', module)
 
         log.debug('Constructed %d module(s): %s', len(constructed), ', '.join(constructed))
@@ -89,7 +89,7 @@ class ModuleManager(object):
                 module.start()
 
                 started.append(key)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to start %r module - %s', key, ex, exc_info=True)
 
         log.debug('Started %d module(s): %s', len(started), ', '.join(started))

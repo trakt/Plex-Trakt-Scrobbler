@@ -95,7 +95,7 @@ class Upgrade(Module):
                 return None
 
             return data
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to read current version: %s', ex, exc_info=True)
 
         return None
@@ -115,7 +115,7 @@ class Upgrade(Module):
 
             log.debug('Version updated to %r', data)
             return True
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to write current version: %s', ex, exc_info=True)
 
         return False

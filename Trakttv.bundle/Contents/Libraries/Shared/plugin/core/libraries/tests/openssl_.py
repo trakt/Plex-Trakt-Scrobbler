@@ -62,7 +62,7 @@ class OpenSSL(BaseTest):
 
         try:
             requests.head('https://api-v2launch.trakt.tv', timeout=3)
-        except requests.RequestException, ex:
+        except requests.RequestException as ex:
             # Ignore failed requests (server error, network problem, etc..)
             log.warn('Request failed: %s', ex, exc_info=True)
 
@@ -94,7 +94,7 @@ class OpenSSL(BaseTest):
             try:
                 from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
                 inject_into_urllib3()
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to inject pyOpenSSL into urllib3 - %s', ex, exc_info=True)
                 return
         else:
@@ -113,7 +113,7 @@ class OpenSSL(BaseTest):
         try:
             import ssl
             return hasattr(ssl, 'SSLContext')
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to check if the standard ssl library supports "SSLContext": %s', ex, exc_info=True)
 
         return None
@@ -123,7 +123,7 @@ class OpenSSL(BaseTest):
         try:
             import ssl
             return ssl.OPENSSL_VERSION_NUMBER
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve standard ssl library version: %s', ex, exc_info=True)
 
         return None
@@ -133,7 +133,7 @@ class OpenSSL(BaseTest):
         try:
             from cryptography.hazmat.bindings.openssl.binding import Binding
             return Binding.lib.SSLeay()
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve bundled ssl library version: %s', ex, exc_info=True)
 
         return None
