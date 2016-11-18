@@ -117,11 +117,11 @@ class InterfaceMessages(object):
             if ':' not in message:
                 return message
 
-            if not message.startswith('/') or not message.startswith('./'):
-                return message
+            # Strip path from message (if it looks like a path)
+            if message.startswith('/') or message.startswith('./'):
+                return message[message.index(':') + 1:].strip().capitalize()
 
-            # Strip path from message
-            return message[message.index(':') + 1:].strip().capitalize()
+            return message
 
         # Unknown exception type
         return message
