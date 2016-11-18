@@ -5,8 +5,6 @@ from exception_wrappers.manager import ExceptionSource, ExceptionWrapper
 import logging
 import sys
 
-exw_log = logging.getLogger(__name__)
-
 
 exw_enabled = False
 
@@ -17,7 +15,6 @@ exw_exc_info = (None, None, None)
 try:
     from apsw import *
 
-    exw_log.info('Successfully loaded "apsw" library')
     exw_enabled = True
 except ImportError as ex:
     # Emit event

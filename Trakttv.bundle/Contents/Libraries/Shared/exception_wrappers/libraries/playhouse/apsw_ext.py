@@ -2,10 +2,7 @@ from __future__ import absolute_import
 
 from exception_wrappers.exceptions import ModuleDisabledError
 from exception_wrappers.manager import ExceptionSource, ExceptionWrapper
-import logging
 import sys
-
-exw_log = logging.getLogger(__name__)
 
 
 exw_enabled = False
@@ -25,8 +22,6 @@ except ImportError as ex:
 # Try import "playhouse.apsw_ext", generate skeleton if an error is raised
 try:
     from playhouse.apsw_ext import *
-
-    exw_log.info('Successfully loaded "apsw_ext" library')
     exw_enabled = True
 except ImportError as ex:
     # Emit event
