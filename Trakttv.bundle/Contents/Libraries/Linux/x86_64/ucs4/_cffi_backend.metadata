@@ -1,5 +1,10 @@
 ================================== BUILD ===================================
-ID: 46
+ID: 133
+GCC: gcc~x86_64-debian-generic-linux-gnu
+LIBC: glibc-2.09
+
+Python Version: 2.7
+Python UCS: ucs4
 
 ================================== HEADER ==================================
  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
@@ -11,9 +16,9 @@ ID: 46
  Type:                              DYN (Shared object file)
  Machine:                           Advanced Micro Devices X86-64
  Version:                           0x1
- Entry point address:               0x75c0
+ Entry point address:               0x7c10
  Start of program headers:          64 (bytes into file)
- Start of section headers:          417400 (bytes into file)
+ Start of section headers:          448728 (bytes into file)
  Flags:                             0x0
  Size of this header:               64 (bytes)
  Size of program headers:           56 (bytes)
@@ -23,7 +28,6 @@ ID: 46
  Section header string table index: 34
 
 =============================== DEPENDENCIES ===============================
- 0x0000000000000001 (NEEDED)             Shared library: [libffi.so.6]
  0x0000000000000001 (NEEDED)             Shared library: [libpthread.so.0]
  0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
  0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
