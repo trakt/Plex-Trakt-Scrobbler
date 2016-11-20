@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function
 import six
 
 from cryptography import utils
-from cryptography.x509.oid import ObjectIdentifier
+from cryptography.x509.oid import NameOID, ObjectIdentifier
 
 
 class NameAttribute(object):
@@ -20,6 +20,11 @@ class NameAttribute(object):
         if not isinstance(value, six.text_type):
             raise TypeError(
                 "value argument must be a text type."
+            )
+
+        if oid == NameOID.COUNTRY_NAME and len(value.encode("utf8")) != 2:
+            raise ValueError(
+                "Country name must be a 2 character country code"
             )
 
         self._oid = oid
@@ -49,6 +54,10 @@ class NameAttribute(object):
 
 class Name(object):
     def __init__(self, attributes):
+        attributes = list(attributes)
+        if not all(isinstance(x, NameAttribute) for x in attributes):
+            raise TypeError("attributes must be a list of NameAttribute")
+
         self._attributes = attributes
 
     def get_attributes_for_oid(self, oid):
