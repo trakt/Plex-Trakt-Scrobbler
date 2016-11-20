@@ -1,5 +1,10 @@
 ================================== BUILD ===================================
-ID: 42
+ID: 130
+GCC: gcc~x86_64-debian-generic-linux-gnu
+LIBC: glibc-2.09
+
+Python Version: 2.7
+Python UCS: ucs2
 
 Revision: 363486171dbdf9b88a378083276c7f33a10d8a40
 Tag: rel-0.4
@@ -14,9 +19,9 @@ Tag: rel-0.4
  Type:                              DYN (Shared object file)
  Machine:                           Advanced Micro Devices X86-64
  Version:                           0x1
- Entry point address:               0x2380
+ Entry point address:               0x2340
  Start of program headers:          64 (bytes into file)
- Start of section headers:          106112 (bytes into file)
+ Start of section headers:          107888 (bytes into file)
  Flags:                             0x0
  Size of this header:               64 (bytes)
  Size of program headers:           56 (bytes)
