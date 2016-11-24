@@ -72,7 +72,7 @@ class LibraryBase(object):
         while True:
             try:
                 row = result.iterate()
-            except UnicodeDecodeError, ex:
+            except UnicodeDecodeError as ex:
                 log.warn('Unable to retrieve row: %s', ex, exc_info=True, extra={
                     'event': {
                         'module': __name__,
@@ -154,7 +154,7 @@ class LibraryBase(object):
             try:
                 # Parse field
                 value = cls._parse_field(field, value)
-            except Exception, ex:
+            except Exception as ex:
                 log.error('Unable to parse value %r as field %r', value, field)
                 raise ex
 
