@@ -137,7 +137,7 @@ class Movies(Base):
 
                 # Trigger handler
                 self.execute_handlers(
-                    SyncMedia.Movies, data,
+                    self.mode, SyncMedia.Movies, data,
 
                     key=None,
 

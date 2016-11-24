@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.core.guid import GuidMatch, GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.fast_pull.base import Base
@@ -61,8 +61,11 @@ class Shows(Base):
         # Fetch episodes with account settings
         self.p_shows, self.p_seasons, self.p_episodes = self.plex.library.episodes.mapped(
             self.p_sections, ([
-                MetadataItem.library_section
-            ], [], []),
+                MetadataItem.library_section,
+                MetadataItem.added_at
+            ], [], [
+                MetadataItem.added_at
+            ]),
             account=self.current.account.plex.key,
             parse_guid=True
         )
@@ -119,18 +122,35 @@ class Shows(Base):
             # No `pk` found
             return
 
-        # Process actions for show
-        for data, action, t_show in self.iter_changes(SyncMedia.Shows, pk):
-            # Execute show handlers
-            self.execute_handlers(
-                SyncMedia.Shows, data,
-                action=action,
+        # Run pull handlers if the item has been added recently
+        if self.should_pull(sh_id, p_show.get('added_at')):
+            log.info('Show %r has been added recently, running pull sync instead', sh_id)
 
-                key=sh_id,
+            # Execute handlers
+            for data in self.get_data(SyncMedia.Shows):
+                t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
 
-                p_item=p_show,
-                t_item=t_show
-            )
+                # Execute show handlers
+                self.execute_handlers(
+                    SyncMode.Pull, SyncMedia.Shows, data,
+                    key=sh_id,
+
+                    p_item=p_show,
+                    t_item=t_show
+                )
+        else:
+            # Execute handlers for changed data
+            for data, action, t_show in self.iter_changes(SyncMedia.Shows, pk):
+                # Execute show handlers
+                self.execute_handlers(
+                    self.mode, SyncMedia.Shows, data,
+                    action=action,
+
+                    key=sh_id,
+
+                    p_item=p_show,
+                    t_item=t_show
+                )
 
     def run_episodes(self):
         # Iterate over plex episodes
@@ -180,80 +200,26 @@ class Shows(Base):
         if not ids.get('episode'):
             return
 
-        # Process actions for episode
-        for data, action, t_item in self.iter_changes(s_media, pk):
-            self.run_episode_action(
-                ids, match,
-                p_show, p_episode,
-                data, action, t_item
-            )
+        # Run pull handlers if the item has been added recently
+        if self.should_pull(ids['episode'], p_episode.get('added_at')):
+            log.info('Episode %r has been added recently, running pull sync instead', ids['episode'])
 
-    def run_episode_action(self, ids, match, p_show, p_episode, data, action, t_item):
-        if match.media == GuidMatch.Media.Movie:
-            # Process movie
-            self.execute_episode_action(
-                ids, match,
-                p_show, p_episode,
-                data, action, t_item
-            )
-        elif match.media == GuidMatch.Media.Episode:
-            # Ensure `match` contains episodes
-            if not match.episodes:
-                log.info('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
-                return
+            # Execute handlers
+            for data in self.get_data(s_media):
+                t_item = self.trakt[(s_media, data)].get(pk)
 
-            # Process each episode
-            for season_num, episode_num in match.episodes:
-                t_season = t_item.get('seasons', {}).get(season_num)
-
-                if t_season is None:
-                    # Unable to find matching season in `t_show`
+                if t_item is None:
                     continue
 
-                t_episode = t_season.get('episodes', {}).get(episode_num)
-
-                if t_episode is None:
-                    # Unable to find matching episode in `t_season`
-                    continue
-
-                self.execute_episode_action(
-                    ids, match,
-                    p_show, p_episode,
-                    data, action, t_episode
+                self.run_episode_action(
+                    SyncMode.Pull, data, ids, match,
+                    p_show, p_episode, t_item
                 )
-
-    def execute_episode_action(self, ids, match, p_show, p_episode, data, action, t_item):
-        # Process episode
-        if match.media == GuidMatch.Media.Episode:
-            # Process episode
-            self.execute_handlers(
-                SyncMedia.Episodes, data,
-                action=action,
-                key=ids['episode'],
-
-                p_item=p_episode,
-                t_item=t_item
-            )
-
-            return True
-
-        # Process movie
-        if match.media == GuidMatch.Media.Movie:
-            # Build movie item from plex episode
-            p_movie = p_episode.copy()
-
-            p_movie['title'] = p_show.get('title')
-            p_movie['year'] = p_show.get('year')
-
-            # Process movie
-            self.execute_handlers(
-                SyncMedia.Movies, data,
-                action=action,
-                key=ids['episode'],
-
-                p_item=p_episode,
-                t_item=t_item
-            )
-            return True
-
-        raise ValueError('Unknown media type: %r' % (match.media,))
+        else:
+            # Execute handlers for changed data
+            for data, action, t_item in self.iter_changes(s_media, pk):
+                self.run_episode_action(
+                    self.mode, data, ids, match,
+                    p_show, p_episode, t_item,
+                    action=action
+                )

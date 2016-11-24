@@ -1,4 +1,4 @@
-from plugin.sync.core.enums import SyncData, SyncMedia
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
 from plugin.sync.core.guid import GuidParser
 from plugin.sync.modes.core.base import log_unsupported, mark_unsupported
 from plugin.sync.modes.fast_pull.base import Base
@@ -50,7 +50,8 @@ class Movies(Base):
         # Fetch movies with account settings
         self.p_movies = self.plex.library.movies.mapped(
             self.p_sections, [
-                MetadataItem.library_section
+                MetadataItem.library_section,
+                MetadataItem.added_at
             ],
             account=self.current.account.plex.key,
             parse_guid=True
@@ -89,16 +90,32 @@ class Movies(Base):
                 # No `pk` found
                 continue
 
-            # Iterate over changed data
-            for data, action, t_movie in self.iter_changes(SyncMedia.Movies, pk):
-                self.execute_handlers(
-                    SyncMedia.Movies, data,
-                    action=action,
-                    key=mo_id,
+            # Run pull handlers if the item has been added recently
+            if self.should_pull(mo_id, p_movie.get('added_at')):
+                log.info('Movie %r has been added recently, running pull sync instead', mo_id)
 
-                    p_item=p_movie,
-                    t_item=t_movie
-                )
+                # Execute handlers
+                for data in self.get_data(SyncMedia.Movies):
+                    t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
+
+                    self.execute_handlers(
+                        SyncMode.Pull, SyncMedia.Movies, data,
+                        key=mo_id,
+
+                        p_item=p_movie,
+                        t_item=t_movie
+                    )
+            else:
+                # Execute handlers for changed data
+                for data, action, t_movie in self.iter_changes(SyncMedia.Movies, pk):
+                    self.execute_handlers(
+                        self.mode, SyncMedia.Movies, data,
+                        action=action,
+                        key=mo_id,
+
+                        p_item=p_movie,
+                        t_item=t_movie
+                    )
 
             # Task checkpoint
             self.checkpoint()

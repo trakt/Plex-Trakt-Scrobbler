@@ -70,7 +70,7 @@ class Lists(PullListsMode):
 
                 # Execute handler
                 self.execute_handlers(
-                    media, data,
+                    self.mode, media, data,
 
                     p_sections_map=p_sections_map,
                     p_playlist=p_playlist,

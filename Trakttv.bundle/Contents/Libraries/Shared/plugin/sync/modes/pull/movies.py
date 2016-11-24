@@ -91,7 +91,7 @@ class Movies(Base):
                 t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
                 self.execute_handlers(
-                    SyncMedia.Movies, data,
+                    self.mode, SyncMedia.Movies, data,
                     key=mo_id,
 
                     p_item=p_movie,

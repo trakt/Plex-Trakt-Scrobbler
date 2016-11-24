@@ -113,13 +113,13 @@ class Shows(Base):
                 # No `pk` found
                 continue
 
-            # Execute data handlers
+            # Execute handlers
             for data in self.get_data(SyncMedia.Shows):
                 t_show = self.trakt[(SyncMedia.Shows, data)].get(pk)
 
                 # Execute show handlers
                 self.execute_handlers(
-                    SyncMedia.Shows, data,
+                    self.mode, SyncMedia.Shows, data,
                     key=sh_id,
 
                     p_item=p_show,
@@ -167,85 +167,14 @@ class Shows(Base):
         if not ids.get('episode'):
             return
 
-        # Process actions for episode
+        # Execute handlers
         for data in self.get_data(s_media):
-            # Find item
             t_item = self.trakt[(s_media, data)].get(pk)
 
             if t_item is None:
                 continue
 
-            # Run episode action
             self.run_episode_action(
-                ids, match,
-                p_show, p_episode,
-                data, t_item
+                self.mode, data, ids, match,
+                p_show, p_episode, t_item
             )
-
-    def run_episode_action(self, ids, match, p_show, p_episode, data, t_item):
-        if match.media == GuidMatch.Media.Movie:
-            # Process movie
-            self.execute_episode_action(
-                ids, match,
-                p_show, p_episode,
-                data, t_item
-            )
-        elif match.media == GuidMatch.Media.Episode:
-            # Ensure `match` contains episodes
-            if not match.episodes:
-                log.info('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
-                return
-
-            # Process each episode
-            for season_num, episode_num in match.episodes:
-                t_season = t_item.seasons.get(season_num)
-
-                if t_season is None:
-                    # Unable to find matching season in `t_show`
-                    continue
-
-                t_episode = t_season.episodes.get(episode_num)
-
-                if t_episode is None:
-                    # Unable to find matching episode in `t_season`
-                    continue
-
-                self.execute_episode_action(
-                    ids, match,
-                    p_show, p_episode,
-                    data, t_episode
-                )
-
-    def execute_episode_action(self, ids, match, p_show, p_episode, data, t_item):
-        # Process episode
-        if match.media == GuidMatch.Media.Episode:
-            # Process episode
-            self.execute_handlers(
-                SyncMedia.Episodes, data,
-                key=ids['episode'],
-
-                p_item=p_episode,
-                t_item=t_item
-            )
-
-            return True
-
-        # Process movie
-        if match.media == GuidMatch.Media.Movie:
-            # Build movie item from plex episode
-            p_movie = p_episode.copy()
-
-            p_movie['title'] = p_show.get('title')
-            p_movie['year'] = p_show.get('year')
-
-            # Process movie
-            self.execute_handlers(
-                SyncMedia.Movies, data,
-                key=ids['episode'],
-
-                p_item=p_episode,
-                t_item=t_item
-            )
-            return True
-
-        raise ValueError('Unknown media type: %r' % (match.media,))
