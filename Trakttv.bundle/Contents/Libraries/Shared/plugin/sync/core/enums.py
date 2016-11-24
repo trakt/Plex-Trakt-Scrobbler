@@ -1,5 +1,6 @@
 from plugin.core.environment import translate as _
 
+
 class Enum(object):
     @classmethod
     def parse(cls, value):

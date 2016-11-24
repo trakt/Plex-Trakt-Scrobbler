@@ -78,6 +78,8 @@ class SyncTask(object):
         self.modes = dict(self._construct_modules(modes, 'mode'))
 
     def load(self):
+        log.debug('Task Arguments: %r', self.kwargs)
+
         # Load task configuration
         self.configuration.load(self.account)
 
@@ -85,8 +87,8 @@ class SyncTask(object):
         if self.data is None:
             self.data = self.get_enabled_data(self.configuration, self.mode)
 
-        log.debug('Sync Data: %r', self.data)
-        log.debug('Sync Media: %r', self.media)
+        log.debug('Task Data: %r', self.data)
+        log.debug('Task Media: %r', self.media)
 
         if self.data is None:
             raise ValueError('No collections enabled for sync')
