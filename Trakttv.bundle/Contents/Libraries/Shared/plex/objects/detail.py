@@ -29,9 +29,11 @@ class Detail(Container):
     event_stream = Property('eventStream', (int, bool))
     hub_search = Property('hubSearch', (int, bool))
     media_providers = Property('mediaProviders', (int, bool))
+    photo_auto_tag = Property('photoAutoTag', (int, bool))
     plugin_host = Property('pluginHost', (int, bool))
     read_only_libraries = Property('readOnlyLibraries', (int, bool))
     updater = Property('updater', (int, bool))
+    voice_search = Property('voiceSearch', (int, bool))
 
     certificate = Property(type=(int, bool))
     multiuser = Property(type=(int, bool))

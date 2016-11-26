@@ -9,7 +9,7 @@ class Stream(Descriptor):
     selected = Property(type=bool)
 
     title = Property
-    duration = Property(type=int)
+    duration = Property(type=(float, int))
 
     language = Property
     language_code = Property('languageCode')
