@@ -139,71 +139,101 @@ class WebSocket(Source):
             log.debug(data)
             return False
 
-        type = info.get('type')
+        # Handle modern messages (PMS 1.3.0+)
+        if type(info.get('NotificationContainer')) is dict:
+            info = info['NotificationContainer']
 
-        if not type:
+        # Process  message
+        m_type = info.get('type')
+
+        if not m_type:
+            log.debug('Received message with no "type" parameter: %r', info)
             return False
 
         # Pre-process message (if function exists)
-        process_func = getattr(self, 'process_%s' % type, None)
+        process_func = getattr(self, 'process_%s' % m_type, None)
 
         if process_func and process_func(info):
             return True
 
         # Emit raw message
-        self.emit_notification('%s.notification.%s' % (self.name, type), info)
-        return True
+        return self.emit_notification('%s.notification.%s' % (self.name, m_type), info)
 
     def process_playing(self, info):
-        self.emit_notification('%s.playing' % self.name, info)
-        return True
+        children = info.get('_children') or info.get('PlaySessionStateNotification')
 
-    def process_progress(self, info):
-        if not info.get('_children'):
+        if not children:
+            log.debug('Received "playing" message with no children: %r', info)
             return False
 
-        notification = info['_children'][0]
+        return self.emit_notification('%s.playing' % self.name, children)
 
-        self.emit_notification('%s.scanner.progress' % self.name, {
-            'message': notification.get('message')
-        })
+    def process_progress(self, info):
+        children = info.get('_children') or info.get('ProgressNotification')
+
+        if not children:
+            log.debug('Received "progress" message with no children: %r', info)
+            return False
+
+        for notification in children:
+            self.emit('%s.scanner.progress' % self.name, {
+                'message': notification.get('message')
+            })
+
         return True
 
     def process_status(self, info):
-        if not info.get('_children'):
-            return False
-
-        notification = info['_children'][0]
-
-        title = notification.get('title')
-
-        if not title:
-            return False
-
-        # Scan complete message
-        if SCAN_COMPLETE_REGEX.match(title):
-            self.emit_notification('%s.scanner.finished' % self.name)
-            return True
-
-        # Scanning message
-        match = SCANNING_REGEX.match(title)
-
-        if match:
-            section = match.group('section')
-
-            if section:
-                self.emit_notification('%s.scanner.started' % self.name, {
-                    'section': section
-                })
-                return True
-
-        return False
-
-    def process_timeline(self, info):
-        children = info.get('_children', [])
+        children = info.get('_children') or info.get('StatusNotification')
 
         if not children:
+            log.debug('Received "status" message with no children: %r', info)
             return False
+
+        # Process children
+        count = 0
+
+        for notification in children:
+            title = notification.get('title')
+
+            if not title:
+                continue
+
+            # Scan complete message
+            if SCAN_COMPLETE_REGEX.match(title):
+                self.emit('%s.scanner.finished' % self.name)
+                count += 1
+                continue
+
+            # Scanning message
+            match = SCANNING_REGEX.match(title)
+
+            if not match:
+                continue
+
+            section = match.group('section')
+
+            if not section:
+                continue
+
+            self.emit('%s.scanner.started' % self.name, {'section': section})
+            count += 1
+
+        # Validate result
+        if count < 1:
+            log.debug('Received "status" message with no valid children: %r', info)
+            return False
+
+        return True
+
+    def process_timeline(self, info):
+        children = info.get('_children') or info.get('TimelineEntry')
+
+        if not children:
+            log.debug('Received "timeline" message with no children: %r', info)
+            return False
+
+        # Process children
+        count = 0
 
         for entry in children:
             state = TIMELINE_STATES.get(entry.get('state'))
@@ -212,20 +242,57 @@ class WebSocket(Source):
                 continue
 
             self.emit('%s.timeline.%s' % (self.name, state), entry)
+            count += 1
+
+        # Validate result
+        if count < 1:
+            log.debug('Received "timeline" message with no valid children: %r', info)
+            return False
 
         return True
+
+    #
+    # Helpers
+    #
 
     def emit_notification(self, name, info=None):
         if info is None:
             info = {}
 
-        children = info.get('_children', [])
+        # Emit children
+        children = self._get_children(info)
 
-        if len(children) > 1:
-            self.emit(name, children)
-        elif len(children) == 1:
-            self.emit(name, children[0])
-        elif info:
+        if children:
+            for child in children:
+                self.emit(name, child)
+
+            return True
+
+        # Emit objects
+        if info:
             self.emit(name, info)
         else:
             self.emit(name)
+
+        return True
+
+    @staticmethod
+    def _get_children(info):
+        if type(info) is list:
+            return info
+
+        if type(info) is not dict:
+            return None
+
+        # Return legacy children
+        if info.get('_children'):
+            return info['_children']
+
+        # Search for modern children container
+        for key, value in info.items():
+            key = key.lower()
+
+            if (key.endswith('entry') or key.endswith('notification')) and type(value) is list:
+                return value
+
+        return None
