@@ -23,7 +23,7 @@ class Lists(PullListsMode):
 
                     # Execute handlers for list
                     self.execute_handlers(
-                        SyncMedia.Lists, data,
+                        self.mode, SyncMedia.Lists, data,
                         action=action,
 
                         p_playlists=p_playlists,
@@ -139,7 +139,7 @@ class Lists(PullListsMode):
 
                 # Execute handler
                 self.execute_handlers(
-                    media, data,
+                    self.mode, media, data,
 
                     action=actions[0],
 
@@ -188,7 +188,7 @@ class Lists(PullListsMode):
 
                 # Execute handler
                 self.execute_handlers(
-                    media, data,
+                    self.mode, media, data,
 
                     p_sections_map=p_sections_map,
                     p_playlist=p_playlist,

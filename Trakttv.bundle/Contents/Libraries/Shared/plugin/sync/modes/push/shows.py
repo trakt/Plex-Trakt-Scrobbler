@@ -257,7 +257,7 @@ class Shows(Base):
 
                 # Trigger handler
                 self.execute_handlers(
-                    SyncMedia.Shows, data,
+                    self.mode, SyncMedia.Shows, data,
 
                     key=None,
 
@@ -322,7 +322,7 @@ class Shows(Base):
 
                     # Trigger handler
                     self.execute_handlers(
-                        SyncMedia.Episodes, data,
+                        self.mode, SyncMedia.Episodes, data,
                         key=None,
                         identifier=identifier,
                         guid=Guid.construct(*pk, matched=True),

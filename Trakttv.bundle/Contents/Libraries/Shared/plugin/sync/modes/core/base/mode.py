@@ -1,12 +1,8 @@
-from plugin.core.constants import GUID_SERVICES
 from plugin.core.filters import Filters
-from plugin.core.helpers.variable import try_convert
-from plugin.modules.core.manager import ModuleManager
-from plugin.sync import SyncMedia, SyncData, SyncMode
+from plugin.sync.core.enums import SyncData, SyncMedia, SyncMode
+from plugin.sync.core.guid import GuidMatch
 
-from oem.media.show import EpisodeMatch
 from plex import Plex
-from plex_metadata import Guid
 import elapsed
 import itertools
 import logging
@@ -139,8 +135,44 @@ class Mode(object):
             # Run method on child
             func()
 
+    def execute_episode_action(self, mode, data, ids, match, p_show, p_episode, t_item, **kwargs):
+        # Process episode
+        if match.media == GuidMatch.Media.Episode:
+            # Process episode
+            self.execute_handlers(
+                mode, SyncMedia.Episodes, data,
+                key=ids['episode'],
+
+                p_item=p_episode,
+                t_item=t_item,
+                **kwargs
+            )
+
+            return True
+
+        # Process movie
+        if match.media == GuidMatch.Media.Movie:
+            # Build movie item from plex episode
+            p_movie = p_episode.copy()
+
+            p_movie['title'] = p_show.get('title')
+            p_movie['year'] = p_show.get('year')
+
+            # Process movie
+            self.execute_handlers(
+                mode, SyncMedia.Movies, data,
+                key=ids['episode'],
+
+                p_item=p_episode,
+                t_item=t_item,
+                **kwargs
+            )
+            return True
+
+        raise ValueError('Unknown media type: %r' % (match.media,))
+
     @elapsed.clock
-    def execute_handlers(self, media, data, *args, **kwargs):
+    def execute_handlers(self, mode, media, data, *args, **kwargs):
         if type(media) is not list:
             media = [media]
 
@@ -153,7 +185,7 @@ class Mode(object):
                 continue
 
             try:
-                self.handlers[d].run(m, self.mode, *args, **kwargs)
+                self.handlers[d].run(m, mode, *args, **kwargs)
             except Exception as ex:
                 log.warn('Exception raised in handlers[%r].run(%r, ...): %s', d, m, ex, exc_info=True)
 
@@ -226,6 +258,40 @@ class Mode(object):
     def is_data_enabled(self, data):
         return data in self.enabled_data
 
+    def run_episode_action(self, mode, data, ids, match, p_show, p_episode, t_item, **kwargs):
+        if match.media == GuidMatch.Media.Movie:
+            # Process movie
+            self.execute_episode_action(
+                mode, data, ids, match,
+                p_show, p_episode, t_item,
+                **kwargs
+            )
+        elif match.media == GuidMatch.Media.Episode:
+            # Ensure `match` contains episodes
+            if not match.episodes:
+                log.info('No episodes returned for: %s/%s', match.guid.service, match.guid.id)
+                return
+
+            # Process each episode
+            for season_num, episode_num in match.episodes:
+                t_season = self._get_show_season(t_item, season_num)
+
+                if t_season is None:
+                    # Unable to find matching season in `t_show`
+                    continue
+
+                t_episode = self._get_season_episode(t_season, episode_num)
+
+                if t_episode is None:
+                    # Unable to find matching episode in `t_season`
+                    continue
+
+                self.execute_episode_action(
+                    mode, data, ids, match,
+                    p_show, p_episode, t_episode,
+                    **kwargs
+                )
+
     def sections(self, section_type=None):
         # Retrieve "section" for current task
         section_key = self.current.kwargs.get('section', None)
@@ -253,3 +319,17 @@ class Mode(object):
             result[key] = section.uuid
 
         return [(key, ) for key in result.keys()], result
+
+    @staticmethod
+    def _get_show_season(t_show, season_num):
+        if type(t_show) is dict:
+            return t_show.get('seasons', {}).get(season_num)
+
+        return t_show.seasons.get(season_num)
+
+    @staticmethod
+    def _get_season_episode(t_season, episode_num):
+        if type(t_season) is dict:
+            return t_season.get('episodes', {}).get(episode_num)
+
+        return t_season.episodes.get(episode_num)
