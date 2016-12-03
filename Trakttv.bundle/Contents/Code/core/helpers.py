@@ -344,27 +344,51 @@ def function_path(name, ext=None, **kwargs):
 def redirect(path, **kwargs):
     location = PLUGIN_PREFIX + path
 
-    if kwargs:
-        location += '?' + urllib.urlencode(kwargs)
-
     try:
         request = Core.sandbox.context.request
+
+        # Add request parameters (required for authentication on some clients)
+        kwargs.update({
+            # Client
+            'X-Plex-Client-Identifier': request.headers.get('X-Plex-Client-Identifier'),
+            'X-Plex-Product': request.headers.get('X-Plex-Product'),
+            'X-Plex-Version': request.headers.get('X-Plex-Version'),
+
+            # Platform
+            'X-Plex-Platform': request.headers.get('X-Plex-Platform'),
+            'X-Plex-Platform-Version': request.headers.get('X-Plex-Platform-Version'),
+
+            # Device
+            'X-Plex-Device': request.headers.get('X-Plex-Device'),
+            'X-Plex-Device-Name': request.headers.get('X-Plex-Device-Name'),
+            'X-Plex-Device-Screen-Resolution': request.headers.get('X-Plex-Device-Screen-Resolution'),
+
+            # Authentication
+            'X-Plex-Token': request.headers.get('X-Plex-Token')
+        })
 
         # Retrieve protocol
         protocol = request.protocol
 
         if request.host.endswith('.plex.direct:32400'):
-            # Secure connection
+            # Assume secure connection
             protocol = 'https'
 
-        # Build URL
+        # Prepend protocol and host (if not already in `location`)
         if request and request.host and location[0] == "/":
             location = protocol + "://" + request.host + location
     except Exception as ex:
         log.warn('Redirect - %s', str(ex), exc_info=True)
 
+    # Append parameters
+    if kwargs:
+        location += '?' + urllib.urlencode([
+            (key, value) for key, value in kwargs.items()
+            if value is not None
+        ])
+
     # Return redirect response
-    return Redirect(location)
+    return Redirect(location, True)
 
 
 def catch_errors(func):
