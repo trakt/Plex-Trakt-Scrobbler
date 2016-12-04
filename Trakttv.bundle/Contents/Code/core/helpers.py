@@ -238,6 +238,7 @@ def get_class_name(cls):
 def spawn(func, *args, **kwargs):
     thread_name = kwargs.pop('thread_name', None) or get_func_name(func)
 
+    # Construct thread
     th = threading.Thread(target=thread_wrapper, name=thread_name, kwargs={
         'func': func,
         'args': args,
@@ -245,6 +246,10 @@ def spawn(func, *args, **kwargs):
         'thread_name': thread_name
     })
 
+    # Set daemon mode
+    th.daemon = kwargs.pop('daemon', False)
+
+    # Start thread
     try:
         th.start()
         log.debug("Spawned thread with name '%s'" % thread_name)

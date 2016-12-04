@@ -153,7 +153,7 @@ class Main(object):
 
     def start(self):
         # Construct main thread
-        spawn(self.run, thread_name='main')
+        spawn(self.run, daemon=True, thread_name='main')
 
     def run(self):
         # Check for authentication token

@@ -170,11 +170,11 @@ def ValidatePrefs():
             # Restart plugin
             Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
 
-        spawn(restart)
+        spawn(restart, daemon=True)
         return MessageContainer(_("Success"), _("Success"))
 
     # Fire configuration changed callback
-    spawn(Main.on_configuration_changed)
+    spawn(Main.on_configuration_changed, daemon=True)
 
     return MessageContainer(_("Success"), _("Success"))
 
