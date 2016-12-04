@@ -15,6 +15,7 @@ PySocks==1.6.4
 pytz==2016.7
 six==1.10.0
 sortedcontainers==1.5.4
+win_inet_pton==1.0.1
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
