@@ -12,13 +12,13 @@ log = logging.getLogger(__name__)
 
 
 class GetMessage(Get):
-    def _log(self, type, *args, **kwargs):
+    def _log(self, message_type, *args, **kwargs):
         # Find matching (or create new dummy) error message
         message = self.or_create(
-            Message.type == type,
+            Message.type == message_type,
             *args,
 
-            type=type,
+            type=message_type,
             last_logged_at=datetime.utcnow(),
 
             revision=0,
@@ -49,10 +49,10 @@ class GetMessage(Get):
 
         return message
 
-    def from_exception(self, exception):
+    def from_exception(self, exception, message_type=Message.Type.Exception):
         # Log exception
         return self._log(
-            Message.Type.Exception,
+            message_type,
 
             # Query
             Message.exception_hash == exception.hash,

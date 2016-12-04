@@ -1,19 +1,31 @@
 from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH, PMS_PATH
+from plugin.core.exceptions import ConnectionError
 from plugin.core.helpers.error import ErrorHasher
 from plugin.managers.core.base import Manager, Create
 from plugin.managers.message import MessageManager
 from plugin.models.exception import Exception
+from plugin.models.message import Message
 
 from datetime import datetime
+from requests import exceptions as requests_exceptions
+from requests.packages.urllib3 import exceptions as urllib3_exceptions
+from six.moves.urllib.parse import urlparse
 import logging
 import os
 import re
+import socket
+import ssl
 import sys
+import trakt
 
 VERSION_BASE = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 VERSION_BRANCH = PLUGIN_VERSION_BRANCH
 
 RE_TRACEBACK = re.compile(r"\w+ \(most recent call last\)\:\n(?P<traceback>(?:.*?\n)*)(?P<type>\w+)\: (?P<message>.*?)(?:\n|$)", re.IGNORECASE)
+
+FINAL_EXCEPTION_TYPES = [
+    urllib3_exceptions.ProxyError
+]
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +39,14 @@ class CreateException(Create):
         if exc_info is None:
             # Retrieve `exc_info` of last exception
             exc_info = sys.exc_info()
+
+        # Parse exception
+        message_type = Message.Type.Exception
+
+        try:
+            message_type, exc_info = self._parse_exception(exc_info)
+        except Exception as ex:
+            log.warn('Unable to parse exception: %s', ex, exc_info=True)
 
         # Create exception
         exception = self.model(
@@ -43,7 +63,10 @@ class CreateException(Create):
         exception.hash = ErrorHasher.hash(exception)
 
         # Create/Lookup message for exception
-        exception.error = MessageManager.get.from_exception(exception)
+        exception.error = MessageManager.get.from_exception(
+            exception,
+            message_type=message_type
+        )
 
         # Save exception details
         exception.save()
@@ -107,6 +130,118 @@ class CreateException(Create):
             lines[x] = line[:path_start] + path + line[path_end:]
 
         return '\n'.join(lines)
+
+    def _parse_exception(self, exc_info):
+        if type(exc_info) is not tuple or len(exc_info) != 3:
+            return Message.Type.Exception, exc_info
+
+        # Parse exception
+        _, ex, tb = exc_info
+
+        if isinstance(ex, trakt.RequestError):
+            return self._parse_trakt_error(exc_info)
+
+        if isinstance(ex, requests_exceptions.RequestException):
+            return self._parse_request_exception(exc_info)
+
+        return Message.Type.Exception, exc_info
+
+    def _parse_trakt_error(self, exc_info):
+        if type(exc_info) is not tuple or len(exc_info) != 3:
+            return Message.Type.Exception, exc_info
+
+        # Parse exception information
+        _, ex, tb = exc_info
+
+        if not isinstance(ex, trakt.RequestError):
+            return Message.Type.Exception, exc_info
+
+        # Construct connection error
+        return Message.Type.Trakt, (
+            ConnectionError,
+            ConnectionError(self._get_exception_message(ex)),
+            tb
+        )
+
+    def _parse_request_exception(self, exc_info):
+        if type(exc_info) is not tuple or len(exc_info) != 3:
+            return Message.Type.Exception, exc_info
+
+        # Parse exception information
+        _, ex, tb = exc_info
+
+        if not isinstance(ex, requests_exceptions.RequestException) or not ex.request:
+            return Message.Type.Exception, exc_info
+
+        # Parse request url
+        url = urlparse(ex.request.url)
+
+        if not url:
+            return Message.Type.Exception, exc_info
+
+        # Retrieve service title
+        if url.netloc.endswith('.plex.tv'):
+            message_type = Message.Type.Plex
+        elif url.netloc.endswith('.sentry.skipthe.net'):
+            message_type = Message.Type.Sentry
+        elif url.netloc.endswith('.trakt.tv'):
+            message_type = Message.Type.Trakt
+        else:
+            return Message.Type.Exception, exc_info
+
+        # Construct connection error
+        return message_type, (
+            ConnectionError,
+            ConnectionError(self._get_exception_message(ex)),
+            tb
+        )
+
+    def _get_exception_message(self, ex):
+        if not issubclass(ex.__class__, BaseException):
+            return ex
+
+        if type(ex) in FINAL_EXCEPTION_TYPES:
+            return ex.message
+
+        # Return exception messages
+        if isinstance(ex, trakt.RequestError):
+            return '%s (code: %r)' % (
+                ex.error[1],
+                ex.status_code
+            )
+
+        if isinstance(ex, socket.error):
+            if ex.errno is None:
+                return '%s' % (
+                    ex.message or ex.strerror
+                )
+
+            return '%s (code: %r)' % (
+                ex.message or ex.strerror,
+                ex.errno
+            )
+
+        # Expand "requests" and "urllib3" exceptions
+        if isinstance(ex, requests_exceptions.RequestException):
+            if len(ex.args) < 1:
+                return ex.message
+
+            return self._get_exception_message(ex.args[0])
+
+        if isinstance(ex, urllib3_exceptions.MaxRetryError):
+            return self._get_exception_message(ex.reason)
+
+        if isinstance(ex, urllib3_exceptions.HTTPError):
+            if issubclass(ex.message.__class__, BaseException):
+                return self._get_exception_message(ex.message)
+
+            if len(ex.args) < 1:
+                return ex.message
+
+            return self._get_exception_message(ex.args[0])
+
+        # Unknown exception
+        return ex.message
 
 
 class ExceptionManager(Manager):
