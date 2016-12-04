@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-SOCKS support for urllib3
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This contrib module contains provisional support for SOCKS proxies from within
+This module contains provisional support for SOCKS proxies from within
 urllib3. This module supports SOCKS4 (specifically the SOCKS4A variant) and
 SOCKS5. To enable its functionality, either install PySocks or install this
 module with the ``socks`` extra.
 
+The SOCKS implementation supports the full range of urllib3 features. It also
+supports the following SOCKS features:
+
+- SOCKS4
+- SOCKS4a
+- SOCKS5
+- Usernames and passwords for the SOCKS proxy
+
 Known Limitations:
 
 - Currently PySocks does not support contacting remote websites via literal
-  IPv6 addresses. Any such connection attempt will fail.
+  IPv6 addresses. Any such connection attempt will fail. You must use a domain
+  name.
 - Currently PySocks does not support IPv6 connections to the SOCKS proxy. Any
   such connection attempt will fail.
 """
@@ -84,7 +90,8 @@ class SOCKSConnection(HTTPConnection):
         except SocketTimeout as e:
             raise ConnectTimeoutError(
                 self, "Connection to %s timed out. (connect timeout=%s)" %
-                (self.host, self.timeout))
+                (self.host, self.timeout),
+                e)
 
         except socks.ProxyError as e:
             # This is fragile as hell, but it seems to be the only way to raise
@@ -95,22 +102,25 @@ class SOCKSConnection(HTTPConnection):
                     raise ConnectTimeoutError(
                         self,
                         "Connection to %s timed out. (connect timeout=%s)" %
-                        (self.host, self.timeout)
+                        (self.host, self.timeout),
+                        error
                     )
                 else:
                     raise NewConnectionError(
                         self,
-                        "Failed to establish a new connection: %s" % error
+                        "Failed to establish a new connection: %s" % error,
+                        error
                     )
             else:
                 raise NewConnectionError(
                     self,
-                    "Failed to establish a new connection: %s" % e
+                    "Failed to establish a new connection: %s" % e,
+                    e
                 )
 
         except SocketError as e:  # Defensive: PySocks should catch all these.
             raise NewConnectionError(
-                self, "Failed to establish a new connection: %s" % e)
+                self, "Failed to establish a new connection: %s" % e, e)
 
         return conn
 
