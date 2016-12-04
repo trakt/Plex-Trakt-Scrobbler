@@ -6,7 +6,7 @@ from plugin.core.environment import translate as _
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
 from plugin.managers.account import AccountManager
-from plugin.models import Account, SyncResult
+from plugin.models import Account, Message, SyncResult
 from plugin.sync import SyncMode
 from plugin.sync.main import Sync, QueueError
 
@@ -331,8 +331,8 @@ class Status(object):
             past_tense='%s'
         )
 
-    @staticmethod
-    def build_result(status):
+    @classmethod
+    def build_result(cls, status):
         if status.latest.success:
             return _('was successful')
 
@@ -343,10 +343,10 @@ class Status(object):
 
         if len(errors) > 1:
             # Multiple errors
-            message += _(' (%d errors, %s)') % (len(errors), errors[0].summary)
+            message += _(' (%d errors, %s)') % (len(errors), cls.format_error(errors[0]))
         elif len(errors) == 1:
             # Single error
-            message += _(' (%s)') % errors[0].summary
+            message += _(' (%s)') % cls.format_error(errors[0])
 
         return message
 
@@ -358,6 +358,13 @@ class Status(object):
             return _('Last run just a moment ago')
 
         return _('Last run %s') % human(since, precision=1)
+
+    @staticmethod
+    def format_error(error):
+        if error.type in [Message.Type.Trakt, Message.Type.Plex, Message.Type.Sentry]:
+            return '%s: %s' % (Message.Type.title(error.type), error.summary or 'Unknown Connection Error')
+
+        return error.summary
 
 
 class Trigger(object):
