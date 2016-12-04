@@ -1,4 +1,4 @@
-arrow==0.8.0
+arrow==0.10.0
 asio==1.1
 croniter==0.3.13
 enum34==1.1.6
