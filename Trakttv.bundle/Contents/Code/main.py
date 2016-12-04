@@ -15,7 +15,7 @@ from plugin.scrobbler.core.session_prefix import SessionPrefix
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
-from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
+from six.moves.urllib.parse import quote_plus, urlsplit, urlunsplit
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt
 import os
@@ -237,11 +237,14 @@ class Main(object):
             log.info('HTTP Proxy has been disabled')
             return
 
-        if not host.startswith('http://') and not host.startswith('https://'):
-            host = 'http://' + host
-
         # Parse URL
-        scheme, netloc, path, query, fragment = urlsplit(host)
+        host_parsed = urlsplit(host)
+
+        # Expand components
+        scheme, netloc, path, query, fragment = host_parsed
+
+        if not scheme:
+            scheme = 'http'
 
         # Retrieve proxy credentials
         username = Prefs['proxy_username']
@@ -250,8 +253,8 @@ class Main(object):
         # Build URL
         if username and password and '@' not in netloc:
             netloc = '%s:%s@%s' % (
-                urlencode(username),
-                urlencode(password),
+                quote_plus(username),
+                quote_plus(password),
                 netloc
             )
 
@@ -269,4 +272,8 @@ class Main(object):
             'HTTPS_PROXY': url
         })
 
-        log.info('HTTP Proxy has been enabled')
+        # Display message in log file
+        if not host_parsed.username and not host_parsed.password:
+            log.info('HTTP Proxy has been enabled (host: %r)', host)
+        else:
+            log.info('HTTP Proxy has been enabled (host: <sensitive>)')
