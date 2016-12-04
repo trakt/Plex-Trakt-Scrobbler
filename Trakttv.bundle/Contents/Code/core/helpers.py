@@ -403,6 +403,8 @@ def catch_errors(func):
             if InterfaceMessages.critical:
                 return error_record_view(logging.CRITICAL, InterfaceMessages.record)
 
+            log.error('Exception raised in view: %s', ex, exc_info=True)
+
             return error_view(
                 'Exception',
                 ex.message
