@@ -10,9 +10,12 @@ class StoppedHandler(SessionHandler):
 
     @classmethod
     def process(cls, session, payload):
-        if session.state == 'stop':
-            # Duplicate action, just update the current data
-            yield None, payload
-            return
+        # Handle media change
+        if cls.has_media_changed(session, payload) and session.state in ['start', 'pause']:
+            yield 'stop', session.payload
 
-        yield 'stop', payload
+        # Handle current media
+        if session.state in ['start', 'pause']:
+            yield 'stop', payload
+        elif session.state == 'stop':
+            yield None, payload
