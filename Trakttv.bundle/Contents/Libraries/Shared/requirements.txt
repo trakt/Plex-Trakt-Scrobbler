@@ -14,7 +14,7 @@ pyOpenSSL==16.2.0
 PySocks==1.6.5
 pytz==2016.10
 six==1.10.0
-sortedcontainers==1.5.4
+sortedcontainers==1.5.6
 win_inet_pton==1.0.1
 
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
