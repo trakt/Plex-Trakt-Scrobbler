@@ -25,6 +25,26 @@ class ShowsInterface(Interface):
             self.get_data(response, **kwargs)
         )
 
+    def next_episode(self, id, **kwargs):
+        response = self.http.get(
+            str(id), 'next_episode'
+        )
+
+        return SummaryMapper.episode(
+            self.client,
+            self.get_data(response, **kwargs)
+        )
+
+    def last_episode(self, id, **kwargs):
+        response = self.http.get(
+            str(id), 'last_episode'
+        )
+
+        return SummaryMapper.episode(
+            self.client,
+            self.get_data(response, **kwargs)
+        )
+
     def seasons(self, id, extended=None, **kwargs):
         response = self.http.get(str(id), [
             'seasons'
