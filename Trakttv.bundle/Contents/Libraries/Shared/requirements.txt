@@ -11,7 +11,7 @@ msgpack-python==0.4.8
 ndg-httpsclient==0.4.2
 pyasn1==0.1.9
 pyOpenSSL==16.2.0
-PySocks==1.6.4
+PySocks==1.6.5
 pytz==2016.7
 six==1.10.0
 sortedcontainers==1.5.4

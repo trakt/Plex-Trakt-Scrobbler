@@ -1,6 +1,6 @@
 """
 SocksiPy - Python SOCKS module.
-Version 1.6.4
+Version 1.6.5
 
 Copyright 2006 Dan-Haim. All rights reserved.
 
@@ -52,7 +52,7 @@ Modifications made by Anorov (https://github.com/Anorov)
 -Various small bug fixes
 """
 
-__version__ = "1.6.4"
+__version__ = "1.6.5"
 
 import socket
 import struct
@@ -748,6 +748,10 @@ class socksocket(_BaseSocket):
             raise GeneralProxyError("Invalid destination-connection (host, port) pair")
 
 
+        # We set the timeout here so that we don't hang in connection or during
+        # negotiation.
+        _BaseSocket.settimeout(self, self._timeout)
+
         if proxy_type is None:
             # Treat like regular socket object
             self.proxy_peername = dest_pair
@@ -758,7 +762,7 @@ class socksocket(_BaseSocket):
         proxy_addr = self._proxy_addr()
 
         try:
-            # Initial connection to proxy server
+            # Initial connection to proxy server.
             _BaseSocket.connect(self, proxy_addr)
 
         except socket.error as error:
@@ -778,7 +782,6 @@ class socksocket(_BaseSocket):
                 # Calls negotiate_{SOCKS4, SOCKS5, HTTP}
                 negotiate = self._proxy_negotiators[proxy_type]
                 negotiate(self, dest_addr, dest_port)
-                _BaseSocket.settimeout(self, self._timeout)
             except socket.error as error:
                 # Wrap socket errors
                 self.close()
