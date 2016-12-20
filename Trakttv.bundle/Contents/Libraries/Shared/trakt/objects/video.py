@@ -1,4 +1,4 @@
-from trakt.core.helpers import from_iso8601
+from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 from trakt.objects.media import Media
 
@@ -79,6 +79,9 @@ class Video(Media):
         """
 
     def _update(self, info=None, is_watched=None, is_collected=None, **kwargs):
+        if not info:
+            return
+
         super(Video, self)._update(info, **kwargs)
 
         update_attributes(self, info, [
@@ -90,20 +93,20 @@ class Video(Media):
             self.action = info.get('action')
 
         if 'id' in info:
-            self.id = int(info.get('id'))
+            self.id = info.get('id')
 
         # Set timestamps
         if 'last_watched_at' in info:
-            self.last_watched_at = from_iso8601(info.get('last_watched_at'))
+            self.last_watched_at = from_iso8601_datetime(info.get('last_watched_at'))
 
         if 'collected_at' in info:
-            self.collected_at = from_iso8601(info.get('collected_at'))
+            self.collected_at = from_iso8601_datetime(info.get('collected_at'))
 
         if 'paused_at' in info:
-            self.paused_at = from_iso8601(info.get('paused_at'))
+            self.paused_at = from_iso8601_datetime(info.get('paused_at'))
 
         if 'watched_at' in info:
-            self.watched_at = from_iso8601(info.get('watched_at'))
+            self.watched_at = from_iso8601_datetime(info.get('watched_at'))
 
         # Set flags
         if is_watched is not None:

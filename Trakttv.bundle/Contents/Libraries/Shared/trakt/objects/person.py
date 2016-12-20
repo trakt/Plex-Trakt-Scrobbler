@@ -1,4 +1,4 @@
-from trakt.core.helpers import from_iso8601
+from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 
 
@@ -72,7 +72,7 @@ class Person(object):
 
         # Set timestamps
         if 'listed_at' in info:
-            self.listed_at = from_iso8601(info.get('listed_at'))
+            self.listed_at = from_iso8601_datetime(info.get('listed_at'))
 
     @classmethod
     def _construct(cls, client, keys, info=None, index=None, **kwargs):

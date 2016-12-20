@@ -1,4 +1,4 @@
-from trakt.core.helpers import to_iso8601
+from trakt.core.helpers import to_iso8601_datetime
 from trakt.interfaces.base import authenticated
 from trakt.interfaces.sync.core.mixins import Get, Add, Remove
 
@@ -27,10 +27,10 @@ class SyncHistoryInterface(Get, Add, Remove):
             query['limit'] = per_page
 
         if start_at:
-            query['start_at'] = to_iso8601(start_at)
+            query['start_at'] = to_iso8601_datetime(start_at)
 
         if end_at:
-            query['end_at'] = to_iso8601(end_at)
+            query['end_at'] = to_iso8601_datetime(end_at)
 
         # Request watched history
         return super(SyncHistoryInterface, self).get(
