@@ -6,7 +6,6 @@ raven.transport.registry
 :license: BSD, see LICENSE for more details.
 """
 from __future__ import absolute_import
-import sys
 
 # TODO(dcramer): we really should need to import all of these by default
 from raven.transport.eventlet import EventletHTTPTransport
@@ -18,11 +17,7 @@ from raven.transport.threaded import ThreadedHTTPTransport
 from raven.transport.threaded_requests import ThreadedRequestsHTTPTransport
 from raven.transport.twisted import TwistedHTTPTransport
 from raven.transport.tornado import TornadoHTTPTransport
-from raven.transport.udp import UDPTransport
 from raven.utils import urlparse
-
-if sys.version_info >= (3, 3):
-    from raven.transport.aiohttp import AioHttpTransport
 
 
 class TransportRegistry(object):
@@ -64,6 +59,9 @@ class TransportRegistry(object):
             self._transports[full_url] = self._schemes[parsed_url.scheme](parsed_url, **options)
         return self._transports[full_url]
 
+    def get_transport_cls(self, scheme):
+        return self._schemes[scheme]
+
     def compute_scope(self, url, scope):
         """
         Compute a scope dictionary.  This may be overridden by custom
@@ -81,9 +79,5 @@ default_transports = [
     RequestsHTTPTransport,
     ThreadedRequestsHTTPTransport,
     TornadoHTTPTransport,
-    UDPTransport,
     EventletHTTPTransport,
 ]
-
-if sys.version_info >= (3, 3):
-    default_transports += [AioHttpTransport]
