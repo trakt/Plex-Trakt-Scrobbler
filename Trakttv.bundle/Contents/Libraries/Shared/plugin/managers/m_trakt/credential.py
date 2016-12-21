@@ -67,17 +67,17 @@ class UpdateOAuthCredential(Update):
         return True
 
     def from_pin(self, oauth, pin, save=True):
+        data = {'code': pin}
+
         # Exchange `pin` for token authorization
         authorization = Trakt['oauth'].token_exchange(pin, 'urn:ietf:wg:oauth:2.0:oob')
 
-        if not authorization:
-            log.warn('Token exchange failed')
-            return None
+        if authorization:
+            data.update(authorization)
+        else:
+            log.warn('Token exchange failed for %r', oauth.account)
 
         # Update `OAuthCredential`
-        data = {'code': pin}
-        data.update(authorization)
-
         return self(oauth, data, save=save)
 
 
