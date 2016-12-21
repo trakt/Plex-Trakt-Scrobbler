@@ -7,9 +7,9 @@ from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFil
 from plugin.core.logger.filters.events import EventsReportFilter
 
 from raven import Client
-from raven.handlers.logging import SentryHandler, RESERVED
-from raven.utils import six
-from raven.utils.stacks import iter_stack_frames, label_from_frame
+from raven._compat import string_types, iteritems, text_type
+from raven.handlers.logging import SentryHandler, RESERVED, extract_extra
+from raven.utils.stacks import iter_stack_frames
 import datetime
 import logging
 import os
@@ -36,6 +36,7 @@ PARAMS = {
         'Framework.api',
         'Framework.code',
         'Framework.components',
+        'Framework.core',
         'urllib2'
     ],
 
@@ -96,27 +97,12 @@ class ErrorReporter(Client):
 
 class ErrorReporterHandler(SentryHandler):
     def _emit(self, record, **kwargs):
-        data = {
-            'user': {'id': self.client.name}
-        }
+        data, extra = extract_extra(record)
 
-        extra = getattr(record, 'data', None)
-        if not isinstance(extra, dict):
-            if extra:
-                extra = {'data': extra}
-            else:
-                extra = {}
+        # Use client name as default user id
+        data.setdefault('user', {'id': self.client.name})
 
-        for k, v in six.iteritems(vars(record)):
-            if k in RESERVED:
-                continue
-            if k.startswith('_'):
-                continue
-            if '.' not in k and k not in ('culprit', 'server_name'):
-                extra[k] = v
-            else:
-                data[k] = v
-
+        # Retrieve stack
         stack = getattr(record, 'stack', None)
         if stack is True:
             stack = iter_stack_frames()
@@ -124,33 +110,37 @@ class ErrorReporterHandler(SentryHandler):
         if stack:
             stack = self._get_targetted_stack(stack, record)
 
+        # Build message
         date = datetime.datetime.utcfromtimestamp(record.created)
         event_type = 'raven.events.Message'
         handler_kwargs = {
             'params': record.args,
         }
+
         try:
-            handler_kwargs['message'] = six.text_type(record.msg)
+            handler_kwargs['message'] = text_type(record.msg)
         except UnicodeDecodeError:
             # Handle binary strings where it should be unicode...
             handler_kwargs['message'] = repr(record.msg)[1:-1]
 
         try:
-            handler_kwargs['formatted'] = six.text_type(record.message)
+            handler_kwargs['formatted'] = text_type(record.message)
         except UnicodeDecodeError:
             # Handle binary strings where it should be unicode...
             handler_kwargs['formatted'] = repr(record.message)[1:-1]
 
-        # If there's no exception being processed, exc_info may be a 3-tuple of None
-        # http://docs.python.org/library/sys.html#sys.exc_info
+        # Retrieve exception information from record
         try:
             exc_info = self._exc_info(record)
         except Exception as ex:
             log.info('Unable to retrieve exception info - %s', ex, exc_info=True)
             exc_info = None
 
+        # Parse exception information
         exception_hash = None
 
+        # If there's no exception being processed, exc_info may be a 3-tuple of None
+        # http://docs.python.org/library/sys.html#sys.exc_info
         if exc_info and len(exc_info) == 3 and all(exc_info):
             message = handler_kwargs.get('formatted')
 
@@ -178,7 +168,8 @@ class ErrorReporterHandler(SentryHandler):
 
         # HACK: discover a culprit when we normally couldn't
         elif not (data.get('stacktrace') or data.get('culprit')) and (record.name or record.funcName):
-            culprit = label_from_frame({'module': record.name, 'function': record.funcName})
+            culprit = self._label_from_frame({'module': record.name, 'function': record.funcName})
+
             if culprit:
                 data['culprit'] = culprit
 
@@ -188,9 +179,11 @@ class ErrorReporterHandler(SentryHandler):
         # Store record `tags` in message
         if hasattr(record, 'tags'):
             kwargs['tags'] = record.tags
+        elif self.tags:
+            kwargs['tags'] = self.tags
 
+        # Store `exception_hash` in message (if defined)
         if exception_hash:
-            # Store `exception_hash` in message
             if 'tags' not in kwargs:
                 kwargs['tags'] = {}
 
@@ -357,6 +350,16 @@ class ErrorReporterHandler(SentryHandler):
             return None
 
         return module
+
+    @staticmethod
+    def _label_from_frame(frame):
+        module = frame.get('module') or '?'
+        function = frame.get('function') or '?'
+
+        if module == function == '?':
+            return ''
+
+        return '%s in %s' % (module, function)
 
 
 # Build client
