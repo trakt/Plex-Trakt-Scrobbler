@@ -6,7 +6,7 @@ from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFil
     RequestsReportFilter, TraktReportFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
-from raven import Client
+from raven import Client, breadcrumbs
 from raven._compat import string_types, iteritems, text_type
 from raven.handlers.logging import SentryHandler, RESERVED, extract_extra
 from raven.utils.stacks import iter_stack_frames
@@ -47,6 +47,10 @@ PARAMS = {
         'plugin.branch': PLUGIN_VERSION_BRANCH
     })
 }
+
+# Configure raven breadcrumbs
+breadcrumbs.ignore_logger('plugin.core.logger.handlers.error_reporter.ErrorReporter')
+breadcrumbs.ignore_logger('peewee')
 
 
 class ErrorReporter(Client):
