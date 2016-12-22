@@ -25,7 +25,7 @@ class ErrorHasher(object):
         ]))
 
     @classmethod
-    def hash(cls, exception=None, exc_info=None):
+    def hash(cls, exception=None, exc_info=None, include_traceback=True):
         if exception is not None:
             # Retrieve hash parameters from `Exception` object
             type = exception.type
@@ -42,6 +42,8 @@ class ErrorHasher(object):
         m = hashlib.md5()
         m.update(str(type))
         m.update(str(message))
-        m.update(str(tb))
+
+        if include_traceback:
+            m.update(str(tb))
 
         return m.hexdigest()

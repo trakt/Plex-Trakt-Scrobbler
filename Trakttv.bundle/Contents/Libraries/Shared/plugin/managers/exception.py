@@ -60,7 +60,10 @@ class CreateException(Create):
         )
 
         # Calculate exception hash
-        exception.hash = ErrorHasher.hash(exception)
+        exception.hash = ErrorHasher.hash(
+            exception,
+            include_traceback=message_type == Message.Type.Exception
+        )
 
         # Create/Lookup message for exception
         exception.error = MessageManager.get.from_exception(
