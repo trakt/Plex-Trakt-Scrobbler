@@ -1,6 +1,10 @@
 from trakt.core.errors import ERRORS
 
 
+class RequestFailedError(Exception):
+    pass
+
+
 class RequestError(Exception):
     def __init__(self, response):
         self.response = response

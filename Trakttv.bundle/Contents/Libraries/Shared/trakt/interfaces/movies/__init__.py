@@ -1,6 +1,8 @@
 from trakt.interfaces.base import Interface
 from trakt.mapper.summary import SummaryMapper
 
+import requests
+
 
 class MoviesInterface(Interface):
     path = 'movies'
@@ -10,18 +12,22 @@ class MoviesInterface(Interface):
             'extended': extended
         })
 
+        items = self.get_data(response, **kwargs)
+
+        if isinstance(items, requests.Response):
+            return items
+
         # Parse response
-        return SummaryMapper.movie(
-            self.client,
-            self.get_data(response, **kwargs)
-        )
+        return SummaryMapper.movie(self.client, items)
 
     def trending(self, extended=None, **kwargs):
         response = self.http.get('trending', query={
             'extended': extended
         })
 
-        return SummaryMapper.movies(
-            self.client,
-            self.get_data(response, **kwargs)
-        )
+        items = self.get_data(response, **kwargs)
+
+        if isinstance(items, requests.Response):
+            return items
+
+        return SummaryMapper.movies(self.client, items)

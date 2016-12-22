@@ -1,5 +1,7 @@
 from trakt.interfaces.base import Interface
 
+import requests
+
 
 class AuthInterface(Interface):
     path = 'auth'
@@ -11,6 +13,9 @@ class AuthInterface(Interface):
         })
 
         data = self.get_data(response, **kwargs)
+
+        if isinstance(data, requests.Response):
+            return data
 
         if not data:
             return None

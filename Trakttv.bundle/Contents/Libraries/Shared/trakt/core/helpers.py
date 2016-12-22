@@ -30,6 +30,18 @@ def deprecated(message):
     return wrap
 
 
+def popitems(d, keys):
+    result = {}
+
+    for key in keys:
+        value = d.pop(key, None)
+
+        if value is not None:
+            result[key] = value
+
+    return result
+
+
 def synchronized(f_lock, mode='full'):
     if mode == 'full':
         mode = ['acquire', 'release']

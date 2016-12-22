@@ -2,6 +2,8 @@ from trakt.core.helpers import deprecated
 from trakt.helpers import build_url
 from trakt.interfaces.base import Interface
 
+import requests
+
 # Import child interfaces
 from trakt.interfaces.oauth.device import DeviceOAuthInterface
 from trakt.interfaces.oauth.pin import PinOAuthInterface
@@ -42,7 +44,7 @@ class OAuthInterface(Interface):
     def token(self, code=None, redirect_uri=None, grant_type='authorization_code'):
         return self.token_exchange(code, redirect_uri, grant_type)
 
-    def token_exchange(self, code=None, redirect_uri=None, grant_type='authorization_code'):
+    def token_exchange(self, code=None, redirect_uri=None, grant_type='authorization_code', **kwargs):
         client_id = self.client.configuration['client.id']
         client_secret = self.client.configuration['client.secret']
 
@@ -62,14 +64,17 @@ class OAuthInterface(Interface):
             authenticated=False
         )
 
-        data = self.get_data(response)
+        data = self.get_data(response, **kwargs)
+
+        if isinstance(data, requests.Response):
+            return data
 
         if not data:
             return None
 
         return data
 
-    def token_refresh(self, refresh_token=None, redirect_uri=None, grant_type='refresh_token'):
+    def token_refresh(self, refresh_token=None, redirect_uri=None, grant_type='refresh_token', **kwargs):
         client_id = self.client.configuration['client.id']
         client_secret = self.client.configuration['client.secret']
 
@@ -89,7 +94,10 @@ class OAuthInterface(Interface):
             authenticated=False
         )
 
-        data = self.get_data(response)
+        data = self.get_data(response, **kwargs)
+
+        if isinstance(data, requests.Response):
+            return data
 
         if not data:
             return None

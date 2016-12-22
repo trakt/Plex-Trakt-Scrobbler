@@ -1,11 +1,10 @@
-from trakt.core.errors import ERRORS
-from trakt.core.exceptions import ServerError, ClientError
+from trakt.core.errors import log_request_error
+from trakt.core.exceptions import RequestFailedError, ServerError, ClientError
 from trakt.core.helpers import try_convert
 from trakt.core.pagination import PaginationIterator
 from trakt.helpers import setdefault
 
 from functools import wraps
-from six.moves.urllib.parse import urlparse
 import logging
 import warnings
 
@@ -15,7 +14,8 @@ log = logging.getLogger(__name__)
 def authenticated(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-        kwargs['authenticated'] = True
+        if 'authenticated' not in kwargs:
+            kwargs['authenticated'] = True
 
         return func(*args, **kwargs)
 
@@ -59,6 +59,10 @@ class Interface(object):
 
     def get_data(self, response, exceptions=False, pagination=False, parse=True):
         if response is None:
+            if exceptions:
+                raise RequestFailedError('No response available')
+
+            log.warn('Request failed (no response returned)')
             return None
 
         # Return response, if parse=False
@@ -69,26 +73,10 @@ class Interface(object):
         error = False
 
         if response.status_code < 200 or response.status_code >= 300:
-            # Lookup status code in trakt error definitions
-            name, desc = ERRORS.get(response.status_code, ("Unknown", "Unknown"))
+            log_request_error(log, response)
 
-            # Display warning (with extra debug information)
-            method = response.request.method
-            path = urlparse(response.request.url).path
-            code = response.status_code
-
-            log.warn('Request failed: "%s %s" - %s: "%%s" (%%s)' % (method, path, code), desc, name, extra={
-                'data': {
-                    'http.headers': {
-                        'cf-ray': response.headers.get('cf-ray'),
-                        'X-Request-Id': response.headers.get('X-Request-Id'),
-                        'X-Runtime': response.headers.get('X-Runtime')
-                    }
-                }
-            })
-
+            # Raise an exception (if enabled)
             if exceptions:
-                # Raise an exception (including the response for further processing)
                 if response.status_code >= 500:
                     raise ServerError(response)
                 else:
