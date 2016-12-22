@@ -1,5 +1,6 @@
 from logging import Filter
 from requests import RequestException
+from six import string_types
 import logging
 
 IGNORED_MESSAGE_PREFIXES = [
@@ -52,7 +53,7 @@ class RequestsReportFilter(Filter):
             return False
 
         for prefix in IGNORED_MESSAGE_PREFIXES:
-            if record.msg.startswith(prefix):
+            if isinstance(record.msg, string_types) and record.msg.startswith(prefix):
                 return True
 
         return False
