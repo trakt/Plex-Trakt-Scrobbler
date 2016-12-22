@@ -102,6 +102,15 @@ class Environment(object):
         # Initialize locale
         try:
             locale.setlocale(locale.LC_ALL, language)
+        except ValueError as ex:
+            # Ignore locale emulation exceptions
+            if ex.message == '_locale emulation only supports "C" locale':
+                log.info('Locale extension not available, using the "C" locale')
+                return False
+
+            # Unknown exception
+            log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
+            return False
         except Exception as ex:
             log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
             return False
@@ -112,6 +121,15 @@ class Environment(object):
         if not code:
             try:
                 locale.setlocale(locale.LC_ALL, DEFAULT_LOCALE)
+            except ValueError as ex:
+                # Ignore locale emulation exceptions
+                if ex.message == '_locale emulation only supports "C" locale':
+                    log.info('Locale extension not available, using the "C" locale')
+                    return False
+
+                # Unknown exception
+                log.warn('Unable to set locale to %r: %s', language, ex, exc_info=True)
+                return False
             except Exception as ex:
                 log.warn('Unable to set locale to %r: %s', DEFAULT_LOCALE, ex, exc_info=True)
                 return False
