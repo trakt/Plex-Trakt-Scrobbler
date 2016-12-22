@@ -29,13 +29,12 @@ class GetMessage(Get):
         )
 
         if message and not message._created:
-            if message.revision == 0:
-                # Update summary/description
-                if kwargs.get('summary'):
-                    message.summary = kwargs['summary']
+            # Update summary/description
+            if kwargs.get('summary'):
+                message.summary = kwargs['summary']
 
-                if kwargs.get('description'):
-                    message.description = kwargs['description']
+            if kwargs.get('description'):
+                message.description = kwargs['description']
 
             # Update `last_logged_at` timestamp
             message.last_logged_at = datetime.utcnow()
