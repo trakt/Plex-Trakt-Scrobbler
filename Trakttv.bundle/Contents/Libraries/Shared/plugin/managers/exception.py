@@ -24,6 +24,7 @@ VERSION_BRANCH = PLUGIN_VERSION_BRANCH
 RE_TRACEBACK = re.compile(r"\w+ \(most recent call last\)\:\n(?P<traceback>(?:.*?\n)*)(?P<type>\w+)\: (?P<message>.*?)(?:\n|$)", re.IGNORECASE)
 
 FINAL_EXCEPTION_TYPES = [
+    urllib3_exceptions.ConnectTimeoutError,
     urllib3_exceptions.ProxyError
 ]
 
@@ -162,7 +163,7 @@ class CreateException(Create):
         # Construct connection error
         return Message.Type.Trakt, (
             ConnectionError,
-            ConnectionError(self._get_exception_message(ex)),
+            ConnectionError(self._format_exception(ex)),
             tb
         )
 
@@ -183,11 +184,11 @@ class CreateException(Create):
             return Message.Type.Exception, exc_info
 
         # Retrieve service title
-        if url.netloc.endswith('.plex.tv'):
-            message_type = Message.Type.Plex
-        elif url.netloc.endswith('.sentry.skipthe.net'):
+        if url.netloc == 'sentry.skipthe.net':
             message_type = Message.Type.Sentry
-        elif url.netloc.endswith('.trakt.tv'):
+        elif url.netloc == 'plex.tv' or url.netloc.endswith('.plex.tv'):
+            message_type = Message.Type.Plex
+        elif url.netloc == 'trakt.tv' or url.netloc.endswith('.trakt.tv'):
             message_type = Message.Type.Trakt
         else:
             return Message.Type.Exception, exc_info
@@ -195,24 +196,28 @@ class CreateException(Create):
         # Construct connection error
         return message_type, (
             ConnectionError,
-            ConnectionError(self._get_exception_message(ex)),
+            ConnectionError(self._format_exception(ex)),
             tb
         )
 
-    def _get_exception_message(self, ex):
-        if not issubclass(ex.__class__, BaseException):
-            return ex
+    @classmethod
+    def _format_exception(cls, ex, include_type=True):
+        ex = cls._find_inner_exception(ex)
 
-        if type(ex) in FINAL_EXCEPTION_TYPES:
-            return ex.message
+        if isinstance(ex, urllib3_exceptions.ProxyError):
+            return '%s: %s' % (
+                type(ex).__name__,
+                cls._format_exception(ex.args, include_type=False) or ex.message
+            )
 
-        # Return exception messages
+        # Trakt
         if isinstance(ex, trakt.RequestError):
             return '%s (code: %r)' % (
                 ex.error[1],
                 ex.status_code
             )
 
+        # Socket
         if isinstance(ex, socket.error):
             if ex.errno is None:
                 return '%s' % (
@@ -224,27 +229,57 @@ class CreateException(Create):
                 ex.errno
             )
 
-        # Expand "requests" and "urllib3" exceptions
+        # Generic exception
+        if not include_type:
+            return ex.message
+
+        return '%s: %s' % (
+            type(ex).__name__,
+            ex.message
+        )
+
+    @classmethod
+    def _find_inner_exception(cls, ex):
+        # Find exceptions inside list or tuple
+        if type(ex) is list or type(ex) is tuple:
+            for value in ex:
+                if not issubclass(value.__class__, BaseException):
+                    continue
+
+                return cls._find_inner_exception(value)
+
+            return Exception('Unknown Error')
+
+        # Ensure `ex` is an exception
+        if not issubclass(ex.__class__, BaseException):
+            return ex
+
+        # Return final exceptions
+        if type(ex) in FINAL_EXCEPTION_TYPES:
+            return ex
+
+        # Requests
         if isinstance(ex, requests_exceptions.RequestException):
             if len(ex.args) < 1:
-                return ex.message
+                return ex
 
-            return self._get_exception_message(ex.args[0])
+            return cls._find_inner_exception(ex.args)
 
+        # urllib3
         if isinstance(ex, urllib3_exceptions.MaxRetryError):
-            return self._get_exception_message(ex.reason)
+            return cls._find_inner_exception(ex.reason)
 
         if isinstance(ex, urllib3_exceptions.HTTPError):
             if issubclass(ex.message.__class__, BaseException):
-                return self._get_exception_message(ex.message)
+                return cls._find_inner_exception(ex.message)
 
             if len(ex.args) < 1:
-                return ex.message
+                return ex
 
-            return self._get_exception_message(ex.args[0])
+            return cls._find_inner_exception(ex.args)
 
-        # Unknown exception
-        return ex.message
+        # Generic exception
+        return ex
 
 
 class ExceptionManager(Manager):
