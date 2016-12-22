@@ -12,6 +12,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
+CONNECTION_TYPES = [
+    Message.Type.Plex,
+    Message.Type.Sentry,
+    Message.Type.Trakt
+]
+
 ERROR_TYPES = [
     Message.Type.Exception,
 
@@ -83,6 +89,8 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
         elif m.type == Message.Type.Info:
             thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
+        elif m.type in CONNECTION_TYPES:
+            thumb = R("icon-connection-viewed.png") if m.viewed else R("icon-connection.png")
         else:
             thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
 
@@ -223,6 +231,8 @@ def Status(viewed=None):
     for message in messages:
         if message.type in ERROR_TYPES:
             type = 'error'
+        elif message.type in CONNECTION_TYPES and type != 'error':
+            type = 'connection'
 
         count += 1
 
