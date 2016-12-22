@@ -9,6 +9,7 @@ import socket
 
 
 from .exceptions import (
+    ConnectTimeoutError,
     ClosedPoolError,
     ProtocolError,
     EmptyPoolError,
@@ -629,12 +630,12 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
             clean_exit = False
             raise
 
-        except (TimeoutError, HTTPException, SocketError, ProtocolError) as e:
+        except (ConnectTimeoutError, TimeoutError, HTTPException, SocketError, ProtocolError) as e:
             # Discard the connection for these exceptions. It will be
             # be replaced during the next _get_conn() call.
             clean_exit = False
 
-            if isinstance(e, (SocketError, NewConnectionError)) and self.proxy:
+            if isinstance(e, (ConnectTimeoutError, SocketError, NewConnectionError)) and self.proxy:
                 e = ProxyError('Cannot connect to proxy.', e)
             elif isinstance(e, (SocketError, HTTPException)):
                 e = ProtocolError('Connection aborted.', e)

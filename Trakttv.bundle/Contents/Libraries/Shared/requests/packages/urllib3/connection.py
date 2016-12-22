@@ -139,7 +139,7 @@ class HTTPConnection(_HTTPConnection, object):
 
         except SocketTimeout as e:
             raise ConnectTimeoutError(
-                self, "Connection to %s timed out. (connect timeout=%s)" %
+                "Connection to %s timed out. (connect timeout=%s)" %
                 (self.host, self.timeout),
                 e)
 
