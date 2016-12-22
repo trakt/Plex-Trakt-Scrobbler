@@ -225,7 +225,7 @@ class ErrorReporterHandler(SentryHandler):
         # Retrieve exception
         _, ex, _ = exc_info
 
-        if not hasattr(ex, 'message'):
+        if not hasattr(ex, 'message') or not isinstance(ex.message, string_types):
             return None
 
         # Retrieve last line of log record
