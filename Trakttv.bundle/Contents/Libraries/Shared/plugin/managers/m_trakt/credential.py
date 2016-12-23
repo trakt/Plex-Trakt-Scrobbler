@@ -72,13 +72,18 @@ class UpdateOAuthCredential(Update):
         # Exchange `pin` for token authorization
         authorization = Trakt['oauth'].token_exchange(pin, 'urn:ietf:wg:oauth:2.0:oob')
 
-        if authorization:
-            data.update(authorization)
-        else:
+        if not authorization:
             log.warn('Token exchange failed for %r', oauth.account)
 
-        # Update `OAuthCredential`
-        return self(oauth, data, save=save)
+            # Update credential with `code` (to avoid future re-authentication attempts with the same pin)
+            self(oauth, data, save=save)
+            return False
+
+        # Update credential with authorization parameters
+        data.update(authorization)
+
+        self(oauth, data, save=save)
+        return True
 
 
 class TraktOAuthCredentialManager(Manager):

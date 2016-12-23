@@ -26,6 +26,9 @@ class TraktBasicCredential(Model):
 
         return 'empty'
 
+    def is_valid(self):
+        return self.token is not None
+
     def to_json(self, account):
         result = {
             'state': self.state,

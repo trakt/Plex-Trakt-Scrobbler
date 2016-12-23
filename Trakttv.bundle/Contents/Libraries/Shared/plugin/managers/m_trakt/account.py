@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class UpdateAccount(Update):
     keys = ['username']
 
-    def from_dict(self, t_account, changes):
+    def from_dict(self, t_account, changes, settings=None):
         # Resolve `account`
         if inspect.isfunction(t_account):
             t_account = t_account()
@@ -63,10 +63,12 @@ class UpdateAccount(Update):
                 save=False
             )
 
-        # Validate the account authorization
-        with t_account.authorization().http(retry=True):
-            settings = Trakt['users/settings'].get()
+        # Fetch account settings (if not provided)
+        if not settings:
+            with t_account.authorization().http(retry=True):
+                settings = Trakt['users/settings'].get()
 
+        # Ensure account settings are available
         if not settings:
             log.warn('Unable to retrieve account details for authorization')
             return None
@@ -121,6 +123,9 @@ class UpdateAccount(Update):
         # Update `OAuthCredential`
         if not TraktOAuthCredentialManager.update.from_pin(oauth, pin, save=False):
             log.warn("Unable to update OAuthCredential (token exchange failed, hasn't changed, etc..)")
+
+            # Save code into database (to avoid future re-authentication with the same pin)
+            oauth.save()
             return None
 
         # Validate the account authorization
