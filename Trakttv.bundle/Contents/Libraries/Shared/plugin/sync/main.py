@@ -1,3 +1,4 @@
+from plugin.core.message import InterfaceMessages
 from plugin.models import SyncResult
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -9,6 +10,7 @@ from plugin.sync.modes import *
 from plugin.sync.triggers import LibraryUpdateTrigger
 
 from datetime import datetime, timedelta
+from plex_database.library import TZ_LOCAL
 from threading import Lock, Thread
 import logging
 import Queue
@@ -31,6 +33,10 @@ MODES = [
     Pull,
     Push
 ]
+
+# Display error if the system timezone is not available
+if TZ_LOCAL is None:
+    InterfaceMessages.add(logging.ERROR, 'Unable to retrieve system timezone, syncing will not be available')
 
 
 class Main(object):
@@ -66,10 +72,16 @@ class Main(object):
         :return: `SyncResult` object with details on the sync outcome.
         :rtype: plugin.sync.core.result.SyncResult
         """
+        if InterfaceMessages.critical:
+            raise QueueError('Error', InterfaceMessages.message)
+
+        if TZ_LOCAL is None:
+            raise QueueError('Error', 'Unable to retrieve system timezone')
+
         try:
             # Create new task
             task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
             raise QueueError('Error', 'Unable to construct task: %s' % ex)
 
@@ -99,7 +111,7 @@ class Main(object):
                 log.debug('Task %r has started', task)
                 return
 
-            time.sleep(2)
+            time.sleep(1)
 
         raise QueueError("Sync queued", "Sync will start once the currently queued tasks have finished")
 
@@ -137,8 +149,8 @@ class Main(object):
 
                 # Select task
                 self.current = task
-            except Exception, ex:
-                log.warn('Exception raised in run(): %s', ex, exc_info=True)
+            except Exception as ex:
+                log.warn('Exception raised while attempting to retrieve sync task from queue: %s', ex, exc_info=True)
 
                 time.sleep(30)
                 continue
@@ -159,8 +171,8 @@ class Main(object):
                         self.run()
 
                 self.current.success = True
-            except Exception, ex:
-                log.warn('Exception raised in run(): %s', ex, exc_info=True)
+            except Exception as ex:
+                log.warn('Exception raised in sync task: %s', ex, exc_info=True)
 
                 self.current.exceptions.append(sys.exc_info())
                 self.current.success = False
@@ -168,8 +180,8 @@ class Main(object):
             try:
                 # Sync task complete, run final tasks
                 self.finish()
-            except Exception, ex:
-                log.error('Unable to run final sync tasks: %s', ex, exc_info=True)
+            except Exception as ex:
+                log.error('Exception raised while attempting to finish sync task: %s', ex, exc_info=True)
 
     def should_defer(self, task):
         if task and task.result:

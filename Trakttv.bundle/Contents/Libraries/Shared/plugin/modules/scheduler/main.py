@@ -85,7 +85,7 @@ class Scheduler(Module):
             h = handler()
 
             return h.run(job)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in job handler: %s', ex, exc_info=True)
             return True
 

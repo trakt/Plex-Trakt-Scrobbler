@@ -1,6 +1,7 @@
 from trakt.interfaces.base import Interface
 from trakt.mapper.search import SearchMapper
 
+import requests
 import six
 
 
@@ -68,6 +69,9 @@ class SearchInterface(Interface):
         # Parse response
         items = self.get_data(response, **kwargs)
 
+        if isinstance(items, requests.Response):
+            return items
+
         if not items:
             return None
 
@@ -126,6 +130,9 @@ class SearchInterface(Interface):
 
         # Parse response
         items = self.get_data(response, **kwargs)
+
+        if isinstance(items, requests.Response):
+            return items
 
         if items is not None:
             return [SearchMapper.process(self.client, item) for item in items]

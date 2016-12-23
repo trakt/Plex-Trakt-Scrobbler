@@ -1,7 +1,7 @@
 from plugin.models.m_trakt.account import TraktAccount
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class TraktBasicCredential(Model):
@@ -25,6 +25,9 @@ class TraktBasicCredential(Model):
             return 'warning'
 
         return 'empty'
+
+    def is_valid(self):
+        return self.token is not None
 
     def to_json(self, account):
         result = {

@@ -42,7 +42,7 @@ class ApiManager(object):
 
     @classmethod
     def process(cls, method, headers, body, key, *args, **kwargs):
-        log.debug('Handling API %s request %r - args: %r, kwargs: %r', method, key, args, kwargs)
+        log.debug('Handling API %s request %r - args: %r, kwargs: %r', method, key, len(args), len(kwargs.keys()))
 
         if not Preferences.get('api.enabled'):
             log.debug('Unable to process request, API is currently disabled')

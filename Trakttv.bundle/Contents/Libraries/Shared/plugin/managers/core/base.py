@@ -1,7 +1,8 @@
-from plugin.core.helpers.variable import to_tuple
+from plugin.core.exceptions import PluginDisabledError
+from plugin.core.message import InterfaceMessages
 from plugin.models import db
 
-import apsw
+from exception_wrappers.libraries import apsw
 import inspect
 import logging
 import peewee
@@ -20,6 +21,9 @@ class Method(object):
 
 class Get(Method):
     def __call__(self, *query, **kwargs):
+        if InterfaceMessages.critical:
+            raise PluginDisabledError()
+
         obj = self.model.get(*query, **kwargs)
 
         if obj:
@@ -28,20 +32,29 @@ class Get(Method):
         return obj
 
     def all(self):
+        if InterfaceMessages.critical:
+            raise PluginDisabledError()
+
         return self.model.select()
 
     def by_id(self, id):
         return self(self.model.id == id)
 
     def or_create(self, *query, **kwargs):
+        if not apsw or not peewee:
+            raise PluginDisabledError()
+
         try:
             return self.manager.create(**kwargs)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('or_create() - ex: %r', ex)
 
         return self(*query)
 
     def where(self, *query):
+        if InterfaceMessages.critical:
+            raise PluginDisabledError()
+
         return self.model.select().where(*query)
 
 
@@ -49,6 +62,9 @@ class Create(Method):
     def __call__(self, **kwargs):
         if not self.model:
             raise Exception('Manager %r has no "model" attribute defined' % self.manager)
+
+        if InterfaceMessages.critical:
+            raise PluginDisabledError()
 
         with db.transaction():
             obj = self.model.create(**kwargs)
@@ -80,6 +96,9 @@ class Update(Method):
             return False
 
         if save:
+            if InterfaceMessages.critical:
+                raise PluginDisabledError()
+
             obj.save()
 
         return True

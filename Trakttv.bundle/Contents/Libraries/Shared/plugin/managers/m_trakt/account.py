@@ -3,8 +3,8 @@ from plugin.managers.core.exceptions import TraktAccountExistsException
 from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager, TraktBasicCredentialManager
 from plugin.models import TraktAccount, TraktOAuthCredential, TraktBasicCredential
 
+from exception_wrappers.libraries import apsw
 from trakt import Trakt
-import apsw
 import inspect
 import logging
 import peewee
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class UpdateAccount(Update):
     keys = ['username']
 
-    def from_dict(self, t_account, changes):
+    def from_dict(self, t_account, changes, settings=None):
         # Resolve `account`
         if inspect.isfunction(t_account):
             t_account = t_account()
@@ -63,10 +63,12 @@ class UpdateAccount(Update):
                 save=False
             )
 
-        # Validate the account authorization
-        with t_account.authorization().http(retry=True):
-            settings = Trakt['users/settings'].get()
+        # Fetch account settings (if not provided)
+        if not settings:
+            with t_account.authorization().http(retry=True):
+                settings = Trakt['users/settings'].get()
 
+        # Ensure account settings are available
         if not settings:
             log.warn('Unable to retrieve account details for authorization')
             return None
@@ -74,7 +76,7 @@ class UpdateAccount(Update):
         # Update `TraktAccount` username
         try:
             self.update_username(t_account, settings)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Trakt account already exists - %s', ex, exc_info=True)
 
             raise TraktAccountExistsException('Trakt account already exists')
@@ -121,6 +123,9 @@ class UpdateAccount(Update):
         # Update `OAuthCredential`
         if not TraktOAuthCredentialManager.update.from_pin(oauth, pin, save=False):
             log.warn("Unable to update OAuthCredential (token exchange failed, hasn't changed, etc..)")
+
+            # Save code into database (to avoid future re-authentication with the same pin)
+            oauth.save()
             return None
 
         # Validate the account authorization
@@ -134,7 +139,7 @@ class UpdateAccount(Update):
         # Update `TraktAccount` username
         try:
             self.update_username(t_account, settings)
-        except (apsw.ConstraintError, peewee.IntegrityError), ex:
+        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
             log.debug('Trakt account already exists - %s', ex, exc_info=True)
 
             raise TraktAccountExistsException('Trakt account already exists')
@@ -179,7 +184,7 @@ class TraktAccountManager(Manager):
         # Retrieve account
         try:
             account = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find trakt account (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

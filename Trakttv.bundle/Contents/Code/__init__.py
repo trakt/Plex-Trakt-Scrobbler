@@ -18,12 +18,23 @@ os.environ['LIBRARY_DB'] = os.path.join(
 from fs_migrator import FSMigrator
 
 FSMigrator.run()
+
 # ------------------------------------------------
 # Logger
 # ------------------------------------------------
+
 from plugin.core.logger import LoggerManager
 
 LoggerManager.setup(storage=False)
+
+# ------------------------------------------------
+# Interface messages
+# ------------------------------------------------
+
+from plugin.core.message import InterfaceMessages
+
+InterfaceMessages.bind()
+
 # ------------------------------------------------
 # Language
 # ------------------------------------------------
@@ -93,6 +104,12 @@ def Start():
     # Complete logger initialization
     LoggerManager.setup(storage=True)
 
+    # Store current proxy details
+    Dict['proxy_host'] = Prefs['proxy_host']
+
+    Dict['proxy_username'] = Prefs['proxy_username']
+    Dict['proxy_password'] = Prefs['proxy_password']
+
     # Store current language
     Dict['language'] = Prefs['language']
 
@@ -113,7 +130,7 @@ def Api(*args, **kwargs):
         )
 
         return json.dumps(data)
-    except Exception, ex:
+    except Exception as ex:
         Log.Error('Unable to process API request (args: %r, kwargs: %r) - %s', args, kwargs, ex)
         return None
 
@@ -143,7 +160,7 @@ def ValidatePrefs():
         log.debug('Ignoring preference migration (disabled by header)')
 
     # Restart if activity_mode has changed
-    if Preferences.get('activity.mode') != last_activity_mode or Prefs['language'] != Dict['language']:
+    if RestartRequired(last_activity_mode):
         log.info('Restart required to apply changes, restarting plugin...')
 
         def restart():
@@ -153,10 +170,21 @@ def ValidatePrefs():
             # Restart plugin
             Plex[':/plugins'].restart(PLUGIN_IDENTIFIER)
 
-        spawn(restart)
+        spawn(restart, daemon=True)
         return MessageContainer(_("Success"), _("Success"))
 
     # Fire configuration changed callback
-    spawn(Main.on_configuration_changed)
+    spawn(Main.on_configuration_changed, daemon=True)
 
     return MessageContainer(_("Success"), _("Success"))
+
+
+def RestartRequired(last_activity_mode):
+    if Preferences.get('activity.mode') != last_activity_mode:
+        return True
+
+    for key in ['language', 'proxy_host', 'proxy_username', 'proxy_password']:
+        if Prefs[key] != Dict[key]:
+            return True
+
+    return False

@@ -55,12 +55,12 @@ LibrariesManager.setup(cache=False)
 LibrariesManager.test()
 
 # Setup database proxy
-from plugin.core.database import Database
+from plugin.core.database.manager import DatabaseManager
 from tests.helpers.database import DATABASE_PROXY
 
 db_path = os.path.abspath(Environment.path.plugin_database)
 
-Database._cache['peewee'][db_path] = DATABASE_PROXY
+DatabaseManager._cache['peewee'][db_path] = DATABASE_PROXY
 
 # Configure plex.database.py
 os.environ['LIBRARY_DB'] = os.path.join(

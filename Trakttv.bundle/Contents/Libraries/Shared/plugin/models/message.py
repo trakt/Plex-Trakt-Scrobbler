@@ -1,7 +1,7 @@
 from plugin.core.environment import translate as _
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 
 
 class MessageCode(object):
@@ -36,6 +36,8 @@ class MessageType(object):
 
     # Services
     Trakt       = 0x32
+    Plex        = 0x64
+    Sentry      = 0x128
 
     @classmethod
     def title(cls, value):
@@ -49,7 +51,9 @@ class MessageType(object):
                 MessageType.Error:      _("Error"),
                 MessageType.Critical:   _("Critical"),
 
-                MessageType.Trakt:      _("Trakt.tv")
+                MessageType.Trakt:      _("Trakt.tv"),
+                MessageType.Plex:       _("Plex.tv"),
+                MessageType.Sentry:     _("Sentry")
             }
 
         return cls.__titles__.get(value)
@@ -63,6 +67,10 @@ class Message(Model):
         database = db
         db_table = 'message'
 
+        indexes = (
+            (('type', 'exception_hash'), True),
+        )
+
     code = IntegerField(null=True)
     type = IntegerField()
 
@@ -70,7 +78,7 @@ class Message(Model):
     last_viewed_at = DateTimeField(null=True)
 
     # Tracking data
-    exception_hash = CharField(null=True, unique=True, max_length=32)
+    exception_hash = CharField(null=True, max_length=32)
     revision = IntegerField(null=True)
 
     version_base = CharField(max_length=12)

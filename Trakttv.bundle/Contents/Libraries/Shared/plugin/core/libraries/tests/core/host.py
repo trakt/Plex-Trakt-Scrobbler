@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
     try:
         result = run()
-    except Exception, ex:
+    except Exception as ex:
         tb = traceback.format_exc()
 
         result = {

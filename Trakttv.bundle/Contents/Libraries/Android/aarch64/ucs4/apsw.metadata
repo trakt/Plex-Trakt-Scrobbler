@@ -1,13 +1,13 @@
 ================================== BUILD ===================================
-ID: 110
+ID: 120
 GCC: gcc~aarch64-android-generic-linux
 LIBC: android-21
 
 Python Version: 2.7
 Python UCS: ucs4
 
-Revision: 5b3a990c2e7419219d0fab0fb98a8c1ee9d3aa05
-Tag: 3.13.0-r1
+Revision: 7449b676ce12949e0b1d679a3e999888f143208d
+Tag: 3.15.0-r1
 
 ================================== HEADER ==================================
  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
@@ -19,9 +19,9 @@ Tag: 3.13.0-r1
  Type:                              DYN (Shared object file)
  Machine:                           AArch64
  Version:                           0x1
- Entry point address:               0xf050
+ Entry point address:               0xf110
  Start of program headers:          64 (bytes into file)
- Start of section headers:          2972328 (bytes into file)
+ Start of section headers:          3008304 (bytes into file)
  Flags:                             0x0
  Size of this header:               64 (bytes)
  Size of program headers:           56 (bytes)

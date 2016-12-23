@@ -255,7 +255,7 @@ class SystemHelper(object):
 
             if cpu_type:
                 return cpu_type
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve cpu type from "/proc/cpuinfo": %s', ex, exc_info=True)
 
         # Fallback to using the ELF cpu name
@@ -347,7 +347,7 @@ class SystemHelper(object):
             ])
 
             return section, attributes
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve attributes from ELF %r: %s', executable_path, ex, exc_info=True)
 
         return None, None
@@ -362,7 +362,7 @@ class SystemHelper(object):
                 return None
 
             return '%dk' % (page_size / 1024)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to retrieve memory page size: %s', ex, exc_info=True)
             return None
 

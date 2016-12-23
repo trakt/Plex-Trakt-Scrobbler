@@ -72,7 +72,7 @@ class LibraryBase(object):
         while True:
             try:
                 row = result.iterate()
-            except UnicodeDecodeError, ex:
+            except UnicodeDecodeError as ex:
                 log.warn('Unable to retrieve row: %s', ex, exc_info=True, extra={
                     'event': {
                         'module': __name__,
@@ -154,7 +154,7 @@ class LibraryBase(object):
             try:
                 # Parse field
                 value = cls._parse_field(field, value)
-            except Exception, ex:
+            except Exception as ex:
                 log.error('Unable to parse value %r as field %r', value, field)
                 raise ex
 
@@ -585,14 +585,17 @@ class EpisodeLibrary(LibraryBase):
 
                     guid = guids[sh_id]
 
-                # Use primed `Matcher` buffer
-                with context:
-                    # Run `Matcher` on episode
-                    season_num, episode_nums = self.matcher.process_episode(
-                        ep_id,
-                        (season['index'], ep_index),
-                        episode['part']['file']
-                    )
+                # Retrieve episode identifier
+                season_num, episode_nums = season['index'], [ep_index]
+
+                # Run `Matcher` on episode (if available)
+                if self.matcher is not None:
+                    with context:
+                        season_num, episode_nums = self.matcher.process_episode(
+                            ep_id,
+                            (season['index'], ep_index),
+                            episode['part']['file']
+                        )
 
                 for episode_num in episode_nums:
                     ids = {

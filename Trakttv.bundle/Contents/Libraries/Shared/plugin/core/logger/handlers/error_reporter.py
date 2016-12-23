@@ -1,18 +1,18 @@
-from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.constants import PLUGIN_VERSION, PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.helpers.system import SystemHelper
-from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, RequestsReportFilter, TraktReportFilter
+from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, FrameworkFilter,\
+    RequestsReportFilter, TraktReportFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
-from raven import Client
-from raven.handlers.logging import SentryHandler, RESERVED
-from raven.utils import six
-from raven.utils.stacks import iter_stack_frames, label_from_frame
+from raven import Client, breadcrumbs
+from raven._compat import string_types, text_type
+from raven.handlers.logging import SentryHandler, extract_extra
+from raven.utils.stacks import iter_stack_frames
 import datetime
 import logging
 import os
-import platform
 import raven
 import re
 import sys
@@ -36,21 +36,26 @@ PARAMS = {
         'Framework.api',
         'Framework.code',
         'Framework.components',
+        'Framework.core',
         'urllib2'
     ],
 
     # Plugin + System details
-    'release': VERSION,
+    'release': PLUGIN_VERSION,
     'tags': merge(SystemHelper.attributes(), {
         'plugin.version': VERSION,
         'plugin.branch': PLUGIN_VERSION_BRANCH
     })
 }
 
+# Configure raven breadcrumbs
+breadcrumbs.ignore_logger('plugin.core.logger.handlers.error_reporter.ErrorReporter')
+breadcrumbs.ignore_logger('peewee')
+
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = '240c00f6a02542f8900d8a6a1aba365a:7432061e2ac54ed0aabe4ec3fe3ea0d9'
+    key = 'c0cb82d902b4468cabb01239c22a5642:773fc0ca417b4b1cb29b9b7f75eaadd9'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):
@@ -96,27 +101,12 @@ class ErrorReporter(Client):
 
 class ErrorReporterHandler(SentryHandler):
     def _emit(self, record, **kwargs):
-        data = {
-            'user': {'id': self.client.name}
-        }
+        data, extra = extract_extra(record)
 
-        extra = getattr(record, 'data', None)
-        if not isinstance(extra, dict):
-            if extra:
-                extra = {'data': extra}
-            else:
-                extra = {}
+        # Use client name as default user id
+        data.setdefault('user', {'id': self.client.name})
 
-        for k, v in six.iteritems(vars(record)):
-            if k in RESERVED:
-                continue
-            if k.startswith('_'):
-                continue
-            if '.' not in k and k not in ('culprit', 'server_name'):
-                extra[k] = v
-            else:
-                data[k] = v
-
+        # Retrieve stack
         stack = getattr(record, 'stack', None)
         if stack is True:
             stack = iter_stack_frames()
@@ -124,33 +114,37 @@ class ErrorReporterHandler(SentryHandler):
         if stack:
             stack = self._get_targetted_stack(stack, record)
 
+        # Build message
         date = datetime.datetime.utcfromtimestamp(record.created)
         event_type = 'raven.events.Message'
         handler_kwargs = {
             'params': record.args,
         }
+
         try:
-            handler_kwargs['message'] = six.text_type(record.msg)
+            handler_kwargs['message'] = text_type(record.msg)
         except UnicodeDecodeError:
             # Handle binary strings where it should be unicode...
             handler_kwargs['message'] = repr(record.msg)[1:-1]
 
         try:
-            handler_kwargs['formatted'] = six.text_type(record.message)
+            handler_kwargs['formatted'] = text_type(record.message)
         except UnicodeDecodeError:
             # Handle binary strings where it should be unicode...
             handler_kwargs['formatted'] = repr(record.message)[1:-1]
 
-        # If there's no exception being processed, exc_info may be a 3-tuple of None
-        # http://docs.python.org/library/sys.html#sys.exc_info
+        # Retrieve exception information from record
         try:
             exc_info = self._exc_info(record)
-        except Exception, ex:
+        except Exception as ex:
             log.info('Unable to retrieve exception info - %s', ex, exc_info=True)
             exc_info = None
 
+        # Parse exception information
         exception_hash = None
 
+        # If there's no exception being processed, exc_info may be a 3-tuple of None
+        # http://docs.python.org/library/sys.html#sys.exc_info
         if exc_info and len(exc_info) == 3 and all(exc_info):
             message = handler_kwargs.get('formatted')
 
@@ -178,7 +172,8 @@ class ErrorReporterHandler(SentryHandler):
 
         # HACK: discover a culprit when we normally couldn't
         elif not (data.get('stacktrace') or data.get('culprit')) and (record.name or record.funcName):
-            culprit = label_from_frame({'module': record.name, 'function': record.funcName})
+            culprit = self._label_from_frame({'module': record.name, 'function': record.funcName})
+
             if culprit:
                 data['culprit'] = culprit
 
@@ -188,9 +183,11 @@ class ErrorReporterHandler(SentryHandler):
         # Store record `tags` in message
         if hasattr(record, 'tags'):
             kwargs['tags'] = record.tags
+        elif self.tags:
+            kwargs['tags'] = self.tags
 
+        # Store `exception_hash` in message (if defined)
         if exception_hash:
-            # Store `exception_hash` in message
             if 'tags' not in kwargs:
                 kwargs['tags'] = {}
 
@@ -228,7 +225,7 @@ class ErrorReporterHandler(SentryHandler):
         # Retrieve exception
         _, ex, _ = exc_info
 
-        if not hasattr(ex, 'message'):
+        if not hasattr(ex, 'message') or not isinstance(ex.message, string_types):
             return None
 
         # Retrieve last line of log record
@@ -300,7 +297,7 @@ class ErrorReporterHandler(SentryHandler):
         # Try retrieve culprit from traceback
         try:
             culprit = cls._traceback_culprit(tb)
-        except Exception, ex:
+        except Exception as ex:
             log.info('Unable to retrieve traceback culprit - %s', ex, exc_info=True)
             culprit = None
 
@@ -313,7 +310,7 @@ class ErrorReporterHandler(SentryHandler):
             # Build module name from path
             try:
                 module = cls._module_name(file_path)
-            except Exception, ex:
+            except Exception as ex:
                 log.info('Unable to retrieve module name - %s', ex, exc_info=True)
                 module = None
 
@@ -358,6 +355,16 @@ class ErrorReporterHandler(SentryHandler):
 
         return module
 
+    @staticmethod
+    def _label_from_frame(frame):
+        module = frame.get('module') or '?'
+        function = frame.get('function') or '?'
+
+        if module == function == '?':
+            return ''
+
+        return '%s in %s' % (module, function)
+
 
 # Build client
 RAVEN = ErrorReporter(**PARAMS)
@@ -366,6 +373,8 @@ RAVEN = ErrorReporter(**PARAMS)
 ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
 
 ERROR_REPORTER_HANDLER.filters = [
+    FrameworkFilter('filter'),
+
     DuplicateReportFilter(),
     EventsReportFilter(),
     ExceptionReportFilter(),

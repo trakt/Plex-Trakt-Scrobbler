@@ -2,7 +2,7 @@ from plugin.core.environment import Environment
 from plugin.models.m_plex.account import PlexAccount
 from plugin.models.core import db
 
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 from xml.etree import ElementTree
 import logging
 import requests

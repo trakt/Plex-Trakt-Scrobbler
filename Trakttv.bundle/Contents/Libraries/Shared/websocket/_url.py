@@ -20,8 +20,12 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
 """
 
-from six.moves.urllib.parse import urlparse
 import os
+import socket
+import struct
+
+from six.moves.urllib.parse import urlparse
+
 
 __all__ = ["parse_url", "get_proxy_info"]
 
@@ -66,24 +70,60 @@ def parse_url(url):
     if parsed.query:
         resource += "?" + parsed.query
 
-    return (hostname, port, resource, is_secure)
+    return hostname, port, resource, is_secure
 
 
 DEFAULT_NO_PROXY_HOST = ["localhost", "127.0.0.1"]
 
 
+def _is_ip_address(addr):
+    try:
+        socket.inet_aton(addr)
+    except socket.error:
+        return False
+    else:
+        return True
+
+
+def _is_subnet_address(hostname):
+    try:
+        addr, netmask = hostname.split("/")
+        return _is_ip_address(addr) and 0 <= int(netmask) < 32
+    except ValueError:
+        return False
+
+
+def _is_address_in_network(ip, net):
+    ipaddr = struct.unpack('I', socket.inet_aton(ip))[0]
+    netaddr, bits = net.split('/')
+    netmask = struct.unpack('I', socket.inet_aton(netaddr))[0] & ((2 << int(bits) - 1) - 1)
+    return ipaddr & netmask == netmask
+
+
 def _is_no_proxy_host(hostname, no_proxy):
+    # Retrieve "no_proxy" variable from environment
     if not no_proxy:
-        v = os.environ.get("no_proxy", "").replace(" ", "")
-        no_proxy = v.split(",")
+        value = os.environ.get("no_proxy", "").replace(" ", "")
+
+        # Split environment variable into hostname values (and ignore empty values)
+        no_proxy = [v for v in value.split(",") if v]
+
+    # Use default value (if none provided)
     if not no_proxy:
         no_proxy = DEFAULT_NO_PROXY_HOST
 
-    return hostname in no_proxy
+    # Check if `hostname` should ignore the proxy
+    if hostname in no_proxy:
+        return True
+    elif _is_ip_address(hostname):
+        return any([_is_address_in_network(hostname, subnet) for subnet in no_proxy if _is_subnet_address(subnet)])
+
+    return False
 
 
-def get_proxy_info(hostname, is_secure,
-            proxy_host=None, proxy_port=0, proxy_auth=None, no_proxy=None):
+def get_proxy_info(
+        hostname, is_secure, proxy_host=None, proxy_port=0, proxy_auth=None,
+        no_proxy=None):
     """
     try to retrieve proxy host and port from environment
     if not provided in options.

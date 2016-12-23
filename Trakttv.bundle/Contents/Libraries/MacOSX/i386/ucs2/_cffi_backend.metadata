@@ -1,10 +1,18 @@
 ================================== BUILD ===================================
-ID: 46
+ID: 133
+GCC: gcc~i686-darwin-generic-linux-gnu
+LIBC: libsystem-1213.0.0
+
+Python Version: 2.7
+Python UCS: ucs2
 
 ================================== HEADER ==================================
-
+artifacts/2.7/ucs2/libsystem-1213.0.0/gcc~i686-darwin-generic-linux-gnu/_cffi_backend.so:     file format mach-o-i386
+architecture: i386, flags 0x00000050:
+HAS_SYMS, DYNAMIC
+start address 0x00000000
 
 =============================== DEPENDENCIES ===============================
 /usr/lib/libffi.dylib (compatibility version 1.0.0, current version 1.0.0)
-/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1197.1.1)
-/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 2577.0.0)
+/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1213.0.0)
+/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 283.0.0)

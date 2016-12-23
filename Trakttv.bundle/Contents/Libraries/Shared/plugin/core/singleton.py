@@ -24,7 +24,7 @@ def get_port():
     # Parse data
     try:
         return int(data.strip())
-    except Exception, ex:
+    except Exception as ex:
         log.warn('Unable to parse integer from %r: %s', PORT_PATH, ex, exc_info=True)
         return PORT_DEFAULT
 
@@ -40,7 +40,7 @@ class Singleton(object):
     def acquire(cls):
         try:
             return cls._acquire()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in _acquire(): %s', ex, exc_info=True)
             return False
 
@@ -74,7 +74,7 @@ class Singleton(object):
         try:
             # Read response
             response = client.recv(128).strip()
-        except socket.timeout, ex:
+        except socket.timeout:
             log.info('Release timeout', exc_info=True)
             return False
 
@@ -94,7 +94,7 @@ class Singleton(object):
         try:
             # Construct server
             cls._server = TCPServer((cls.host, cls.port), SingletonHandler)
-        except socket.error, ex:
+        except socket.error as ex:
             if ex.errno != 10048:
                 raise ex
 
@@ -114,7 +114,7 @@ class Singleton(object):
     def _run(cls):
         try:
             cls._server.serve_forever()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Server exception raised: %s', ex, exc_info=True)
 
         log.info('Server exited')
@@ -124,7 +124,7 @@ class SingletonHandler(StreamRequestHandler):
     def handle(self):
         try:
             self.process()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in process(): %s', ex, exc_info=True)
 
     def process(self):
@@ -139,7 +139,7 @@ class SingletonHandler(StreamRequestHandler):
 
         try:
             handler()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Handler raised an exception: %s', ex, exc_info=True)
 
     def on_shutdown(self):

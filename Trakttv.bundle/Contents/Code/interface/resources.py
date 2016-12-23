@@ -1,3 +1,4 @@
+from core.helpers import catch_errors
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.managers.account import AccountManager
 from plugin.models import Account
@@ -9,6 +10,7 @@ log = logging.getLogger(__name__)
 
 
 @route(PLUGIN_PREFIX + '/resources/cover')
+@catch_errors
 def Cover(account_id, refresh=None, *args, **kwargs):
     account = AccountManager.get(Account.id == account_id)
 
@@ -39,6 +41,7 @@ def Cover(account_id, refresh=None, *args, **kwargs):
 
 
 @route(PLUGIN_PREFIX + '/resources/thumb')
+@catch_errors
 def Thumb(account_id, refresh=None, *args, **kwargs):
     # Retrieve account
     account = AccountManager.get(Account.id == account_id)

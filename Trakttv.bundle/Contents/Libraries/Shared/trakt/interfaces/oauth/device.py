@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from threading import Thread
 import calendar
 import logging
+import requests
 import time
 
 log = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ log = logging.getLogger(__name__)
 class DeviceOAuthInterface(Interface):
     path = 'oauth/device'
 
-    def code(self):
+    def code(self, **kwargs):
         client_id = self.client.configuration['client.id']
 
         if not client_id:
@@ -26,7 +27,10 @@ class DeviceOAuthInterface(Interface):
             }
         )
 
-        data = self.get_data(response)
+        data = self.get_data(response, **kwargs)
+
+        if isinstance(data, requests.Response):
+            return data
 
         if not data:
             return None
@@ -67,6 +71,9 @@ class DeviceOAuthInterface(Interface):
         )
 
         data = self.get_data(response, **kwargs)
+
+        if isinstance(data, requests.Response):
+            return data
 
         if not data:
             return None

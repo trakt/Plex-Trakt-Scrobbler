@@ -14,7 +14,7 @@ class SyncConfiguration(object):
 
     @elapsed.clock
     def load(self, account):
-        log.debug('Sync Configuration:')
+        log.debug('Task Configuration:')
 
         # Load options from database
         for key, option in OPTIONS_BY_KEY.items():

@@ -1,4 +1,4 @@
-from core.helpers import timestamp, pad_title, function_path, redirect
+from core.helpers import catch_errors, timestamp, pad_title, function_path, redirect
 from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
@@ -6,7 +6,7 @@ from plugin.core.environment import translate as _
 from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
 from plugin.managers.account import AccountManager
-from plugin.models import Account, SyncResult
+from plugin.models import Account, Message, SyncResult
 from plugin.sync import SyncMode
 from plugin.sync.main import Sync, QueueError
 
@@ -20,6 +20,7 @@ log = Logger('interface.m_sync')
 # NOTE: pad_title(...) is used to force the UI to use 'media-details-list'
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
+@catch_errors
 def AccountsMenu(refresh=None, *args, **kwargs):
     oc = ObjectContainer(
         title2=_("Accounts"),
@@ -46,6 +47,7 @@ def AccountsMenu(refresh=None, *args, **kwargs):
 
 
 @route(PLUGIN_PREFIX + '/sync')
+@catch_errors
 def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False, *args, **kwargs):
     account = AccountManager.get(Account.id == account_id)
 
@@ -120,7 +122,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
         # Retrieve account libraries/sections
         with p_account.authorization():
             sections = Plex['library'].sections()
-    except Exception, ex:
+    except Exception as ex:
         # Build message
         if p_account is None:
             message = _("Plex account hasn't been authenticated")
@@ -166,26 +168,31 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
+@catch_errors
 def Synchronize(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Full, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
+@catch_errors
 def FastPull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.FastPull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
+@catch_errors
 def Push(account_id=1, section=None, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Push, section=section, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
+@catch_errors
 def Pull(account_id=1, *args, **kwargs):
     return Trigger.run(int(account_id), SyncMode.Pull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
+@catch_errors
 def Cancel(account_id, id, *args, **kwargs):
     id = int(id)
 
@@ -324,8 +331,8 @@ class Status(object):
             past_tense='%s'
         )
 
-    @staticmethod
-    def build_result(status):
+    @classmethod
+    def build_result(cls, status):
         if status.latest.success:
             return _('was successful')
 
@@ -336,10 +343,10 @@ class Status(object):
 
         if len(errors) > 1:
             # Multiple errors
-            message += _(' (%d errors, %s)') % (len(errors), errors[0].summary)
+            message += _(' (%d errors, %s)') % (len(errors), cls.format_error(errors[0]))
         elif len(errors) == 1:
             # Single error
-            message += _(' (%s)') % errors[0].summary
+            message += _(' (%s)') % cls.format_error(errors[0])
 
         return message
 
@@ -351,6 +358,13 @@ class Status(object):
             return _('Last run just a moment ago')
 
         return _('Last run %s') % human(since, precision=1)
+
+    @staticmethod
+    def format_error(error):
+        if error.type in [Message.Type.Trakt, Message.Type.Plex, Message.Type.Sentry]:
+            return '%s: %s' % (Message.Type.title(error.type), error.summary or 'Unknown Connection Error')
+
+        return error.summary
 
 
 class Trigger(object):
@@ -378,7 +392,7 @@ class Trigger(object):
         # Trigger sync
         try:
             Sync.queue(account_id, mode, **kwargs)
-        except QueueError, ex:
+        except QueueError as ex:
             return redirect('/sync', account_id=account_id, title=ex.title, message=ex.message)
 
         return redirect('/sync', account_id=account_id)

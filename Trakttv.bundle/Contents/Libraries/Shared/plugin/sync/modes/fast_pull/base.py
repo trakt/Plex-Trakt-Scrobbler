@@ -37,3 +37,19 @@ class Base(Mode):
                     continue
 
                 yield c_data, c_action, t_item
+
+    def should_pull(self, p_id, p_added_at):
+        if not self.current.kwargs.get('pull'):
+            return False
+
+        pull = self.current.kwargs['pull']
+
+        # Check `p_id` is inside the `ids` parameter
+        if p_id in pull.get('ids', set()):
+            return True
+
+        # Check `p_added_at` timestamp is after the `created_since` parameter
+        if p_added_at and pull.get('created_since') and p_added_at > pull['created_since']:
+            return True
+
+        return False

@@ -9,8 +9,8 @@ on how to use these modules.
 '''
 
 # The IANA (nee Olson) database is updated several times a year.
-OLSON_VERSION = '2016f'
-VERSION = '2016.6.1'  # Switching to pip compatible version numbering.
+OLSON_VERSION = '2016j'
+VERSION = '2016.10'  # Switching to pip compatible version numbering.
 __version__ = VERSION
 
 OLSEN_VERSION = OLSON_VERSION # Old releases had this misspelling
@@ -731,6 +731,7 @@ all_timezones = \
  'Asia/Aqtobe',
  'Asia/Ashgabat',
  'Asia/Ashkhabad',
+ 'Asia/Atyrau',
  'Asia/Baghdad',
  'Asia/Bahrain',
  'Asia/Baku',
@@ -751,6 +752,7 @@ all_timezones = \
  'Asia/Dili',
  'Asia/Dubai',
  'Asia/Dushanbe',
+ 'Asia/Famagusta',
  'Asia/Gaza',
  'Asia/Harbin',
  'Asia/Hebron',
@@ -816,6 +818,7 @@ all_timezones = \
  'Asia/Vientiane',
  'Asia/Vladivostok',
  'Asia/Yakutsk',
+ 'Asia/Yangon',
  'Asia/Yekaterinburg',
  'Asia/Yerevan',
  'Atlantic/Azores',
@@ -955,6 +958,7 @@ all_timezones = \
  'Europe/Samara',
  'Europe/San_Marino',
  'Europe/Sarajevo',
+ 'Europe/Saratov',
  'Europe/Simferopol',
  'Europe/Skopje',
  'Europe/Sofia',
@@ -1301,6 +1305,7 @@ common_timezones = \
  'Asia/Aqtau',
  'Asia/Aqtobe',
  'Asia/Ashgabat',
+ 'Asia/Atyrau',
  'Asia/Baghdad',
  'Asia/Bahrain',
  'Asia/Baku',
@@ -1317,6 +1322,7 @@ common_timezones = \
  'Asia/Dili',
  'Asia/Dubai',
  'Asia/Dushanbe',
+ 'Asia/Famagusta',
  'Asia/Gaza',
  'Asia/Hebron',
  'Asia/Ho_Chi_Minh',
@@ -1351,7 +1357,6 @@ common_timezones = \
  'Asia/Pyongyang',
  'Asia/Qatar',
  'Asia/Qyzylorda',
- 'Asia/Rangoon',
  'Asia/Riyadh',
  'Asia/Sakhalin',
  'Asia/Samarkand',
@@ -1372,6 +1377,7 @@ common_timezones = \
  'Asia/Vientiane',
  'Asia/Vladivostok',
  'Asia/Yakutsk',
+ 'Asia/Yangon',
  'Asia/Yekaterinburg',
  'Asia/Yerevan',
  'Atlantic/Azores',
@@ -1444,6 +1450,7 @@ common_timezones = \
  'Europe/Samara',
  'Europe/San_Marino',
  'Europe/Sarajevo',
+ 'Europe/Saratov',
  'Europe/Simferopol',
  'Europe/Skopje',
  'Europe/Sofia',

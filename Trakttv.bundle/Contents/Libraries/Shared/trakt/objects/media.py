@@ -1,4 +1,4 @@
-from trakt.core.helpers import from_iso8601
+from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 from trakt.objects.rating import Rating
 
@@ -125,12 +125,22 @@ class Media(object):
 
         return self.keys[0]
 
+    def get_key(self, service):
+        for k_service, k_value in self.keys:
+            if k_service == service:
+                return k_value
+
+        return None
+
     def _update(self, info=None, in_watchlist=None, **kwargs):
         if not info:
             return
 
         update_attributes(self, info, [
+            # Extended Info
             'overview',
+
+            # Search
             'score'
         ])
 
@@ -139,7 +149,7 @@ class Media(object):
 
         # Set timestamps
         if 'listed_at' in info:
-            self.listed_at = from_iso8601(info.get('listed_at'))
+            self.listed_at = from_iso8601_datetime(info.get('listed_at'))
 
         # Set flags
         if in_watchlist is not None:

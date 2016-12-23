@@ -1,7 +1,8 @@
 from plugin.core.backup import BackupManager
+from plugin.core.database.connection import db_connect, db_connection
 from plugin.core.environment import Environment
-from plugin.core.helpers.database import db_connect, db_connection
 
+from exception_wrappers import DisabledError
 from threading import RLock
 import logging
 import os
@@ -9,7 +10,7 @@ import os
 log = logging.getLogger(__name__)
 
 
-class Database(object):
+class DatabaseManager(object):
     _cache = {
         'peewee': {},
         'raw': {}
@@ -18,11 +19,11 @@ class Database(object):
 
     @classmethod
     def main(cls):
-        return cls._get(Environment.path.plugin_database, 'peewee')
+        return cls._get(Environment.path.plugin_database, 'peewee', name='plugin database')
 
     @classmethod
     def cache(cls, name):
-        return cls._get(os.path.join(Environment.path.plugin_caches, '%s.db' % name), 'raw')
+        return cls._get(os.path.join(Environment.path.plugin_caches, '%s.db' % name), 'raw', name='%s cache' % name)
 
     @classmethod
     def reset(cls, group, database, tag=None):
@@ -56,13 +57,16 @@ class Database(object):
         return True
 
     @classmethod
-    def _get(cls, path, type):
+    def _get(cls, path, type, **kwargs):
         path = os.path.abspath(path)
         cache = cls._cache[type]
 
         with cls._lock:
             if path not in cache:
-                cache[path] = db_connect(path, type)
+                try:
+                    cache[path] = db_connect(path, type, **kwargs)
+                except DisabledError:
+                    cache[path] = None
 
             # Return cached connection
             return cache[path]

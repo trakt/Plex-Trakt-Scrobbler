@@ -112,7 +112,7 @@ class OAuthConfiguration(object):
     def __init__(self, owner):
         self.owner = owner
 
-    def __call__(self, token=None, refresh_token=None, created_at=None, expires_in=None, refresh=None):
+    def __call__(self, token=None, refresh_token=None, created_at=None, expires_in=None, refresh=None, username=None):
         if type(self.owner) is ConfigurationManager:
             return Configuration(self.owner).oauth(token, refresh_token, created_at, expires_in, refresh)
 
@@ -123,14 +123,33 @@ class OAuthConfiguration(object):
             'oauth.created_at':     created_at,
             'oauth.expires_in':     expires_in,
 
-            'oauth.refresh':        refresh
+            'oauth.refresh':        refresh,
+            'oauth.username':       username
         })
 
         return self.owner
 
-    def from_response(self, response=None, refresh=None):
+    def clear(self):
         if type(self.owner) is ConfigurationManager:
-            return Configuration(self.owner).oauth.from_response(response, refresh)
+            return Configuration(self.owner).oauth.clear()
+
+        self.owner.data.update({
+            'oauth.token':          None,
+            'oauth.refresh_token':  None,
+
+            'oauth.created_at':     None,
+            'oauth.expires_in':     None
+        })
+
+        return self.owner
+
+    def from_response(self, response=None, refresh=None, username=None):
+        if type(self.owner) is ConfigurationManager:
+            return Configuration(self.owner).oauth.from_response(
+                response=response,
+                refresh=refresh,
+                username=username
+            )
 
         if not response:
             raise ValueError('Invalid "response" parameter provided to oauth.from_response()')
@@ -142,7 +161,8 @@ class OAuthConfiguration(object):
             'oauth.created_at':     response.get('created_at'),
             'oauth.expires_in':     response.get('expires_in'),
 
-            'oauth.refresh':        refresh
+            'oauth.refresh':        refresh,
+            'oauth.username':       username
         })
 
         return self.owner

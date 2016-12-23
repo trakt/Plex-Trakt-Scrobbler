@@ -1,3 +1,6 @@
+from six.moves.urllib.parse import urlparse
+
+
 ERRORS = {
     400: ("Bad Request",            "Request couldn't be parsed"),
     401: ("Unauthorized",           "OAuth must be provided"),
@@ -19,3 +22,30 @@ ERRORS = {
     522: ("Service Unavailable",    "CloudFlare: Connection timed out"),
     524: ("Service Unavailable",    "CloudFlare: A timeout occurred")
 }
+
+
+def log_request_error(logger, response):
+    request = response.request
+
+    # Lookup status code in trakt error definitions
+    name, desc = ERRORS.get(response.status_code, ("Unknown", "Unknown"))
+
+    # Build message
+    if request:
+        method = request.method
+        path = urlparse(request.url).path
+
+        message = 'Request failed: "%s %s" - %s: "%%s" (%%s)' % (method, path, response.status_code)
+    else:
+        message = 'Request failed: %s: "%%s" (%%s)' % (response.status_code,)
+
+    # Log warning
+    logger.warn(message, desc, name, extra={
+        'data': {
+            'http.headers': {
+                'cf-ray': response.headers.get('cf-ray'),
+                'X-Request-Id': response.headers.get('X-Request-Id'),
+                'X-Runtime': response.headers.get('X-Runtime')
+            }
+        }
+    })

@@ -8,14 +8,11 @@ raven.transport.twisted
 from __future__ import absolute_import
 
 import io
-import logging
 
 from raven.transport.base import AsyncTransport
 from raven.transport.http import HTTPTransport
-from raven.transport.udp import BaseUDPTransport
 
 try:
-    import twisted.internet.protocol
     from twisted.web.client import (
         Agent, FileBodyProducer, HTTPConnectionPool, ResponseNeverReceived,
         readBody,
@@ -27,18 +24,13 @@ except:
 
 
 class TwistedHTTPTransport(AsyncTransport, HTTPTransport):
-
     scheme = ['twisted+http', 'twisted+https']
 
-    def __init__(self, parsed_url):
+    def __init__(self, parsed_url, *args, **kwargs):
         if not has_twisted:
             raise ImportError('TwistedHTTPTransport requires twisted.web.')
 
-        super(TwistedHTTPTransport, self).__init__(parsed_url)
-        self.logger = logging.getLogger('sentry.errors')
-
-        # remove the twisted+ from the protocol, as it is not a real protocol
-        self._url = self._url.split('+', 1)[-1]
+        super(TwistedHTTPTransport, self).__init__(parsed_url, *args, **kwargs)
 
         # Import reactor as late as possible.
         from twisted.internet import reactor
@@ -81,17 +73,3 @@ class TwistedHTTPTransport(AsyncTransport, HTTPTransport):
         ).addErrback(
             on_failure,
         )
-
-
-class TwistedUDPTransport(BaseUDPTransport):
-    scheme = ['twisted+udp']
-
-    def __init__(self, parsed_url):
-        super(TwistedUDPTransport, self).__init__(parsed_url)
-        if not has_twisted:
-            raise ImportError('TwistedUDPTransport requires twisted.')
-        self.protocol = twisted.internet.protocol.DatagramProtocol()
-        twisted.internet.reactor.listenUDP(0, self.protocol)
-
-    def _send_data(self, data, addr):
-        self.protocol.transport.write(data, addr)

@@ -42,7 +42,7 @@ def import_module(path, base_name, name):
     try:
         __import__(full_name)
         return True
-    except Exception, ex:
+    except Exception as ex:
         log.error('Exception raised trying to import module %r: %s', full_name, ex, exc_info=True)
 
     return False

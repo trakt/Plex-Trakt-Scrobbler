@@ -4,10 +4,10 @@ from core.logger import Logger
 from core.update_checker import UpdateChecker
 
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
-from plugin.core.cache import CacheManager
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, LoggerManager
 from plugin.managers.account import TraktAccountManager
+from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -16,6 +16,7 @@ from plugin.scrobbler.core.session_prefix import SessionPrefix
 from plex import Plex
 from plex_activity import Activity
 from plex_metadata import Metadata
+from six.moves.urllib.parse import quote_plus, urlsplit, urlunsplit
 from requests.packages.urllib3.util import Retry
 from trakt import Trakt
 import os
@@ -33,12 +34,15 @@ class Main(object):
     def __init__(self):
         Header.show(self)
 
-        LoggerManager.refresh()
+        # Initial configuration update
+        self.on_configuration_changed()
 
+        # Initialize clients
         self.init_trakt()
         self.init_plex()
         self.init()
 
+        # Initialize modules
         ModuleManager.initialize()
 
     def init(self):
@@ -107,26 +111,32 @@ class Main(object):
         Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
         Trakt.http.rebuild()
 
-        Trakt.on('oauth.token_refreshed', cls.on_token_refreshed)
+        # Bind to events
+        Trakt.on('oauth.refresh', cls.on_trakt_refresh)
+        Trakt.on('oauth.refresh.rejected', cls.on_trakt_refresh_rejected)
 
     @classmethod
-    def on_token_refreshed(cls, authorization):
-        log.debug('Authentication - PIN authorization refreshed')
+    def on_trakt_refresh(cls, username, authorization):
+        log.debug('[Trakt.tv] Token has been refreshed for %r', username)
 
         # Retrieve trakt account matching this `authorization`
         with Trakt.configuration.http(retry=True).oauth(token=authorization.get('access_token')):
-            settings = Trakt['users/settings'].get()
+            settings = Trakt['users/settings'].get(validate_token=False)
 
         if not settings:
-            log.warn('Authentication - Unable to retrieve account details for authorization')
-            return
+            log.warn('[Trakt.tv] Unable to retrieve account details for token')
+            return False
 
         # Retrieve trakt account username from `settings`
-        username = settings.get('user', {}).get('username')
+        s_username = settings.get('user', {}).get('username')
 
-        if not username:
-            log.warn('Authentication - Unable to retrieve username for authorization')
-            return None
+        if not s_username:
+            log.warn('[Trakt.tv] Unable to retrieve username for token')
+            return False
+
+        if s_username != username:
+            log.warn('[Trakt.tv] Token mismatch (%r != %r)', s_username, username)
+            return False
 
         # Find matching trakt account
         trakt_account = (TraktAccount
@@ -137,20 +147,49 @@ class Main(object):
         ).first()
 
         if not trakt_account:
-            log.warn('Authentication - Unable to find TraktAccount with the username %r', username)
+            log.warn('[Trakt.tv] Unable to find account with the username: %r', username)
+            return False
 
-        # Update oauth credential
-        TraktAccountManager.update.from_dict(trakt_account, {
-            'authorization': {
-                'oauth': authorization
-            }
-        })
+        # Update OAuth credential
+        TraktAccountManager.update.from_dict(
+            trakt_account, {
+                'authorization': {
+                    'oauth': authorization
+                }
+            },
+            settings=settings
+        )
 
-        log.info('Authentication - Updated OAuth credential for %r', trakt_account)
+        log.info('[Trakt.tv] Token updated for %r', trakt_account)
+        return True
+
+    @classmethod
+    def on_trakt_refresh_rejected(cls, username):
+        log.debug('[Trakt.tv] Token refresh for %r has been rejected', username)
+
+        # Find matching trakt account
+        account = (TraktAccount
+            .select()
+            .where(
+                TraktAccount.username == username
+            )
+        ).first()
+
+        if not account:
+            log.warn('[Trakt.tv] Unable to find account with the username: %r', username)
+            return False
+
+        # Delete OAuth credential
+        TraktOAuthCredentialManager.delete(
+            account=account.id
+        )
+
+        log.info('[Trakt.tv] Token cleared for %r', account)
+        return True
 
     def start(self):
         # Construct main thread
-        spawn(self.run, thread_name='main')
+        spawn(self.run, daemon=True, thread_name='main')
 
     def run(self):
         # Check for authentication token
@@ -204,6 +243,73 @@ class Main(object):
 
         SessionPrefix.increment()
 
-    @staticmethod
-    def on_configuration_changed():
+    @classmethod
+    def on_configuration_changed(cls):
+        # Update proxies (for requests)
+        cls.update_proxies()
+
+        # Refresh loggers
         LoggerManager.refresh()
+
+    @staticmethod
+    def update_proxies():
+        # Retrieve proxy host
+        host = Prefs['proxy_host']
+
+        if not host:
+            if not Trakt.http.proxies and not os.environ.get('HTTP_PROXY') and not os.environ.get('HTTPS_PROXY'):
+                return
+
+            # Update trakt client
+            Trakt.http.proxies = {}
+
+            # Update environment variables
+            if 'HTTP_PROXY' in os.environ:
+                del os.environ['HTTP_PROXY']
+
+            if 'HTTPS_PROXY' in os.environ:
+                del os.environ['HTTPS_PROXY']
+
+            log.info('HTTP Proxy has been disabled')
+            return
+
+        # Parse URL
+        host_parsed = urlsplit(host)
+
+        # Expand components
+        scheme, netloc, path, query, fragment = host_parsed
+
+        if not scheme:
+            scheme = 'http'
+
+        # Retrieve proxy credentials
+        username = Prefs['proxy_username']
+        password = Prefs['proxy_password']
+
+        # Build URL
+        if username and password and '@' not in netloc:
+            netloc = '%s:%s@%s' % (
+                quote_plus(username),
+                quote_plus(password),
+                netloc
+            )
+
+        url = urlunsplit((scheme, netloc, path, query, fragment))
+
+        # Update trakt client
+        Trakt.http.proxies = {
+            'http': url,
+            'https': url
+        }
+
+        # Update environment variables
+        os.environ.update({
+            'HTTP_PROXY': url,
+            'HTTPS_PROXY': url
+        })
+
+        # Display message in log file
+        if not host_parsed.username and not host_parsed.password:
+            log.info('HTTP Proxy has been enabled (host: %r)', host)
+        else:
+            log.info('HTTP Proxy has been enabled (host: <sensitive>)')

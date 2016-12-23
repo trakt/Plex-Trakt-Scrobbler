@@ -13,6 +13,7 @@ import logging
 import os
 import sys
 import time
+
 from optparse import OptionParser
 
 from raven import Client, get_version
@@ -44,12 +45,13 @@ def get_uid():
 
 def send_test_message(client, options):
     sys.stdout.write("Client configuration:\n")
-    for k in ('servers', 'project', 'public_key', 'secret_key'):
-        sys.stdout.write('  %-15s: %s\n' % (k, getattr(client, k)))
+    for k in ('base_url', 'project', 'public_key', 'secret_key'):
+        sys.stdout.write('  %-15s: %s\n' % (k, getattr(client.remote, k)))
     sys.stdout.write('\n')
 
-    if not all([client.servers, client.project, client.public_key, client.secret_key]):
-        sys.stdout.write("Error: All values must be set!\n")
+    remote_config = client.remote
+    if not remote_config.is_active():
+        sys.stdout.write("Error: DSN configuration is not valid!\n")
         sys.exit(1)
 
     if not client.is_enabled():
@@ -68,7 +70,7 @@ def send_test_message(client, options):
     sys.stdout.write('Sending a test message... ')
     sys.stdout.flush()
 
-    ident = client.get_ident(client.captureMessage(
+    ident = client.captureMessage(
         message='This is a test message generated using ``raven test``',
         data=data,
         level=logging.INFO,
@@ -78,13 +80,7 @@ def send_test_message(client, options):
             'user': get_uid(),
             'loadavg': get_loadavg(),
         },
-    ))
-
-    if client.state.did_fail():
-        sys.stdout.write('error!\n')
-        return False
-
-    sys.stdout.write('success!\n')
+    )
 
     sys.stdout.write('Event ID was %r\n' % (ident,))
 
@@ -113,5 +109,13 @@ def main():
     print()
 
     client = Client(dsn, include_paths=['raven'])
+
     send_test_message(client, opts.__dict__)
+
+    # TODO(dcramer): correctly support async models
     time.sleep(3)
+    if client.state.did_fail():
+        sys.stdout.write('error!\n')
+        sys.exit(1)
+
+    sys.stdout.write('success!\n')

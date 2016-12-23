@@ -1,4 +1,4 @@
-from plugin.core.database import Database
+from plugin.core.database.manager import DatabaseManager
 
 from stash import Stash, ApswArchive
 from threading import Lock, Thread
@@ -69,7 +69,7 @@ class CacheManager(object):
     def _process(cls):
         try:
             cls._process_run()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Exception raised in CacheManager: %s', ex, exc_info=True)
 
     @classmethod
@@ -117,7 +117,7 @@ class Cache(object):
 
         # Construct cache
         return Stash(
-            ApswArchive(Database.cache(database), table),
+            ApswArchive(DatabaseManager.cache(database), table),
             'lru:///?capacity=500&compact_threshold=1500',
             serializer=serializer,
             key_transform=(lambda k: str(k), lambda k: k)
@@ -147,7 +147,7 @@ class Cache(object):
             self.stash.flush()
 
             log.debug('Flushed "%s" cache', self.key)
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to flush "%s" cache: %s', self.key, ex, exc_info=True)
         finally:
             self.flush_clear()

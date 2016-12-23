@@ -1,5 +1,10 @@
 ================================== BUILD ===================================
-ID: 42
+ID: 130
+GCC: gcc~i686-debian-generic-linux-gnu
+LIBC: glibc-2.09
+
+Python Version: 2.7
+Python UCS: ucs2
 
 Revision: 363486171dbdf9b88a378083276c7f33a10d8a40
 Tag: rel-0.4
@@ -14,16 +19,16 @@ Tag: rel-0.4
  Type:                              DYN (Shared object file)
  Machine:                           Intel 80386
  Version:                           0x1
- Entry point address:               0x11a0
+ Entry point address:               0x1250
  Start of program headers:          52 (bytes into file)
- Start of section headers:          73036 (bytes into file)
+ Start of section headers:          82728 (bytes into file)
  Flags:                             0x0
  Size of this header:               52 (bytes)
  Size of program headers:           32 (bytes)
- Number of program headers:         7
+ Number of program headers:         5
  Size of section headers:           40 (bytes)
- Number of section headers:         35
- Section header string table index: 32
+ Number of section headers:         36
+ Section header string table index: 33
 
 =============================== DEPENDENCIES ===============================
  0x00000001 (NEEDED)                     Shared library: [libpthread.so.0]

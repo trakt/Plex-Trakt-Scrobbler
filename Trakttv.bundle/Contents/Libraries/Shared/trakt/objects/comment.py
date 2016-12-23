@@ -1,4 +1,4 @@
-from trakt.core.helpers import from_iso8601
+from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 
 
@@ -122,10 +122,10 @@ class Comment(object):
             return
 
         if 'created_at' in info:
-            self.created_at = from_iso8601(info.get('created_at'))
+            self.created_at = from_iso8601_datetime(info.get('created_at'))
 
         if 'liked_at' in info:
-            self.liked_at = from_iso8601(info.get('liked_at'))
+            self.liked_at = from_iso8601_datetime(info.get('liked_at'))
 
         update_attributes(self, info, [
             'parent_id',

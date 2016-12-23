@@ -11,11 +11,7 @@ from __future__ import absolute_import
 import codecs
 import datetime
 import uuid
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
 
 try:
     JSONDecodeError = json.JSONDecodeError
@@ -29,7 +25,7 @@ class BetterJSONEncoder(json.JSONEncoder):
         datetime.datetime: lambda o: o.strftime('%Y-%m-%dT%H:%M:%SZ'),
         set: list,
         frozenset: list,
-        bytes: lambda o: o.decode('utf-8', errors='replace'),
+        bytes: lambda o: o.decode('utf-8', errors='replace')
     }
 
     def default(self, obj):

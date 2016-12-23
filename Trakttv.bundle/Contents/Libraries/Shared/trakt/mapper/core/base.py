@@ -63,7 +63,7 @@ class Mapper(object):
 
             keys.append((key, str(value)))
 
-        if media == 'season':
+        if media == 'season' and 'number' in item:
             keys.insert(0, item.get('number'))
 
         if media == 'episode':

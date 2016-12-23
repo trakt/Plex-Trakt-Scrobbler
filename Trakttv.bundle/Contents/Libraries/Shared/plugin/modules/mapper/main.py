@@ -205,7 +205,7 @@ class Mapper(Module):
             except AbsoluteNumberRequiredError:
                 log.info('Unable to retrieve mapping for %r (%s -> %s) - Absolute mappings are not supported yet', key, source, target)
                 continue
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to retrieve mapping for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
                 continue
 
@@ -221,7 +221,7 @@ class Mapper(Module):
         for target, service in self._iter_services(source):
             try:
                 result = service.get(key)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to retrieve item for %r (%s -> %s) - %s', key, source, target, ex, exc_info=True)
                 continue
 
@@ -323,7 +323,7 @@ class Mapper(Module):
             except KeyError:
                 log.warn('Unable to find service: %s -> %s', source, target)
                 continue
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to retrieve service: %s -> %s - %s', source, target, ex, exc_info=True)
                 continue
 

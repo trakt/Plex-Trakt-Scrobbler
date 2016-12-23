@@ -102,7 +102,7 @@ class _ECDSASignatureContext(object):
         max_size = self._backend._lib.ECDSA_size(ec_key)
         self._backend.openssl_assert(max_size > 0)
 
-        sigbuf = self._backend._ffi.new("char[]", max_size)
+        sigbuf = self._backend._ffi.new("unsigned char[]", max_size)
         siglen_ptr = self._backend._ffi.new("unsigned int[]", 1)
         res = self._backend._lib.ECDSA_sign(
             0,
@@ -240,6 +240,11 @@ class _EllipticCurvePrivateKey(object):
             self._ec_key
         )
 
+    def sign(self, data, signature_algorithm):
+        signer = self.signer(signature_algorithm)
+        signer.update(data)
+        return signer.finalize()
+
 
 @utils.register_interface(ec.EllipticCurvePublicKeyWithSerialization)
 class _EllipticCurvePublicKey(object):
@@ -299,6 +304,12 @@ class _EllipticCurvePublicKey(object):
         return self._backend._public_key_bytes(
             encoding,
             format,
+            self,
             self._evp_pkey,
             None
         )
+
+    def verify(self, signature, data, signature_algorithm):
+        verifier = self.verifier(signature, signature_algorithm)
+        verifier.update(data)
+        verifier.verify()

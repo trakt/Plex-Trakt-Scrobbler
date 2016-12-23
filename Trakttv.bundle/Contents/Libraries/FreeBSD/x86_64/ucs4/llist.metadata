@@ -1,5 +1,10 @@
 ================================== BUILD ===================================
-ID: 42
+ID: 130
+GCC: gcc~x86_64-freebsd-generic-linux-gnu
+LIBC: bsd-libc-1.3
+
+Python Version: 2.7
+Python UCS: ucs4
 
 Revision: 363486171dbdf9b88a378083276c7f33a10d8a40
 Tag: rel-0.4
@@ -14,13 +19,13 @@ Tag: rel-0.4
  Type:                              DYN (Shared object file)
  Machine:                           Advanced Micro Devices X86-64
  Version:                           0x1
- Entry point address:               0x21b0
+ Entry point address:               0x2220
  Start of program headers:          64 (bytes into file)
- Start of section headers:          92336 (bytes into file)
+ Start of section headers:          95664 (bytes into file)
  Flags:                             0x0
  Size of this header:               64 (bytes)
  Size of program headers:           56 (bytes)
- Number of program headers:         5
+ Number of program headers:         6
  Size of section headers:           64 (bytes)
  Number of section headers:         36
  Section header string table index: 33

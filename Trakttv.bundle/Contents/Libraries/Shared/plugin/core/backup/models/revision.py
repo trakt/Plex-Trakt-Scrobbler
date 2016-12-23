@@ -28,7 +28,7 @@ class BackupRevision(object):
         # Delete revision metadata
         try:
             os.remove(self.path)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to delete revision metadata file: %r - %s', self.path, ex, exc_info=True)
             return False
 
@@ -43,7 +43,7 @@ class BackupRevision(object):
 
             try:
                 os.remove(path)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to delete revision file: %r - %s', path, ex, exc_info=True)
                 return False
 

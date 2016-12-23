@@ -42,7 +42,7 @@ class TraktBasicCredentialManager(Manager):
         # Retrieve basic credential
         try:
             credential = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find basic credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 
@@ -67,18 +67,23 @@ class UpdateOAuthCredential(Update):
         return True
 
     def from_pin(self, oauth, pin, save=True):
+        data = {'code': pin}
+
         # Exchange `pin` for token authorization
         authorization = Trakt['oauth'].token_exchange(pin, 'urn:ietf:wg:oauth:2.0:oob')
 
         if not authorization:
-            log.warn('Token exchange failed')
-            return None
+            log.warn('Token exchange failed for %r', oauth.account)
 
-        # Update `OAuthCredential`
-        data = {'code': pin}
+            # Update credential with `code` (to avoid future re-authentication attempts with the same pin)
+            self(oauth, data, save=save)
+            return False
+
+        # Update credential with authorization parameters
         data.update(authorization)
 
-        return self(oauth, data, save=save)
+        self(oauth, data, save=save)
+        return True
 
 
 class TraktOAuthCredentialManager(Manager):
@@ -91,7 +96,7 @@ class TraktOAuthCredentialManager(Manager):
         # Retrieve oauth credential
         try:
             credential = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find oauth credential (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

@@ -43,8 +43,12 @@ class Matcher(Module):
         ]
 
         for matcher in matchers:
+            if not matcher:
+                continue
+
             # Update cache
-            matcher.cache = self._cache
+            if self._cache:
+                matcher.cache = self._cache
 
             # Configure features
             if matcher.caper_enabled != extended or matcher.extend_enabled != extended:
@@ -100,9 +104,9 @@ class Matcher(Module):
             log.warn('Unable to initialize matchers: %s', ex, exc_info=True)
 
             # Mark attributes as disabled
-            self._cache = False
-            self._database_matcher = False
-            self._metadata_matcher = False
+            self._cache = None
+            self._database_matcher = None
+            self._metadata_matcher = None
             return
 
         # Configure matchers

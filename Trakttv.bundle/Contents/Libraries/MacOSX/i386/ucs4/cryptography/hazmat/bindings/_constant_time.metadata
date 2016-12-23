@@ -1,12 +1,20 @@
 ================================== BUILD ===================================
-ID: 58
+ID: 151
+GCC: gcc~i686-darwin-generic-linux-gnu
+LIBC: libsystem-1213.0.0
 
-Revision: 5b32344deadf371f3a5301ac4c71508eb1a6cf17
-Tag: 1.2.2
+Python Version: 2.7
+Python UCS: ucs4
+
+Revision: 090ece652bf47ee5bd081b6eab4c8e6953276752
+Tag: 1.5.3
 
 ================================== HEADER ==================================
-
+artifacts/2.7/ucs4/libsystem-1213.0.0/gcc~i686-darwin-generic-linux-gnu/cryptography/hazmat/bindings/_constant_time.so:     file format mach-o-i386
+architecture: i386, flags 0x00000050:
+HAS_SYMS, DYNAMIC
+start address 0x00000000
 
 =============================== DEPENDENCIES ===============================
-/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1197.1.1)
-/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 2577.0.0)
+/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1213.0.0)
+/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 283.0.0)

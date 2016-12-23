@@ -1,4 +1,4 @@
-from trakt.core.helpers import from_iso8601
+from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 
 
@@ -115,10 +115,10 @@ class List(object):
             return
 
         if 'liked_at' in info:
-            self.liked_at = from_iso8601(info.get('liked_at'))
+            self.liked_at = from_iso8601_datetime(info.get('liked_at'))
 
         if 'updated_at' in info:
-            self.updated_at = from_iso8601(info.get('updated_at'))
+            self.updated_at = from_iso8601_datetime(info.get('updated_at'))
 
         update_attributes(self, info, [
             'name',

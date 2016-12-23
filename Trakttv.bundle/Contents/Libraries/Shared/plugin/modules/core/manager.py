@@ -1,3 +1,5 @@
+from plugin.core.message import InterfaceMessages
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -35,15 +37,24 @@ class ModuleManager(object):
 
     @classmethod
     def construct(cls):
+        if InterfaceMessages.critical:
+            log.info('Module construction has been cancelled due to a critical plugin error')
+            return
+
         try:
             available = cls.discover()
-        except Exception, ex:
+        except Exception as ex:
             log.error('Unable to import modules: %s', ex, exc_info=True)
             return
 
+        # Construct modules
         constructed = []
 
         for module in available:
+            if InterfaceMessages.critical:
+                log.info('Module construction has been cancelled due to a critical plugin error')
+                return
+
             try:
                 if module.__key__ is None:
                     # Automatically set module `__key__` (if one isn't specified)
@@ -52,24 +63,33 @@ class ModuleManager(object):
                 yield module.__key__, module()
 
                 constructed.append(module.__key__)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to construct module: %r', module)
 
         log.debug('Constructed %d module(s): %s', len(constructed), ', '.join(constructed))
 
     @classmethod
     def start(cls, keys=None):
+        if InterfaceMessages.critical:
+            log.info('Module startup has been cancelled due to a critical plugin error')
+            return
+
+        # Start modules
         started = []
 
         for key, module in cls.modules.items():
             if keys is not None and key not in keys:
                 continue
 
+            if InterfaceMessages.critical:
+                log.info('Module startup has been cancelled due to a critical plugin error')
+                return
+
             try:
                 module.start()
 
                 started.append(key)
-            except Exception, ex:
+            except Exception as ex:
                 log.warn('Unable to start %r module - %s', key, ex, exc_info=True)
 
         log.debug('Started %d module(s): %s', len(started), ', '.join(started))

@@ -4,7 +4,7 @@ from plugin.managers.core.base import Get, Manager, Update
 from plugin.managers.core.exceptions import UserFilteredException
 from plugin.models import User, UserRule, PlexAccount
 
-import apsw
+from exception_wrappers.libraries import apsw
 import logging
 import peewee
 

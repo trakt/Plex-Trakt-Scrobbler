@@ -75,7 +75,7 @@ class BackupArchive(BackupRevision):
             with open(path, 'wb') as fp:
                 json.dump(self.dict(), fp, default=json_date_serializer)
 
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to save metadata - %s', ex, exc_info=True)
             return False
 

@@ -292,7 +292,7 @@ class Backend(object):
 
     def derive_pbkdf2_hmac(self, algorithm, length, salt, iterations,
                            key_material):
-        buf = self._ffi.new("char[]", length)
+        buf = self._ffi.new("unsigned char[]", length)
         evp_md = self._lib.EVP_get_digestbyname(
             algorithm.name.encode("ascii"))
         self.openssl_assert(evp_md != self._ffi.NULL)
@@ -1475,7 +1475,9 @@ class Backend(object):
             check_y = self._lib.BN_CTX_get(bn_ctx)
 
             res = set_func(group, point, bn_x, bn_y, bn_ctx)
-            self.openssl_assert(res == 1)
+            if res != 1:
+                self._consume_errors()
+                raise ValueError("EC point not on curve")
 
             res = get_func(group, point, check_x, check_y, bn_ctx)
             self.openssl_assert(res == 1)

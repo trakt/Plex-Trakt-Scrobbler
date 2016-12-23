@@ -1,12 +1,20 @@
 ================================== BUILD ===================================
-ID: 56
+ID: 120
+GCC: gcc~i686-darwin-generic-linux-gnu
+LIBC: libsystem-1213.0.0
 
-Revision: 1be8f228f8b337f33f1a88ee55f61915133dd9b4
-Tag: 1be8f22
+Python Version: 2.7
+Python UCS: ucs4
+
+Revision: 7449b676ce12949e0b1d679a3e999888f143208d
+Tag: 3.15.0-r1
 
 ================================== HEADER ==================================
-
+artifacts/2.7/ucs4/libsystem-1213.0.0/gcc~i686-darwin-generic-linux-gnu/apsw.so:     file format mach-o-i386
+architecture: i386, flags 0x00000050:
+HAS_SYMS, DYNAMIC
+start address 0x00000000
 
 =============================== DEPENDENCIES ===============================
-/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1197.1.1)
-/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 2577.0.0)
+/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1213.0.0)
+/usr/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 283.0.0)

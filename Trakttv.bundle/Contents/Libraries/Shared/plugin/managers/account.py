@@ -53,7 +53,7 @@ class AccountManager(Manager):
         # Retrieve account
         try:
             account = cls.get(*query, **kwargs)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to find account (query: %r, kwargs: %r): %r', query, kwargs, ex)
             return False
 

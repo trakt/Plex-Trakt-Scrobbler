@@ -1,5 +1,6 @@
 from plugin.core.enums import ActivityMode
 from plugin.core.helpers.variable import pms_path
+from plugin.core.helpers.version import build_version
 
 PLUGIN_NAME = 'Trakt.tv'
 PLUGIN_ART = 'art-default.png'
@@ -7,13 +8,10 @@ PLUGIN_ICON = 'icon-default.png'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
-PLUGIN_VERSION_BASE = (1, 1, 0, 7)
+PLUGIN_VERSION_BASE = (1, 2, 0)
 PLUGIN_VERSION_BRANCH = 'master'
 
-PLUGIN_VERSION = ''.join([
-    '.'.join([str(x) for x in PLUGIN_VERSION_BASE]),
-    '-' + PLUGIN_VERSION_BRANCH if PLUGIN_VERSION_BRANCH else ''
-])
+PLUGIN_VERSION = build_version(PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH)
 
 PMS_PATH = pms_path()
 

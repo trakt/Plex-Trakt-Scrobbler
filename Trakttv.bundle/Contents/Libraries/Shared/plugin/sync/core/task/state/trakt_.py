@@ -1,7 +1,7 @@
 from plugin.core.helpers.variable import try_convert
 from plugin.core.backup import BackupManager
 from plugin.core.constants import GUID_SERVICES
-from plugin.core.database import Database
+from plugin.core.database.manager import DatabaseManager
 from plugin.core.exceptions import AccountAuthenticationError
 
 from plex.objects.library import metadata as plex_objects
@@ -41,7 +41,7 @@ class SyncStateTrakt(object):
     def _build_cache(self):
         def storage(name):
             return StashBackend(
-                ApswArchive(Database.cache('trakt'), name),
+                ApswArchive(DatabaseManager.cache('trakt'), name),
                 'lru:///?capacity=500&compact_threshold=1500',
                 'pickle:///?protocol=2'
             )
@@ -133,7 +133,7 @@ class SyncStateTrakt(object):
         # Store backup of trakt data
         group = os.path.join('trakt', str(self.task.account.id))
 
-        BackupManager.database.backup(group, Database.cache('trakt'), self.task.id, {
+        BackupManager.database.backup(group, DatabaseManager.cache('trakt'), self.task.id, {
             'account': {
                 'id': self.task.account.id,
                 'name': self.task.account.name,

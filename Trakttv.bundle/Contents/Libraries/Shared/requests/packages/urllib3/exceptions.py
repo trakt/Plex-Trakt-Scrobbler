@@ -1,10 +1,29 @@
 from __future__ import absolute_import
+from .packages.six.moves.http_client import (
+    IncompleteRead as httplib_IncompleteRead
+)
 # Base Exceptions
 
 
 class HTTPError(Exception):
     "Base exception used by this module."
-    pass
+    
+    def __init__(self, message, *args):
+        super(HTTPError, self).__init__(*args)
+
+        self.message = message
+
+    def __str__(self):
+        return '%s: %s' % (
+            self.__class__.__name__,
+            self.message
+        )
+
+    def __repr__(self):
+        return '%s(%r)' % (
+            self.__class__.__name__,
+            self.message
+        )
 
 
 class HTTPWarning(Warning):
@@ -14,9 +33,9 @@ class HTTPWarning(Warning):
 
 class PoolError(HTTPError):
     "Base exception for errors caused within a pool."
-    def __init__(self, pool, message):
+    def __init__(self, pool, message, *args):
         self.pool = pool
-        HTTPError.__init__(self, "%s: %s" % (pool, message))
+        HTTPError.__init__(self, "%s: %s" % (pool, message), *args)
 
     def __reduce__(self):
         # For pickling purposes.
@@ -25,9 +44,9 @@ class PoolError(HTTPError):
 
 class RequestError(PoolError):
     "Base exception for PoolErrors that have associated URLs."
-    def __init__(self, pool, url, message):
+    def __init__(self, pool, url, message, *args):
         self.url = url
-        PoolError.__init__(self, pool, message)
+        PoolError.__init__(self, pool, message, *args)
 
     def __reduce__(self):
         # For pickling purposes.
@@ -190,6 +209,35 @@ class DependencyWarning(HTTPWarning):
 
 class ResponseNotChunked(ProtocolError, ValueError):
     "Response needs to be chunked in order to read it as chunks."
+    pass
+
+
+class BodyNotHttplibCompatible(HTTPError):
+    """
+    Body should be httplib.HTTPResponse like (have an fp attribute which
+    returns raw chunks) for read_chunked().
+    """
+    pass
+
+
+class IncompleteRead(HTTPError, httplib_IncompleteRead):
+    """
+    Response length doesn't match expected Content-Length
+
+    Subclass of http_client.IncompleteRead to allow int value
+    for `partial` to avoid creating large objects on streamed
+    reads.
+    """
+    def __init__(self, partial, expected):
+        super(IncompleteRead, self).__init__(partial, expected)
+
+    def __repr__(self):
+        return ('IncompleteRead(%i bytes read, '
+                '%i more expected)' % (self.partial, self.expected))
+
+
+class InvalidHeader(HTTPError):
+    "The header provided was somehow invalid."
     pass
 
 

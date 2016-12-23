@@ -1,3 +1,4 @@
+from trakt.core.helpers import popitems
 from trakt.interfaces.base import Interface, authenticated, application
 
 
@@ -105,8 +106,8 @@ class ScrobbleInterface(Interface):
 
         data = {
             'progress': progress,
-            'app_version': kwargs.get('app_version', '1.0'),
-            'app_date': kwargs.get('app_date', '2014-08-29')
+            'app_version': kwargs.pop('app_version', self.client.version),
+            'app_date': kwargs.pop('app_date', None)
         }
 
         if movie:
@@ -122,11 +123,13 @@ class ScrobbleInterface(Interface):
         response = self.http.post(
             action,
             data=data,
-
-            authenticated=kwargs.get('authenticated', None)
+            **popitems(kwargs, [
+                'authenticated',
+                'validate_token'
+            ])
         )
 
-        return self.get_data(response)
+        return self.get_data(response, **kwargs)
 
     @application
     @authenticated

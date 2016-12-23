@@ -1,8 +1,9 @@
-from core.helpers import pad_title, try_convert, redirect
+from core.helpers import catch_errors, pad_title, try_convert, redirect
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
-from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE, VERSION_BRANCH
+from plugin.core.message import InterfaceMessages
+from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE
 from plugin.models import Exception, Message
 
 from ago import human
@@ -10,6 +11,12 @@ from datetime import datetime, timedelta
 import logging
 
 log = logging.getLogger(__name__)
+
+CONNECTION_TYPES = [
+    Message.Type.Plex,
+    Message.Type.Sentry,
+    Message.Type.Trakt
+]
 
 ERROR_TYPES = [
     Message.Type.Exception,
@@ -21,6 +28,7 @@ ERROR_TYPES = [
 
 
 @route(PLUGIN_PREFIX + '/messages/list')
+@catch_errors
 def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
     # Cast `viewed` to boolean
     if type(viewed) is str:
@@ -48,26 +56,45 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
         title2=_("Messages")
     )
 
+    # Add "Dismiss All" button
     if viewed is False and len(messages) > 1:
         oc.add(DirectoryObject(
             key=Callback(DismissMessages),
             title=pad_title(_("Dismiss all"))
         ))
 
+    # Add interface messages
+    for record in InterfaceMessages.records:
+        # Pick object thumb
+        if record.level >= logging.WARNING:
+            thumb = R("icon-error.png")
+        else:
+            thumb = R("icon-notification.png")
+
+        # Add object
+        oc.add(DirectoryObject(
+            key=PLUGIN_PREFIX + '/messages/list',
+            title=pad_title('[%s] %s' % (logging.getLevelName(record.level).capitalize(), record.message)),
+            thumb=thumb
+        ))
+
+    # Add stored messages
     for m in messages:
         if m.type is None or\
            m.summary is None:
             continue
 
-        thumb = None
-
+        # Pick thumb
         if m.type == Message.Type.Exception:
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
         elif m.type == Message.Type.Info:
             thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
-        elif m.type in ERROR_TYPES:
+        elif m.type in CONNECTION_TYPES:
+            thumb = R("icon-connection-viewed.png") if m.viewed else R("icon-connection.png")
+        else:
             thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
 
+        # Add object
         oc.add(DirectoryObject(
             key=Callback(ViewMessage, error_id=m.id),
             title=pad_title('[%s] %s' % (Message.Type.title(m.type), m.summary)),
@@ -84,6 +111,7 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
     return oc
 
 @route(PLUGIN_PREFIX + '/messages/view')
+@catch_errors
 def ViewMessage(error_id, *args, **kwargs):
     # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
@@ -133,6 +161,7 @@ def ViewMessage(error_id, *args, **kwargs):
     return oc
 
 @route(PLUGIN_PREFIX + '/exceptions/view')
+@catch_errors
 def ViewException(exception_id, *args, **kwargs):
     # Retrieve exception from database
     exception = ExceptionManager.get.by_id(exception_id)
@@ -155,20 +184,16 @@ def ViewException(exception_id, *args, **kwargs):
         if not line:
             continue
 
-        length = len(line)
-
-        line = line.lstrip()
-        spaces = length - len(line)
-
         oc.add(DirectoryObject(
             key=Callback(ViewException, exception_id=exception_id),
-            title=pad_title(('&nbsp;' * spaces) + line)
+            title=pad_title(line)
         ))
 
     return oc
 
 
 @route(PLUGIN_PREFIX + '/messages/dismissAll')
+@catch_errors
 def DismissMessages(days=14, version='latest', *args, **kwargs):
     # Retrieve messages that match the specified criteria
     messages = List(
@@ -202,8 +227,18 @@ def Status(viewed=None):
     count = 0
     type = 'notification'
 
+    # Process stored messages
     for message in messages:
         if message.type in ERROR_TYPES:
+            type = 'error'
+        elif message.type in CONNECTION_TYPES and type != 'error':
+            type = 'connection'
+
+        count += 1
+
+    # Process interface messages
+    for record in InterfaceMessages.records:
+        if record.level >= logging.ERROR:
             type = 'error'
 
         count += 1

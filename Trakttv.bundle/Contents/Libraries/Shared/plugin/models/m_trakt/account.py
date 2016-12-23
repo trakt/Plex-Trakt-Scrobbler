@@ -3,7 +3,7 @@ from plugin.models.core import db
 from plugin.models.account import Account
 
 from datetime import datetime, timedelta
-from playhouse.apsw_ext import *
+from exception_wrappers.libraries.playhouse.apsw_ext import *
 from trakt import Trakt
 from urllib import urlencode
 from urlparse import urlparse, parse_qsl
@@ -67,7 +67,7 @@ class TraktAccount(Model):
         # Basic (legacy)
         basic = self.basic
 
-        if basic:
+        if basic and basic.is_valid():
             return self.basic_authorization(basic)
 
         # No account authorization available
@@ -87,7 +87,11 @@ class TraktAccount(Model):
 
         log.debug('Using oauth authorization for %r', self)
 
-        return Trakt.configuration.oauth.from_response(oauth_credential.to_response(), refresh=True)
+        return Trakt.configuration.oauth.from_response(
+            oauth_credential.to_response(),
+            refresh=True,
+            username=self.username
+        )
 
     def refresh(self, force=False, save=True, settings=None):
         if not force and self.refreshed_at:

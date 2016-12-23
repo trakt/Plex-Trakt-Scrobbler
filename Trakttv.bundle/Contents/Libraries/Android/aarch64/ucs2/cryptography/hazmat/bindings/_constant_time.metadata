@@ -1,13 +1,13 @@
 ================================== BUILD ===================================
-ID: 136
+ID: 151
 GCC: gcc~aarch64-android-generic-linux
 LIBC: android-21
 
 Python Version: 2.7
 Python UCS: ucs2
 
-Revision: b6e0ba0fb7bf0eccdcf84c730ea23bb4544f427d
-Tag: b6e0ba0
+Revision: 090ece652bf47ee5bd081b6eab4c8e6953276752
+Tag: 1.5.3
 
 ================================== HEADER ==================================
  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 

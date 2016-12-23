@@ -42,3 +42,15 @@ class SessionHandler(Handler):
             return True
 
         return False
+
+    @staticmethod
+    def should_scrobble(session, payload):
+        if not session or not session.duration:
+            return False
+
+        # Calculate session progress
+        # TODO update to support multi-part sessions
+        progress = float(payload.get('view_offset')) / session.duration
+
+        # Session is finished when `progress` reaches at least 98%
+        return progress >= 0.98

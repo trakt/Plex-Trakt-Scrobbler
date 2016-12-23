@@ -17,6 +17,8 @@ import six
 
 from cryptography import utils
 from cryptography.hazmat.primitives import constant_time, serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509.general_name import GeneralName, IPAddress, OtherName
 from cryptography.x509.name import Name
 from cryptography.x509.oid import (
@@ -32,23 +34,32 @@ class _SubjectPublicKeyInfo(univ.Sequence):
 
 
 def _key_identifier_from_public_key(public_key):
-    # This is a very slow way to do this.
-    serialized = public_key.public_bytes(
-        serialization.Encoding.DER,
-        serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    spki, remaining = decoder.decode(
-        serialized, asn1Spec=_SubjectPublicKeyInfo()
-    )
-    assert not remaining
-    # the univ.BitString object is a tuple of bits. We need bytes and
-    # pyasn1 really doesn't want to give them to us. To get it we'll
-    # build an integer and convert that to bytes.
-    bits = 0
-    for bit in spki.getComponentByName("subjectPublicKey"):
-        bits = bits << 1 | bit
+    if isinstance(public_key, RSAPublicKey):
+        data = public_key.public_bytes(
+            serialization.Encoding.DER,
+            serialization.PublicFormat.PKCS1,
+        )
+    elif isinstance(public_key, EllipticCurvePublicKey):
+        data = public_key.public_numbers().encode_point()
+    else:
+        # This is a very slow way to do this.
+        serialized = public_key.public_bytes(
+            serialization.Encoding.DER,
+            serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        spki, remaining = decoder.decode(
+            serialized, asn1Spec=_SubjectPublicKeyInfo()
+        )
+        assert not remaining
+        # the univ.BitString object is a tuple of bits. We need bytes and
+        # pyasn1 really doesn't want to give them to us. To get it we'll
+        # build an integer and convert that to bytes.
+        bits = 0
+        for bit in spki.getComponentByName("subjectPublicKey"):
+            bits = bits << 1 | bit
 
-    data = utils.int_to_bytes(bits)
+        data = utils.int_to_bytes(bits)
+
     return hashlib.sha1(data).digest()
 
 
@@ -163,13 +174,15 @@ class AuthorityKeyIdentifier(object):
                 "must both be present or both None"
             )
 
-        if authority_cert_issuer is not None and not all(
-            isinstance(x, GeneralName) for x in authority_cert_issuer
-        ):
-            raise TypeError(
-                "authority_cert_issuer must be a list of GeneralName "
-                "objects"
-            )
+        if authority_cert_issuer is not None:
+            authority_cert_issuer = list(authority_cert_issuer)
+            if not all(
+                isinstance(x, GeneralName) for x in authority_cert_issuer
+            ):
+                raise TypeError(
+                    "authority_cert_issuer must be a list of GeneralName "
+                    "objects"
+                )
 
         if authority_cert_serial_number is not None and not isinstance(
             authority_cert_serial_number, six.integer_types
@@ -187,6 +200,14 @@ class AuthorityKeyIdentifier(object):
         digest = _key_identifier_from_public_key(public_key)
         return cls(
             key_identifier=digest,
+            authority_cert_issuer=None,
+            authority_cert_serial_number=None
+        )
+
+    @classmethod
+    def from_issuer_subject_key_identifier(cls, ski):
+        return cls(
+            key_identifier=ski.value.digest,
             authority_cert_issuer=None,
             authority_cert_serial_number=None
         )
@@ -254,6 +275,7 @@ class AuthorityInformationAccess(object):
     oid = ExtensionOID.AUTHORITY_INFORMATION_ACCESS
 
     def __init__(self, descriptions):
+        descriptions = list(descriptions)
         if not all(isinstance(x, AccessDescription) for x in descriptions):
             raise TypeError(
                 "Every item in the descriptions list must be an "
@@ -313,6 +335,9 @@ class AccessDescription(object):
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        return hash((self.access_method, self.access_location))
+
     access_method = utils.read_only_property("_access_method")
     access_location = utils.read_only_property("_access_location")
 
@@ -364,6 +389,7 @@ class CRLDistributionPoints(object):
     oid = ExtensionOID.CRL_DISTRIBUTION_POINTS
 
     def __init__(self, distribution_points):
+        distribution_points = list(distribution_points)
         if not all(
             isinstance(x, DistributionPoint) for x in distribution_points
         ):
@@ -404,22 +430,22 @@ class DistributionPoint(object):
                 "least one must be None."
             )
 
-        if full_name and not all(
-            isinstance(x, GeneralName) for x in full_name
-        ):
-            raise TypeError(
-                "full_name must be a list of GeneralName objects"
-            )
+        if full_name:
+            full_name = list(full_name)
+            if not all(isinstance(x, GeneralName) for x in full_name):
+                raise TypeError(
+                    "full_name must be a list of GeneralName objects"
+                )
 
         if relative_name and not isinstance(relative_name, Name):
             raise TypeError("relative_name must be a Name")
 
-        if crl_issuer and not all(
-            isinstance(x, GeneralName) for x in crl_issuer
-        ):
-            raise TypeError(
-                "crl_issuer must be None or a list of general names"
-            )
+        if crl_issuer:
+            crl_issuer = list(crl_issuer)
+            if not all(isinstance(x, GeneralName) for x in crl_issuer):
+                raise TypeError(
+                    "crl_issuer must be None or a list of general names"
+                )
 
         if reasons and (not isinstance(reasons, frozenset) or not all(
             isinstance(x, ReasonFlags) for x in reasons
@@ -487,10 +513,67 @@ class ReasonFlags(Enum):
 
 
 @utils.register_interface(ExtensionType)
+class PolicyConstraints(object):
+    oid = ExtensionOID.POLICY_CONSTRAINTS
+
+    def __init__(self, require_explicit_policy, inhibit_policy_mapping):
+        if require_explicit_policy is not None and not isinstance(
+            require_explicit_policy, six.integer_types
+        ):
+            raise TypeError(
+                "require_explicit_policy must be a non-negative integer or "
+                "None"
+            )
+
+        if inhibit_policy_mapping is not None and not isinstance(
+            inhibit_policy_mapping, six.integer_types
+        ):
+            raise TypeError(
+                "inhibit_policy_mapping must be a non-negative integer or None"
+            )
+
+        if inhibit_policy_mapping is None and require_explicit_policy is None:
+            raise ValueError(
+                "At least one of require_explicit_policy and "
+                "inhibit_policy_mapping must not be None"
+            )
+
+        self._require_explicit_policy = require_explicit_policy
+        self._inhibit_policy_mapping = inhibit_policy_mapping
+
+    def __repr__(self):
+        return (
+            u"<PolicyConstraints(require_explicit_policy={0.require_explicit"
+            u"_policy}, inhibit_policy_mapping={0.inhibit_policy_"
+            u"mapping})>".format(self)
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, PolicyConstraints):
+            return NotImplemented
+
+        return (
+            self.require_explicit_policy == other.require_explicit_policy and
+            self.inhibit_policy_mapping == other.inhibit_policy_mapping
+        )
+
+    def __ne__(self, other):
+        return not self == other
+
+    require_explicit_policy = utils.read_only_property(
+        "_require_explicit_policy"
+    )
+    inhibit_policy_mapping = utils.read_only_property(
+        "_inhibit_policy_mapping"
+    )
+
+
+@utils.register_interface(ExtensionType)
 class CertificatePolicies(object):
     oid = ExtensionOID.CERTIFICATE_POLICIES
 
     def __init__(self, policies):
+        policies = list(policies)
         if not all(isinstance(x, PolicyInformation) for x in policies):
             raise TypeError(
                 "Every item in the policies list must be a "
@@ -527,15 +610,17 @@ class PolicyInformation(object):
             raise TypeError("policy_identifier must be an ObjectIdentifier")
 
         self._policy_identifier = policy_identifier
-        if policy_qualifiers and not all(
-            isinstance(
-                x, (six.text_type, UserNotice)
-            ) for x in policy_qualifiers
-        ):
-            raise TypeError(
-                "policy_qualifiers must be a list of strings and/or UserNotice"
-                " objects or None"
-            )
+
+        if policy_qualifiers:
+            policy_qualifiers = list(policy_qualifiers)
+            if not all(
+                    isinstance(x, (six.text_type, UserNotice))
+                    for x in policy_qualifiers
+            ):
+                raise TypeError(
+                    "policy_qualifiers must be a list of strings and/or "
+                    "UserNotice objects or None"
+                )
 
         self._policy_qualifiers = policy_qualifiers
 
@@ -598,9 +683,8 @@ class UserNotice(object):
 class NoticeReference(object):
     def __init__(self, organization, notice_numbers):
         self._organization = organization
-        if not isinstance(notice_numbers, list) or not all(
-            isinstance(x, int) for x in notice_numbers
-        ):
+        notice_numbers = list(notice_numbers)
+        if not all(isinstance(x, int) for x in notice_numbers):
             raise TypeError(
                 "notice_numbers must be a list of integers"
             )
@@ -634,6 +718,7 @@ class ExtendedKeyUsage(object):
     oid = ExtensionOID.EXTENDED_KEY_USAGE
 
     def __init__(self, usages):
+        usages = list(usages)
         if not all(isinstance(x, ObjectIdentifier) for x in usages):
             raise TypeError(
                 "Every item in the usages list must be an ObjectIdentifier"
@@ -689,6 +774,9 @@ class InhibitAnyPolicy(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash(self.skip_certs)
 
     skip_certs = utils.read_only_property("_skip_certs")
 
@@ -785,6 +873,7 @@ class NameConstraints(object):
 
     def __init__(self, permitted_subtrees, excluded_subtrees):
         if permitted_subtrees is not None:
+            permitted_subtrees = list(permitted_subtrees)
             if not all(
                 isinstance(x, GeneralName) for x in permitted_subtrees
             ):
@@ -796,6 +885,7 @@ class NameConstraints(object):
             self._validate_ip_name(permitted_subtrees)
 
         if excluded_subtrees is not None:
+            excluded_subtrees = list(excluded_subtrees)
             if not all(
                 isinstance(x, GeneralName) for x in excluded_subtrees
             ):
@@ -884,6 +974,7 @@ class Extension(object):
 
 class GeneralNames(object):
     def __init__(self, general_names):
+        general_names = list(general_names)
         if not all(isinstance(x, GeneralName) for x in general_names):
             raise TypeError(
                 "Every item in the general_names list must be an "

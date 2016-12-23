@@ -15,6 +15,7 @@ SCAN_COMPLETE_REGEX = re.compile('Library scan complete', re.IGNORECASE)
 
 TIMELINE_STATES = {
     0: 'created',
+    1: 'processing',
     2: 'matching',
     3: 'downloading',
     4: 'loading',

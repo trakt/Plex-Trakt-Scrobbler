@@ -47,7 +47,16 @@ except ImportError:
 
 urlparse = _urlparse
 
-try:
-    from unittest2 import TestCase
-except ImportError:
-    from unittest import TestCase  # NOQA
+
+def check_threads():
+    try:
+        from uwsgi import opt
+    except ImportError:
+        return
+
+    if str(opt.get('enable-threads', '0')).lower() in ('false', 'off', 'no', '0'):
+        from warnings import warn
+        warn(Warning('We detected the use of uwsgi with disabled threads.  '
+                     'This will cause issues with the transport you are '
+                     'trying to use.  Please enable threading for uwsgi.  '
+                     '(Enable the "enable-threads" flag).'))

@@ -4,6 +4,7 @@ from plugin.modules.migrations.account import AccountMigration
 from plugin.modules.migrations.preferences import PreferencesMigration
 from plugin.modules.migrations.schema import SchemaMigration
 
+from exception_wrappers import DisabledError
 import logging
 
 log = logging.getLogger(__name__)
@@ -21,8 +22,14 @@ class Migrations(object):
     @classmethod
     def start(cls):
         # Connect to database, enable WAL
-        db.connect()
-        db.execute_sql('PRAGMA journal_mode=WAL;')
+        try:
+            db.connect()
+            db.execute_sql('PRAGMA journal_mode=WAL;')
+        except DisabledError:
+            return
+        except Exception as ex:
+            log.warn('Database connection failed: %s', ex, exc_info=True)
+            return
 
         # Run each migration
         for migration in cls.migrations:

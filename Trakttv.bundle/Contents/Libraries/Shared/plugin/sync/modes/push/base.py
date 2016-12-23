@@ -25,7 +25,7 @@ class Base(Mode):
             t_movie = self.trakt[(SyncMedia.Movies, data)].get(pk)
 
             self.execute_handlers(
-                SyncMedia.Movies, data,
+                self.mode, SyncMedia.Movies, data,
 
                 key=mo_id,
 
@@ -41,7 +41,7 @@ class Base(Mode):
 
             # Execute show handlers
             self.execute_handlers(
-                SyncMedia.Shows, data,
+                self.mode, SyncMedia.Shows, data,
                 key=sh_id,
                 guid=guid,
 
@@ -62,7 +62,7 @@ class Base(Mode):
 
             # Execute episode handlers
             self.execute_handlers(
-                SyncMedia.Episodes, data,
+                self.mode, SyncMedia.Episodes, data,
 
                 key=ep_id,
                 identifier=identifier,
@@ -123,7 +123,7 @@ class Base(Mode):
         # Update pending items report
         try:
             report_path = cls.write_pending(account, key, keys)
-        except Exception, ex:
+        except Exception as ex:
             log.warn('Unable to save report: %s', ex, exc_info=True)
             report_path = None
 

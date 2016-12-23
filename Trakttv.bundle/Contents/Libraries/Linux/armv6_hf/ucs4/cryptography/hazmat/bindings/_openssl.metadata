@@ -1,8 +1,13 @@
 ================================== BUILD ===================================
-ID: 58
+ID: 151
+GCC: gcc~armv6-debian-rpi-linux-gnueabihf
+LIBC: glibc-2.09
 
-Revision: 5b32344deadf371f3a5301ac4c71508eb1a6cf17
-Tag: 1.2.2
+Python Version: 2.7
+Python UCS: ucs4
+
+Revision: 090ece652bf47ee5bd081b6eab4c8e6953276752
+Tag: 1.5.3
 
 ================================== HEADER ==================================
  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
@@ -14,9 +19,9 @@ Tag: 1.2.2
  Type:                              DYN (Shared object file)
  Machine:                           ARM
  Version:                           0x1
- Entry point address:               0x53960
+ Entry point address:               0x522a0
  Start of program headers:          52 (bytes into file)
- Start of section headers:          4042268 (bytes into file)
+ Start of section headers:          4034376 (bytes into file)
  Flags:                             0x5000402, has entry point, Version5 EABI, hard-float ABI
  Size of this header:               52 (bytes)
  Size of program headers:           32 (bytes)
@@ -43,6 +48,8 @@ File Attributes
   Tag_ABI_FP_number_model: IEEE 754
   Tag_ABI_align_needed: 8-byte
   Tag_ABI_enum_size: int
+  Tag_ABI_HardFP_use: SP and DP
   Tag_ABI_VFP_args: VFP registers
+  Tag_ABI_optimization_goals: Aggressive Speed
   Tag_CPU_unaligned_access: v6
   Tag_Virtualization_use: TrustZone

@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-SOCKS support for urllib3
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This contrib module contains provisional support for SOCKS proxies from within
+This module contains provisional support for SOCKS proxies from within
 urllib3. This module supports SOCKS4 (specifically the SOCKS4A variant) and
 SOCKS5. To enable its functionality, either install PySocks or install this
 module with the ``socks`` extra.
 
+The SOCKS implementation supports the full range of urllib3 features. It also
+supports the following SOCKS features:
+
+- SOCKS4
+- SOCKS4a
+- SOCKS5
+- Usernames and passwords for the SOCKS proxy
+
 Known Limitations:
 
 - Currently PySocks does not support contacting remote websites via literal
-  IPv6 addresses. Any such connection attempt will fail.
+  IPv6 addresses. Any such connection attempt will fail. You must use a domain
+  name.
 - Currently PySocks does not support IPv6 connections to the SOCKS proxy. Any
   such connection attempt will fail.
 """
@@ -83,8 +89,9 @@ class SOCKSConnection(HTTPConnection):
 
         except SocketTimeout as e:
             raise ConnectTimeoutError(
-                self, "Connection to %s timed out. (connect timeout=%s)" %
-                (self.host, self.timeout))
+                "Connection to %s timed out. (connect timeout=%s)" %
+                (self.host, self.timeout),
+                e)
 
         except socks.ProxyError as e:
             # This is fragile as hell, but it seems to be the only way to raise
@@ -93,24 +100,26 @@ class SOCKSConnection(HTTPConnection):
                 error = e.socket_err
                 if isinstance(error, SocketTimeout):
                     raise ConnectTimeoutError(
-                        self,
                         "Connection to %s timed out. (connect timeout=%s)" %
-                        (self.host, self.timeout)
+                        (self._socks_options['proxy_host'], self.timeout),
+                        e
                     )
                 else:
                     raise NewConnectionError(
                         self,
-                        "Failed to establish a new connection: %s" % error
+                        "Failed to establish a new connection: %s" % error,
+                        error
                     )
             else:
                 raise NewConnectionError(
                     self,
-                    "Failed to establish a new connection: %s" % e
+                    "Failed to establish a new connection: %s" % e,
+                    e
                 )
 
         except SocketError as e:  # Defensive: PySocks should catch all these.
             raise NewConnectionError(
-                self, "Failed to establish a new connection: %s" % e)
+                self, "Failed to establish a new connection: %s" % e, e)
 
         return conn
 
@@ -143,27 +152,28 @@ class SOCKSProxyManager(PoolManager):
 
     def __init__(self, proxy_url, username=None, password=None,
                  num_pools=10, headers=None, **connection_pool_kw):
-        parsed = parse_url(proxy_url)
+        proxy = parse_url(proxy_url)
 
-        if parsed.scheme == 'socks5':
+        if proxy.scheme == 'socks5':
             socks_version = socks.PROXY_TYPE_SOCKS5
-        elif parsed.scheme == 'socks4':
+        elif proxy.scheme == 'socks4':
             socks_version = socks.PROXY_TYPE_SOCKS4
         else:
             raise ValueError(
                 "Unable to determine SOCKS version from %s" % proxy_url
             )
 
-        self.proxy_url = proxy_url
+        self.proxy = proxy
 
         socks_options = {
             'socks_version': socks_version,
-            'proxy_host': parsed.host,
-            'proxy_port': parsed.port,
+            'proxy_host': proxy.host,
+            'proxy_port': proxy.port,
             'username': username,
             'password': password,
         }
         connection_pool_kw['_socks_options'] = socks_options
+        connection_pool_kw['_proxy'] = self.proxy
 
         super(SOCKSProxyManager, self).__init__(
             num_pools, headers, **connection_pool_kw

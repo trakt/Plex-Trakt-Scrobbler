@@ -1,5 +1,10 @@
 ================================== BUILD ===================================
-ID: 42
+ID: 130
+GCC: gcc~armv7-debian-rpi2-linux-gnueabihf
+LIBC: glibc-2.09
+
+Python Version: 2.7
+Python UCS: ucs4
 
 Revision: 363486171dbdf9b88a378083276c7f33a10d8a40
 Tag: rel-0.4
@@ -16,7 +21,7 @@ Tag: rel-0.4
  Version:                           0x1
  Entry point address:               0x12f4
  Start of program headers:          52 (bytes into file)
- Start of section headers:          90708 (bytes into file)
+ Start of section headers:          92000 (bytes into file)
  Flags:                             0x5000402, has entry point, Version5 EABI, hard-float ABI
  Size of this header:               52 (bytes)
  Size of program headers:           32 (bytes)
@@ -46,7 +51,9 @@ File Attributes
   Tag_ABI_align_needed: 8-byte
   Tag_ABI_align_preserved: 8-byte, except leaf SP
   Tag_ABI_enum_size: int
+  Tag_ABI_HardFP_use: SP and DP
   Tag_ABI_VFP_args: VFP registers
+  Tag_ABI_optimization_goals: Aggressive Speed
   Tag_CPU_unaligned_access: v6
   Tag_MPextension_use: Allowed
   Tag_DIV_use: Allowed in v7-A with integer division extension
