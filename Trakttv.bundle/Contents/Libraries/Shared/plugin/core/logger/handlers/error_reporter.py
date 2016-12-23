@@ -55,7 +55,7 @@ breadcrumbs.ignore_logger('peewee')
 
 class ErrorReporter(Client):
     server = 'sentry.skipthe.net'
-    key = '240c00f6a02542f8900d8a6a1aba365a:7432061e2ac54ed0aabe4ec3fe3ea0d9'
+    key = 'c0cb82d902b4468cabb01239c22a5642:773fc0ca417b4b1cb29b9b7f75eaadd9'
     project = 1
 
     def __init__(self, dsn=None, raise_send_errors=False, **options):
