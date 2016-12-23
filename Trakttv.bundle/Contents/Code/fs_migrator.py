@@ -149,6 +149,7 @@ class Clean(Migration):
                 # plugin
                 'Shared/plugin/api/account.py',
                 'Shared/plugin/core/event.py',
+                'Shared/plugin/core/helpers/database.py',
                 'Shared/plugin/core/io.py',
                 'Shared/plugin/core/jsonw.py',
                 'Shared/plugin/core/libraries/main.py',
@@ -278,6 +279,11 @@ class Clean(Migration):
                 # plex.metadata.py
                 'Shared/plex_metadata/core/cache.py',
 
+                # raven
+                'Shared/raven/transport/aiohttp.py',
+                'Shared/raven/transport/udp.py',
+                'Shared/raven/utils/six.py',
+
                 # requests
                 'Shared/requests/packages/urllib3/util.py',
                 'Shared/requests/packages/README.rst',
@@ -338,6 +344,7 @@ class Clean(Migration):
         (
             'delete_directory', [
                 'tests/core/mock',
+                'tests/scrobbler/engine_tests.py',
             ], os.path.isdir
         )
     ]
