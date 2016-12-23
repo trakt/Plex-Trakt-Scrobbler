@@ -1,4 +1,4 @@
-from plugin.core.constants import PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
+from plugin.core.constants import PLUGIN_VERSION, PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH
 from plugin.core.helpers.error import ErrorHasher
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.helpers.system import SystemHelper
@@ -7,8 +7,8 @@ from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFil
 from plugin.core.logger.filters.events import EventsReportFilter
 
 from raven import Client, breadcrumbs
-from raven._compat import string_types, iteritems, text_type
-from raven.handlers.logging import SentryHandler, RESERVED, extract_extra
+from raven._compat import string_types, text_type
+from raven.handlers.logging import SentryHandler, extract_extra
 from raven.utils.stacks import iter_stack_frames
 import datetime
 import logging
@@ -41,7 +41,7 @@ PARAMS = {
     ],
 
     # Plugin + System details
-    'release': VERSION,
+    'release': PLUGIN_VERSION,
     'tags': merge(SystemHelper.attributes(), {
         'plugin.version': VERSION,
         'plugin.branch': PLUGIN_VERSION_BRANCH
