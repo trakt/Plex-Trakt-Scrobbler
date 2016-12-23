@@ -244,7 +244,7 @@ class Client(object):
         else:
             self.remote = self._transport_cache[dsn]
 
-        self.logger.debug("Configuring Raven for host: {0}".format(self.remote))
+        self.logger.debug("Configuring Raven for host: {0}".format(dsn))
 
     def install_sys_hook(self):
         global __excepthook__
