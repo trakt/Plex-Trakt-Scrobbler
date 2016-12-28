@@ -2,6 +2,7 @@ from plex_database.matcher import Default as Matcher
 from plex_database.models import *
 from plex_metadata.guid import Guid
 
+from datetime import datetime
 from peewee import JOIN_LEFT_OUTER, DateTimeField, FieldProxy
 from stash.algorithms.core.prime_context import PrimeContext
 import logging
@@ -178,7 +179,14 @@ class LibraryBase(object):
         if type(field) is FieldProxy:
             field = field.field_instance
 
-        if type(field) is DateTimeField and value:
+        if type(field) is DateTimeField:
+            if not value:
+                return None
+
+            if not isinstance(value, datetime):
+                log.debug('Invalid value provided for DateTimeField: %r (expected datetime instance)', value)
+                return None
+
             if value.tzinfo:
                 # `tzinfo` provided, ignore conversion
                 return value
