@@ -54,7 +54,9 @@ class SchemaMigration(Migration):
         from plugin.models import Message
 
         MessageManager.get.from_message(logging.WARNING,
-            "Plugin database has been automatically reset due to schema corruption, see http://bit.ly/TFPx90101 for more details",
+            message="Plugin database has been reset due to schema corruption",
+            description="Your corrupted database is available at: "
+                        "\"Plug-in Support\\Data\\com.plexapp.plugins.trakttv\\Backups\\main.bgr\"",
             code=Message.Code.DatabaseSchemaCorruptionReset
         )
 
