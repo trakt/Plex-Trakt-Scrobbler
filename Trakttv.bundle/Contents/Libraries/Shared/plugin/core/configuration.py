@@ -56,6 +56,9 @@ class ConfigurationSection(object):
         if not self._parser:
             return default
 
+        if not self._parser.has_option(self._name, key):
+            return default
+
         try:
             return getattr(self._parser, func)(self._name, key)
         except (NoSectionError, NoOptionError):

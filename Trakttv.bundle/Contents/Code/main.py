@@ -3,6 +3,7 @@ from core.helpers import get_class_name, spawn
 from core.logger import Logger
 from core.update_checker import UpdateChecker
 
+from plugin.core.configuration import Configuration
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, LoggerManager
@@ -95,6 +96,14 @@ class Main(object):
 
     @classmethod
     def init_trakt(cls):
+        config = Configuration.advanced['trakt']
+
+        # Build timeout value
+        timeout = (
+            config.get_float('connect_timeout', 6.05),
+            config.get_float('read_timeout', 24)
+        )
+
         # Client
         Trakt.configuration.defaults.client(
             id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61',
@@ -107,13 +116,42 @@ class Main(object):
             version=PLUGIN_VERSION
         )
 
-        # Setup request retrying
-        Trakt.http.adapter_kwargs = {'max_retries': Retry(total=3, read=0)}
+        # Http
+        Trakt.base_url = (
+            config.get('protocol', 'https') + '://' +
+            config.get('hostname', 'api-v2launch.trakt.tv')
+        )
+
+        Trakt.configuration.defaults.http(
+            timeout=timeout
+        )
+
+        # Configure keep-alive
+        Trakt.http.keep_alive = config.get_boolean('keep_alive', True)
+
+        # Configure requests adapter
+        Trakt.http.adapter_kwargs = {
+            'pool_connections': config.get_int('pool_connections', 10),
+            'pool_maxsize': config.get_int('pool_size', 10),
+            'max_retries': Retry(
+                total=config.get_int('connect_retries', 3),
+                read=0
+            )
+        }
+
         Trakt.http.rebuild()
 
         # Bind to events
         Trakt.on('oauth.refresh', cls.on_trakt_refresh)
         Trakt.on('oauth.refresh.rejected', cls.on_trakt_refresh_rejected)
+
+        log.info(
+            'Configured trakt.py (timeout=%r, base_url=%r, keep_alive=%r, adapter_kwargs=%r)',
+            timeout,
+            Trakt.base_url,
+            Trakt.http.keep_alive,
+            Trakt.http.adapter_kwargs,
+        )
 
     @classmethod
     def on_trakt_refresh(cls, username, authorization):
