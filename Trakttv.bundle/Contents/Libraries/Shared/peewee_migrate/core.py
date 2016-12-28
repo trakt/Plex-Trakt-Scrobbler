@@ -183,6 +183,9 @@ class Router(object):
             # Load migration from file
             migration = self._migration(name)
 
+            if not migration:
+                break
+
             # Retrieve specification for migration
             spec = migration.get('SPEC')
 
@@ -209,7 +212,14 @@ class Router(object):
         return None
 
     def _migration(self, name):
-        with open(op.join(self.migrate_dir, name + '.py')) as f:
+        path = op.join(self.migrate_dir, name + '.py')
+
+        # Ensure migration exists
+        if not op.exists(path):
+            return None
+
+        # Read migration module
+        with open(path) as f:
             code = f.read()
 
         scope = {}
