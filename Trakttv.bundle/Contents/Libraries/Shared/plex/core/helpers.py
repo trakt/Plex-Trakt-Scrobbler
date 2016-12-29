@@ -1,5 +1,7 @@
 from plex.lib import six
 
+import functools
+import inspect
 import re
 import unicodedata
 
@@ -46,17 +48,45 @@ def to_iterable(value):
     return [value]
 
 
-def synchronized(func):
-    def wrapper(self, *__args, **__kw):
-        self._lock.acquire()
+def synchronized(f_lock, mode='full'):
+    if inspect.isfunction(f_lock) and f_lock.func_code.co_name != '<lambda>':
+        return synchronized(lambda self: self._lock, mode)(f_lock)
 
-        try:
-            return func(self, *__args, **__kw)
-        finally:
-            self._lock.release()
+    if mode == 'full':
+        mode = ['acquire', 'release']
+    elif isinstance(mode, (str, unicode)):
+        mode = [mode]
 
-    wrapper.__name__ = func.__name__
-    wrapper.__dict__ = func.__dict__
-    wrapper.__doc__ = func.__doc__
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapped(self, *args, **kwargs):
+            lock = f_lock(self)
 
-    return wrapper
+            def acquire():
+                if 'acquire' not in mode:
+                    return
+
+                lock.acquire()
+
+            def release():
+                if 'release' not in mode:
+                    return
+
+                lock.release()
+
+            # Acquire the lock
+            acquire()
+
+            try:
+                # Execute wrapped function
+                result = func(self, *args, **kwargs)
+            finally:
+                # Release the lock
+                release()
+
+            # Return the result
+            return result
+
+        return wrapped
+
+    return wrap

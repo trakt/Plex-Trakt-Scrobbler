@@ -1,33 +1,31 @@
+from plex.core.context_collection import ContextCollection
+
+
 class ConfigurationManager(object):
     def __init__(self):
-        self.stack = [
-            Configuration(self)
-        ]
+        self.defaults = Configuration(self)
+        self.stack = ContextCollection([self.defaults])
 
     @property
     def current(self):
         return self.stack[-1]
 
-    @property
-    def defaults(self):
-        return self.stack[0]
-
-    def authentication(self, token):
+    def authentication(self, token=None):
         return Configuration(self).authentication(token)
 
     def cache(self, **definitions):
         return Configuration(self).cache(**definitions)
 
-    def client(self, identifier, product, version):
+    def client(self, identifier=None, product=None, version=None):
         return Configuration(self).client(identifier, product, version)
 
-    def device(self, name, system):
+    def device(self, name=None, system=None):
         return Configuration(self).device(name, system)
 
-    def headers(self, headers):
+    def headers(self, headers=None):
         return Configuration(self).headers(headers)
 
-    def platform(self, name, version):
+    def platform(self, name=None, version=None):
         return Configuration(self).platform(name, version)
 
     def server(self, host='127.0.0.1', port=32400):
@@ -106,7 +104,11 @@ class Configuration(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         item = self.manager.stack.pop()
 
-        assert item == self
+        assert item == self, 'Removed %r from stack, expecting %r' % (item, self)
+
+        # Clear old context lists
+        if len(self.manager.stack) == 1:
+            self.manager.stack.clear()
 
     def __getitem__(self, key):
         return self.data[key]
