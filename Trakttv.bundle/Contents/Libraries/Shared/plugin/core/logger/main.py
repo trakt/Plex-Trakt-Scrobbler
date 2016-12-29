@@ -148,8 +148,8 @@ class LoggerManager(object):
         except Exception as ex:
             log.warn('Unable to generate id from hostname - %s', ex, exc_info=True)
 
-        # Fallback to random identifier
-        return md5(str(uuid.uuid4()))
+        # Fallback to generated identifier
+        return 'generated-' + md5(str(uuid.uuid4()))
 
     @classmethod
     def refresh(cls):
