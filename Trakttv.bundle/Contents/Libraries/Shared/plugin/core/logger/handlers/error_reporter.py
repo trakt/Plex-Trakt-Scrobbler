@@ -3,7 +3,7 @@ from plugin.core.helpers.error import ErrorHasher
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.helpers.system import SystemHelper
 from plugin.core.logger.filters import DuplicateReportFilter, ExceptionReportFilter, FrameworkFilter,\
-    RequestsReportFilter, TraktReportFilter
+    RequestsReportFilter, TraktReportFilter, TraktNetworkFilter
 from plugin.core.logger.filters.events import EventsReportFilter
 
 from raven import Client, breadcrumbs
@@ -61,18 +61,15 @@ breadcrumbs.ignore_logger('plugin.core.logger.handlers.error_reporter.ErrorRepor
 breadcrumbs.ignore_logger('peewee')
 
 
-class ErrorReporter(Client):
+class ErrorReporterClient(Client):
     server = 'sentry.skipthe.net'
-    key = 'c0cb82d902b4468cabb01239c22a5642:773fc0ca417b4b1cb29b9b7f75eaadd9'
-    project = 1
 
-    def __init__(self, dsn=None, raise_send_errors=False, **options):
-        # Build URI
-        if dsn is None:
-            dsn = self.build_dsn()
+    def __init__(self, project, key, raise_send_errors=False, **kwargs):
+        self.project = project
+        self.key = key
 
         # Construct raven client
-        super(ErrorReporter, self).__init__(dsn, raise_send_errors, **options)
+        super(ErrorReporterClient, self).__init__(self.build_dsn(), raise_send_errors, **kwargs)
 
     def build_dsn(self, protocol='threaded+requests+http'):
         return '%s://%s@%s/%s' % (
@@ -104,7 +101,7 @@ class ErrorReporter(Client):
         )
 
         # Send event
-        super(ErrorReporter, self).send_remote(url, data, headers)
+        super(ErrorReporterClient, self).send_remote(url, data, headers)
 
 
 class ErrorReporterHandler(SentryHandler):
@@ -374,18 +371,63 @@ class ErrorReporterHandler(SentryHandler):
         return '%s in %s' % (module, function)
 
 
-# Build client
-RAVEN = ErrorReporter(**PARAMS)
+class ErrorReporter(object):
+    plugin = ErrorReporterClient(
+        project=1,
+        key='c0cb82d902b4468cabb01239c22a5642:773fc0ca417b4b1cb29b9b7f75eaadd9',
+        **PARAMS
+    )
 
-# Construct logging handler
-ERROR_REPORTER_HANDLER = ErrorReporterHandler(RAVEN, level=logging.WARNING)
+    trakt = ErrorReporterClient(
+        project=8,
+        key='e6a1597834474ee8a70ae37e465bb929:c73bc1c6da1241a4b80f4adc9da3153c',
+        enable_breadcrumbs=False,
+        **PARAMS
+    )
 
-ERROR_REPORTER_HANDLER.filters = [
+    @classmethod
+    def construct_handler(cls, client, filters, level=logging.WARNING):
+        handler = ErrorReporterHandler(client, level=level)
+        handler.filters = filters
+        return handler
+
+    @classmethod
+    def set_name(cls, name):
+        cls.plugin.name = name
+        cls.trakt.name = name
+
+    @classmethod
+    def set_protocol(cls, protocol):
+        cls.plugin.set_protocol(protocol)
+        cls.trakt.set_protocol(protocol)
+
+    @classmethod
+    def set_tags(cls, *args, **kwargs):
+        # Update clients with dictionary arguments
+        for value in args:
+            if type(value) is dict:
+                cls.plugin.tags.update(value)
+                cls.trakt.tags.update(value)
+            else:
+                raise ValueError('Only dictionaries can be provided as arguments, found: %s' % type(value))
+
+        # Update clients with `kwargs` tags
+        cls.plugin.tags.update(kwargs)
+        cls.trakt.tags.update(kwargs)
+
+
+# Construct logging handlers
+PLUGIN_REPORTER_HANDLER = ErrorReporter.construct_handler(ErrorReporter.plugin, [
     FrameworkFilter('filter'),
+    TraktNetworkFilter(),
 
     DuplicateReportFilter(),
     EventsReportFilter(),
     ExceptionReportFilter(),
     RequestsReportFilter(),
     TraktReportFilter()
-]
+])
+
+TRAKT_REPORTER_HANDLER = ErrorReporter.construct_handler(ErrorReporter.trakt, [
+    TraktNetworkFilter(mode='include')
+])

@@ -5,7 +5,7 @@ from plugin.core.libraries.cache import CacheManager
 from plugin.core.libraries.constants import CONTENTS_PATH, NATIVE_DIRECTORIES, UNICODE_MAP
 from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelper
 from plugin.core.libraries.tests import LIBRARY_TESTS
-from plugin.core.logger.handlers.error_reporter import RAVEN
+from plugin.core.logger.handlers.error_reporter import ErrorReporter
 
 import logging
 import os
@@ -114,7 +114,7 @@ class LibrariesManager(object):
         # Include versions in error reports
         versions = metadata.get('versions') or {}
 
-        RAVEN.tags.update(dict([
+        ErrorReporter.set_tags(dict([
             ('%s.version' % key, value)
             for key, value in versions.items()
         ]))
@@ -158,21 +158,29 @@ class LibrariesManager(object):
 
         if libraries_path and os.path.exists(libraries_path):
             log.info('Using libraries at %r', StorageHelper.to_relative_path(libraries_path))
-            RAVEN.tags.update({'libraries.source': 'custom'})
+            ErrorReporter.set_tags({
+                'libraries.source': 'custom'
+            })
             return libraries_path
 
         # Use system libraries (if bundled libraries have been disabled in "advanced.ini")
         if not Configuration.advanced['libraries'].get_boolean('bundled', True):
             log.info('Bundled libraries have been disabled, using system libraries')
-            RAVEN.tags.update({'libraries.source': 'system'})
+            ErrorReporter.set_tags({
+                'libraries.source': 'system'
+            })
             return None
 
         # Cache libraries (if enabled)
         if cache:
-            RAVEN.tags.update({'libraries.source': 'cache'})
+            ErrorReporter.set_tags({
+                'libraries.source': 'cache'
+            })
             return cls._cache_libraries()
 
-        RAVEN.tags.update({'libraries.source': 'bundle'})
+        ErrorReporter.set_tags({
+            'libraries.source': 'bundle'
+        })
         return Environment.path.libraries
 
     @classmethod
@@ -264,7 +272,7 @@ class LibrariesManager(object):
                 PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size), ucs)
 
         # Include attributes in error reports
-        RAVEN.tags.update({
+        ErrorReporter.set_tags({
             'cpu.type': cpu_type,
             'memory.page_size': page_size,
             'python.ucs': ucs
@@ -285,7 +293,7 @@ class LibrariesManager(object):
             PathHelper.insert(libraries_path, system, architecture, vcr, ucs)
 
         # Include attributes in error reports
-        RAVEN.tags.update({
+        ErrorReporter.set_tags({
             'python.ucs': ucs,
             'vcr.version': vcr
         })
