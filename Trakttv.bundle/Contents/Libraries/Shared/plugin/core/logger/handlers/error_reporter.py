@@ -25,6 +25,11 @@ VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_BASE])
 RE_BUNDLE_PATH = re.compile(r"^.*?(?P<path>\w+\.bundle(?:\\|\/).*?)$", re.IGNORECASE)
 RE_TRACEBACK_HEADER = re.compile(r"^Exception (.*?)\(most recent call last\)(.*?)$", re.IGNORECASE | re.DOTALL)
 
+ENVIRONMENTS = {
+    'master': 'production',
+    'beta': 'beta'
+}
+
 PARAMS = {
     # Message processors + filters
     'processors': [
@@ -40,8 +45,11 @@ PARAMS = {
         'urllib2'
     ],
 
-    # Plugin + System details
+    # Release details
     'release': PLUGIN_VERSION,
+    'environment': ENVIRONMENTS.get(PLUGIN_VERSION_BRANCH, 'development'),
+
+    # Tags
     'tags': merge(SystemHelper.attributes(), {
         'plugin.version': VERSION,
         'plugin.branch': PLUGIN_VERSION_BRANCH
