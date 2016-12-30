@@ -153,5 +153,5 @@ class CacheManager(object):
             return source, destination
 
         # No libraries could be found
-        log.error('Unable to find native libraries for platform (name: %r, architecture: %r)', system, architecture)
+        log.info('Unable to cache libraries, couldn\'t find native libraries for platform (name: %r, architecture: %r)', system, architecture)
         return None, None

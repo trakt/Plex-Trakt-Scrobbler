@@ -50,8 +50,9 @@ class Upgrade(Module):
         if tuple(installed['version']) < tuple(current['version']):
             cls.log(
                 logging.WARN, Message.Code.DowngradeUnclean,
-                message='Unclean downgrade detected, see http://bit.ly/TFPx100201 for more details',
-                description="An unclean plugin downgrade can cause a number of errors, see http://bit.ly/TFPx100201 for more details"
+                message='Detected un-clean downgrade',
+                description="Try delete the \"Trakttv.bundle\" directory first, then install the older version "
+                            "of the plugin"
             )
             return True, False
 

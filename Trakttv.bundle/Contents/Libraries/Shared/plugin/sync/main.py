@@ -81,8 +81,15 @@ class Main(object):
         try:
             # Create new task
             task = SyncTask.create(account, mode, data, media, trigger, **kwargs)
+        except QueueError:
+            exc_info = sys.exc_info()
+
+            # Re-raise queue errors
+            raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
         except Exception as ex:
             log.warn('Unable to construct task: %s', ex, exc_info=True)
+
+            # Raise as queue error
             raise QueueError('Error', 'Unable to construct task: %s' % ex)
 
         with self._queue_lock:

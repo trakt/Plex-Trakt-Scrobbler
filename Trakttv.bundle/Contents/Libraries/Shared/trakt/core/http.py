@@ -23,9 +23,11 @@ log = logging.getLogger(__name__)
 
 
 class HttpClient(object):
-    def __init__(self, client, adapter_kwargs=None):
+    def __init__(self, client, adapter_kwargs=None, keep_alive=True):
         self.client = client
+
         self.adapter_kwargs = adapter_kwargs or {}
+        self.keep_alive = keep_alive
 
         # Build client
         self.configuration = ContextStack()
@@ -85,6 +87,9 @@ class HttpClient(object):
 
         # Prepare request
         prepared = request.prepare()
+
+        if not self.keep_alive:
+            prepared.headers['Connection'] = 'close'
 
         # Send request
         return self.send(prepared)

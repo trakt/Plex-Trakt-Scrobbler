@@ -2,6 +2,9 @@ from plex_metadata import Guid
 
 
 def log_unsupported_guid(logger, guid):
+    if guid is None:
+        return
+
     if guid and isinstance(guid, Guid):
         logger.warn('Unsupported guid: %%r (agent: %r)' % guid.agent_id, guid.value, extra={
             'original': guid.original,

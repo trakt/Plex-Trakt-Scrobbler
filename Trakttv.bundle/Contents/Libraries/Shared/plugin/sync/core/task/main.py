@@ -1,7 +1,7 @@
 from plugin.managers.exception import ExceptionManager
 from plugin.models import *
 from plugin.sync.core.enums import SyncData, SyncMode
-from plugin.sync.core.exceptions import SyncAbort
+from plugin.sync.core.exceptions import SyncAbort, QueueError
 from plugin.sync.core.task.artifacts import SyncArtifacts
 from plugin.sync.core.task.configuration import SyncConfiguration
 from plugin.sync.core.task.map import SyncMap
@@ -91,7 +91,7 @@ class SyncTask(object):
         log.debug('Task Media: %r', self.media)
 
         if self.data is None:
-            raise ValueError('No collections enabled for sync')
+            raise QueueError('No collections enabled for sync')
 
         # Load children
         self.profiler.load()

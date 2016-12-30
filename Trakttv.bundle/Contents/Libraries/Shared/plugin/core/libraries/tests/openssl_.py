@@ -13,13 +13,15 @@ class OpenSSL(BaseTest):
     def test_import(cls):
         standard_version = cls._standard_version()
         standard_contexts = cls._standard_has_contexts()
+        standard_sslwrap = cls._standard_has_sslwrap()
 
         bundled_version = cls._bundled_version()
 
         libraries = {
             'standard': {
                 'version': standard_version,
-                'contexts': standard_contexts
+                'contexts': standard_contexts,
+                'sslwrap': standard_sslwrap
             },
 
             'bundled': {
@@ -28,7 +30,7 @@ class OpenSSL(BaseTest):
         }
 
         # Check if we should use the standard ssl library
-        if standard_contexts and (bundled_version is None or (standard_version and standard_version > bundled_version)):
+        if cls._use_standard(libraries):
             return {
                 'type': 'standard',
                 'libraries': libraries,
@@ -82,12 +84,13 @@ class OpenSSL(BaseTest):
 
         if not libraries['standard']['contexts']:
             log.debug('Standard SSL library doesn\'t support "SSLContext"')
+        elif not libraries['standard']['sslwrap']:
+            log.debug('Standard SSL library doesn\'t support "sslwrap"')
+        elif libraries['bundled']['version'] > libraries['standard']['version']:
+            log.debug('Standard SSL library is out of date')
 
         # Initialize ssl library
         if metadata['type'] == 'bundled':
-            if libraries['bundled']['version'] > libraries['standard']['version']:
-                log.debug('Standard SSL library is out of date')
-
             # Inject pyOpenSSL into requests
             log.debug('Using bundled SSL library (pyOpenSSL)')
 
@@ -101,20 +104,51 @@ class OpenSSL(BaseTest):
             log.debug('Using standard SSL library (ssl)')
 
         # Enable secure error reporting
-        from plugin.core.logger.handlers.error_reporter import RAVEN
-        RAVEN.set_protocol('threaded+requests+https')
+        from plugin.core.logger.handlers.error_reporter import ErrorReporter
+        ErrorReporter.set_protocol('threaded+requests+https')
 
     #
     # Helpers
     #
 
     @classmethod
+    def _use_standard(cls, libraries):
+        if not libraries['standard']['contexts']:
+            return False
+
+        if not libraries['standard']['sslwrap']:
+            return False
+
+        # Ensure bundled library is available
+        if libraries['bundled']['version'] is None:
+            return True
+
+        # Compare standard library versions
+        if libraries['standard']['version'] is None:
+            return False
+
+        return libraries['standard']['version'] > libraries['bundled']['version']
+
+    @classmethod
     def _standard_has_contexts(cls):
         try:
             import ssl
-            return hasattr(ssl, 'SSLContext')
+            import _ssl
+
+            return hasattr(ssl, 'SSLContext') and hasattr(_ssl, '_SSLContext')
         except Exception as ex:
             log.warn('Unable to check if the standard ssl library supports "SSLContext": %s', ex, exc_info=True)
+
+        return None
+
+    @classmethod
+    def _standard_has_sslwrap(cls):
+        try:
+            import _ssl
+
+            return hasattr(_ssl, 'sslwrap') or hasattr(_ssl._SSLContext, '_wrap_socket')
+        except Exception as ex:
+            log.warn('Unable to check if the standard ssl library supports "sslwrap": %s', ex, exc_info=True)
 
         return None
 

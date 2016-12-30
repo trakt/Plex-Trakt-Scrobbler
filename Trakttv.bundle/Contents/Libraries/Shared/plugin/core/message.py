@@ -45,10 +45,22 @@ class InterfaceMessages(object):
 
     @classmethod
     def add(cls, level, message, *args):
+        try:
+            message = message % args
+        except TypeError:
+            log.warn('Unable to format string %r, with arguments: %r', message, args)
+
+        # Append message to log file
+        if level <= logging.CRITICAL:
+            log.log(level, message)
+        else:
+            log.log(logging.CRITICAL, message)
+
+        # Add interface message record
         cls.records.add(Record(
             level=level,
             timestamp=time.time(),
-            message=message % args
+            message=message
         ))
 
     @classmethod

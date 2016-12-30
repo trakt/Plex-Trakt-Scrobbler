@@ -95,9 +95,10 @@ class LoggerManager(object):
 
         # Setup error reporting (if enabled)
         if report:
-            from plugin.core.logger.handlers.error_reporter import ERROR_REPORTER_HANDLER
+            from plugin.core.logger.handlers.error_reporter import PLUGIN_REPORTER_HANDLER, TRAKT_REPORTER_HANDLER
 
-            rootLogger.handlers.append(ERROR_REPORTER_HANDLER)
+            rootLogger.handlers.append(PLUGIN_REPORTER_HANDLER)
+            rootLogger.handlers.append(TRAKT_REPORTER_HANDLER)
 
         # Setup local error storage (if enabled)
         if storage:
@@ -107,14 +108,16 @@ class LoggerManager(object):
 
     @classmethod
     def setup_raven(cls):
-        from plugin.core.logger.handlers.error_reporter import RAVEN
+        from plugin.core.logger.handlers.error_reporter import ErrorReporter
 
         # Generate client identifier
-        RAVEN.name = cls.generate_id()
+        ErrorReporter.set_name(cls.generate_id())
 
         # Include server version in error reports
         try:
-            RAVEN.tags.update({'server.version': Environment.platform.server_version})
+            ErrorReporter.set_tags({
+                'server.version': Environment.platform.server_version
+            })
         except Exception as ex:
             log.warn('Unable to retrieve server version - %s', ex, exc_info=True)
 
@@ -145,8 +148,8 @@ class LoggerManager(object):
         except Exception as ex:
             log.warn('Unable to generate id from hostname - %s', ex, exc_info=True)
 
-        # Fallback to random identifier
-        return md5(str(uuid.uuid4()))
+        # Fallback to generated identifier
+        return 'generated-' + md5(str(uuid.uuid4()))
 
     @classmethod
     def refresh(cls):
