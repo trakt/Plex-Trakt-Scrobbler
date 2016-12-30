@@ -165,24 +165,22 @@ class LibrariesManager(object):
             log.warn('Unable to read distribution metadata: %s', ex, exc_info=True)
             return None
 
-        release = distribution.get('release')
-
-        # Validate distribution metadata
         if not distribution or not distribution.get('name'):
             return
 
-        if not release or not release.get('version') or not release.get('branch'):
-            return
-
-        log.debug('Found distribution metadata: %r', distribution)
-
-        # Update raven tags
+        # Set distribution name tag
         ErrorReporter.set_tags({
-            'distribution.name': distribution['name'],
-
-            'distribution.version': release['version'],
-            'distribution.branch': release['branch']
+            'distribution.name': distribution['name']
         })
+
+        # Set distribution release tags
+        release = distribution.get('release')
+
+        if release and release.get('version') and release.get('branch'):
+            ErrorReporter.set_tags({
+                'distribution.version': release['version'],
+                'distribution.branch': release['branch']
+            })
 
         return distribution
 
