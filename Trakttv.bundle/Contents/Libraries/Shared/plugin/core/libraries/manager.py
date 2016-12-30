@@ -1,5 +1,6 @@
 from plugin.core.configuration import Configuration
 from plugin.core.environment import Environment
+from plugin.core.message import InterfaceMessages
 from plugin.core.helpers.variable import merge
 from plugin.core.libraries.cache import CacheManager
 from plugin.core.libraries.constants import CONTENTS_PATH, NATIVE_DIRECTORIES, UNICODE_MAP
@@ -7,6 +8,7 @@ from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelpe
 from plugin.core.libraries.tests import LIBRARY_TESTS
 from plugin.core.logger.handlers.error_reporter import ErrorReporter
 
+import json
 import logging
 import os
 import platform
@@ -24,6 +26,9 @@ class LibrariesManager(object):
         :type cache: bool
         """
 
+        # Read distribution metadata
+        distribution = cls._read_distribution_metadata()
+
         # Use `cache` value from advanced configuration
         cache = Configuration.advanced['libraries'].get_boolean('cache', cache)
 
@@ -39,7 +44,7 @@ class LibrariesManager(object):
         cls.reset()
 
         # Insert platform specific library paths
-        cls._insert_paths(libraries_path)
+        cls._insert_paths(distribution, libraries_path)
 
         # Display library paths in logfile
         for path in sys.path:
@@ -146,6 +151,42 @@ class LibrariesManager(object):
             PathHelper.remove(path)
 
     @classmethod
+    def _read_distribution_metadata(cls):
+        metadata_path = os.path.join(Environment.path.contents, 'distribution.json')
+
+        if not os.path.exists(metadata_path):
+            return None
+
+        # Read distribution metadata
+        try:
+            with open(metadata_path, 'r') as fp:
+                distribution = json.load(fp)
+        except Exception as ex:
+            log.warn('Unable to read distribution metadata: %s', ex, exc_info=True)
+            return None
+
+        release = distribution.get('release')
+
+        # Validate distribution metadata
+        if not distribution or not distribution.get('name'):
+            return
+
+        if not release or not release.get('version') or not release.get('branch'):
+            return
+
+        log.debug('Found distribution metadata: %r', distribution)
+
+        # Update raven tags
+        ErrorReporter.set_tags({
+            'distribution.name': distribution['name'],
+
+            'distribution.version': release['version'],
+            'distribution.branch': release['branch']
+        })
+
+        return distribution
+
+    @classmethod
     def _libraries_path(cls, cache=False):
         """Retrieve the native libraries base directory (and cache the libraries if enabled)
 
@@ -198,7 +239,7 @@ class LibrariesManager(object):
         return libraries_path
 
     @classmethod
-    def _insert_paths(cls, libraries_path):
+    def _insert_paths(cls, distribution, libraries_path):
         # Display platform details
         p_bits, _ = platform.architecture()
         p_machine = platform.machine()
@@ -210,26 +251,43 @@ class LibrariesManager(object):
         architecture = SystemHelper.architecture()
 
         if not architecture:
-            return
+            InterfaceMessages.add(60, 'Unable to retrieve system architecture')
+            return False
 
         log.debug('System: %r, Architecture: %r', system, architecture)
 
-        # Insert architecture specific libraries
+        # Build architecture list
         architectures = [architecture]
 
         if architecture == 'i686':
             # Fallback to i386
             architectures.append('i386')
 
+        # Insert library paths
+        found = False
+
         for arch in architectures + ['universal']:
-            cls._insert_architecture_paths(libraries_path, system, arch)
+            if cls._insert_architecture_paths(libraries_path, system, arch):
+                log.debug('Inserted libraries path for system: %r, arch: %r', system, arch)
+                found = True
+
+        # Display interface message if no libraries were found
+        if not found:
+            if distribution and distribution.get('name'):
+                message = 'Unable to find compatible native libraries in the %s distribution' % distribution['name']
+            else:
+                message = 'Unable to find compatible native libraries'
+
+            InterfaceMessages.add(60, '%s (system: %r, architecture: %r)', message, system, architecture)
+
+        return found
 
     @classmethod
     def _insert_architecture_paths(cls, libraries_path, system, architecture):
         architecture_path = os.path.join(libraries_path, system, architecture)
 
         if not os.path.exists(architecture_path):
-            return
+            return False
 
         # Architecture libraries
         PathHelper.insert(libraries_path, system, architecture)
@@ -241,6 +299,8 @@ class LibrariesManager(object):
         else:
             # Darwin/FreeBSD/Linux libraries
             cls._insert_paths_unix(libraries_path, system, architecture)
+
+        return True
 
     @staticmethod
     def _insert_paths_unix(libraries_path, system, architecture):
