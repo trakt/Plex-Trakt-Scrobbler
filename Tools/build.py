@@ -24,6 +24,7 @@ EXCLUDE_PATHS = [
     # Files
     os.path.join('Contents', '.coveragerc'),
     os.path.join('Contents', '.version'),
+    os.path.join('Contents', 'distribution.json'),
     os.path.join('Contents', 'setup.cfg'),
 ]
 
