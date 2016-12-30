@@ -152,22 +152,35 @@ class Builder(object):
     def write_metadata(cls, build_path, name, system, arch):
         print(' - Writing metadata...')
 
-        # Retieve current commit
+        # Find bundle version + branch
+        version, branch = cls.get_version(build_path)
+
+        if not version or not branch:
+            return False
+
+        # Retrieve current commit
         commit = cls.get_current_commit()
 
         # Build metadata
         metadata = {
             'name': name,
 
+            'release': {
+                'version': version,
+                'branch': branch
+            },
+
             'system': system,
             'architectures': [arch] if type(arch) is str else arch
         }
 
         if commit:
-            metadata['sha'] = commit.hexsha
+            metadata['release']['commit'] = {
+                'sha': commit.hexsha
+            }
 
         # Build metadata path
-        metadata_path = os.path.join(build_path, BUNDLE_NAME, 'Contents', '.platform')
+        metadata_path = os.path.join(build_path, BUNDLE_NAME, 'Contents', 'distribution.json')
 
         # Write metadata to file
         with open(metadata_path, 'w') as fp:
