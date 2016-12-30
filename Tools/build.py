@@ -1,3 +1,4 @@
+from git import Repo
 from zipfile import ZipFile
 import json
 import os
@@ -29,25 +30,28 @@ EXCLUDE_PATHS = [
 PLATFORMS = {
     'universal':        None,
 
+    # Android
+    'android_aarch64':  ('Android', 'aarch64'),
+
     # FreeBSD
-    'bsd_i386':         ('FreeBSD', 'i386'),
-    'bsd_x86_64':       ('FreeBSD', 'x86_64'),
+    'freebsd_i386':     ('FreeBSD', 'i386'),
+    'freebsd_x86_64':   ('FreeBSD', 'x86_64'),
 
     # Linux
+    'linux_aarch64':    ('Linux', 'aarch64'),
     'linux_armv5':      ('Linux', ['armv5_hf', 'armv5_sf']),
     'linux_armv6':      ('Linux', ['armv6_hf', 'armv6_sf']),
     'linux_armv7':      ('Linux', ['armv7_hf', 'armv7_sf']),
-    'linux_aarch64':    ('Linux', 'aarch64'),
     'linux_i386':       ('Linux', 'i386'),
     'linux_ppc':        ('Linux', 'PowerPC'),
     'linux_x86_64':     ('Linux', 'x86_64'),
 
     # Mac OSX
-    'mac_i386':         ('MacOSX', 'i386'),
-    'mac_x86_64':       ('MacOSX', 'x86_64'),
+    'macosx_intel':     ('MacOSX', 'i386'),
+    'macosx_x86_64':    ('MacOSX', 'x86_64'),
 
     # Windows
-    'win_i386':         ('Windows', 'i386')
+    'win32':            ('Windows', 'i386')
 }
 
 
@@ -144,18 +148,30 @@ class Builder(object):
 
         return True
 
-    @staticmethod
-    def write_metadata(build_path, name, system, arch):
+    @classmethod
+    def write_metadata(cls, build_path, name, system, arch):
         print(' - Writing metadata...')
-        path = os.path.join(build_path, BUNDLE_NAME, 'Contents', '.platform')
 
-        with open(path, 'w') as fp:
-            json.dump({
-                'name': name,
+        # Retieve current commit
+        commit = cls.get_current_commit()
 
-                'system': system,
-                'architectures': [arch] if type(arch) is str else arch
-            }, fp)
+        # Build metadata
+        metadata = {
+            'name': name,
+
+            'system': system,
+            'architectures': [arch] if type(arch) is str else arch
+        }
+
+        if commit:
+            metadata['sha'] = commit.hexsha
+
+        # Build metadata path
+        metadata_path = os.path.join(build_path, BUNDLE_NAME, 'Contents', '.platform')
+
+        # Write metadata to file
+        with open(metadata_path, 'w') as fp:
+            json.dump(metadata, fp)
 
         return True
 
@@ -166,16 +182,19 @@ class Builder(object):
         if not version or not branch:
             return False
 
+        # Retrieve current commit
+        sha = self.get_current_sha()
+
+        if not sha:
+            return False
+
         # Build release name
-        filename = '%s-%s' % (RELEASE_NAME, version)
-
-        if branch != 'master':
-            filename += '.' + branch
-
-        if name != 'universal':
-            filename += '-' + name
-
-        filename += '.zip'
+        filename = '%s.zip' % ('-'.join([
+            RELEASE_NAME,
+            version,
+            sha,
+            name
+        ]))
 
         print(' - Compressing package (filename: %r)...' % filename)
 
@@ -183,15 +202,21 @@ class Builder(object):
         if not os.path.exists(self.dist_path):
             os.makedirs(self.dist_path)
 
-        # Build dist path
-        path = os.path.join(self.dist_path, filename)
+        # Create distribution directory
+        dist_directory = os.path.join(self.dist_path, version + '-' + sha)
 
-        # Delete existing dist
-        if os.path.exists(path):
-            os.remove(path)
+        if not os.path.exists(dist_directory):
+            os.mkdir(dist_directory)
+
+        # Build distribution path
+        dist_path = os.path.join(dist_directory, filename)
+
+        # Remove existing distribution
+        if os.path.exists(dist_path):
+            os.remove(dist_path)
 
         # Create archive of bundle
-        archive = ZipFile(path, 'w', zipfile.ZIP_DEFLATED)
+        archive = ZipFile(dist_path, 'w', zipfile.ZIP_DEFLATED)
 
         for root, dirs, files in os.walk(build_path):
             for file in files:
@@ -236,6 +261,33 @@ class Builder(object):
             version_branch
         )
 
+    @staticmethod
+    def get_current_commit():
+        repo = Repo(os.curdir)
+
+        if not repo or repo.is_dirty():
+            return None
+
+        # Retrieve latest commit
+        return repo.head.commit
+
+    @staticmethod
+    def get_current_sha():
+        repo = Repo(os.curdir)
+
+        if not repo:
+            return None
+
+        if repo.is_dirty():
+            return 'dirty'
+
+        # Retrieve latest commit
+        commit = repo.head.commit
+
+        if not commit or not commit.hexsha:
+            return None
+
+        return commit.hexsha[:7]
 
 
 if __name__ == '__main__':
