@@ -374,13 +374,13 @@ class ErrorReporterHandler(SentryHandler):
 class ErrorReporter(object):
     plugin = ErrorReporterClient(
         project=1,
-        key='c0cb82d902b4468cabb01239c22a5642:773fc0ca417b4b1cb29b9b7f75eaadd9',
+        key='9297cd482d974cc983eaa11665662082:1452d96d3b794ef0914e2b20d7a590b5',
         **PARAMS
     )
 
     trakt = ErrorReporterClient(
         project=8,
-        key='e6a1597834474ee8a70ae37e465bb929:c73bc1c6da1241a4b80f4adc9da3153c',
+        key='904ebc3f0c2642aea78c341c7cefbbb6:3fac822481004f8e8e41b56261056a31',
         enable_breadcrumbs=False,
         **PARAMS
     )
