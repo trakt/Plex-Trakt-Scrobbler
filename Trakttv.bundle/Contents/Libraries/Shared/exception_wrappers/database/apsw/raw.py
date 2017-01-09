@@ -9,10 +9,10 @@ import sys
 
 class APSWConnectionWrapper(apsw.Connection, APSWBaseWrapper):
     def cursor(self, *args, **kwargs):
-        cursor = super(APSWConnectionWrapper, self).cursor(*args, **kwargs)
-
-        # Return wrapped cursor
-        return APSWCursorWrapper(self, cursor)
+        try:
+            return APSWCursorWrapper(self, super(APSWConnectionWrapper, self).cursor(*args, **kwargs))
+        except self.critical_errors:
+            self.on_exception(ExceptionSource.APSW, sys.exc_info())
 
 
 class APSWCursorWrapper(object):
@@ -24,7 +24,7 @@ class APSWCursorWrapper(object):
         try:
             return self.__cursor.execute(*args, **kwargs)
         except self.__connection.critical_errors:
-            self.__connection.on_exception(ExceptionSource.Peewee, sys.exc_info())
+            self.__connection.on_exception(ExceptionSource.APSW, sys.exc_info())
 
     def __getattr__(self, key):
         if key.startswith('_APSWCursorWrapper__'):

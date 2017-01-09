@@ -41,12 +41,14 @@ except ImportError:
 from socket import error as SocketError, timeout as SocketTimeout
 
 from ..connection import (
+    DummyConnection,
     HTTPConnection, HTTPSConnection
 )
 from ..connectionpool import (
-    HTTPConnectionPool, HTTPSConnectionPool
+    HTTPConnectionPool, HTTPSConnectionPool,
+    log
 )
-from ..exceptions import ConnectTimeoutError, NewConnectionError
+from ..exceptions import ConnectTimeoutError, NewConnectionError, SSLError
 from ..poolmanager import PoolManager
 from ..util.url import parse_url
 
@@ -138,6 +140,26 @@ class SOCKSHTTPConnectionPool(HTTPConnectionPool):
 
 class SOCKSHTTPSConnectionPool(HTTPSConnectionPool):
     ConnectionCls = SOCKSHTTPSConnection
+
+    def _new_conn(self):
+        self.num_connections += 1
+
+        log.debug("Starting new HTTPS connection (%d): %s", self.num_connections, self.host)
+
+        if not self.ConnectionCls or self.ConnectionCls is DummyConnection:
+            raise SSLError("Can't connect to HTTPS URL because the SSL module is not available.")
+
+        conn = self.ConnectionCls(
+            host=self.host, port=self.port,
+            timeout=self.timeout.connect_timeout,
+            strict=self.strict,
+            **self.conn_kw
+        )
+
+        return self._prepare_conn(conn)
+
+    def _prepare_proxy(self, conn):
+        pass
 
 
 class SOCKSProxyManager(PoolManager):
