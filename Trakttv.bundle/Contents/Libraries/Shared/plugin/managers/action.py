@@ -1,4 +1,5 @@
 from plugin.core.helpers.thread import module
+from plugin.core.message import InterfaceMessages
 from plugin.managers.core.base import Manager
 from plugin.models import ActionHistory, ActionQueue
 from plugin.preferences import Preferences
@@ -105,6 +106,10 @@ class ActionManager(Manager):
     @classmethod
     def run(cls):
         while cls._process_enabled:
+            if InterfaceMessages.critical:
+                cls._process_enabled = False
+                return
+
             # Retrieve one action from the queue
             try:
                 action = ActionQueue.get()
