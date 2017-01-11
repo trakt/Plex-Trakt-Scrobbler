@@ -49,7 +49,7 @@ def to_iterable(value):
 
 
 def synchronized(f_lock, mode='full'):
-    if inspect.isfunction(f_lock) and f_lock.func_code.co_name != '<lambda>':
+    if inspect.isfunction(f_lock) and f_lock.__name__ != '<lambda>':
         return synchronized(lambda self: self._lock, mode)(f_lock)
 
     if mode == 'full':
