@@ -34,6 +34,7 @@ class HttpClient(object):
         self.session = None
 
         self._proxies = {}
+        self._ssl_version = None
 
         self._oauth_refreshing = KeyLock()
         self._oauth_validate_lock = RLock()
@@ -54,6 +55,17 @@ class HttpClient(object):
             self.session.proxies = proxies
 
         self._proxies = proxies
+
+    @property
+    def ssl_version(self):
+        return self._ssl_version
+
+    @ssl_version.setter
+    def ssl_version(self, version):
+        self._ssl_version = version
+
+        # Rebuild session (to apply ssl version change)
+        self.rebuild()
 
     def configure(self, path=None):
         self.configuration.push(base_path=path)
@@ -152,12 +164,7 @@ class HttpClient(object):
 
         # Mount adapters
         self.session.mount('http://', HTTPAdapter(**self.adapter_kwargs))
-
-        if ssl is not None:
-            self.session.mount('https://', HTTPSAdapter(ssl_version=ssl.PROTOCOL_TLSv1, **self.adapter_kwargs))
-        else:
-            log.warn('"ssl" module is not available, unable to change "ssl_version"')
-            self.session.mount('https://', HTTPSAdapter(**self.adapter_kwargs))
+        self.session.mount('https://', HTTPSAdapter(ssl_version=self._ssl_version, **self.adapter_kwargs))
 
         return self.session
 

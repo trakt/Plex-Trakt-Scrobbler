@@ -1,3 +1,5 @@
+import warnings
+
 from trakt.interfaces.base import Interface
 from trakt.mapper.search import SearchMapper
 
@@ -8,7 +10,7 @@ import six
 class SearchInterface(Interface):
     path = 'search'
 
-    def lookup(self, id, service=None, media=None, **kwargs):
+    def lookup(self, id, service=None, media=None, extended=None, **kwargs):
         """Lookup items by their Trakt, IMDB, TMDB, TVDB, or TVRage ID.
 
         **Note:** If you lookup an identifier without a :code:`media` type specified it
@@ -39,32 +41,47 @@ class SearchInterface(Interface):
 
         :type media: :class:`~python:str` or :class:`~python:list` of :class:`~python:str`
 
+        :param extended: Level of information to include in response
+
+            **Possible values:**
+             - :code:`None`: Minimal (e.g. title, year, ids) **(default)**
+             - :code:`full`: Complete
+
+        :type extended: :class:`~python:str`
+
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
 
         :return: Results
         :rtype: :class:`trakt.objects.media.Media` or :class:`~python:list` of :class:`trakt.objects.media.Media`
         """
+        # Expand tuple `id`
         if type(id) is tuple:
             if len(id) != 2:
                 raise ValueError()
 
-            # Expand (<id>, <service>) identifier
             id, service = id
 
+        # Validate parameters
+        if not service:
+            raise ValueError('Invalid value provided for the "service" parameter')
+
         # Build query
-        query = {
-            'id': id,
-            'id_type': service
-        }
+        query = {}
 
         if isinstance(media, six.string_types):
             query['type'] = media
         elif isinstance(media, list):
             query['type'] = ','.join(media)
 
+        if extended:
+            query['extended'] = extended
+
         # Send request
-        response = self.http.get(query=query)
+        response = self.http.get(
+            params=[service, id],
+            query=query
+        )
 
         # Parse response
         items = self.get_data(response, **kwargs)
@@ -78,13 +95,13 @@ class SearchInterface(Interface):
         count = len(items)
 
         if count > 1:
-            return [SearchMapper.process(self.client, item) for item in items]
+            return SearchMapper.process_many(self.client, items)
         elif count == 1:
             return SearchMapper.process(self.client, items[0])
 
         return None
 
-    def query(self, query, media=None, year=None, **kwargs):
+    def query(self, query, media=None, year=None, fields=None, extended=None, **kwargs):
         """Search by titles, descriptions, translated titles, aliases, and people.
 
         **Note:** Results are ordered by the most relevant score.
@@ -106,27 +123,56 @@ class SearchInterface(Interface):
         :param year: Desired media year (or :code:`None` to return all matching items)
         :type year: :class:`~python:str` or :class:`~python:int`
 
+        :param fields: Fields to search for :code:`query` (or :code:`None` to search all fields)
+        :type fields: :class:`~python:str` or :class:`~python:list`
+
+        :param extended: Level of information to include in response
+
+            **Possible values:**
+             - :code:`None`: Minimal (e.g. title, year, ids) **(default)**
+             - :code:`full`: Complete
+
+        :type extended: :class:`~python:str`
+
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
 
         :return: Results
         :rtype: :class:`~python:list` of :class:`trakt.objects.media.Media`
         """
+        # Validate parameters
+        if not media:
+            warnings.warn(
+                "\"media\" parameter is now required on the Trakt['search'].query() method",
+                DeprecationWarning, stacklevel=2
+            )
+
+        if fields and not media:
+            raise ValueError('"fields" can only be used when the "media" parameter is defined')
+
+        # Build query
         query = {
             'query': query
         }
 
-        # Set optional parameters
-        if isinstance(media, six.string_types):
-            query['type'] = media
-        elif isinstance(media, list):
-            query['type'] = ','.join(media)
-
         if year:
             query['year'] = year
 
+        if fields:
+            query['fields'] = fields
+
+        if extended:
+            query['extended'] = extended
+
+        # Serialize media items
+        if isinstance(media, list):
+            media = ','.join(media)
+
         # Send request
-        response = self.http.get(query=query)
+        response = self.http.get(
+            params=[media],
+            query=query
+        )
 
         # Parse response
         items = self.get_data(response, **kwargs)
@@ -135,6 +181,6 @@ class SearchInterface(Interface):
             return items
 
         if items is not None:
-            return [SearchMapper.process(self.client, item) for item in items]
+            return SearchMapper.process_many(self.client, items)
 
         return None

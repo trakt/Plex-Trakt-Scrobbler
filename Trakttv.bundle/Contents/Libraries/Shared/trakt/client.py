@@ -7,7 +7,7 @@ from trakt.version import __version__
 
 
 class TraktClient(Emitter):
-    base_url = 'https://api-v2launch.trakt.tv'
+    base_url = 'https://api.trakt.tv'
     version = __version__
 
     __interfaces = None
