@@ -4,8 +4,10 @@ from oem_framework.plugin import Plugin
 import logging
 
 try:
+    from oem_format_msgpack.packer import Packer
     import msgpack
 except ImportError:
+    Packer = None
     msgpack = None
 
 log = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ class MessagePackFormat(Format, Plugin):
 
     def dump_file(self, obj, fp):
         try:
-            msgpack.dump(obj, fp)
+            fp.write(Packer().pack(obj))
             return True
         except Exception as ex:
             log.warn('Unable to dump object to file: %s', ex, exc_info=True)
@@ -32,12 +34,11 @@ class MessagePackFormat(Format, Plugin):
 
     def dump_string(self, obj):
         try:
-            msgpack.dumps(obj)
-            return True
+            return Packer().pack(obj)
         except Exception as ex:
             log.warn('Unable to dump object: %s', ex, exc_info=True)
 
-        return False
+        return None
 
     def load_file(self, fp):
         try:
