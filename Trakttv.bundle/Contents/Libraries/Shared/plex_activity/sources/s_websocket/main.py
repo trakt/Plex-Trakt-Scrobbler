@@ -5,6 +5,7 @@ from plex_activity.sources.base import Source
 import json
 import logging
 import re
+import sys
 import time
 import websocket
 
@@ -23,6 +24,13 @@ TIMELINE_STATES = {
     6: 'analyzing',
     9: 'deleted'
 }
+
+
+class ConnectionState(object):
+    disconnected = 'disconnected'
+
+    connecting = 'connecting'
+    connected = 'connected'
 
 
 class WebSocket(Source):
@@ -48,8 +56,8 @@ class WebSocket(Source):
     def __init__(self, activity):
         super(WebSocket, self).__init__()
 
+        self.state = ConnectionState.disconnected
         self.ws = None
-        self.reconnects = 0
 
         # Pipe events to the main activity instance
         self.pipe(self.events, activity)
@@ -70,33 +78,86 @@ class WebSocket(Source):
         if params:
             uri += '?' + urlencode(params)
 
-        # Create websocket connection
-        self.ws = websocket.create_connection(uri)
+        # Ensure existing websocket has been closed
+        if self.ws:
+            try:
+                self.ws.close()
+            except Exception as ex:
+                log.info('Unable to close existing websocket: %s', ex)
+
+        # Update state
+        self.state = ConnectionState.connecting
+
+        # Try connect to notifications websocket
+        try:
+            self.ws = websocket.create_connection(uri)
+
+            # Update state
+            self.state = ConnectionState.connected
+        except Exception as ex:
+            # Reset state
+            self.ws = None
+            self.state = ConnectionState.disconnected
+
+            raise ex
+
+    def connect_retry(self):
+        if self.state == ConnectionState.connected:
+            return True
+
+        log.debug('Connecting...')
+
+        attempts = 0
+        exc_info = None
+        ex = None
+
+        while self.state == ConnectionState.disconnected and attempts < 10:
+            try:
+                attempts += 1
+
+                # Attempt socket connection
+                self.connect()
+
+                # Connected
+                log.debug('Connected')
+                return True
+            except websocket.WebSocketBadStatusException as ex:
+                exc_info = sys.exc_info()
+
+                # Break on client errors (not authorized, etc..)
+                if 400 <= ex.status_code < 500:
+                    break
+            except Exception as ex:
+                exc_info = sys.exc_info()
+
+            # Retry socket connection
+            sleep = int(round(attempts * 1.2, 0))
+
+            log.debug('Connection failed: %s (retrying in %d seconds)', ex, sleep)
+            time.sleep(sleep)
+
+        # Check if we are connected
+        if self.state == ConnectionState.connected:
+            log.debug('Connected')
+            return True
+
+        # Display connection error
+        log.error('Unable to connect to the notification channel: %s (after %d attempts)', ex, attempts, exc_info=exc_info)
+        return False
 
     def run(self):
-        self.connect()
+        # Connect to notification channel
+        if not self.connect_retry():
+            return
 
-        log.debug('Ready')
-
+        # Receive notifications from channel
         while True:
             try:
                 self.process(*self.receive())
-
-                # successfully received data, reset reconnects counter
-                self.reconnects = 0
             except websocket.WebSocketConnectionClosedException:
-                if self.reconnects <= 5:
-                    self.reconnects += 1
-
-                    # Increasing sleep interval between reconnections
-                    if self.reconnects > 1:
-                        time.sleep(2 * (self.reconnects - 1))
-
-                    log.info('WebSocket connection has closed, reconnecting...')
-                    self.connect()
-                else:
-                    log.error('WebSocket connection unavailable, activity monitoring not available')
-                    break
+                # Try reconnect to notification channel
+                if not self.connect_retry():
+                    return
 
     def receive(self):
         frame = self.ws.recv_frame()
