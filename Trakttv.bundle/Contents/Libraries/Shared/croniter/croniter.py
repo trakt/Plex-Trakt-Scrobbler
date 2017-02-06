@@ -63,8 +63,10 @@ class croniter(object):
     bad_length = 'Exactly 5 or 6 columns has to be specified for iterator' \
                  'expression.'
 
-    def __init__(self, expr_format, start_time=None, ret_type=float):
+    def __init__(self, expr_format, start_time=None, ret_type=float, day_or=True):
         self._ret_type = ret_type
+        self._day_or = day_or
+
         if start_time is None:
             start_time = time()
 
@@ -240,7 +242,8 @@ class croniter(object):
             raise TypeError("Invalid ret_type, only 'float' or 'datetime' "
                             "is acceptable.")
 
-        if expanded[2][0] != '*' and expanded[4][0] != '*':
+        # exception to support day of month and day of week as defined in cron
+        if (expanded[2][0] != '*' and expanded[4][0] != '*') and self._day_or:
             bak = expanded[4]
             expanded[4] = ['*']
             t1 = self._calc(self.cur, expanded, is_prev)
