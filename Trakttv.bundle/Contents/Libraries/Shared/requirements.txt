@@ -6,7 +6,7 @@ enum34==1.1.6
 expiringdict==1.1.3
 futures==3.0.5
 idna==2.2
-ipaddress==1.0.17
+ipaddress==1.0.18
 itsdangerous==0.24
 msgpack-python==0.4.8
 ndg-httpsclient==0.4.2
