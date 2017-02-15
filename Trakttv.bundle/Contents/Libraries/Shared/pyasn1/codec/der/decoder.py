@@ -4,9 +4,27 @@
 # Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
 # License: http://pyasn1.sf.net/license.html
 #
+from pyasn1.type import univ
 from pyasn1.codec.cer import decoder
 
-tagMap = decoder.tagMap
+
+class BitStringDecoder(decoder.BitStringDecoder):
+    supportConstructedForm = False
+
+
+class OctetStringDecoder(decoder.OctetStringDecoder):
+    supportConstructedForm = False
+
+# TODO: prohibit non-canonical encoding
+RealDecoder = decoder.RealDecoder
+
+tagMap = decoder.tagMap.copy()
+tagMap.update(
+    {univ.BitString.tagSet: BitStringDecoder(),
+     univ.OctetString.tagSet: OctetStringDecoder(),
+     univ.Real.tagSet: RealDecoder()}
+)
+
 typeMap = decoder.typeMap
 
 

@@ -131,6 +131,7 @@ class BooleanDecoder(IntegerDecoder):
 class BitStringDecoder(AbstractSimpleDecoder):
     protoComponent = univ.BitString(())
     tagFormats = (tag.tagFormatSimple, tag.tagFormatConstructed)
+    supportConstructedForm = True
 
     def valueDecoder(self, fullSubstrate, substrate, asn1Spec, tagSet, length,
                      state, decodeFun, substrateFun):
@@ -157,6 +158,8 @@ class BitStringDecoder(AbstractSimpleDecoder):
                     j -= 1
                 p += 1
             return self._createComponent(asn1Spec, tagSet, b), tail
+        if not self.supportConstructedForm:
+            raise error.PyAsn1Error('Constructed encoding form prohibited at %s' % self.__class__.__name__)
         r = self._createComponent(asn1Spec, tagSet, ())
         if substrateFun:
             return substrateFun(r, substrate, length)
@@ -187,12 +190,15 @@ class BitStringDecoder(AbstractSimpleDecoder):
 class OctetStringDecoder(AbstractSimpleDecoder):
     protoComponent = univ.OctetString('')
     tagFormats = (tag.tagFormatSimple, tag.tagFormatConstructed)
+    supportConstructedForm = True
 
     def valueDecoder(self, fullSubstrate, substrate, asn1Spec, tagSet, length,
                      state, decodeFun, substrateFun):
         head, tail = substrate[:length], substrate[length:]
         if tagSet[0][1] == tag.tagFormatSimple:  # XXX what tag to check?
             return self._createComponent(asn1Spec, tagSet, head), tail
+        if not self.supportConstructedForm:
+            raise error.PyAsn1Error('Constructed encoding form prohibited at %s' % self.__class__.__name__)
         r = self._createComponent(asn1Spec, tagSet, '')
         if substrateFun:
             return substrateFun(r, substrate, length)
@@ -787,7 +793,7 @@ class Decoder(object):
                         '%d-octet short' % (length - len(substrate))
                     )
                 if length == -1 and not self.supportIndefLength:
-                    error.PyAsn1Error('Indefinite length encoding not supported by this codec')
+                    raise error.PyAsn1Error('Indefinite length encoding not supported by this codec')
                 state = stGetValueDecoder
                 debug.logger and debug.logger & debug.flagDecoder and debug.logger(
                     'value length decoded into %d, payload substrate is: %s' % (length, debug.hexdump(length == -1 and substrate or substrate[:length]))

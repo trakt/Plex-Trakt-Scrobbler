@@ -1910,7 +1910,7 @@ class Enumerated(Integer):
             new instance of ENUMERATED type/value
 
         """
-        return Integer.subtype(self, value, implicitTag, explicitTag, namedValues)
+        return Integer.subtype(self, value, implicitTag, explicitTag, subtypeSpec, namedValues)
 
 
 # "Structured" ASN.1 types

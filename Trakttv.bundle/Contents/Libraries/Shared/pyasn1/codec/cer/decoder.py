@@ -30,9 +30,18 @@ class BooleanDecoder(decoder.AbstractSimpleDecoder):
             raise error.PyAsn1Error('Unexpected Boolean payload: %s' % byte)
         return self._createComponent(asn1Spec, tagSet, value), tail
 
+# TODO: prohibit non-canonical encoding
+BitStringDecoder = decoder.BitStringDecoder
+OctetStringDecoder = decoder.OctetStringDecoder
+RealDecoder = decoder.RealDecoder
 
 tagMap = decoder.tagMap.copy()
-tagMap.update({univ.Boolean.tagSet: BooleanDecoder()})
+tagMap.update(
+    {univ.Boolean.tagSet: BooleanDecoder(),
+     univ.BitString.tagSet: BitStringDecoder(),
+     univ.OctetString.tagSet: OctetStringDecoder(),
+     univ.Real.tagSet: RealDecoder()}
+)
 
 typeMap = decoder.typeMap
 

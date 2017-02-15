@@ -10,7 +10,7 @@ ipaddress==1.0.18
 itsdangerous==0.24
 msgpack-python==0.4.8
 ndg-httpsclient==0.4.2
-pyasn1==0.2.1
+pyasn1==0.2.2
 pyOpenSSL==16.2.0
 PySocks==1.6.6
 pytz==2016.10
