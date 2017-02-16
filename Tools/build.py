@@ -48,7 +48,7 @@ PLATFORMS = {
     'linux_x86_64':     ('Linux', 'x86_64'),
 
     # Mac OSX
-    'macosx_intel':     ('MacOSX', 'i386'),
+    'macosx_i386':      ('MacOSX', 'i386'),
     'macosx_x86_64':    ('MacOSX', 'x86_64'),
 
     # Windows
@@ -202,13 +202,17 @@ class Builder(object):
         if not sha:
             return False
 
-        # Build release name
-        filename = '%s.zip' % ('-'.join([
+        # Build release filename
+        components = [
             RELEASE_NAME,
             version,
-            sha,
-            name
-        ]))
+            sha
+        ]
+
+        if name != 'universal':
+            components.append(name)
+
+        filename = '%s.zip' % ('-'.join(components))
 
         print(' - Compressing package (filename: %r)...' % filename)
 

@@ -119,7 +119,7 @@ class Main(object):
         # Http
         Trakt.base_url = (
             config.get('protocol', 'https') + '://' +
-            config.get('hostname', 'api-v2launch.trakt.tv')
+            config.get('hostname', 'api.trakt.tv')
         )
 
         Trakt.configuration.defaults.http(

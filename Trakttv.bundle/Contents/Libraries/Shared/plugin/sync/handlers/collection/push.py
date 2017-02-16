@@ -8,18 +8,19 @@ import re
 log = logging.getLogger(__name__)
 
 AUDIO_CODECS = {
-    'lpcm':             'pcm',
-    'mp3':              None,
-    'aac':              None,
-    'ogg':              'vorbis',
-    'wma':              None,
+    'lpcm':                 'pcm',
+    'mp3':                  None,
+    'aac':                  None,
+    'ogg':                  'vorbis',
+    'wma':                  None,
 
-    'dts':              '(dca|dta)',
-    'dts_ma':           'dtsma',
+    'dts':                  '(dca|dta)',
+    'dts_ma':               'dtsma',
 
-    'dolby_prologic':   'dolby.?pro',
-    'dolby_digital':    'ac.?3',
-    'dolby_truehd':     'truehd'
+    'dolby_prologic':       'dolby.?pro',
+    'dolby_digital':        'ac.?3',
+    'dolby_digital_plus':   'eac.?3',
+    'dolby_truehd':         'truehd'
 }
 
 # compile patterns in `AUDIO_CODECS`

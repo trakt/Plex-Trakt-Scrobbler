@@ -1,8 +1,8 @@
 from trakt.interfaces.base import authenticated
-from trakt.interfaces.sync.core.mixins import Get
+from trakt.interfaces.sync.core.mixins import Get, Delete
 
 
-class SyncPlaybackInterface(Get):
+class SyncPlaybackInterface(Get, Delete):
     path = 'sync/playback'
 
     @authenticated

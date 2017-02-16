@@ -1,4 +1,7 @@
 from trakt.mapper.core.base import Mapper
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class SearchMapper(Mapper):
@@ -9,16 +12,32 @@ class SearchMapper(Mapper):
             media = item.get('type')
 
         if not media:
-            return ValueError()
+            log.warn('Item %r has no "type" defined', media)
+            return None
 
         # Find function for `media`
         func = getattr(cls, media, None)
 
         if not func:
-            raise ValueError('Unknown media type: %r', media)
+            log.warn('Unknown media type: %r', media)
+            return None
 
         # Map item
         return func(client, item, **kwargs)
+
+    @classmethod
+    def process_many(cls, client, items, **kwargs):
+        result = []
+
+        for item in items:
+            item = cls.process(client, item, **kwargs)
+
+            if not item:
+                continue
+
+            result.append(item)
+
+        return result
 
     @classmethod
     def movie(cls, client, item, **kwargs):
@@ -40,6 +59,54 @@ class SearchMapper(Mapper):
             movie._update(item)
 
         return movie
+
+    @classmethod
+    def list(cls, client, item, **kwargs):
+        if 'list' in item:
+            i_list = item['list']
+        else:
+            i_list = item
+
+        # Retrieve item keys
+        pk, keys = cls.get_ids('custom_list', i_list)
+
+        if pk is None:
+            return None
+
+        # Create object
+        custom_list = cls.construct(client, 'custom_list', i_list, keys, **kwargs)
+
+        # Update with root info
+        if 'list' in item:
+            custom_list._update(item)
+
+        return custom_list
+
+    @classmethod
+    def officiallist(cls, client, item, **kwargs):
+        return None
+
+    @classmethod
+    def person(cls, client, item, **kwargs):
+        if 'person' in item:
+            i_person = item['person']
+        else:
+            i_person = item
+
+        # Retrieve item keys
+        pk, keys = cls.get_ids('person', i_person)
+
+        if pk is None:
+            return None
+
+        # Create object
+        person = cls.construct(client, 'person', i_person, keys, **kwargs)
+
+        # Update with root info
+        if 'person' in item:
+            person._update(item)
+
+        return person
 
     @classmethod
     def show(cls, client, item, **kwargs):
@@ -94,25 +161,3 @@ class SearchMapper(Mapper):
             episode._update(item)
 
         return episode
-
-    @classmethod
-    def list(cls, client, item, **kwargs):
-        if 'list' in item:
-            i_list = item['list']
-        else:
-            i_list = item
-
-        # Retrieve item keys
-        pk, keys = cls.get_ids('custom_list', i_list)
-
-        if pk is None:
-            return None
-
-        # Create object
-        custom_list = cls.construct(client, 'custom_list', i_list, keys, **kwargs)
-
-        # Update with root info
-        if 'list' in item:
-            custom_list._update(item)
-
-        return custom_list

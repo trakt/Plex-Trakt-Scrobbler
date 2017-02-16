@@ -87,3 +87,17 @@ class Remove(Interface):
         )
 
         return self.get_data(response, **kwargs)
+
+
+class Delete(Interface):
+    @authenticated
+    def delete(self, playbackid, **kwargs):
+        response = self.http.delete(
+            path=str(playbackid),
+            **popitems(kwargs, [
+                'authenticated',
+                'validate_token'
+            ])
+        )
+
+        return 200 <= response.status_code < 300

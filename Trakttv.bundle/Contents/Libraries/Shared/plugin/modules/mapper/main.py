@@ -21,7 +21,7 @@ class Mapper(Module):
     services = {
         'anidb': [
             # Prefer movies
-            'imdb', 'tmdb:movie',
+            'tmdb:movie', 'imdb',
 
             # Fallback to shows
             'tvdb'
