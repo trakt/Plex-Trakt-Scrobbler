@@ -26,6 +26,7 @@ oem-client-provider-release==1.0.1
 oem-format-minimize==1.2.2
 oem-format-minimize-msgpack==1.1.1
 oem-format-msgpack==1.1.1
+oem-storage-codernitydb==1.1.1
 
 trakt.py==2.14.1
 
@@ -42,8 +43,6 @@ https://github.com/fuzeman/requests/archive/master.zip#egg=requests
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
 https://github.com/fuzeman/tzlocal/archive/master.zip#egg=tzlocal
 https://github.com/fuzeman/websocket-client/archive/master.zip#egg=websocket-client
-
-git+https://github.com/OpenEntityMap/oem-storage-codernitydb.git#egg=oem-storage-codernitydb
 
 https://github.com/fuzeman/plex.py/archive/develop.zip#egg=plex-py
 https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activity-py
