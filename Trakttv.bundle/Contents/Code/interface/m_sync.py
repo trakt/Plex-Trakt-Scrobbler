@@ -3,12 +3,7 @@ from core.logger import Logger
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
-from plugin.core.filters import Filters
 from plugin.core.helpers.variable import normalize
-from plugin.managers.account import AccountManager
-from plugin.models import Account, Message, SyncResult
-from plugin.sync import SyncMode
-from plugin.sync.main import Sync, QueueError
 
 from ago import human
 from datetime import datetime
@@ -49,6 +44,11 @@ def AccountsMenu(refresh=None, *args, **kwargs):
 @route(PLUGIN_PREFIX + '/sync')
 @catch_errors
 def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False, *args, **kwargs):
+    from plugin.core.filters import Filters
+    from plugin.managers.account import AccountManager
+    from plugin.models import Account
+    from plugin.sync.core.enums import SyncMode
+
     account = AccountManager.get(Account.id == account_id)
 
     # Build sync controls menu
@@ -170,30 +170,40 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 @catch_errors
 def Synchronize(account_id=1, *args, **kwargs):
+    from plugin.sync.core.enums import SyncMode
+
     return Trigger.run(int(account_id), SyncMode.Full, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
 @catch_errors
 def FastPull(account_id=1, *args, **kwargs):
+    from plugin.sync.core.enums import SyncMode
+
     return Trigger.run(int(account_id), SyncMode.FastPull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/push')
 @catch_errors
 def Push(account_id=1, section=None, *args, **kwargs):
+    from plugin.sync.core.enums import SyncMode
+
     return Trigger.run(int(account_id), SyncMode.Push, section=section, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 @catch_errors
 def Pull(account_id=1, *args, **kwargs):
+    from plugin.sync.core.enums import SyncMode
+
     return Trigger.run(int(account_id), SyncMode.Pull, **kwargs)
 
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
 @catch_errors
 def Cancel(account_id, id, *args, **kwargs):
+    from plugin.sync.main import Sync
+
     id = int(id)
 
     # Cancel sync task
@@ -212,6 +222,9 @@ class Accounts(object):
 
     @classmethod
     def list(cls):
+        from plugin.managers.account import AccountManager
+        from plugin.models import Account
+
         return AccountManager.get.all().where(
             Account.id != 0,
             Account.deleted == False
@@ -221,7 +234,9 @@ class Accounts(object):
 class Active(object):
     @classmethod
     def create(cls, oc, callback, account=None):
-        current = Sync.current
+        from plugin.sync import main
+
+        current = main.Sync.current
 
         if not current:
             # No task running
@@ -239,6 +254,8 @@ class Active(object):
 
     @staticmethod
     def build_title(current, account):
+        from plugin.sync.core.enums import SyncMode
+
         # <mode>
         title = normalize(SyncMode.title(current.mode))
 
@@ -293,6 +310,8 @@ class Active(object):
 class Status(object):
     @classmethod
     def build(cls, account, mode, section=None):
+        from plugin.models import SyncResult
+
         status = SyncResult.get_latest(account, mode, section).first()
 
         if status is None or status.latest is None:
@@ -361,6 +380,8 @@ class Status(object):
 
     @staticmethod
     def format_error(error):
+        from plugin.models import Message
+
         if error.type in [Message.Type.Trakt, Message.Type.Plex, Message.Type.Sentry]:
             return '%s: %s' % (Message.Type.title(error.type), error.summary or 'Unknown Connection Error')
 
@@ -379,6 +400,8 @@ class Trigger(object):
 
     @classmethod
     def run(cls, account_id, mode, t, **kwargs):
+        from plugin.sync.main import Sync, QueueError
+
         # Check for duplicate trigger
         key = (account_id, mode, t)
 

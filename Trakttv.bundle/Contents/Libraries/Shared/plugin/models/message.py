@@ -63,6 +63,9 @@ class Message(Model):
     Code = MessageCode
     Type = MessageType
 
+    ConnectionTypes = [Type.Plex, Type.Sentry, Type.Trakt]
+    ErrorTypes = [Type.Exception, Type.Warning, Type.Error, Type.Critical]
+
     class Meta:
         database = db
         db_table = 'message'

@@ -106,7 +106,7 @@ def module_start():
 
 
 def spawn(func, *args, **kwargs):
-    name = kwargs.pop('_name', func.__name__)
+    name = kwargs.pop('_name', None) or kwargs.pop('thread_name', None) or func.__name__
 
     # Construct thread wrapper to log exceptions
     def wrapper(th_name, *args, **kwargs):
@@ -118,6 +118,10 @@ def spawn(func, *args, **kwargs):
     # Spawn thread
     try:
         thread = Thread(target=wrapper, name=name, args=[name] + (args or []), kwargs=kwargs)
+
+        # Set daemon mode
+        thread.daemon = kwargs.pop('daemon', False)
+
         thread.start()
     except Exception as ex:
         log.warn('Unable to spawn thread: %s', ex, exc_info=True)
