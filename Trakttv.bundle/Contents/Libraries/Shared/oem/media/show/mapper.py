@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from oem.core.exceptions import AbsoluteNumberRequiredError
 from oem.media.movie.identifier import MovieIdentifier
 from oem.media.show.identifier import EpisodeIdentifier
@@ -257,12 +259,12 @@ class ShowMapper(object):
         # Parse mapping attributes
         try:
             season_num = int(episode_mapping.season)
-        except:
+        except (TypeError, ValueError):
             return False, None
 
         try:
             episode_num = int(episode_mapping.number)
-        except:
+        except (TypeError, ValueError):
             return False, None
 
         # Return episode match

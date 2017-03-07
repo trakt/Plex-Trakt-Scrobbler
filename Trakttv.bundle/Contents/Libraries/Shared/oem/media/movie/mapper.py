@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from oem.media.movie.identifier import MovieIdentifier
 from oem.media.movie.match import MovieMatch
 from oem.media.show import EpisodeIdentifier

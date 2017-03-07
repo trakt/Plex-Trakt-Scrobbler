@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from oem.core.providers.base import Provider
 from oem.version import __version__
 from oem_core.core.plugin import PluginManager
@@ -13,7 +15,7 @@ class Client(object):
     version = __version__
 
     def __init__(self, services, provider, formats=None):
-        """OpenEntityMap (OEM) Client
+        """Client for OpenEntityMap.
 
         :param services: List of services to load (e.g. "anidb")
         :type services: list
