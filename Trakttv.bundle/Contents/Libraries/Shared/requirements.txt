@@ -49,4 +49,4 @@ https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activit
 https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex-database-py
 https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex-metadata-py
 
-https://github.com/fuzeman/trakt.sync.py/archive/develop.zip#egg=trakt-sync-py
+git+https://github.com/fuzeman/trakt.sync.py.git@develop#egg=trakt-sync-py
