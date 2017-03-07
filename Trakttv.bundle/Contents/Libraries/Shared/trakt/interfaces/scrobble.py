@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import popitems
 from trakt.interfaces.base import Interface, authenticated, application
 
@@ -8,7 +10,7 @@ class ScrobbleInterface(Interface):
     @application
     @authenticated
     def action(self, action, movie=None, show=None, episode=None, progress=0.0, **kwargs):
-        """Perform specified scrobble action
+        """Perform scrobble action.
 
         :param action: Action to perform (either :code:`start`, :code:`pause` or :code:`stop`)
         :type action: :class:`~python:str`
@@ -134,7 +136,9 @@ class ScrobbleInterface(Interface):
     @application
     @authenticated
     def start(self, movie=None, show=None, episode=None, progress=0.0, **kwargs):
-        """Use this method when the video initially starts playing or is un-paused. This will
+        """Send the scrobble "start" action.
+
+        Use this method when the video initially starts playing or is un-paused. This will
         remove any playback progress if it exists.
 
         **Note:** A watching status will auto expire after the remaining runtime has elapsed.
@@ -236,7 +240,9 @@ class ScrobbleInterface(Interface):
     @application
     @authenticated
     def pause(self, movie=None, show=None, episode=None, progress=0.0, **kwargs):
-        """Use this method when the video is paused. The playback progress will be saved and
+        """Send the scrobble "pause' action.
+
+        Use this method when the video is paused. The playback progress will be saved and
         :code:`Trakt['sync/playback'].get()` can be used to resume the video from this exact
         position. Un-pause a video by calling the :code:`Trakt['scrobble'].start()` method again.
 
@@ -336,7 +342,9 @@ class ScrobbleInterface(Interface):
     @application
     @authenticated
     def stop(self, movie=None, show=None, episode=None, progress=0.0, **kwargs):
-        """Use this method when the video is stopped or finishes playing on its own. If the
+        """Send the scrobble "stop" action.
+
+        Use this method when the video is stopped or finishes playing on its own. If the
         progress is above 80%, the video will be scrobbled and the :code:`action` will be set
         to **scrobble**.
 

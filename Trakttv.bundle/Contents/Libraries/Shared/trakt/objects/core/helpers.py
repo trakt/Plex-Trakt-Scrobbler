@@ -1,3 +1,6 @@
+from __future__ import absolute_import, division, print_function
+
+
 def update_attributes(obj, dictionary, keys):
     if not dictionary:
         return

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 from trakt.objects.media import Media

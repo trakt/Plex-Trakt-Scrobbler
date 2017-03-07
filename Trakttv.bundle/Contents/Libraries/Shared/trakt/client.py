@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.configuration import ConfigurationManager
 from trakt.core.emitter import Emitter
 from trakt.core.http import HttpClient

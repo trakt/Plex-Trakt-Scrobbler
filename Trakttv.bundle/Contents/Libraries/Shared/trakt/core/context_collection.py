@@ -1,8 +1,10 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import synchronized
 
-from threading import RLock
-from six.moves import _thread as thread
 from six.moves import xrange
+from six.moves import _thread as thread
+from threading import RLock
 import logging
 
 log = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class ListCollection(object):
     @synchronized(lambda self: self._lock)
     def lists(self, resolve=True):
         for l in self._lists:
-            if resolve and hasattr(l, '__call__'):
+            if resolve and callable(l):
                 l = l()
 
             yield l

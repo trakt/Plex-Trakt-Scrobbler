@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import to_iso8601_datetime
 from trakt.interfaces.base import authenticated
 from trakt.interfaces.sync.core.mixins import Get, Add, Remove

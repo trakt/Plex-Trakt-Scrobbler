@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from requests import Request
 from six.moves.urllib_parse import urlencode
 import json
@@ -107,11 +109,40 @@ class TraktRequest(object):
             if value
         )
 
-        # Append `query` to URL
-        if self.query:
-            url += '?' + urlencode([
-                (key, value) for key, value in self.query.items()
-                if value is not None
-            ])
+        # Append query parameters (if defined)
+        query = self.encode_query(self.query)
+
+        if query:
+            url += '?' + query
 
         return url
+
+    @classmethod
+    def encode_query(cls, parameters):
+        if not parameters:
+            return ''
+
+        return urlencode([
+            (key, cls.encode_query_parameter(value))
+            for key, value in parameters.items()
+            if value is not None
+        ])
+
+    @classmethod
+    def encode_query_parameter(cls, value):
+        # Encode tuple into range string
+        if isinstance(value, tuple):
+            if len(value) != 2:
+                raise ValueError('Invalid tuple parameter (expected 2-length tuple)')
+
+            return '%s-%s' % value
+
+        # Encode list into comma-separated string
+        if isinstance(value, list):
+            return ','.join([
+                cls.encode_query_parameter(item)
+                for item in value
+            ])
+
+        # Ensure values are strings
+        return str(value)

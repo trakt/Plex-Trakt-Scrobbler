@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import from_iso8601_datetime, to_iso8601_datetime, deprecated
 from trakt.objects.core.helpers import update_attributes
 from trakt.objects.media import Media
@@ -134,7 +136,7 @@ class Show(Media):
         """
 
     def episodes(self):
-        """Returns a flat episode iterator
+        """Return a flat episode iterator.
 
         :returns: Iterator :code:`((season_num, episode_num), Episode)`
         :rtype: iterator
@@ -146,8 +148,7 @@ class Show(Media):
                 yield (sk, ek), episode
 
     def to_identifier(self):
-        """Returns the show identifier which is compatible with requests that require
-        show definitions.
+        """Return the show identifier which is compatible with requests that require show definitions.
 
         :return: Show identifier/definition
         :rtype: :class:`~python:dict`
@@ -161,11 +162,11 @@ class Show(Media):
 
     @deprecated('Show.to_info() has been moved to Show.to_dict()')
     def to_info(self):
-        """**Deprecated:** use the :code:`to_dict()` method instead"""
+        """**Deprecated:** use the :code:`to_dict()` method instead."""
         return self.to_dict()
 
     def to_dict(self):
-        """Dump show to a dictionary
+        """Dump show to a dictionary.
 
         :return: Show dictionary
         :rtype: :class:`~python:dict`

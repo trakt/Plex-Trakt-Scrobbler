@@ -1,10 +1,11 @@
-import warnings
+from __future__ import absolute_import, division, print_function
 
 from trakt.interfaces.base import Interface
 from trakt.mapper.search import SearchMapper
 
 import requests
 import six
+import warnings
 
 
 class SearchInterface(Interface):

@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import popitems
 from trakt.core.pagination import PaginationIterator
-from trakt.interfaces.base import authenticated, Interface
+from trakt.interfaces.base import Interface, authenticated
 from trakt.mapper.sync import SyncMapper
 
 import requests

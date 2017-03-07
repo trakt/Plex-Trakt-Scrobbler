@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.objects.core.helpers import update_attributes
 from trakt.objects.list.base import List
 
@@ -51,7 +53,7 @@ class CustomList(List):
         return l
 
     def items(self, **kwargs):
-        """Retrieve list items
+        """Retrieve list items.
 
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
@@ -67,7 +69,7 @@ class CustomList(List):
     #
 
     def add(self, items, **kwargs):
-        """Add specified items to the list
+        """Add specified items to the list.
 
         :param items: Items that should be added to the list
         :type items: :class:`~python:list`
@@ -82,7 +84,7 @@ class CustomList(List):
         return self._client['users/*/lists/*'].add(self.username, self.id, items, **kwargs)
 
     def delete(self, **kwargs):
-        """Delete the list
+        """Delete the list.
 
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
@@ -94,7 +96,7 @@ class CustomList(List):
         return self._client['users/*/lists/*'].delete(self.username, self.id, **kwargs)
 
     def update(self, **kwargs):
-        """Updates the list with the current object attributes
+        """Update the list with the current object attributes.
 
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
@@ -112,7 +114,7 @@ class CustomList(List):
         return True
 
     def remove(self, items, **kwargs):
-        """Remove specified items from the list
+        """Remove specified items from the list.
 
         :param items: Items that should be removed from the list
         :type items: :class:`~python:list`
@@ -131,7 +133,7 @@ class CustomList(List):
     #
 
     def like(self, **kwargs):
-        """Like the list
+        """Like the list.
 
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`
@@ -143,7 +145,7 @@ class CustomList(List):
         return self._client['users/*/lists/*'].like(self.username, self.id, **kwargs)
 
     def unlike(self, **kwargs):
-        """Un-like the list
+        """Un-like the list.
 
         :param kwargs: Extra request options
         :type kwargs: :class:`~python:dict`

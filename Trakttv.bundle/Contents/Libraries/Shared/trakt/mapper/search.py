@@ -1,4 +1,7 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.mapper.core.base import Mapper
+
 import logging
 
 log = logging.getLogger(__name__)

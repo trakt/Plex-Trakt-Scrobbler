@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import from_iso8601_datetime
 from trakt.objects.core.helpers import update_attributes
 
@@ -85,7 +87,7 @@ class List(object):
 
     @property
     def id(self):
-        """Returns the list identifier
+        """Retrieve the list identifier.
 
         :rtype: :class:`~python:int`
         """
@@ -99,7 +101,7 @@ class List(object):
 
     @property
     def pk(self):
-        """Primary Key (unique identifier for the list)
+        """Retrieve the primary key (unique identifier for the list).
 
         :return: :code:`("trakt", <id>)` or :code:`None` if no primary key is available
         :rtype: :class:`~python:tuple`

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.mapper.core.base import Mapper
 
 
@@ -125,7 +127,7 @@ class SummaryMapper(Mapper):
         return [cls.episode(client, item, **kwargs) for item in items]
 
     @classmethod
-    def episode(cls, client, item, **kwargs):
+    def episode(cls, client, item, parse_show=False, **kwargs):
         if not item:
             return None
 
@@ -142,6 +144,9 @@ class SummaryMapper(Mapper):
 
         # Create object
         episode = cls.construct(client, 'episode', i_episode, keys, **kwargs)
+
+        if parse_show:
+            episode.show = cls.show(client, item)
 
         # Update with root info
         if 'episode' in item:

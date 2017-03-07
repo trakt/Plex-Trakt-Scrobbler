@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import clean_username
 from trakt.interfaces.base import Interface
 from trakt.mapper import ListMapper
@@ -5,12 +7,12 @@ from trakt.mapper import ListMapper
 import requests
 
 # Import child interfaces
-from trakt.interfaces.users.lists.list_ import UsersListInterface
+from trakt.interfaces.users.lists.list_ import UsersListInterface  # noqa: I100
 
-__all__ = [
+__all__ = (
     'UsersListsInterface',
     'UsersListInterface'
-]
+)
 
 
 class UsersListsInterface(Interface):

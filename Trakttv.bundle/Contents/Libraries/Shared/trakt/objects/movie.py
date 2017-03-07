@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import from_iso8601_datetime, to_iso8601_datetime,\
     from_iso8601_date, to_iso8601_date, deprecated
 from trakt.objects.core.helpers import update_attributes
@@ -101,8 +103,7 @@ class Movie(Video):
         """
 
     def to_identifier(self):
-        """Returns the movie identifier which is compatible with requests that require
-        movie definitions.
+        """Return the movie identifier which is compatible with requests that require movie definitions.
 
         :return: Movie identifier/definition
         :rtype: :class:`~python:dict`
@@ -116,11 +117,11 @@ class Movie(Video):
 
     @deprecated('Movie.to_info() has been moved to Movie.to_dict()')
     def to_info(self):
-        """**Deprecated:** use the :code:`to_dict()` method instead"""
+        """**Deprecated:** use the :code:`to_dict()` method instead."""
         return self.to_dict()
 
     def to_dict(self):
-        """Dump movie to a dictionary
+        """Dump movie to a dictionary.
 
         :return: Movie dictionary
         :rtype: :class:`~python:dict`

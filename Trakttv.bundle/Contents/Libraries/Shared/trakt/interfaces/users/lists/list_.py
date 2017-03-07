@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import clean_username, popitems
 from trakt.interfaces.base import Interface, authenticated
 from trakt.mapper import ListMapper, ListItemMapper
@@ -129,7 +131,7 @@ class UsersListInterface(Interface):
                 username=username
             )
 
-        raise ValueError("Unsupported value for \"return_type\": %r", return_type)
+        raise ValueError('Unsupported value for "return_type": %r', return_type)
 
     @authenticated
     def remove(self, username, id, items, **kwargs):

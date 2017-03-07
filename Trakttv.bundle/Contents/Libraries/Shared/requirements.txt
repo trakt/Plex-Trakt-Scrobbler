@@ -18,6 +18,8 @@ six==1.10.0
 sortedcontainers==1.5.7
 win_inet_pton==1.0.1
 
+trakt.py==2.14.1
+
 https://bitbucket.org/fuzeman/ago/get/tip.zip#egg=ago
 https://github.com/fuzeman/elapsed.py/archive/master.zip#egg=elapsed-py
 https://github.com/fuzeman/jsonpickle/archive/master.zip#egg=jsonpickle
@@ -47,5 +49,4 @@ https://github.com/fuzeman/plex.activity.py/archive/develop.zip#egg=plex-activit
 https://github.com/fuzeman/plex.database.py/archive/develop.zip#egg=plex-database-py
 https://github.com/fuzeman/plex.metadata.py/archive/develop.zip#egg=plex-metadata-py
 
-https://github.com/fuzeman/trakt.py/archive/develop.zip#egg=trakt-py
 https://github.com/fuzeman/trakt.sync.py/archive/develop.zip#egg=trakt-sync-py

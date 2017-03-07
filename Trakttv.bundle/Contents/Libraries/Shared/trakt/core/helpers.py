@@ -1,3 +1,6 @@
+from __future__ import absolute_import, division, print_function
+
+from six import string_types
 import functools
 import logging
 import warnings
@@ -45,7 +48,7 @@ def popitems(d, keys):
 def synchronized(f_lock, mode='full'):
     if mode == 'full':
         mode = ['acquire', 'release']
-    elif isinstance(mode, (str, unicode)):
+    elif isinstance(mode, string_types):
         mode = [mode]
 
     def wrap(func):

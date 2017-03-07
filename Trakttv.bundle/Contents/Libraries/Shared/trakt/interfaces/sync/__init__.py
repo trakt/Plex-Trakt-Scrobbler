@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.helpers import deprecated, popitems
 from trakt.interfaces.base import Interface, authenticated
 
@@ -9,7 +11,7 @@ from trakt.interfaces.sync.ratings import SyncRatingsInterface
 from trakt.interfaces.sync.watched import SyncWatchedInterface
 from trakt.interfaces.sync.watchlist import SyncWatchlistInterface
 
-__all__ = [
+__all__ = (
     'SyncInterface',
     'SyncCollectionInterface',
     'SyncHistoryInterface',
@@ -17,7 +19,7 @@ __all__ = [
     'SyncRatingsInterface',
     'SyncWatchedInterface',
     'SyncWatchlistInterface'
-]
+)
 
 
 class SyncInterface(Interface):

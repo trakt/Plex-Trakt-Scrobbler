@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.objects import Movie, Show, Episode, Season, CustomList, Comment, Person
 
 IDENTIFIERS = {

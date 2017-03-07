@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.configuration import DEFAULT_HTTP_RETRY, DEFAULT_HTTP_MAX_RETRIES, DEFAULT_HTTP_TIMEOUT, \
     DEFAULT_HTTP_RETRY_SLEEP
 from trakt.core.context_stack import ContextStack
@@ -5,7 +7,7 @@ from trakt.core.helpers import synchronized
 from trakt.core.keylock import KeyLock
 from trakt.core.request import TraktRequest
 
-from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
+from requests.adapters import DEFAULT_POOLBLOCK, HTTPAdapter
 from threading import RLock
 import calendar
 import datetime

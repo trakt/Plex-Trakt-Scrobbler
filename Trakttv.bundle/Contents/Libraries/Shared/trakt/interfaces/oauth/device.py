@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 from trakt.core.emitter import Emitter
 from trakt.interfaces.base import Interface
 
@@ -38,7 +40,7 @@ class DeviceOAuthInterface(Interface):
         return data
 
     def poll(self, device_code, expires_in, interval, **kwargs):
-        """Construct device authentication poller
+        """Construct the device authentication poller.
 
         :param device_code: Device authentication code
         :type device_code: str

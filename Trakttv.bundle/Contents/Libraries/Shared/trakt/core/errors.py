@@ -1,3 +1,5 @@
+# flake8: noqa: E241
+
 from six.moves.urllib.parse import urlparse
 
 

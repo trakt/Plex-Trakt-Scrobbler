@@ -1,3 +1,5 @@
+# flake8: noqa: E241
+
 from trakt.core.context_collection import ContextCollection
 
 DEFAULT_HTTP_RETRY = False
