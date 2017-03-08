@@ -1,4 +1,5 @@
 from core.helpers import catch_errors, pad_title, try_convert, redirect
+from core.state import State
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
@@ -13,6 +14,7 @@ log = logging.getLogger(__name__)
 
 @route(PLUGIN_PREFIX + '/messages/list')
 @catch_errors
+@State.wait()
 def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
     from plugin.models import Message
 
@@ -96,8 +98,10 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
 
     return oc
 
+
 @route(PLUGIN_PREFIX + '/messages/view')
 @catch_errors
+@State.wait()
 def ViewMessage(error_id, *args, **kwargs):
     from plugin.managers.exception import MessageManager
     from plugin.models import Exception, Message
@@ -149,8 +153,10 @@ def ViewMessage(error_id, *args, **kwargs):
 
     return oc
 
+
 @route(PLUGIN_PREFIX + '/exceptions/view')
 @catch_errors
+@State.wait()
 def ViewException(exception_id, *args, **kwargs):
     from plugin.managers.exception import ExceptionManager
 
@@ -185,6 +191,7 @@ def ViewException(exception_id, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/messages/dismissAll')
 @catch_errors
+@State.wait()
 def DismissMessages(days=14, version='latest', *args, **kwargs):
     # Retrieve messages that match the specified criteria
     messages = List(

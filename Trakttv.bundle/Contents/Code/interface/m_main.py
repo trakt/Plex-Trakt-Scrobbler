@@ -1,4 +1,5 @@
 from core.helpers import catch_errors, pad_title
+from core.state import State
 from interface.m_messages import Status as MessageStatus, ListMessages
 from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
@@ -10,6 +11,7 @@ import locale
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
 @catch_errors
+@State.wait()
 def MainMenu(*args, **kwargs):
     oc = ObjectContainer(no_cache=True)
 
@@ -57,6 +59,7 @@ def MainMenu(*args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/about')
 @catch_errors
+@State.wait()
 def AboutMenu(*args, **kwargs):
     oc = ObjectContainer(
         title2=_("About")

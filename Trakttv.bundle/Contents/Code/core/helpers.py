@@ -255,17 +255,22 @@ def error_record_view(level, record):
 
 
 def error_view(title, message=None):
+    return message_view(title, '%s: %s' % (
+        title,
+        message or 'Unknown'
+    ))
+
+
+def message_view(title=None, message=None):
     oc = ObjectContainer(
         title2=title,
         no_cache=True
     )
 
-    oc.add(DirectoryObject(
-        key=PLUGIN_PREFIX,
-        title=pad_title('%s: %s' % (
-            title,
-            message or 'Unknown'
+    if message:
+        oc.add(DirectoryObject(
+            key=PLUGIN_PREFIX,
+            title=pad_title(message)
         ))
-    ))
 
     return oc

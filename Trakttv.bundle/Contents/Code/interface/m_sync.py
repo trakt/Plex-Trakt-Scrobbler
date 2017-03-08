@@ -1,5 +1,6 @@
 from core.helpers import catch_errors, timestamp, pad_title, function_path, redirect
 from core.logger import Logger
+from core.state import State
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
@@ -16,6 +17,7 @@ log = Logger('interface.m_sync')
 
 @route(PLUGIN_PREFIX + '/sync/accounts')
 @catch_errors
+@State.wait()
 def AccountsMenu(refresh=None, *args, **kwargs):
     oc = ObjectContainer(
         title2=_("Accounts"),
@@ -43,6 +45,7 @@ def AccountsMenu(refresh=None, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/sync')
 @catch_errors
+@State.wait()
 def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_only=False, *args, **kwargs):
     from plugin.core.filters import Filters
     from plugin.managers.account import AccountManager
@@ -169,6 +172,7 @@ def ControlsMenu(account_id=1, title=None, message=None, refresh=None, message_o
 
 @route(PLUGIN_PREFIX + '/sync/synchronize')
 @catch_errors
+@State.wait()
 def Synchronize(account_id=1, *args, **kwargs):
     from plugin.sync.core.enums import SyncMode
 
@@ -177,6 +181,7 @@ def Synchronize(account_id=1, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/sync/fast_pull')
 @catch_errors
+@State.wait()
 def FastPull(account_id=1, *args, **kwargs):
     from plugin.sync.core.enums import SyncMode
 
@@ -185,6 +190,7 @@ def FastPull(account_id=1, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/sync/push')
 @catch_errors
+@State.wait()
 def Push(account_id=1, section=None, *args, **kwargs):
     from plugin.sync.core.enums import SyncMode
 
@@ -193,6 +199,7 @@ def Push(account_id=1, section=None, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/sync/pull')
 @catch_errors
+@State.wait()
 def Pull(account_id=1, *args, **kwargs):
     from plugin.sync.core.enums import SyncMode
 
@@ -201,6 +208,7 @@ def Pull(account_id=1, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/sync/cancel')
 @catch_errors
+@State.wait()
 def Cancel(account_id, id, *args, **kwargs):
     from plugin.sync.main import Sync
 

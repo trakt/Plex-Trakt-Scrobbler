@@ -1,3 +1,5 @@
+from core.state import State
+
 from plugin.core.constants import PLUGIN_VERSION, PLUGIN_NAME
 from plugin.core.helpers.thread import spawn
 
@@ -22,14 +24,11 @@ def task(*args, **kwargs):
 
 class Bootstrap(object):
     class Groups(object):
-        Initialize  = 1000
-        Configure   = 2000
-        Start       = 3000
+        Initialize  = 10
+        Configure   = 20
+        Start       = 30
 
     debug = False
-
-    def __init__(self):
-        self.finished = False
 
     def discover(self):
         tasks = []
@@ -65,6 +64,9 @@ class Bootstrap(object):
             if self.debug:
                 Log.Debug('Task \'%s\' started' % (name,))
 
+            if func.priority and type(func.priority) is tuple:
+                State.set(func.priority[0])
+
             try:
                 func()
 
@@ -72,7 +74,9 @@ class Bootstrap(object):
                     Log.Debug('Task \'%s\' finished' % (name,))
             except Exception as ex:
                 if not func.optional:
-                    Log.Error('Unable to bootstrap plugin, task \'%s\' raised: %s' % (name, ex))
+                    Log.Error('Unable to start plugin, task \'%s\' raised: %s' % (name, ex))
+
+                    State.set(State.Types.error, ex)
                     return False
 
                 Log.Warn('Task \'%s\' raised: %s' % (name, ex))
@@ -80,7 +84,8 @@ class Bootstrap(object):
         if self.debug:
             Log.Debug('Finished %d task(s)' % (len(tasks),))
 
-        self.finished = True
+        State.set(State.Types.started)
+        return True
 
     #
     # Header
@@ -532,7 +537,6 @@ class Bootstrap(object):
             Log.Info('HTTP Proxy has been enabled (host: %r)' % (host,))
         else:
             Log.Info('HTTP Proxy has been enabled (host: <sensitive>)')
-
 
 
 bootstrap = Bootstrap()
