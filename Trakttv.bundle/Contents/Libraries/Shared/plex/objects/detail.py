@@ -28,6 +28,7 @@ class Detail(Container):
     diagnostics = Property(resolver=lambda: Detail.parse_diagnostics)
     event_stream = Property('eventStream', (int, bool))
     hub_search = Property('hubSearch', (int, bool))
+    item_clusters = Property('itemClusters', (int, bool))
     media_providers = Property('mediaProviders', (int, bool))
     photo_auto_tag = Property('photoAutoTag', (int, bool))
     plugin_host = Property('pluginHost', (int, bool))

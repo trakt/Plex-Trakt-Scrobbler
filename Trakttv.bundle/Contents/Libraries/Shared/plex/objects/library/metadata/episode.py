@@ -15,6 +15,8 @@ class Episode(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     index = Property(type=int)
     absolute_index = Property('absoluteIndex', int)
 
+    skip_parent = Property('skipParent', (int, bool))
+
     def __repr__(self):
         if self.show and self.season:
             return '<Episode %r - S%02dE%02d (%s)>' % (
@@ -57,6 +59,8 @@ class Episode(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
             'index':        'parentIndex',
             'key':          'parentKey',
             'ratingKey':    'parentRatingKey',
+
+            'title':        'parentTitle',
 
             'thumb':        'parentThumb'
         }
