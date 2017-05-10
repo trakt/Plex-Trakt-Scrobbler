@@ -36,6 +36,10 @@ class FrameworkFilter(Filter):
         if not self.is_framework_record(record):
             return True
 
+        # Hide `ioloop.py` errors
+        if record.pathname and record.pathname.endswith('ioloop.py'):
+            return False
+
         # Map (or filter) record
         if self.mode == 'map':
             record.levelno = logging.DEBUG

@@ -111,6 +111,7 @@ class Clean(Migration):
                 'core/configuration.py',
                 'core/environment.py',
                 'core/eventing.py',
+                'core/header.py',
                 'core/localization.py',
                 'core/logging_handler.py',
                 'core/logging_reporter.py',
@@ -130,6 +131,7 @@ class Clean(Migration):
 
                 # /
                 'libraries.py',
+                'main.py',
                 'sync.py'
             ], os.path.isfile
         ),

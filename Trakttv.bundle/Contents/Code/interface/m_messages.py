@@ -1,10 +1,9 @@
 from core.helpers import catch_errors, pad_title, try_convert, redirect
+from core.state import State
 
 from plugin.core.constants import PLUGIN_PREFIX
 from plugin.core.environment import translate as _
 from plugin.core.message import InterfaceMessages
-from plugin.managers.exception import ExceptionManager, MessageManager, VERSION_BASE
-from plugin.models import Exception, Message
 
 from ago import human
 from datetime import datetime, timedelta
@@ -12,24 +11,13 @@ import logging
 
 log = logging.getLogger(__name__)
 
-CONNECTION_TYPES = [
-    Message.Type.Plex,
-    Message.Type.Sentry,
-    Message.Type.Trakt
-]
-
-ERROR_TYPES = [
-    Message.Type.Exception,
-
-    Message.Type.Warning,
-    Message.Type.Error,
-    Message.Type.Critical
-]
-
 
 @route(PLUGIN_PREFIX + '/messages/list')
 @catch_errors
+@State.wait()
 def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
+    from plugin.models import Message
+
     # Cast `viewed` to boolean
     if type(viewed) is str:
         if viewed == 'None':
@@ -89,7 +77,7 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
             thumb = R("icon-exception-viewed.png") if m.viewed else R("icon-exception.png")
         elif m.type == Message.Type.Info:
             thumb = R("icon-notification-viewed.png") if m.viewed else R("icon-notification.png")
-        elif m.type in CONNECTION_TYPES:
+        elif m.type in Message.ConnectionTypes:
             thumb = R("icon-connection-viewed.png") if m.viewed else R("icon-connection.png")
         else:
             thumb = R("icon-error-viewed.png") if m.viewed else R("icon-error.png")
@@ -110,9 +98,14 @@ def ListMessages(days=14, version='latest', viewed=False, *args, **kwargs):
 
     return oc
 
+
 @route(PLUGIN_PREFIX + '/messages/view')
 @catch_errors
+@State.wait()
 def ViewMessage(error_id, *args, **kwargs):
+    from plugin.managers.exception import MessageManager
+    from plugin.models import Exception, Message
+
     # Retrieve message from database
     message = MessageManager.get.by_id(error_id)
 
@@ -160,9 +153,13 @@ def ViewMessage(error_id, *args, **kwargs):
 
     return oc
 
+
 @route(PLUGIN_PREFIX + '/exceptions/view')
 @catch_errors
+@State.wait()
 def ViewException(exception_id, *args, **kwargs):
+    from plugin.managers.exception import ExceptionManager
+
     # Retrieve exception from database
     exception = ExceptionManager.get.by_id(exception_id)
 
@@ -194,6 +191,7 @@ def ViewException(exception_id, *args, **kwargs):
 
 @route(PLUGIN_PREFIX + '/messages/dismissAll')
 @catch_errors
+@State.wait()
 def DismissMessages(days=14, version='latest', *args, **kwargs):
     # Retrieve messages that match the specified criteria
     messages = List(
@@ -218,6 +216,8 @@ def DismissMessages(days=14, version='latest', *args, **kwargs):
 
 def Status(viewed=None):
     """Get the number and type of messages logged in the last week"""
+    from plugin.models import Message
+
     messages = List(
         days=14,
         version='latest',
@@ -229,9 +229,9 @@ def Status(viewed=None):
 
     # Process stored messages
     for message in messages:
-        if message.type in ERROR_TYPES:
+        if message.type in Message.ErrorTypes:
             type = 'error'
-        elif message.type in CONNECTION_TYPES and type != 'error':
+        elif message.type in Message.ConnectionTypes and type != 'error':
             type = 'connection'
 
         count += 1
@@ -248,6 +248,9 @@ def Status(viewed=None):
 
 def List(days=None, version=None, viewed=None):
     """Get messages logged in the last week"""
+    from plugin.managers.exception import MessageManager, VERSION_BASE
+    from plugin.models import Message
+
     where = []
 
     # Days

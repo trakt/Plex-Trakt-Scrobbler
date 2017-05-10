@@ -11,8 +11,12 @@ import warnings
 
 LOG_FORMAT = '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(name)s:%(lineno)d) - %(message)s'
 LOG_OPTIONS = {
+    'oem':                          'libraries',
+    'oem_core':                     'libraries',
+    'oem_framework':                'libraries',
     'plex':                         'libraries',
     'plex_activity':                'libraries',
+    'plex_database':                'libraries',
     'plex_metadata':                'libraries',
     'raven':                        'libraries',
     'requests':                     'libraries',
@@ -21,6 +25,7 @@ LOG_OPTIONS = {
     'peewee':                       'peewee',
     'peewee_migrate':               'peewee',
 
+    None:                           'plugin',
     'com.plexapp.plugins.trakttv':  'plugin',
     'plugin':                       'plugin',
 

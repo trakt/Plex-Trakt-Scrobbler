@@ -1,7 +1,7 @@
 from core.helpers import catch_errors
+from core.state import State
+
 from plugin.core.constants import PLUGIN_PREFIX
-from plugin.managers.account import AccountManager
-from plugin.models import Account
 
 import logging
 import requests
@@ -12,6 +12,12 @@ log = logging.getLogger(__name__)
 @route(PLUGIN_PREFIX + '/resources/cover')
 @catch_errors
 def Cover(account_id, refresh=None, *args, **kwargs):
+    if State.get() < State.Types.started:
+        return Redirect(R('art-default.png'))
+
+    from plugin.managers.account import AccountManager
+    from plugin.models import Account
+
     account = AccountManager.get(Account.id == account_id)
 
     if not account.trakt:
@@ -43,6 +49,12 @@ def Cover(account_id, refresh=None, *args, **kwargs):
 @route(PLUGIN_PREFIX + '/resources/thumb')
 @catch_errors
 def Thumb(account_id, refresh=None, *args, **kwargs):
+    if State.get() < State.Types.started:
+        return Redirect(R('art-default.png'))
+
+    from plugin.managers.account import AccountManager
+    from plugin.models import Account
+
     # Retrieve account
     account = AccountManager.get(Account.id == account_id)
 
