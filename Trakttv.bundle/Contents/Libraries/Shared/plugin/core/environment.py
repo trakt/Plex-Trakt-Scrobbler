@@ -33,7 +33,7 @@ class PathEnvironment(object):
 
     @property
     def libraries(self):
-        return os.path.join(self.contents, 'Libraries')
+        return os.path.join(self._core.plugin_support_path, 'Libraries')
 
     @property
     def locale(self):
@@ -41,15 +41,15 @@ class PathEnvironment(object):
 
     @property
     def plugin_caches(self):
-        return os.path.join(self.plugin_support, 'Caches', PLUGIN_IDENTIFIER)
+        return os.path.join(self._core.plugin_support_path, 'Caches', PLUGIN_IDENTIFIER)
 
     @property
     def plugin_data(self):
-        return os.path.join(self.plugin_support, 'Data', PLUGIN_IDENTIFIER)
+        return os.path.join(self._core.plugin_support_path, 'Data', PLUGIN_IDENTIFIER)
 
     @property
     def plugin_database(self):
-        return os.path.join(self.plugin_support, 'Databases', '%s.db' % PLUGIN_IDENTIFIER)
+        return os.path.join(self._core.plugin_support_path, 'Databases', '%s.db' % PLUGIN_IDENTIFIER)
 
     @property
     def plugin_support(self):
