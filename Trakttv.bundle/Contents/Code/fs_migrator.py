@@ -39,7 +39,7 @@ class Migration(object):
 
     @property
     def preferences_path(self):
-        return os.path.join(self.plex_path, 'Plug-in Support', 'Preferences', 'com.plexapp.plugins.trakttv.xml')
+        return os.path.join(Core.plugin_support_path, 'Preferences', 'com.plexapp.plugins.trakttv.xml')
 
     def get_preferences(self):
         if not os.path.exists(self.preferences_path):
