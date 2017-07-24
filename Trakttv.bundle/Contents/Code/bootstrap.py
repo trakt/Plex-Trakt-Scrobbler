@@ -119,7 +119,7 @@ class Bootstrap(object):
 
         # plex.database.py
         os.environ['LIBRARY_DB'] = os.path.join(
-            Environment.path.plugin_support, 'Databases',
+            Core.plugin_support_path, 'Databases',
             'com.plexapp.plugins.library.db'
         )
 
