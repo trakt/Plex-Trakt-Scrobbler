@@ -6,7 +6,6 @@ from plugin.core.libraries.cache import CacheManager
 from plugin.core.libraries.constants import CONTENTS_PATH, NATIVE_DIRECTORIES, UNICODE_MAP
 from plugin.core.libraries.helpers import PathHelper, StorageHelper, SystemHelper
 from plugin.core.libraries.tests import LIBRARY_TESTS
-from plugin.core.logger.handlers.error_reporter import ErrorReporter
 
 import json
 import logging
@@ -119,10 +118,6 @@ class LibrariesManager(object):
         # Include versions in error reports
         versions = metadata.get('versions') or {}
 
-        ErrorReporter.set_tags(dict([
-            ('%s.version' % key, value)
-            for key, value in versions.items()
-        ]))
 
     @classmethod
     def reset(cls):
@@ -168,20 +163,6 @@ class LibrariesManager(object):
         if not distribution or not distribution.get('name'):
             return
 
-        # Set distribution name tag
-        ErrorReporter.set_tags({
-            'distribution.name': distribution['name']
-        })
-
-        # Set distribution release tags
-        release = distribution.get('release')
-
-        if release and release.get('version') and release.get('branch'):
-            ErrorReporter.set_tags({
-                'distribution.version': release['version'],
-                'distribution.branch': release['branch']
-            })
-
         return distribution
 
     @classmethod
@@ -197,29 +178,17 @@ class LibrariesManager(object):
 
         if libraries_path and os.path.exists(libraries_path):
             log.info('Using libraries at %r', StorageHelper.to_relative_path(libraries_path))
-            ErrorReporter.set_tags({
-                'libraries.source': 'custom'
-            })
             return libraries_path
 
         # Use system libraries (if bundled libraries have been disabled in "advanced.ini")
         if not Configuration.advanced['libraries'].get_boolean('bundled', True):
             log.info('Bundled libraries have been disabled, using system libraries')
-            ErrorReporter.set_tags({
-                'libraries.source': 'system'
-            })
             return None
 
         # Cache libraries (if enabled)
         if cache:
-            ErrorReporter.set_tags({
-                'libraries.source': 'cache'
-            })
             return cls._cache_libraries()
 
-        ErrorReporter.set_tags({
-            'libraries.source': 'bundle'
-        })
         return Environment.path.libraries
 
     @classmethod
@@ -329,13 +298,6 @@ class LibrariesManager(object):
             if page_size:
                 PathHelper.insert(libraries_path, system, architecture, '%s_%s' % (cpu_type, page_size), ucs)
 
-        # Include attributes in error reports
-        ErrorReporter.set_tags({
-            'cpu.type': cpu_type,
-            'memory.page_size': page_size,
-            'python.ucs': ucs
-        })
-
     @staticmethod
     def _insert_paths_windows(libraries_path, system, architecture):
         vcr = SystemHelper.vcr_version() or 'vc12'  # Assume "vc12" if call fails
@@ -349,9 +311,3 @@ class LibrariesManager(object):
         # UCS libraries
         if ucs:
             PathHelper.insert(libraries_path, system, architecture, vcr, ucs)
-
-        # Include attributes in error reports
-        ErrorReporter.set_tags({
-            'python.ucs': ucs,
-            'vcr.version': vcr
-        })

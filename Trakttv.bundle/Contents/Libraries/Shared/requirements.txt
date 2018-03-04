@@ -26,7 +26,6 @@ https://github.com/fuzeman/peewee/archive/master.zip#egg=peewee
 https://github.com/fuzeman/peewee_migrate/archive/develop.zip#egg=peewee_migrate
 https://github.com/fuzeman/pyemitter/archive/develop.zip#egg=pyemitter
 https://github.com/fuzeman/pypy-llist/archive/master.zip#egg=pyllist
-https://github.com/fuzeman/raven-python/archive/master.zip#egg=raven
 https://github.com/fuzeman/requests/archive/master.zip#egg=requests
 https://github.com/fuzeman/stash.py/archive/develop.zip#egg=stash-py
 https://github.com/fuzeman/tzlocal/archive/master.zip#egg=tzlocal

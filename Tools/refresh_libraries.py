@@ -14,16 +14,7 @@ DELETE_DIRECTORIES = [
     os.path.join('shove', 'tests'),
     os.path.join('tzlocal', 'test_data'),
     os.path.join('websocket', 'tests'),
-    'tests',
-
-    os.path.join('raven', 'contrib', 'bottle'),
-    os.path.join('raven', 'contrib', 'celery'),
-    os.path.join('raven', 'contrib', 'django'),
-    os.path.join('raven', 'contrib', 'pylons'),
-    os.path.join('raven', 'contrib', 'tornado'),
-    os.path.join('raven', 'contrib', 'webpy'),
-    os.path.join('raven', 'contrib', 'zerorpc'),
-    os.path.join('raven', 'contrib', 'zope')
+    'tests'
 ]
 
 DELETE_FILES = [

@@ -103,10 +103,6 @@ class OpenSSL(BaseTest):
         else:
             log.debug('Using standard SSL library (ssl)')
 
-        # Enable secure error reporting
-        from plugin.core.logger.handlers.error_reporter import ErrorReporter
-        ErrorReporter.set_protocol('threaded+requests+https')
-
     #
     # Helpers
     #
