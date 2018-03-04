@@ -34,16 +34,6 @@ class Header(object):
     def print_version(cls, main):
         cls.line('Current Version: v%s' % PLUGIN_VERSION)
 
-        #update_available = main.update_checker.update_available
-        #update_detail = main.update_checker.update_detail
-        #
-        #if update_available is None:
-        #    cls.line('Update Check: unable to check for updates')
-        #elif update_available:
-        #    cls.line('Update Check: %s is available' % update_detail['name'])
-        #else:
-        #    cls.line('Update Check: up to date')
-
     @staticmethod
     def get_module_names():
         return sorted([

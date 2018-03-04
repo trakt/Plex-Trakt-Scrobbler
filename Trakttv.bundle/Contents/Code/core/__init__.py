@@ -10,6 +10,3 @@ sys.modules['core.header'] = header
 
 import helpers
 sys.modules['core.helpers'] = helpers
-
-import update_checker
-sys.modules['core.update_checker'] = update_checker

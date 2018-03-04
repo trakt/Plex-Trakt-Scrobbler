@@ -1,7 +1,6 @@
 from core.header import Header
 from core.helpers import get_class_name, spawn
 from core.logger import Logger
-from core.update_checker import UpdateChecker
 
 from plugin.core.configuration import Configuration
 from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
@@ -27,10 +26,7 @@ log = Logger()
 
 
 class Main(object):
-    modules = [
-        # core
-        UpdateChecker()
-    ]
+    modules = []
 
     def __init__(self):
         Header.show(self)
