@@ -6,7 +6,7 @@ from plex.objects.directory import Directory
 class Section(Directory):
     id = Property
     uuid = Property
-    path = Property('key')
+    path = Property
 
     auto_photo_tags = Property('enableAutoPhotoTags', type=(int, bool))
     filters = Property(type=(int, bool))

@@ -16,6 +16,7 @@ class Detail(Container):
 
     country_code = Property('countryCode')
     streaming_brain_version = Property('streamingBrainVersion', int)
+    streaming_brain_abr_version = Property('streamingBrainABRVersion', int)
 
     allow_camera_upload = Property('allowCameraUpload', (int, bool))
     allow_channel_access = Property('allowChannelAccess', (int, bool))
@@ -28,6 +29,8 @@ class Detail(Container):
     diagnostics = Property(resolver=lambda: Detail.parse_diagnostics)
     event_stream = Property('eventStream', (int, bool))
     hub_search = Property('hubSearch', (int, bool))
+    item_clusters = Property('itemClusters', (int, bool))
+    live_tv = Property('livetv', int)
     media_providers = Property('mediaProviders', (int, bool))
     photo_auto_tag = Property('photoAutoTag', (int, bool))
     plugin_host = Property('pluginHost', (int, bool))
