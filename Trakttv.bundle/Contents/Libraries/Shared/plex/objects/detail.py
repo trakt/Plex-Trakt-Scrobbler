@@ -23,6 +23,7 @@ class Detail(Container):
     allow_media_deletion = Property('allowMediaDeletion', (int, bool))
     allow_sharing = Property('allowSharing', (int, bool))
     allow_sync = Property('allowSync', (int, bool))
+    allow_tuners = Property('allowTuners', (int, bool))
 
     background_processing = Property('backgroundProcessing', (int, bool))
     companion_proxy = Property('companionProxy', (int, bool))
