@@ -123,6 +123,7 @@ class Clean(Migration):
                 'core/task.py',
                 'core/trakt.py',
                 'core/trakt_objects.py',
+                'core/update_checker.py',
 
                 # /interface
                 'interface/main_menu.py',
@@ -154,6 +155,7 @@ class Clean(Migration):
                 'Shared/plugin/core/jsonw.py',
                 'Shared/plugin/core/libraries/main.py',
                 'Shared/plugin/core/libraries/tests/pyopenssl_.py',
+                'Shared/plugin/core/logger/handlers/error_reporter.py',
                 'Shared/plugin/core/session_status.py',
                 'Shared/plugin/models/core/exceptions.py',
                 'Shared/plugin/modules/base.py',
@@ -312,12 +314,16 @@ class Clean(Migration):
                 'Shared/plugin/core/collections',
                 'Shared/plugin/data',
                 'Shared/plugin/modules/backup',
+                'Shared/plugin/raven',
 
                 # native
                 'MacOSX/universal',
 
                 # pytz
                 'Shared/pytz/tests',
+
+                # raven
+                'Shared/raven',
 
                 # shove
                 'Shared/shove',
