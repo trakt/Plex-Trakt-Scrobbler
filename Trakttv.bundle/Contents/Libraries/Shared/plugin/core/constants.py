@@ -8,7 +8,7 @@ PLUGIN_ICON = 'icon-default.png'
 PLUGIN_IDENTIFIER = 'com.plexapp.plugins.trakttv'
 PLUGIN_PREFIX = '/video/trakt'
 
-PLUGIN_VERSION_BASE = (1, 3, 2)
+PLUGIN_VERSION_BASE = (1, 3, 3)
 PLUGIN_VERSION_BRANCH = 'master'
 
 PLUGIN_VERSION = build_version(PLUGIN_VERSION_BASE, PLUGIN_VERSION_BRANCH)
