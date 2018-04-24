@@ -96,7 +96,7 @@ def test_added_metadata():
                 'audio_codec': 'mp3',
                 'audio_channels': 2.0,
 
-                'height': 1080,
+                'width': 1920,
                 'interlaced': False
             }
         },
@@ -141,7 +141,7 @@ def test_added_metadata():
                 'audio_codec': 'ac3',
                 'audio_channels': 6.0,
 
-                'height': 576,
+                'width': 720,
                 'interlaced': True
             }
         },
@@ -164,7 +164,7 @@ def test_added_metadata():
 
                             'audio': 'dolby_digital',
                             'audio_channels': '5.1',
-                            'resolution': 'sd_576i'
+                            'resolution': 'sd_480i'
                         }
                     }
                 }

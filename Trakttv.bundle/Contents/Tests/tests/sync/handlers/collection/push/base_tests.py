@@ -20,20 +20,20 @@ def test_audio_codec():
 
 
 def test_resolution():
-    assert Base.get_resolution(480, False) == 'sd_480p'
-    assert Base.get_resolution(480, True) == 'sd_480i'
+    assert Base.get_resolution(720, False) == 'sd_480p'
+    assert Base.get_resolution(720, True) == 'sd_480i'
 
-    assert Base.get_resolution(576, False) == 'sd_576p'
-    assert Base.get_resolution(576, True) == 'sd_576i'
+    assert Base.get_resolution(864, False) == 'sd_576p'
+    assert Base.get_resolution(864, True) == 'sd_576i'
 
-    assert Base.get_resolution(720, False) == 'hd_720p'
-    assert Base.get_resolution(720, True) == 'hd_720p'
+    assert Base.get_resolution(1280, False) == 'hd_720p'
+    assert Base.get_resolution(1280, True) == 'hd_720p'
 
-    assert Base.get_resolution(1080, False) == 'hd_1080p'
-    assert Base.get_resolution(1080, True) == 'hd_1080i'
+    assert Base.get_resolution(1920, False) == 'hd_1080p'
+    assert Base.get_resolution(1920, True) == 'hd_1080i'
 
-    assert Base.get_resolution(2160, False) == 'uhd_4k'
-    assert Base.get_resolution(2160, True) == 'uhd_4k'
+    assert Base.get_resolution(3840, False) == 'uhd_4k'
+    assert Base.get_resolution(3840, True) == 'uhd_4k'
 
 
 def test_metadata_missing():
