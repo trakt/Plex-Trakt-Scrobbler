@@ -16,8 +16,8 @@ class SectionLocation(Model):
     index = IntegerField(null=True)
     text = CharField(null=True)
 
-    time_offset = IntegerField(null=True)
-    end_time_offset = IntegerField(null=True)
+    time_offset = BigIntegerField(null=True)
+    end_time_offset = BigIntegerField(null=True)
 
     thumb_url = CharField(null=True)
 
