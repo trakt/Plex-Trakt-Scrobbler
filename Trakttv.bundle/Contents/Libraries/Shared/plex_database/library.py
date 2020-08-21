@@ -1,4 +1,3 @@
-from Trakttv.bundle.Contents.Libraries.Shared.peewee import JOIN
 from plex_database.matcher import Default as Matcher
 from plex_database.models import *
 from plex_metadata.guid import Guid
@@ -280,12 +279,11 @@ class MovieLibrary(LibraryBase):
         # Build `select()` query
         if fields is None:
             fields = []
-        
-        guid_case = Case(None, ((Tags.tag.is_null(), MetadataItem.guid)), Tags.tag)
 
         fields = [
             MetadataItem.id,
-            guid_case.alias('guid'),
+            MetadataItem.guid,
+            Tags.tag,
 
             MediaPart.duration,
             MediaPart.file,
@@ -316,7 +314,7 @@ class MovieLibrary(LibraryBase):
                              .join(MediaItem, on=(MediaItem.metadata_item == MetadataItem.id).alias('media'))
                              .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
                              .switch(MetadataItem)
-                             .join(subq, JOIN.LEFT_OUTER, on=(subq.metadata_item == MetadataItem.id).alias('taggings'))
+                             .join(subq, JOIN_LEFT_OUTER, on=(subq.metadata_item == MetadataItem.id).alias('taggings'))
                              .switch(MetadataItem)
         )
 
@@ -342,13 +340,15 @@ class MovieLibrary(LibraryBase):
 
         def movies_iterator():
             for row in self._tuple_iterator(query):
-                id, guid, movie = self._parse(fields, row, offset=2)
+                id, guid, tag, movie = self._parse(fields, row, offset=2)
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
-                        guids[id] = Guid.parse(guid, strict=True)
-
+                        if tag is None:
+                            guids[id] = Guid.parse(guid, strict=True)
+                        else:
+                            guids[id] = Guid.parse(tag, strict=True)
                     guid = guids[id]
 
                 # Return item

@@ -5,6 +5,8 @@ from plex_database.models.media_item import MediaItem
 from plex_database.models.media_part import MediaPart
 from plex_database.models.metadata_item import MetadataItem, MetadataItemType
 from plex_database.models.metadata_item_settings import MetadataItemSettings
+from plex_database.models.tags import Tags
+from plex_database.models.taggings import Taggings
 
 # Model aliases
 Season = MetadataItem.alias()
