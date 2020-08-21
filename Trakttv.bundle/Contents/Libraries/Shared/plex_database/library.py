@@ -1,3 +1,4 @@
+from Trakttv.bundle.Contents.Libraries.Shared.peewee import JOIN
 from plex_database.matcher import Default as Matcher
 from plex_database.models import *
 from plex_metadata.guid import Guid
@@ -279,10 +280,12 @@ class MovieLibrary(LibraryBase):
         # Build `select()` query
         if fields is None:
             fields = []
+        
+        guid_case = Case(None, ((Tags.tag.is_null(), MetadataItem.guid)), Tags.tag)
 
         fields = [
             MetadataItem.id,
-            MetadataItem.guid,
+            guid_case.alias('guid'),
 
             MediaPart.duration,
             MediaPart.file,
@@ -299,13 +302,21 @@ class MovieLibrary(LibraryBase):
 
         where += [
             MetadataItem.library_section << section_ids,
-            MetadataItem.metadata_type == MetadataItemType.Movie
+            MetadataItem.metadata_type == MetadataItemType.Movie,
         ]
 
         # Build query
+        subq = (Taggings.select()
+                        .join(Tags, on=(Tags.id == Taggings.tag).alias('tags'))
+                        .where(Tags.tag_type == 314)
+                        .order_by(Tags.id.asc())
+                        .alias('subq')
+        )
         query = (MetadataItem.select(*fields)
                              .join(MediaItem, on=(MediaItem.metadata_item == MetadataItem.id).alias('media'))
                              .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
+                             .switch(MetadataItem)
+                             .join(subq, JOIN.LEFT_OUTER, on=(subq.metadata_item == MetadataItem.id).alias('taggings'))
                              .switch(MetadataItem)
         )
 

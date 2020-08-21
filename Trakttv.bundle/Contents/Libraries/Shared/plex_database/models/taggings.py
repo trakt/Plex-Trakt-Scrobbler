@@ -5,7 +5,7 @@ from plex_database.models import MetadataItem
 from plex_database.models import Tags
 
 
-class SectionLocation(Model):
+class Taggings(Model):
     class Meta:
         database = db
         db_table = 'taggings'

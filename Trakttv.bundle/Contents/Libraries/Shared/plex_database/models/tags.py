@@ -3,7 +3,7 @@ from plex_database.core import db
 from peewee import *
 
 
-class SectionLocation(Model):
+class Tags(Model):
     class Meta:
         database = db
         db_table = 'tags'
