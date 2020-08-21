@@ -1,4 +1,5 @@
 from plex.objects.core.base import Property
+from plex.objects.library.extra.guid import Guid
 from plex.objects.library.metadata.season import Season
 from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
@@ -11,6 +12,15 @@ from plex.objects.mixins.scrobble import ScrobbleMixin
 class Episode(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     show = Property(resolver=lambda: Episode.construct_show)
     season = Property(resolver=lambda: Episode.construct_season)
+    guids = Property(resolver=lambda: Guid.from_node)
+    agent_guid = Property('guid')
+    
+    @property
+    def guid(self):
+        try:
+            return self.guids.id
+        except:
+            return self.agent_guid
 
     index = Property(type=int)
     absolute_index = Property('absoluteIndex', int)

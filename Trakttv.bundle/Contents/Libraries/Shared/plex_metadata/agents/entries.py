@@ -171,6 +171,27 @@ AGENTS = {
     },
 
     #
+    # Native Agents
+    #
+
+    'imdb': {
+        'media': ['movie', 'show', 'season', 'episode'],
+        'service': 'imdb'
+    },
+
+    'tmdb': {
+        'media': ['movie', 'show', 'season', 'episode'],
+        'service': 'tmdb',
+        'type': int
+    },
+
+    'tvdb': {
+        'media': ['show', 'season', 'episode'],
+        'service': 'tvdb',
+        'type': int
+    },
+
+    #
     # Misc
     #
 

@@ -1,4 +1,5 @@
 from plex.objects.core.base import Property
+from plex.objects.library.extra.guid import Guid
 from plex.objects.library.container import ChildrenContainer
 from plex.objects.library.metadata.show import Show
 from plex.objects.library.metadata.base import Metadata
@@ -10,6 +11,16 @@ class Season(Directory, Metadata, RateMixin):
     show = Property(resolver=lambda: Season.construct_show)
 
     index = Property(type=int)
+
+    guids = Property(resolver=lambda: Guid.from_node)
+    agent_guid = Property('guid')
+    
+    @property
+    def guid(self):
+        try:
+            return self.guids.id
+        except:
+            return self.agent_guid
 
     banner = Property
     theme = Property
