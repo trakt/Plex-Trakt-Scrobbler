@@ -25,6 +25,7 @@ except Exception:
 MODEL_KEYS = {
     MediaItem:              'media',
     MediaPart:              'part',
+
     MetadataItemSettings:   'settings'
 }
 
@@ -170,6 +171,7 @@ class LibraryBase(object):
                 item[key][field.name] = value
             else:
                 raise ValueError('Unable to parse field %r, unknown model %r' % (field, field.model_class))
+
         return tuple(list(row[:offset]) + [item])
 
     @staticmethod
@@ -312,7 +314,7 @@ class MovieLibrary(LibraryBase):
 
         where += [
             MetadataItem.library_section << section_ids,
-            MetadataItem.metadata_type == MetadataItemType.Movie,
+            MetadataItem.metadata_type == MetadataItemType.Movie
         ]
 
         # Build query
@@ -353,10 +355,10 @@ class MovieLibrary(LibraryBase):
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
                     if id not in guids:
-                        if tag is None:
-                            guids[id] = Guid.parse(guid, strict=True)
-                        else:
+                        if tag:
                             guids[id] = Guid.parse(tag, strict=True)
+                        else:
+                            guids[id] = Guid.parse(guid, strict=True)
                     guid = guids[id]
 
                 # Return item
@@ -370,23 +372,66 @@ class ShowLibrary(LibraryBase):
         # Set default `select()` fields
         if fields is None:
             fields = []
+        
+        subq = (Taggings
+                .select(
+                    Tags.tag_type,
+                    Tags.tag,
+                    Taggings.metadata_item
+                )
+                .join(Tags, on=(Tags.id == Taggings.tag).alias('taggings'))
+                .where(Tags.tag_type == 314)
+                .order_by(Tags.id.asc())
+                .switch(Taggings)
+                .alias('subq')
+        )
 
         fields = [
             MetadataItem.id,
-            MetadataItem.guid
+            MetadataItem.guid,
+            subq.c.tag
         ] + fields
 
-        # Build query
-        query = self.query(
-            sections,
-            fields=fields,
-            account=account,
-            where=where
+        query = (MetadataItem.select(*fields)
+                        .join(subq, JOIN_LEFT_OUTER, on=(subq.c.metadata_item_id == MetadataItem.id).alias('tags'))
+                        .switch(MetadataItem)
+        )
+
+        if account and type(account) is Account:
+            account = account.id
+
+        # Map `Section` list to ids
+        section_ids = [id for (id, ) in sections]
+
+        # Build `where()` query
+        if where is None:
+            where = []
+
+        where += [
+            MetadataItem.library_section << section_ids,
+            MetadataItem.metadata_type == MetadataItemType.Show
+        ]
+
+        # Join settings
+        query = self._join_settings(query, account, MetadataItem)
+
+        # Join extra models
+        models = self._models(fields, account)
+
+        query = self._join(query, models, account, [
+            MetadataItemSettings,
+            Taggings,
+            Tags
+        ])
+
+        # Apply `WHERE` filter
+        query = query.where(
+            *where
         )
 
         # Parse rows
         return [
-            self._parse(fields, row, offset=2)
+            self._parse(fields, row, offset=3)
             for row in self._tuple_iterator(query)
         ]
 
@@ -646,12 +691,16 @@ class EpisodeLibrary(LibraryBase):
 
         # Retrieve shows
         shows = Library.shows(sections, fields, account)
+        output = {}
+        for (id, guid, tag, show) in shows:
+            if id not in output:
+                if tag:
+                    output[id] = (tag, show)
+                else:
+                    output[id] = (guid, show)
 
         # Map shows by `id`
-        return dict([
-            (id, (guid, show))
-            for (id, guid, show) in shows
-        ])
+        return output
 
     def mapped_seasons(self, sections, fields=None, account=None):
         # Parse `fields`
