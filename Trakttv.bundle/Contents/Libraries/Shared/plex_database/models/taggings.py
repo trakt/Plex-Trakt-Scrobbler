@@ -13,14 +13,3 @@ class Taggings(Model):
     metadata_item = ForeignKeyField(MetadataItem, null=True, related_name='taggings')
     tag = ForeignKeyField(Tags, null=True, related_name='taggings')
 
-    index = IntegerField(null=True)
-    text = CharField(null=True)
-
-    time_offset = BigIntegerField(null=True)
-    end_time_offset = BigIntegerField(null=True)
-
-    thumb_url = CharField(null=True)
-
-    created_at = DateTimeField(null=True)
-    extra_data = CharField(null=True)
-

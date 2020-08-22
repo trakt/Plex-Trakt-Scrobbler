@@ -25,7 +25,6 @@ except Exception:
 MODEL_KEYS = {
     MediaItem:              'media',
     MediaPart:              'part',
-
     MetadataItemSettings:   'settings'
 }
 
@@ -171,7 +170,6 @@ class LibraryBase(object):
                 item[key][field.name] = value
             else:
                 raise ValueError('Unable to parse field %r, unknown model %r' % (field, field.model_class))
-
         return tuple(list(row[:offset]) + [item])
 
     @staticmethod
@@ -280,10 +278,24 @@ class MovieLibrary(LibraryBase):
         if fields is None:
             fields = []
 
+        # Build subquery
+        subq = (Taggings
+                        .select(
+                            Tags.tag_type,
+                            Tags.tag,
+                            Taggings.metadata_item
+                        )
+                        .join(Tags, on=(Tags.id == Taggings.tag).alias('taggings'))
+                        .where(Tags.tag_type == 314)
+                        .order_by(Tags.id.asc())
+                        .switch(Taggings)
+                        .alias('subq')
+        )
+
         fields = [
             MetadataItem.id,
             MetadataItem.guid,
-            Tags.tag,
+            subq.c.tag,
 
             MediaPart.duration,
             MediaPart.file,
@@ -304,17 +316,11 @@ class MovieLibrary(LibraryBase):
         ]
 
         # Build query
-        subq = (Taggings.select()
-                        .join(Tags, on=(Tags.id == Taggings.tag).alias('tags'))
-                        .where(Tags.tag_type == 314)
-                        .order_by(Tags.id.asc())
-                        .alias('subq')
-        )
         query = (MetadataItem.select(*fields)
+                             .join(subq, JOIN_LEFT_OUTER, on=(subq.c.metadata_item_id == MetadataItem.id).alias('tags'))
+                             .switch(MetadataItem)
                              .join(MediaItem, on=(MediaItem.metadata_item == MetadataItem.id).alias('media'))
                              .join(MediaPart, on=(MediaPart.media_item == MediaItem.id).alias('part'))
-                             .switch(MetadataItem)
-                             .join(subq, JOIN_LEFT_OUTER, on=(subq.metadata_item == MetadataItem.id).alias('taggings'))
                              .switch(MetadataItem)
         )
 
@@ -327,7 +333,9 @@ class MovieLibrary(LibraryBase):
         query = self._join(query, models, account, [
             MetadataItemSettings,
             MediaItem,
-            MediaPart
+            MediaPart,
+            Taggings,
+            Tags
         ])
 
         # Apply `WHERE` filter
@@ -340,7 +348,7 @@ class MovieLibrary(LibraryBase):
 
         def movies_iterator():
             for row in self._tuple_iterator(query):
-                id, guid, tag, movie = self._parse(fields, row, offset=2)
+                id, guid, tag, movie = self._parse(fields, row, offset=3)
 
                 # Parse `guid` (if enabled, and not already parsed)
                 if parse_guid:
