@@ -1,4 +1,5 @@
 from plex.objects.core.base import Property
+from plex.objects.library.extra.guid import Guid
 from plex.objects.directory import Directory
 from plex.objects.library.container import LeavesContainer, ChildrenContainer
 from plex.objects.library.metadata.base import Metadata
@@ -8,6 +9,15 @@ from plex.objects.mixins.rate import RateMixin
 class Show(Directory, Metadata, RateMixin):
     index = Property(type=int)
     duration = Property(type=int)
+    guids = Property(resolver=lambda: Guid.from_node)
+    agent_guid = Property('guid')
+    
+    @property
+    def guid(self):
+        try:
+            return self.guids.id
+        except:
+            return self.agent_guid
 
     banner = Property
     theme = Property
