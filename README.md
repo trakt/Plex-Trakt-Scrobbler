@@ -24,7 +24,7 @@ I cannot support other issues with the plugin outside of the new agent support.
 
 [install]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Installation
 [faq]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Frequently-asked-questions
-[settings]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Configuration
+[settings]:  http://trakt-for-plex.github.io/configuration
 [support]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/Support
 [knowledge-base]: https://github.com/trakt/Plex-Trakt-Scrobbler/wiki/KB
 [issues]: https://github.com/trakt/Plex-Trakt-Scrobbler/issues
