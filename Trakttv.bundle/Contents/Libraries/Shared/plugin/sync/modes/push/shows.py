@@ -72,7 +72,7 @@ class Shows(Base):
             ], [], [
                 MediaItem.audio_channels,
                 MediaItem.audio_codec,
-                MediaItem.height,
+                MediaItem.width,
                 MediaItem.interlaced,
 
                 Episode.added_at

@@ -58,7 +58,7 @@ class Movies(Base):
 
                 MediaItem.audio_channels,
                 MediaItem.audio_codec,
-                MediaItem.height,
+                MediaItem.width,
                 MediaItem.interlaced
             ],
             account=self.current.account.plex.key,

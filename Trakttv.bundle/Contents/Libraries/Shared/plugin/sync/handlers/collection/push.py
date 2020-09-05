@@ -60,24 +60,24 @@ class Base(PushHandler, CollectionHandler):
         return None
 
     @staticmethod
-    def get_resolution(height, interlaced):
+    def get_resolution(width, interlaced):
         # 4k
-        if height > 1100:
+        if width >= 3840:
             return 'uhd_4k'
 
         # 1080
-        if height > 720:
+        if width >= 1920:
             if interlaced:
                 return 'hd_1080i'
             else:
                 return 'hd_1080p'
 
         # 720
-        if height > 576:
+        if width >= 1280:
             return 'hd_720p'
 
         # 576
-        if height > 480:
+        if width >= 864:
             if interlaced:
                 return 'sd_576i'
             else:
@@ -104,8 +104,8 @@ class Base(PushHandler, CollectionHandler):
         if 'audio_channels' in p_media:
             data['audio_channels'] = cls.get_audio_channels(p_media['audio_channels'])
 
-        if 'height' in p_media and 'interlaced' in p_media:
-            data['resolution'] = cls.get_resolution(p_media['height'], p_media['interlaced'])
+        if 'width' in p_media and 'interlaced' in p_media:
+            data['resolution'] = cls.get_resolution(p_media['width'], p_media['interlaced'])
 
         # Remove any invalid/missing attributes
         for key in data.keys():
