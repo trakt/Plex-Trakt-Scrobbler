@@ -155,11 +155,15 @@ class ActionManager(Manager):
 
         log.debug('Sending action %r (account: %r, interface: %r, method: %r)', action.event, action.account, interface, method)
 
-        try:
-            result = cls.send(action, Trakt[interface][method], request)
-        except Exception as ex:
-            log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
-            return None
+        result = None
+        for retry_count in range(5):
+            try:
+                if retry_count > 0:
+                    log.debug('Retrying Sending action %r (account: %r, interface: %r, method: %r, retry: %r)', action.event, action.account, interface, method, retry_count)
+                result = cls.send(action, Trakt[interface][method], request)
+                break
+            except Exception as ex:
+                log.error('Unable to send action %r: %r', action.event, ex, exc_info=True)
 
         if not result:
             # Invalid response
