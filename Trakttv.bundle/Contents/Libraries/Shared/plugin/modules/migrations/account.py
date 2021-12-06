@@ -10,6 +10,7 @@ from exception_wrappers.libraries import apsw
 import logging
 import os
 import peewee
+import platform
 import requests
 
 log = logging.getLogger(__name__)
@@ -240,9 +241,63 @@ class AccountMigration(Migration):
         # Environment token
         env_token = os.environ.get('PLEXTOKEN')
 
-        if env_token:
+        if env_token and not env_token.startswith('local-'):
             log.info('Plex Token: environment')
             return env_token
+
+        # Windows Registry token
+        if platform.system() == 'Windows':
+            import _winreg as winreg
+
+            try:
+                reg_path = "Software\\Plex, Inc.\\Plex Media Server"
+                registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_ALL_ACCESS)
+                reg_token = winreg.QueryValueEx(registry_key, 'PlexOnlineToken')[0]
+            except:
+                reg_token = None
+
+            if reg_token:
+                log.info('Plex Token: Windows Registry')
+                return reg_token
+
+        # MacOS plist token
+        elif platform.system() == 'Darwin':
+            import plistlib
+
+            try:
+                plist_file = plistlib.readPlist(
+                    os.path.expanduser(
+                        '~/Library/Preferences/com.plexapp.plexmediaserver.plist'
+                    )
+                )
+                plist_token = plist_file['PlexOnlineToken']
+            except:
+                plist_token = None
+
+            if plist_token:
+                log.info('Plex Token: MacOS plist')
+                return plist_token
+
+        # Linux Preferences.xml
+        else:
+            import xml.etree.ElementTree as ET
+
+            try:
+                xml_tree = ET.parse(
+                    os.path.join(
+                        os.environ.get('PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR'),
+                        'Plex Media Server',
+                        'Preferences.xml'
+                    )
+                )
+                xml_root = xml_tree.getroot()
+                xml_token = xml_root.attrib.get('PlexOnlineToken')
+            except:
+                xml_token = None
+
+            if xml_token:
+                log.info('Plex Token: Preferences.xml')
+                return xml_token
 
         # Check if anonymous access is available
         server = requests.get('http://localhost:32400')
