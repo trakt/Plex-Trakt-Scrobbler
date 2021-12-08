@@ -97,15 +97,7 @@ class Base(object):
 
         # Retrieve episode number
         season_num, episodes = ModuleManager['matcher'].process(episode)
-        
-        # If matching only a single episode, scrobble it with just id's
-        if len(episodes) == 1:
-            return {
-                'episode': {
-                    'ids': ids
-                }
-            }
-        
+
         if len(episodes) > 0 and part - 1 < len(episodes):
             episode_num = episodes[part - 1]
         elif len(episodes) > 0:
@@ -115,16 +107,22 @@ class Base(object):
             log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
             episode_num = episode.index
 
-        # Process guid episode identifier overrides
-        if guid.season is not None:
-            season_num = guid.season
+        # Get the show metadata
+        if episode.show:
+            show_metadata = Metadata.get(episode.show.rating_key)
+            show_ids = Identifier.get_ids(show_metadata.guids, strict=False)
+        
+        if show_metadata:
+            show = {
+                'title': show_metadata.title,
+                'year': show_metadata.year,
+                
+                'ids': show_ids
+            }
 
         # Build request
         return {
-            'show': {
-                'title': episode.show.title,
-                'year': episode.year,
-            },
+            'show': show,
             'episode': {
                 'title': episode.title,
 
