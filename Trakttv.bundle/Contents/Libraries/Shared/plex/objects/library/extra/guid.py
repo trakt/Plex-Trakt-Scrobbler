@@ -6,4 +6,11 @@ class Guid(Descriptor):
 
     @classmethod
     def from_node(cls, client, node):
-        return cls.construct(client, cls.helpers.find(node, 'Guid'), child=True)
+        items = []
+        
+        for guid in cls.helpers.findall(node, 'Guid'):
+            _, obj = Guid.construct(client, guid, child=True)
+            
+            items.append(obj)
+        
+        return [], items

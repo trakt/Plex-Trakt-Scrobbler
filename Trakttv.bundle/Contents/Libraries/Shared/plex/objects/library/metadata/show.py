@@ -15,7 +15,7 @@ class Show(Directory, Metadata, RateMixin):
     @property
     def guid(self):
         try:
-            return self.guids.id
+            return self.guids[0].id
         except:
             return self.agent_guid
 
