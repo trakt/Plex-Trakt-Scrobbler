@@ -129,8 +129,7 @@ class Base(object):
                 'title': episode.title,
 
                 'season': season_num,
-                'number': episode_num,
-                'ids': ids
+                'number': episode_num
             }
         }
 
