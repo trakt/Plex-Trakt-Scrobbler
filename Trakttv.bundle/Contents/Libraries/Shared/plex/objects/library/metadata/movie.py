@@ -20,7 +20,7 @@ class Movie(Video, Metadata, PlaylistItemMixin, RateMixin, ScrobbleMixin):
     @property
     def guid(self):
         try:
-            return self.guids.id
+            return self.guids[0].id
         except:
             return self.agent_guid
 

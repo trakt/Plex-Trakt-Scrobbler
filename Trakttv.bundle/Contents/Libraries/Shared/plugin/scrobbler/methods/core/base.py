@@ -81,7 +81,7 @@ class Base(object):
     @classmethod
     def build_episode(cls, episode, guid, part):
         # Retrieve show identifier
-        ids = Identifier.get_ids(guid, strict=False)
+        ids = Identifier.get_ids(episode.guids, strict=False)
 
         if not ids:
             # Try map episode to a supported service (with OEM)
@@ -97,7 +97,15 @@ class Base(object):
 
         # Retrieve episode number
         season_num, episodes = ModuleManager['matcher'].process(episode)
-
+        
+        # If matching only a single episode, scrobble it with just id's
+        if len(episodes) == 1:
+            return {
+                'episode': {
+                    'ids': ids
+                }
+            }
+        
         if len(episodes) > 0 and part - 1 < len(episodes):
             episode_num = episodes[part - 1]
         elif len(episodes) > 0:
@@ -116,20 +124,19 @@ class Base(object):
             'show': {
                 'title': episode.show.title,
                 'year': episode.year,
-
-                'ids': ids
             },
             'episode': {
                 'title': episode.title,
 
                 'season': season_num,
-                'number': episode_num
+                'number': episode_num,
+                'ids': ids
             }
         }
 
     @staticmethod
     def build_movie(movie, guid, part):
-        ids = Identifier.get_ids(guid, strict=False)
+        ids = Identifier.get_ids(movie.guids, strict=False)
 
         if not ids:
             # Try map episode to a supported service (with OEM)
