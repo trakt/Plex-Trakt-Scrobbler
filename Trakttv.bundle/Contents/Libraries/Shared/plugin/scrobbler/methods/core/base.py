@@ -81,7 +81,7 @@ class Base(object):
     @classmethod
     def build_episode(cls, episode, guid, part):
         # Retrieve show identifier
-        ids = Identifier.get_ids(guid, strict=False)
+        ids = Identifier.get_ids(episode.guids, strict=False)
 
         if not ids:
             # Try map episode to a supported service (with OEM)
@@ -107,18 +107,22 @@ class Base(object):
             log.warn('Matcher didn\'t return a valid result - season_num: %r, episodes: %r', season_num, episodes)
             episode_num = episode.index
 
-        # Process guid episode identifier overrides
-        if guid.season is not None:
-            season_num = guid.season
+        # Get the show metadata
+        if episode.show:
+            show_metadata = Metadata.get(episode.show.rating_key)
+            show_ids = Identifier.get_ids(show_metadata.guids, strict=False)
+        
+        if show_metadata:
+            show = {
+                'title': show_metadata.title,
+                'year': show_metadata.year,
+                
+                'ids': show_ids
+            }
 
         # Build request
         return {
-            'show': {
-                'title': episode.show.title,
-                'year': episode.year,
-
-                'ids': ids
-            },
+            'show': show,
             'episode': {
                 'title': episode.title,
 
@@ -129,7 +133,7 @@ class Base(object):
 
     @staticmethod
     def build_movie(movie, guid, part):
-        ids = Identifier.get_ids(guid, strict=False)
+        ids = Identifier.get_ids(movie.guids, strict=False)
 
         if not ids:
             # Try map episode to a supported service (with OEM)
