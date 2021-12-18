@@ -9,19 +9,20 @@ log = logging.getLogger(__name__)
 
 class Identifier(object):
     @classmethod
-    def get_ids(cls, guid, strict=True):
+    def get_ids(cls, guids, strict=True):
         ids = {}
 
-        if not guid:
+        if not guids:
             return ids
 
-        if type(guid) is str:
-            # Parse raw guid
-            guid = Guid.parse(guid, strict=strict)
+        for guid in guids:
+            if type(guid.id) is str:
+                # Parse raw guid
+                guid = Guid.parse(guid.id, strict=strict)
 
-        if guid and guid.valid and guid.service in GUID_SERVICES:
-            ids[guid.service] = guid.id
-        elif strict:
-            return None
+            if guid and guid.valid and guid.service in GUID_SERVICES:
+                ids[guid.service] = guid.id
+            elif strict:
+                return None
 
         return ids
