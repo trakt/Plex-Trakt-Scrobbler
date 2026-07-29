@@ -180,7 +180,7 @@ class Mapper(Module):
 
             return True, (id_service, id_key)
 
-        log.info('[%s/%s] - Unable to find valid identifier in %r', source, key, match.identiifers)
+        log.info('[%s/%s] - Unable to find valid identifier in %r', source, key, match.identifiers)
         return True, (None, None)
 
     def map(self, source, key, identifier=None, resolve_mappings=True, use_handlers=True):
