@@ -209,7 +209,7 @@ class HttpClient(object):
 
         # Calculate expiry
         current = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-        expires_at = config['oauth.created_at'] + config['oauth.expires_in'] - (48 * 60 * 60)
+        expires_at = config['oauth.created_at'] + config['oauth.expires_in']
 
         if current < expires_at:
             return True
