@@ -361,6 +361,7 @@ class TraktAuthenticationManager(object):
                 raise DeviceCodeExpired('Device code expired; request another code')
 
             try:
+                log.debug('[Trakt] Polling for device authorization')
                 response = cls._http_post(
                     cls._endpoint(base_url, DEVICE_TOKEN_PATH),
                     {
@@ -526,6 +527,7 @@ class TraktAuthenticationManager(object):
             raise
         except Exception:
             _set_auth_state(t_account, AUTH_STATE_AUTHENTICATION_ERROR)
+            log.exception('[Trakt] Device authorization failed')
             raise
 
     @classmethod
@@ -945,6 +947,8 @@ class TraktAuthenticationManager(object):
         status_code = getattr(response, 'status_code', None)
         headers = getattr(response, 'headers', {}) or {}
         body = _parse_body(response)
+
+        log.debug('[Trakt] Trakt HTTP response status=%s', status_code)
 
         if status_code is not None and (status_code < 200 or status_code >= 300):
             if status_code == 429:
