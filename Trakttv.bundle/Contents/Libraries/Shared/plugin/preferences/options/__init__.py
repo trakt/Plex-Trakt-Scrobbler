@@ -4,7 +4,7 @@ from plugin.preferences.options.o_sync import *
 from plugin.preferences.options.activity import ActivityOption
 from plugin.preferences.options.api import ApiOption
 from plugin.preferences.options.matcher import MatcherOption
-from plugin.preferences.options.pin import PinOption
+from plugin.preferences.options.connect_trakt import ConnectTraktOption
 from plugin.preferences.options.scrobble import ScrobbleOption
 from plugin.preferences.options.scrobble_duplication_period import ScrobbleDuplicationPeriodOption
 
@@ -12,7 +12,7 @@ OPTIONS = [
     ActivityOption,
     ApiOption,
     MatcherOption,
-    PinOption,
+    ConnectTraktOption,
 
     ScrobbleOption,
     ScrobbleDuplicationPeriodOption,

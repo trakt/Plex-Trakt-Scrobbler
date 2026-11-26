@@ -29,6 +29,10 @@ class TraktAccount(Model):
 
     refreshed_at = DateTimeField(null=True)
 
+    # Authentication migration/state:
+    # connected, authorization_required, authorization_in_progress, authentication_error
+    auth_state = CharField(null=True)
+
     def __init__(self, *args, **kwargs):
         super(TraktAccount, self).__init__(*args, **kwargs)
 
@@ -61,7 +65,7 @@ class TraktAccount(Model):
         # OAuth
         oauth = self.oauth
 
-        if oauth and oauth.is_valid():
+        if oauth and oauth.access_token:
             return self.oauth_authorization(oauth)
 
         # Basic (legacy)
@@ -87,9 +91,17 @@ class TraktAccount(Model):
 
         log.debug('Using oauth authorization for %r', self)
 
+        # Own token lifecycle. Disable bundled trakt.py legacy refresh.
+        from plugin.managers.m_trakt.authentication import TraktAuthenticationManager
+
+        oauth_credential = TraktAuthenticationManager.ensure_valid_token(
+            self,
+            oauth_credential=oauth_credential,
+        )
+
         return Trakt.configuration.oauth.from_response(
             oauth_credential.to_response(),
-            refresh=True,
+            refresh=False,
             username=self.username
         )
 
@@ -153,7 +165,9 @@ class TraktAccount(Model):
             'id': self.id,
             'username': self.username,
 
-            'thumb_url': self.thumb_url()
+            'thumb_url': self.thumb_url(),
+
+            'auth_state': self.auth_state
         }
 
         if not full:

@@ -1,8 +1,8 @@
 [
     {
-        "id": "pin",
+        "id": "connect_trakt",
         "type": "text",
-        "label": "Authentication PIN (visit https://trakt.tv/pin/478)",
+        "label": "Connect Trakt",
         "default": ""
     },
     {
