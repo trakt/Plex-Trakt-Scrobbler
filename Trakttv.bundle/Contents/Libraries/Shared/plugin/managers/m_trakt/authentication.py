@@ -171,6 +171,7 @@ class TraktAuthorizationRequired(TokenRefreshError, AccountAuthenticationError):
 #
 
 DEFAULT_BASE_URL = 'https://api.trakt.tv'
+DEFAULT_AUTH_BASE_URL = 'https://auth.trakt.tv'
 DEFAULT_TIMEOUT = (6.05, 24)
 
 DEFAULT_DEVICE_INTERVAL = 5
@@ -330,7 +331,7 @@ class TraktAuthenticationManager(object):
         """
         POST /oauth/device/token until authorized.
 
-        Sends device_code + Client ID. No Client Secret.
+        Sends the device code as `code`, along with the Client ID.
 
         Handles:
             authorization_pending -> wait `interval`, retry
@@ -365,7 +366,7 @@ class TraktAuthenticationManager(object):
                 response = cls._http_post(
                     cls._endpoint(base_url, DEVICE_TOKEN_PATH),
                     {
-                        'device_code': device_code,
+                        'code': device_code,
                         'client_id': client_id,
                     },
                     client_id=client_id,
@@ -390,6 +391,9 @@ class TraktAuthenticationManager(object):
 
                 if _is_access_denied(ex, error):
                     raise AuthorizationDenied('User denied Trakt authorization')
+
+                if ex.status_code == 404 or error == 'invalid_device_code':
+                    raise InvalidDeviceCode('Invalid device code; start Connect Trakt again')
 
                 if ex.status_code == 429:
                     retry_after = _retry_after(ex.headers)
@@ -519,6 +523,9 @@ class TraktAuthenticationManager(object):
         except DeviceCodeExpired:
             _set_auth_state(t_account, AUTH_STATE_AUTHORIZATION_REQUIRED)
             raise
+        except InvalidDeviceCode:
+            _set_auth_state(t_account, AUTH_STATE_AUTHORIZATION_REQUIRED)
+            raise
         except TraktNetworkError:
             _set_auth_state(t_account, AUTH_STATE_AUTHENTICATION_ERROR)
             raise
@@ -543,16 +550,20 @@ class TraktAuthenticationManager(object):
         now=None,
     ):
         """Poll an already displayed device authorization and save account."""
-        return cls.authenticate_account(
-            t_account,
-            device_authorization=device_authorization,
-            client_id=client_id,
-            base_url=base_url,
-            session=session,
-            timeout=timeout,
-            sleep=sleep,
-            now=now,
-        )
+        try:
+            return cls.authenticate_account(
+                t_account,
+                device_authorization=device_authorization,
+                client_id=client_id,
+                base_url=base_url,
+                session=session,
+                timeout=timeout,
+                sleep=sleep,
+                now=now,
+                max_expired_retries=0,
+            )
+        except TraktAuthenticationError as ex:
+            log.warning('[Trakt] Device authorization failed: %s', ex)
 
     #
     # Trakt account identification / persistence
@@ -1025,6 +1036,8 @@ class TraktAuthenticationManager(object):
 
     @classmethod
     def _endpoint(cls, base_url, path):
+        if path.startswith('oauth/'):
+            base_url = base_url or cls._default_base_url or DEFAULT_AUTH_BASE_URL
         return '%s/%s' % (cls._resolve_base_url(base_url), path.lstrip('/'))
 
     #
@@ -1185,21 +1198,23 @@ def _error_code(body):
 
 
 def _is_authorization_pending(ex, error):
-    return error == 'authorization_pending'
+    return error == 'authorization_pending' or (ex.status_code == 400 and not error)
 
 
 def _is_slow_down(ex, error):
-    return error == 'slow_down'
+    return error == 'slow_down' or ex.status_code == 418
 
 
 def _is_expired_token(ex, error):
-    return error in ('expired_token', 'expired', 'invalid_device_code', 'device_code_expired') or (
+    return ex.status_code == 410 or error in ('expired_token', 'expired', 'device_code_expired') or (
         ex.status_code == 400 and error == 'invalid_grant' and _body_contains(ex.body, 'expired')
     )
 
 
 def _is_access_denied(ex, error):
-    return error in ('access_denied', 'authorization_denied', 'user_denied', 'denied')
+    return ex.status_code == 403 and not error or error in (
+        'access_denied', 'authorization_denied', 'user_denied', 'denied'
+    )
 
 
 def _is_invalid_client(ex, error):

@@ -150,7 +150,6 @@ class Main(object):
         # Authentication manager is authoritative for refresh + persistence.
         TraktAuthenticationManager.configure(
             client_id=client_id,
-            base_url=Trakt.base_url,
             timeout=timeout,
             session=Trakt.http.session,
         )

@@ -74,11 +74,6 @@ def MainMenu(*args, **kwargs):
 @catch_errors
 def ConnectTrakt(account_id=None, *args, **kwargs):
     """Connect Trakt using Device Code Flow without requiring Preferences."""
-    oc = ObjectContainer(
-        title2=_("Connect Trakt"),
-        no_cache=True
-    )
-
     accounts = TraktAccountManager.get.all()
 
     if account_id is not None:
@@ -90,14 +85,12 @@ def ConnectTrakt(account_id=None, *args, **kwargs):
         trakt_account = accounts.first()
 
     if trakt_account is None:
-        oc.message = _("No Trakt account found. Create/link a Trakt account first.")
-        return oc
+        return MessageContainer(_("Connect Trakt"), _("No Trakt account found. Create/link a Trakt account first."))
 
     try:
         device_authorization = TraktAuthenticationManager.request_device_code()
     except Exception as ex:
-        oc.message = _("Unable to start Trakt Device Code Flow: %s") % ex
-        return oc
+        return MessageContainer(_("Connect Trakt"), _("Unable to start Trakt Device Code Flow: %s") % ex)
 
     instructions = TraktAuthenticationManager.format_device_instructions(device_authorization)
 
@@ -110,8 +103,7 @@ def ConnectTrakt(account_id=None, *args, **kwargs):
     thread.daemon = True
     thread.start()
 
-    oc.message = instructions
-    return oc
+    return MessageContainer(_("Connect Trakt"), instructions)
 
 @route(PLUGIN_PREFIX + '/about')
 @catch_errors

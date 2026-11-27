@@ -117,6 +117,7 @@ def test_missing_client_id_is_configuration_error():
 
 def test_poll_pending_then_authorized_respects_interval_and_rotation_fields():
     session = FakeSession([
+        FakeResponse(400),
         FakeResponse(400, {'error': 'authorization_pending'}),
         FakeResponse(200, {
             'access_token': 'NEW_ACCESS',
@@ -141,17 +142,18 @@ def test_poll_pending_then_authorized_respects_interval_and_rotation_fields():
         now=fixed_now,
     )
 
-    assert slept == [7]
+    assert slept == [7, 7]
     assert auth['access_token'] == 'NEW_ACCESS'
     assert auth['refresh_token'] == 'NEW_REFRESH'
     assert auth['scope'] == 'public'
-    assert session.calls[0]['data'] == {'device_code': 'DEVICE', 'client_id': 'CLIENT'}
-    assert session.calls[1]['data'] == {'device_code': 'DEVICE', 'client_id': 'CLIENT'}
+    for call in session.calls:
+        assert call['url'] == 'https://api.trakt.tv/oauth/device/token'
+        assert call['data'] == {'code': 'DEVICE', 'client_id': 'CLIENT'}
 
 
 def test_poll_slow_down_increases_interval():
     session = FakeSession([
-        FakeResponse(400, {'error': 'slow_down'}),
+        FakeResponse(418),
         FakeResponse(200, {
             'access_token': 'A',
             'refresh_token': 'R',
@@ -175,11 +177,12 @@ def test_poll_slow_down_increases_interval():
     )
 
     assert slept == [6]
+    assert session.calls[0]['url'] == 'https://auth.trakt.tv/oauth/device/token'
 
 
 def test_poll_expired_device_code():
     session = FakeSession([
-        FakeResponse(400, {'error': 'expired_token'}),
+        FakeResponse(410),
     ])
 
     try:
@@ -198,7 +201,7 @@ def test_poll_expired_device_code():
 
 def test_poll_user_denied():
     session = FakeSession([
-        FakeResponse(400, {'error': 'access_denied'}),
+        FakeResponse(403),
     ])
 
     try:

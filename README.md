@@ -76,8 +76,8 @@ Waiting for authorization...
 The `verification_url` comes from Trakt; it is not constructed. `user_code` and
 device authorization are temporary and are not persisted as account credentials.
 Polling respects Trakt's `interval`, `authorization_pending`, `slow_down`,
-expired device codes and user denial. An expired device code requests another
-code; denial reports failure.
+expired device codes and user denial. If a code expires, open **Connect Trakt**
+again to get a fresh code.
 
 After authorization, the plugin calls `/users/settings`, retrieves username, and
 associates authorization with the existing Plex-Trakt account.
