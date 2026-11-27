@@ -13,6 +13,13 @@ def migrate(migrator, database):
 
 SPEC = {
     'trakt.account': {
-        'auth_state': CharField(null=True),
+        'id':           'INTEGER PRIMARY KEY NOT NULL',
+        'account_id':   'INTEGER NOT NULL',
+        'username':     'VARCHAR(255)',
+        'thumb':        'TEXT',
+        'cover':        'TEXT',
+        'timezone':    'TEXT',
+        'refreshed_at': 'DATETIME',
+        'auth_state':  'VARCHAR(255)',
     }
 }

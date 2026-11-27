@@ -4,13 +4,17 @@
 
 import json
 
+import pytest
+from plugin.managers.m_trakt import authentication
 from plugin.managers.m_trakt.authentication import (
     AuthorizationDenied,
     DeviceCodeExpired,
     InvalidClient,
     SlowDown,
+    TokenRefreshUncertainError,
     TraktAPIError,
     TraktAuthenticationManager,
+    TraktAuthorizationRequired,
     TraktConfigurationError,
     TraktNetworkError,
 )
@@ -262,6 +266,40 @@ def test_network_errors_do_not_poll_faster_than_interval():
     )
 
     assert slept == [9]
+
+
+def test_uncertain_refresh_blocks_retry_after_reloading_account(monkeypatch):
+    persisted = {'auth_state': authentication.AUTH_STATE_CONNECTED}
+
+    class Account(object):
+        def __init__(self):
+            self.auth_state = persisted['auth_state']
+
+        def save(self):
+            persisted['auth_state'] = self.auth_state
+
+    class Credential(object):
+        access_token = 'ACCESS'
+        refresh_token = 'REFRESH'
+        created_at = 1
+        expires_in = 1
+
+    session = FakeSession([TraktNetworkError('timeout')])
+    monkeypatch.setattr(authentication, '_reload_account', lambda account_id: Account())
+    monkeypatch.setattr(authentication, '_reload_oauth_credential', lambda account_id: Credential())
+
+    with pytest.raises(TokenRefreshUncertainError):
+        TraktAuthenticationManager.ensure_valid_token(1, client_id='CLIENT', session=session)
+
+    assert persisted['auth_state'] == authentication.AUTH_STATE_AUTHORIZATION_REQUIRED
+
+    # A failed attempt to connect again must leave the blocked state intact.
+    authentication._set_auth_state(1, authentication.AUTH_STATE_AUTHORIZATION_IN_PROGRESS)
+    authentication._set_auth_state(1, authentication.AUTH_STATE_AUTHENTICATION_ERROR)
+    with pytest.raises(TraktAuthorizationRequired):
+        TraktAuthenticationManager.ensure_valid_token(1, client_id='CLIENT', session=session)
+
+    assert len(session.calls) == 1
 
 
 def test_normalize_authorization_preserves_scope_and_requires_complete_response():

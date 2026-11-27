@@ -364,7 +364,7 @@ class TraktAuthenticationManager(object):
                 raise DeviceCodeExpired('Device code expired; request another code')
 
             try:
-                log.debug('[Trakt] Polling for device authorization')
+                log.info('[Trakt] Polling for device authorization')
                 response = cls._http_post(
                     cls._endpoint(base_url, DEVICE_TOKEN_PATH),
                     {
@@ -743,10 +743,10 @@ class TraktAuthenticationManager(object):
                     session=session,
                     timeout=timeout,
                 )
-            except TraktNetworkError as ex:
+            except TraktNetworkError:
                 # Do not automatically retry old token. Recovery requires
                 # checking persistent storage or reauthorization.
-                _set_auth_state(t_account, AUTH_STATE_AUTHENTICATION_ERROR)
+                _set_auth_state(t_account, AUTH_STATE_AUTHORIZATION_REQUIRED)
                 log.warn('[Trakt] Refresh outcome unknown; recovery required')
                 raise TokenRefreshUncertainError(
                     'Refresh request timed out; token may have been consumed; recover or reauthorize',
@@ -975,7 +975,7 @@ class TraktAuthenticationManager(object):
         headers = getattr(response, 'headers', {}) or {}
         body = _parse_body(response)
 
-        log.debug('[Trakt] Trakt HTTP response status=%s', status_code)
+        log.info('[Trakt] Trakt HTTP response status=%s', status_code)
 
         if status_code is not None and (status_code < 200 or status_code >= 300):
             if status_code == 429:
@@ -1099,6 +1099,11 @@ class TraktAuthenticationManager(object):
 def _set_auth_state(t_account, state):
     try:
         account = _reload_account(_account_id_of(t_account)) or t_account
+        # Keep refresh blocked during reauthorization, including failed attempts.
+        # Saving replacement credentials explicitly marks the account connected.
+        if getattr(account, 'auth_state', None) == AUTH_STATE_AUTHORIZATION_REQUIRED:
+            return
+
         account.auth_state = state
         account.save()
     except Exception:

@@ -74,15 +74,18 @@ def MainMenu(*args, **kwargs):
 @catch_errors
 def ConnectTrakt(account_id=None, *args, **kwargs):
     """Connect Trakt using Device Code Flow without requiring Preferences."""
-    accounts = TraktAccountManager.get.all()
-
-    if account_id is not None:
-        try:
-            trakt_account = TraktAccountManager.get(TraktAccount.id == int(account_id))
-        except Exception:
-            trakt_account = accounts.first()
+    if account_id is None:
+        trakt_account = TraktAccountManager.get.all().first()
     else:
-        trakt_account = accounts.first()
+        try:
+            account_id = int(account_id)
+        except (TypeError, ValueError):
+            return MessageContainer(_("Connect Trakt"), _("Invalid Trakt account ID."))
+
+        try:
+            trakt_account = TraktAccountManager.get(TraktAccount.id == account_id)
+        except TraktAccount.DoesNotExist:
+            return MessageContainer(_("Connect Trakt"), _("The requested Trakt account was not found."))
 
     if trakt_account is None:
         return MessageContainer(_("Connect Trakt"), _("No Trakt account found. Create/link a Trakt account first."))
