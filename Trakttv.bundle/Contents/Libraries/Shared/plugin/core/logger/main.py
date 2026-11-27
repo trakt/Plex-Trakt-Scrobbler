@@ -66,6 +66,8 @@ class LoggerManager(object):
 
     @staticmethod
     def setup_logging(report=True, storage=True):
+        logging.getLogger('peewee').addFilter(AuthorizationFilter())
+
         # Initialize "root" logger
         rootLogger = logging.getLogger()
         rootLogger.setLevel(logging.DEBUG)

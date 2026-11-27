@@ -83,6 +83,13 @@ class Base(object):
         # Retrieve show identifier
         ids = Identifier.get_ids(guid, strict=False)
 
+        if not ids and guid.service == 'local' and episode.show and episode.show.rating_key:
+            # Plex can identify the series even when the episode has a local GUID.
+            show = Metadata.get(episode.show.rating_key)
+            if show and show.type == 'show':
+                show_guid = Guid.parse(show.guid, strict=True)
+                ids = Identifier.get_ids(show_guid, strict=False)
+
         if not ids:
             # Try map episode to a supported service (with OEM)
             supported, request = ModuleManager['mapper'].request_episode(
