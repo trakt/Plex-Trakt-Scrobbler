@@ -39,3 +39,102 @@ I cannot support other issues with the plugin outside of the new agent support.
 [scrutinizer]: https://scrutinizer-ci.com/g/fuzeman/Plex-Trakt-Scrobbler
 [trakt.tv]: https://trakt.tv
 [plex.tv]: https://www.plex.tv
+
+## Trakt authentication (Device Code Flow)
+
+This plugin uses **Trakt Device Code Flow** to connect a Trakt account. No Client
+Secret is required.
+
+### Application configuration
+
+Create a Trakt application, then configure only the Client ID. In Plex plugin
+data, create `advanced.ini`:
+
+```ini
+[trakt]
+client_id = YOUR_CLIENT_ID
+```
+
+`TRAKT_CLIENT_ID` may be used instead of `client_id`. Do not add or require a
+`client_secret`. The old embedded Client ID/Secret and old `/pin/{app_id}` URL
+are no longer used.
+
+### Connect Trakt
+
+1. Open **Preferences**.
+2. Use **Connect Trakt** in the main menu, or in **Authentication** if shown.
+3. The plugin requests a device code and shows:
+
+```text
+Connect Trakt
+1. Open: [verification_url]
+2. Enter code: ABCD-EFGH
+
+Waiting for authorization...
+```
+
+The `verification_url` comes from Trakt; it is not constructed. `user_code` and
+device authorization are temporary and are not persisted as account credentials.
+Polling respects Trakt's `interval`, `authorization_pending`, `slow_down`,
+expired device codes and user denial. If a code expires, open **Connect Trakt**
+again to get a fresh code.
+
+After authorization, the plugin calls `/users/settings`, retrieves username, and
+associates authorization with the existing Plex-Trakt account.
+
+### Token refresh and migration
+
+Trakt access tokens expire after 7 days. `TraktAuthenticationManager` refreshes
+automatically before authenticated scrobbling/sync requests.
+
+Refresh request body:
+
+```json
+{
+  "refresh_token": "<current_refresh_token>",
+  "client_id": "<client_id>",
+  "grant_type": "refresh_token"
+}
+```
+
+No Client Secret is sent. Refresh-token rotation is atomic: `access_token`,
+`refresh_token`, `scope`, `token_type`, `created_at` and `expires_in` are
+replaced together. `scope` is preserved exactly as returned. Per-account locks
+prevent concurrent refresh requests from consuming the same single-use refresh
+token twice.
+
+**Existing installations:** keep existing account records and database. Accounts
+with legacy OAuth credentials that cannot be refreshed after Trakt's
+authentication migration are marked `authorization_required`; they are not
+deleted. Plex username-to-Plex-user association, watched history, sync
+preferences and plugin state are preserved. Reconnect once with **Connect
+Trakt**. Old refresh tokens cannot be exchanged after Trakt's authentication
+migration; `invalid_grant` / `session not found` requires reauthorization.
+
+Authentication state is `connected`, `authorization_required`,
+`authorization_in_progress`, or `authentication_error`. Trakt API unavailable
+does not delete account state. `invalid_client` is reported as an application
+configuration problem. HTTP 429 respects rate-limit instructions. Network
+timeout during refresh is not automatically retried with the old token because
+Trakt may have consumed it; recovery checks persistent storage or requires
+reauthorization.
+
+### Logging
+
+Authentication logs record events such as `[Trakt] Device authorization
+initiated`, `[Trakt] Waiting for user authorization`, `[Trakt] Account
+authorized`, `[Trakt] Access token refreshed`, `[Trakt] Credentials persisted`,
+`[Trakt] Refresh rejected`, and `[Trakt] Account requires reauthorization`.
+Tokens, device codes, user codes and authorization payloads are never logged.
+
+### Synology deployment
+
+1. Back up the existing plugin directory and database.
+2. Install the modified plugin alongside the backup.
+3. Configure `[trakt] client_id`.
+4. Connect the Trakt account again once.
+5. Verify scrobbling.
+6. Force a token refresh in a test environment.
+7. Restart Plex and verify authentication persists.
+8. Keep the backup until the installation has operated successfully for several
+   days.

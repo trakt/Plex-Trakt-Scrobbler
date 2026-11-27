@@ -7,7 +7,7 @@ from plugin.core.constants import ACTIVITY_MODE, PLUGIN_VERSION
 from plugin.core.helpers.thread import module_start
 from plugin.core.logger import LOG_HANDLER, LoggerManager
 from plugin.managers.account import TraktAccountManager
-from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager
+from plugin.managers.m_trakt.authentication import TraktAuthenticationManager
 from plugin.models import TraktAccount
 from plugin.modules.core.manager import ModuleManager
 from plugin.preferences import Preferences
@@ -100,10 +100,20 @@ class Main(object):
             config.get_float('read_timeout', 24)
         )
 
-        # Client
+        # Client: no Client Secret. Client ID is required; not embedded.
+        # advanced.ini:
+        #   [trakt]
+        #   client_id = YOUR_CLIENT_ID
+        client_id = (
+            config.get('client_id') or
+            config.get('client.id') or
+            os.environ.get('TRAKT_CLIENT_ID') or
+            ''
+        )
+
         Trakt.configuration.defaults.client(
-            id='c9ccd3684988a7862a8542ae0000535e0fbd2d1c0ca35583af7ea4e784650a61',
-            secret='bf00575b1ad252b514f14b2c6171fe650d474091daad5eb6fa890ef24d581f65'
+            id=client_id,
+            secret=None
         )
 
         # Application
@@ -137,7 +147,14 @@ class Main(object):
 
         Trakt.http.rebuild()
 
-        # Bind to events
+        # Authentication manager is authoritative for refresh + persistence.
+        TraktAuthenticationManager.configure(
+            client_id=client_id,
+            timeout=timeout,
+            session=Trakt.http.session,
+        )
+
+        # Bind to events. Event concept retained; no second refresh implementation.
         Trakt.on('oauth.refresh', cls.on_trakt_refresh)
         Trakt.on('oauth.refresh.rejected', cls.on_trakt_refresh_rejected)
 
@@ -151,57 +168,16 @@ class Main(object):
 
     @classmethod
     def on_trakt_refresh(cls, username, authorization):
-        log.debug('[Trakt.tv] Token has been refreshed for %r', username)
-
-        # Retrieve trakt account matching this `authorization`
-        with Trakt.configuration.http(retry=True).oauth(token=authorization.get('access_token')):
-            settings = Trakt['users/settings'].get(validate_token=False)
-
-        if not settings:
-            log.warn('[Trakt.tv] Unable to retrieve account details for token')
-            return False
-
-        # Retrieve trakt account username from `settings`
-        s_username = settings.get('user', {}).get('username')
-
-        if not s_username:
-            log.warn('[Trakt.tv] Unable to retrieve username for token')
-            return False
-
-        if s_username != username:
-            log.warn('[Trakt.tv] Token mismatch (%r != %r)', s_username, username)
-            return False
-
-        # Find matching trakt account
-        trakt_account = (TraktAccount
-            .select()
-            .where(
-                TraktAccount.username == username
-            )
-        ).first()
-
-        if not trakt_account:
-            log.warn('[Trakt.tv] Unable to find account with the username: %r', username)
-            return False
-
-        # Update OAuth credential
-        TraktAccountManager.update.from_dict(
-            trakt_account, {
-                'authorization': {
-                    'oauth': authorization
-                }
-            },
-            settings=settings
-        )
-
-        log.info('[Trakt.tv] Token updated for %r', trakt_account)
+        # `TraktAuthenticationManager` is authoritative for persistence.
+        # Retain event integration; do not persist a second time.
+        log.info('[Trakt.tv] Access token refreshed for %r', username)
         return True
 
     @classmethod
-    def on_trakt_refresh_rejected(cls, username):
-        log.debug('[Trakt.tv] Token refresh for %r has been rejected', username)
+    def on_trakt_refresh_rejected(cls, username, reason=None):
+        log.info('[Trakt.tv] Refresh rejected: %s', reason or 'invalid_grant')
 
-        # Find matching trakt account
+        # Find matching trakt account. Do not delete account or clear associations.
         account = (TraktAccount
             .select()
             .where(
@@ -213,12 +189,11 @@ class Main(object):
             log.warn('[Trakt.tv] Unable to find account with the username: %r', username)
             return False
 
-        # Delete OAuth credential
-        TraktOAuthCredentialManager.delete(
-            account=account.id
-        )
+        # Mark credentials invalid / require reauthorization; preserve record.
+        account.auth_state = 'authorization_required'
+        account.save()
 
-        log.info('[Trakt.tv] Token cleared for %r', account)
+        log.info('[Trakt.tv] Account requires reauthorization: %r', account)
         return True
 
     def start(self):

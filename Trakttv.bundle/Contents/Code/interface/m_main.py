@@ -4,8 +4,12 @@ from interface.m_sync import Accounts, AccountsMenu, ControlsMenu
 
 from plugin.core.constants import PLUGIN_NAME, PLUGIN_ART, PLUGIN_ICON, PLUGIN_PREFIX, PLUGIN_VERSION
 from plugin.core.environment import translate as _
+from plugin.managers.account import TraktAccountManager
+from plugin.managers.m_trakt.authentication import TraktAuthenticationManager
+from plugin.models import TraktAccount
 
 import locale
+import threading
 
 
 @handler(PLUGIN_PREFIX, PLUGIN_NAME, thumb=PLUGIN_ICON, art=PLUGIN_ART)
@@ -38,6 +42,17 @@ def MainMenu(*args, **kwargs):
     ))
 
     #
+    # Connect Trakt (Device Code Flow)
+    #
+
+    oc.add(DirectoryObject(
+        key=Callback(ConnectTrakt),
+        title=_("Connect Trakt"),
+        summary=_("Connect or reauthorize a Trakt account"),
+        thumb=R("icon-connection.png")
+    ))
+
+    #
     # About
     #
 
@@ -54,6 +69,44 @@ def MainMenu(*args, **kwargs):
 
     return oc
 
+
+@route(PLUGIN_PREFIX + '/trakt/connect')
+@catch_errors
+def ConnectTrakt(account_id=None, *args, **kwargs):
+    """Connect Trakt using Device Code Flow without requiring Preferences."""
+    if account_id is None:
+        trakt_account = TraktAccountManager.get.all().first()
+    else:
+        try:
+            account_id = int(account_id)
+        except (TypeError, ValueError):
+            return MessageContainer(_("Connect Trakt"), _("Invalid Trakt account ID."))
+
+        try:
+            trakt_account = TraktAccountManager.get(TraktAccount.id == account_id)
+        except TraktAccount.DoesNotExist:
+            return MessageContainer(_("Connect Trakt"), _("The requested Trakt account was not found."))
+
+    if trakt_account is None:
+        return MessageContainer(_("Connect Trakt"), _("No Trakt account found. Create/link a Trakt account first."))
+
+    try:
+        device_authorization = TraktAuthenticationManager.request_device_code()
+    except Exception as ex:
+        return MessageContainer(_("Connect Trakt"), _("Unable to start Trakt Device Code Flow: %s") % ex)
+
+    instructions = TraktAuthenticationManager.format_device_instructions(device_authorization)
+
+    # Start polling in background; user needs instructions while waiting.
+    thread = threading.Thread(
+        target=TraktAuthenticationManager.authenticate_account_with_device,
+        args=(trakt_account, device_authorization),
+        name='TraktDeviceAuthorization',
+    )
+    thread.daemon = True
+    thread.start()
+
+    return MessageContainer(_("Connect Trakt"), instructions)
 
 @route(PLUGIN_PREFIX + '/about')
 @catch_errors

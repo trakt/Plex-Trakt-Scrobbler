@@ -1,5 +1,6 @@
 from plugin.managers.core.base import Manager, Update
 from plugin.models import TraktBasicCredential, TraktOAuthCredential
+from plugin.models.core import db
 
 from trakt import Trakt
 import inspect
@@ -66,30 +67,66 @@ class UpdateOAuthCredential(Update):
 
         return True
 
-    def from_pin(self, oauth, pin, save=True):
-        data = {'code': pin}
-
-        # Exchange `pin` for token authorization
-        authorization = Trakt['oauth'].token_exchange(pin, 'urn:ietf:wg:oauth:2.0:oob')
-
-        if not authorization:
-            log.warn('Token exchange failed for %r', oauth.account)
-
-            # Update credential with `code` (to avoid future re-authentication attempts with the same pin)
-            self(oauth, data, save=save)
-            return False
-
-        # Update credential with authorization parameters
-        data.update(authorization)
-
-        self(oauth, data, save=save)
-        return True
-
 
 class TraktOAuthCredentialManager(Manager):
     update = UpdateOAuthCredential
 
     model = TraktOAuthCredential
+
+    @classmethod
+    def save_authorization(cls, oauth_credential, authorization, save=True):
+        """
+        Atomically replace OAuth credentials.
+
+        Required complete response fields:
+            access_token, refresh_token, token_type, expires_in, created_at, scope
+
+        Scope is preserved exactly as returned by Trakt; it is not assumed.
+        """
+        required = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'created_at', 'scope']
+        missing = [key for key in required if key not in authorization]
+
+        if missing:
+            raise ValueError('Invalid OAuth response; missing fields: %s' % ','.join(missing))
+
+        if not authorization.get('access_token'):
+            raise ValueError('Invalid OAuth response; missing access_token')
+
+        if not authorization.get('refresh_token'):
+            raise ValueError('Invalid OAuth response; missing refresh_token')
+
+        if not authorization.get('token_type'):
+            raise ValueError('Invalid OAuth response; missing token_type')
+
+        if authorization.get('created_at') is None:
+            raise ValueError('Invalid OAuth response; missing created_at')
+
+        if authorization.get('expires_in') is None:
+            raise ValueError('Invalid OAuth response; missing expires_in')
+
+        if authorization.get('scope') is None:
+            raise ValueError('Invalid OAuth response; missing scope')
+
+        data = {
+            'access_token': authorization.get('access_token'),
+            'refresh_token': authorization.get('refresh_token'),
+
+            'created_at': authorization.get('created_at'),
+            'expires_in': authorization.get('expires_in'),
+
+            'token_type': authorization.get('token_type'),
+            'scope': authorization.get('scope'),
+        }
+
+        # One save for all token fields. No partial access-token-only update.
+        for key, value in data.items():
+            setattr(oauth_credential, key, value)
+
+        if save:
+            with db.transaction():
+                oauth_credential.save()
+
+        return oauth_credential
 
     @classmethod
     def delete(cls, *query, **kwargs):

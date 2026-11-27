@@ -25,6 +25,11 @@ NOTICE = '[*** sensitive ***]'
 
 class AuthorizationFilter(Filter):
     def filter(self, record):
+        if record.name == 'peewee' and isinstance(record.msg, tuple) and len(record.msg) == 2:
+            sql, params = record.msg
+            if '"trakt.credential.' in sql and params:
+                record.msg = (sql, NOTICE)
+
         if self.is_authorization_message(record):
             return False
 

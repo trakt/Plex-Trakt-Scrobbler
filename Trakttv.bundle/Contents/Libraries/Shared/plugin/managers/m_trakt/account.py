@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 
 class UpdateAccount(Update):
-    keys = ['username']
+    keys = ['username', 'auth_state']
 
     def from_dict(self, t_account, changes, settings=None):
         # Resolve `account`
@@ -101,65 +101,6 @@ class UpdateAccount(Update):
 
         log.info('Updated account authorization for %r', t_account)
         return True
-
-    def from_pin(self, t_account, pin):
-        if not pin:
-            log.debug('"pin" parameter is empty, ignoring account authorization update')
-            return t_account
-
-        # Retrieve current account `OAuthCredential`
-        oauth = t_account.oauth_credentials.first()
-
-        if oauth and oauth.code == pin:
-            log.debug("PIN hasn't changed, ignoring account authorization update")
-            return t_account
-
-        if not oauth:
-            # Create new `OAuthCredential` for the account
-            oauth = TraktOAuthCredential(
-                account=t_account
-            )
-
-        # Update `OAuthCredential`
-        if not TraktOAuthCredentialManager.update.from_pin(oauth, pin, save=False):
-            log.warn("Unable to update OAuthCredential (token exchange failed, hasn't changed, etc..)")
-
-            # Save code into database (to avoid future re-authentication with the same pin)
-            oauth.save()
-            return None
-
-        # Validate the account authorization
-        with t_account.oauth_authorization(oauth).http(retry=True):
-            settings = Trakt['users/settings'].get()
-
-        if not settings:
-            log.warn('Unable to retrieve account details for authorization')
-            return None
-
-        # Update `TraktAccount` username
-        try:
-            self.update_username(t_account, settings)
-        except (apsw.ConstraintError, peewee.IntegrityError) as ex:
-            log.debug('Trakt account already exists - %s', ex, exc_info=True)
-
-            raise TraktAccountExistsException('Trakt account already exists')
-
-        # Save oauth credential changes
-        oauth.save()
-
-        # Refresh `TraktAccount`
-        t_account.refresh(
-            force=True,
-            settings=settings
-        )
-
-        # Refresh `Account`
-        t_account.account.refresh(
-            force=True
-        )
-
-        log.info('Updated account authorization for %r', t_account)
-        return t_account
 
     def update_username(self, t_account, settings, save=True):
         username = settings.get('user', {}).get('username')
