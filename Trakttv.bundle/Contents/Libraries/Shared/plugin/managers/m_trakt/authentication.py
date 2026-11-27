@@ -20,6 +20,7 @@ Design constraints:
 - Tokens, device codes, user codes and authorization payloads are never logged.
 """
 
+from plugin.core.constants import PLUGIN_VERSION
 from plugin.core.exceptions import AccountAuthenticationError
 from plugin.managers.m_trakt.credential import TraktOAuthCredentialManager
 from plugin.models import TraktAccount, TraktOAuthCredential
@@ -173,6 +174,7 @@ class TraktAuthorizationRequired(TokenRefreshError, AccountAuthenticationError):
 DEFAULT_BASE_URL = 'https://api.trakt.tv'
 DEFAULT_AUTH_BASE_URL = 'https://auth.trakt.tv'
 DEFAULT_TIMEOUT = (6.05, 24)
+USER_AGENT = 'Plex-Trakt-Scrobbler/%s' % PLUGIN_VERSION
 
 DEFAULT_DEVICE_INTERVAL = 5
 DEFAULT_DEVICE_EXPIRES_IN = 600
@@ -575,13 +577,24 @@ class TraktAuthenticationManager(object):
         if not access_token:
             raise TraktAuthorizationRequired('Access token is required')
 
-        response = cls._http_get(
-            cls._endpoint(base_url, USER_SETTINGS_PATH),
-            access_token=access_token,
-            client_id=client_id,
-            session=session,
-            timeout=timeout,
-        )
+        client_id = cls._require_client_id(client_id)
+
+        try:
+            response = cls._http_get(
+                cls._endpoint(base_url, USER_SETTINGS_PATH),
+                access_token=access_token,
+                client_id=client_id,
+                session=session,
+                timeout=timeout,
+            )
+        except TraktAPIError as ex:
+            log.warning(
+                '[Trakt] GET /users/settings failed: HTTP %s (CF-Ray: %s, CF-Mitigated: %s)',
+                ex.status_code,
+                ex.headers.get('CF-Ray', '-'),
+                ex.headers.get('CF-Mitigated', '-'),
+            )
+            raise
 
         if not isinstance(response, dict) or not response:
             raise TraktAuthenticationError('Unable to retrieve account details for token')
@@ -883,6 +896,7 @@ class TraktAuthenticationManager(object):
     def _http_post(cls, url, payload, client_id=None, session=None, timeout=None):
         headers = {
             'Content-Type': 'application/json',
+            'User-Agent': USER_AGENT,
             'trakt-api-version': '2',
         }
 
@@ -920,6 +934,8 @@ class TraktAuthenticationManager(object):
     @classmethod
     def _http_get(cls, url, access_token=None, client_id=None, session=None, timeout=None):
         headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': USER_AGENT,
             'trakt-api-version': '2',
         }
 

@@ -296,6 +296,23 @@ def test_normalize_authorization_preserves_scope_and_requires_complete_response(
     raise AssertionError('Expected missing scope to fail')
 
 
+def test_get_user_settings_sends_required_headers():
+    settings = {'user': {'username': 'viewer'}}
+    session = FakeSession([FakeResponse(200, settings)])
+
+    assert TraktAuthenticationManager.get_user_settings(
+        'ACCESS', client_id='CLIENT', session=session
+    ) == settings
+
+    call = session.calls[0]
+    assert call['url'] == 'https://api.trakt.tv/users/settings'
+    assert call['headers']['Content-Type'] == 'application/json'
+    assert call['headers']['User-Agent'].startswith('Plex-Trakt-Scrobbler/')
+    assert call['headers']['trakt-api-key'] == 'CLIENT'
+    assert call['headers']['trakt-api-version'] == '2'
+    assert call['headers']['Authorization'] == 'Bearer ACCESS'
+
+
 def test_api_error_preserves_response_body():
     body = {'error': 'invalid_grant', 'error_description': 'session not found'}
 
